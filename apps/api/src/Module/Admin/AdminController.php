@@ -1,0 +1,247 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Lodgik\Module\Admin;
+
+use Lodgik\Helper\PaginationHelper;
+use Lodgik\Helper\ResponseHelper;
+use Lodgik\Module\Admin\DTO\CreatePlanRequest;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+
+final class AdminController
+{
+    public function __construct(
+        private readonly AdminService $adminService,
+        private readonly ResponseHelper $response,
+    ) {}
+
+    // ─── Dashboard ─────────────────────────────────────────────
+
+    /** GET /api/admin/dashboard */
+    public function dashboard(Request $request, Response $response): Response
+    {
+        $stats = $this->adminService->getDashboardStats();
+        return $this->response->success($response, $stats);
+    }
+
+    // ─── Tenants ───────────────────────────────────────────────
+
+    /** GET /api/admin/tenants */
+    public function listTenants(Request $request, Response $response): Response
+    {
+        $pagination = PaginationHelper::fromRequest($request);
+        $search = PaginationHelper::searchFromRequest($request);
+        $filters = PaginationHelper::filtersFromRequest($request, ['status']);
+
+        $result = $this->adminService->listTenants(
+            search: $search,
+            status: $filters['status'] ?? null,
+            page: $pagination['page'],
+            limit: $pagination['limit'],
+        );
+
+        $items = array_map(fn($t) => $this->serializeTenantAdmin($t), $result['items']);
+
+        return $this->response->paginated(
+            $response, $items, $result['total'],
+            $pagination['page'], $pagination['limit'],
+        );
+    }
+
+    /** GET /api/admin/tenants/{id} */
+    public function showTenant(Request $request, Response $response, array $args): Response
+    {
+        $tenant = $this->adminService->getTenant($args['id']);
+        if ($tenant === null) {
+            return $this->response->notFound($response, 'Tenant not found');
+        }
+
+        return $this->response->success($response, $this->serializeTenantAdmin($tenant));
+    }
+
+    /** PATCH /api/admin/tenants/{id}/activate */
+    public function activateTenant(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $tenant = $this->adminService->setTenantActive($args['id'], true);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 400);
+        }
+
+        return $this->response->success($response, $this->serializeTenantAdmin($tenant), 'Tenant activated');
+    }
+
+    /** PATCH /api/admin/tenants/{id}/suspend */
+    public function suspendTenant(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $tenant = $this->adminService->setTenantActive($args['id'], false);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 400);
+        }
+
+        return $this->response->success($response, $this->serializeTenantAdmin($tenant), 'Tenant suspended');
+    }
+
+    /** POST /api/admin/tenants/{id}/assign-plan */
+    public function assignPlan(Request $request, Response $response, array $args): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $planId = $body['plan_id'] ?? '';
+
+        if (trim($planId) === '') {
+            return $this->response->validationError($response, ['plan_id' => 'Plan ID is required']);
+        }
+
+        try {
+            $tenant = $this->adminService->assignPlan($args['id'], $planId);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 400);
+        }
+
+        return $this->response->success($response, $this->serializeTenantAdmin($tenant), 'Plan assigned');
+    }
+
+    // ─── Plans ─────────────────────────────────────────────────
+
+    /** GET /api/admin/plans */
+    public function listPlans(Request $request, Response $response): Response
+    {
+        $plans = $this->adminService->listPlans();
+        $items = array_map(fn($p) => $this->serializePlan($p), $plans);
+
+        return $this->response->success($response, $items);
+    }
+
+    /** GET /api/plans (public) */
+    public function listPublicPlans(Request $request, Response $response): Response
+    {
+        $plans = $this->adminService->listPublicPlans();
+        $items = array_map(fn($p) => $this->serializePlanPublic($p), $plans);
+
+        return $this->response->success($response, $items);
+    }
+
+    /** GET /api/admin/plans/{id} */
+    public function showPlan(Request $request, Response $response, array $args): Response
+    {
+        $plan = $this->adminService->getPlan($args['id']);
+        if ($plan === null) {
+            return $this->response->notFound($response, 'Plan not found');
+        }
+
+        return $this->response->success($response, $this->serializePlan($plan));
+    }
+
+    /** POST /api/admin/plans */
+    public function createPlan(Request $request, Response $response): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $dto = CreatePlanRequest::fromArray($body);
+
+        $errors = $dto->validate();
+        if (!empty($errors)) {
+            return $this->response->validationError($response, $errors);
+        }
+
+        try {
+            $plan = $this->adminService->createPlan($dto);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 409);
+        }
+
+        return $this->response->created($response, $this->serializePlan($plan), 'Plan created');
+    }
+
+    /** PATCH /api/admin/plans/{id} */
+    public function updatePlan(Request $request, Response $response, array $args): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+
+        try {
+            $plan = $this->adminService->updatePlan($args['id'], $body);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 400);
+        }
+
+        return $this->response->success($response, $this->serializePlan($plan), 'Plan updated');
+    }
+
+    /** DELETE /api/admin/plans/{id} */
+    public function deletePlan(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $this->adminService->deletePlan($args['id']);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 400);
+        }
+
+        return $this->response->noContent($response);
+    }
+
+    // ─── Serializers ───────────────────────────────────────────
+
+    private function serializeTenantAdmin(object $t): array
+    {
+        return [
+            'id' => $t->getId(),
+            'name' => $t->getName(),
+            'slug' => $t->getSlug(),
+            'email' => $t->getEmail(),
+            'phone' => $t->getPhone(),
+            'subscription_status' => $t->getSubscriptionStatus()->value,
+            'subscription_plan_id' => $t->getSubscriptionPlanId(),
+            'trial_ends_at' => $t->getTrialEndsAt()?->format(\DateTimeInterface::ATOM),
+            'subscription_ends_at' => $t->getSubscriptionEndsAt()?->format(\DateTimeInterface::ATOM),
+            'max_rooms' => $t->getMaxRooms(),
+            'max_staff' => $t->getMaxStaff(),
+            'max_properties' => $t->getMaxProperties(),
+            'enabled_modules' => $t->getEnabledModules(),
+            'is_active' => $t->isActive(),
+            'created_at' => $t->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
+    private function serializePlan(object $p): array
+    {
+        return [
+            'id' => $p->getId(),
+            'name' => $p->getName(),
+            'tier' => $p->getTier(),
+            'description' => $p->getDescription(),
+            'monthly_price' => $p->getMonthlyPrice(),
+            'annual_price' => $p->getAnnualPrice(),
+            'currency' => $p->getCurrency(),
+            'max_rooms' => $p->getMaxRooms(),
+            'max_staff' => $p->getMaxStaff(),
+            'max_properties' => $p->getMaxProperties(),
+            'included_modules' => $p->getIncludedModules(),
+            'feature_flags' => $p->getFeatureFlags(),
+            'is_public' => $p->isPublic(),
+            'is_active' => $p->isActive(),
+            'for_tenant_id' => $p->getForTenantId(),
+            'trial_days' => $p->getTrialDays(),
+            'sort_order' => $p->getSortOrder(),
+        ];
+    }
+
+    private function serializePlanPublic(object $p): array
+    {
+        return [
+            'id' => $p->getId(),
+            'name' => $p->getName(),
+            'tier' => $p->getTier(),
+            'description' => $p->getDescription(),
+            'monthly_price' => $p->getMonthlyPrice(),
+            'annual_price' => $p->getAnnualPrice(),
+            'currency' => $p->getCurrency(),
+            'max_rooms' => $p->getMaxRooms(),
+            'max_staff' => $p->getMaxStaff(),
+            'max_properties' => $p->getMaxProperties(),
+            'included_modules' => $p->getIncludedModules(),
+            'trial_days' => $p->getTrialDays(),
+        ];
+    }
+}

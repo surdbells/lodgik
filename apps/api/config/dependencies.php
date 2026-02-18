@@ -1,0 +1,393 @@
+<?php
+
+declare(strict_types=1);
+
+use DI\ContainerBuilder;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\ORMSetup;
+use Lodgik\Doctrine\Listener\TenantListener;
+use Lodgik\Helper\ResponseHelper;
+use Lodgik\Middleware\AuthMiddleware;
+use Lodgik\Middleware\MiddlewareFactory;
+use Lodgik\Middleware\RateLimitMiddleware;
+use Lodgik\Middleware\TenantMiddleware;
+use Lodgik\Module\Admin\AdminController;
+use Lodgik\Module\Admin\AdminService;
+use Lodgik\Module\AppDistribution\AppDistributionController;
+use Lodgik\Module\AppDistribution\AppDistributionService;
+use Lodgik\Module\Auth\AuthController;
+use Lodgik\Module\Auth\AuthService;
+use Lodgik\Module\Feature\FeatureController;
+use Lodgik\Module\Feature\FeatureService;
+use Lodgik\Module\Onboarding\OnboardingController;
+use Lodgik\Module\Onboarding\OnboardingService;
+use Lodgik\Module\Subscription\SubscriptionController;
+use Lodgik\Module\Subscription\SubscriptionService;
+use Lodgik\Module\Usage\UsageController;
+use Lodgik\Module\Usage\UsageService;
+use Lodgik\Module\Staff\StaffController;
+use Lodgik\Module\Staff\StaffService;
+use Lodgik\Module\Tenant\TenantController;
+use Lodgik\Module\Tenant\TenantService;
+use Lodgik\Repository\PropertyRepository;
+use Lodgik\Repository\RefreshTokenRepository;
+use Lodgik\Repository\SubscriptionPlanRepository;
+use Lodgik\Repository\TenantRepository;
+use Lodgik\Repository\UserRepository;
+use Lodgik\Service\AuditService;
+use Lodgik\Service\FileStorageService;
+use Lodgik\Service\JwtService;
+use Lodgik\Service\PaystackService;
+use Lodgik\Service\ZeptoMailService;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
+use Predis\Client as RedisClient;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
+
+return function (ContainerBuilder $builder): void {
+    $builder->addDefinitions([
+
+        // ─── Settings ──────────────────────────────────────────────
+        'settings' => function (): array {
+            return require __DIR__ . '/app.php';
+        },
+
+        // ─── Logger (Monolog) ──────────────────────────────────────
+        LoggerInterface::class => function (ContainerInterface $c): LoggerInterface {
+            $settings = $c->get('settings')['logging'];
+            $logger = new Logger('lodgik');
+
+            $level = Level::fromName(ucfirst($settings['level']));
+
+            if ($settings['channel'] === 'stderr') {
+                $logger->pushHandler(new StreamHandler('php://stderr', $level));
+            } else {
+                $logFile = rtrim($settings['path'], '/') . '/app.log';
+                $logger->pushHandler(new StreamHandler($logFile, $level));
+            }
+
+            return $logger;
+        },
+
+        // ─── Doctrine Entity Manager ──────────────────────────────
+        EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
+            $settings = $c->get('settings')['database'];
+            $appSettings = $c->get('settings')['app'];
+
+            $config = ORMSetup::createAttributeMetadataConfiguration(
+                paths: [__DIR__ . '/../src/Entity'],
+                isDevMode: $appSettings['debug'],
+            );
+
+            // Register global filters
+            $config->addFilter('tenant', \Lodgik\Doctrine\Filter\TenantFilter::class);
+            $config->addFilter('soft_delete', \Lodgik\Doctrine\Filter\SoftDeleteFilter::class);
+
+            $connection = DriverManager::getConnection([
+                'driver' => $settings['driver'],
+                'host' => $settings['host'],
+                'port' => $settings['port'],
+                'dbname' => $settings['dbname'],
+                'user' => $settings['user'],
+                'password' => $settings['password'],
+                'charset' => $settings['charset'],
+            ], $config);
+
+            $em = new EntityManager($connection, $config);
+
+            // Enable soft delete filter by default (always hide deleted records)
+            $em->getFilters()->enable('soft_delete');
+
+            // Register Doctrine event listeners
+            $tenantListener = $c->get(TenantListener::class);
+            $em->getEventManager()->addEventListener(
+                [\Doctrine\ORM\Events::prePersist],
+                $tenantListener
+            );
+
+            // Tenant filter is enabled per-request by TenantMiddleware
+            // $em->getFilters()->enable('tenant')->setParameter('tenantId', $id);
+
+            return $em;
+        },
+
+        // ─── Tenant Listener (singleton, shared with middleware) ──
+        TenantListener::class => function (): TenantListener {
+            return new TenantListener();
+        },
+
+        // ─── Redis Client ──────────────────────────────────────────
+        RedisClient::class => function (ContainerInterface $c): RedisClient {
+            $settings = $c->get('settings')['redis'];
+
+            $options = [
+                'prefix' => $settings['prefix'],
+            ];
+
+            $parameters = [
+                'scheme' => 'tcp',
+                'host' => $settings['host'],
+                'port' => $settings['port'],
+            ];
+
+            if (!empty($settings['password'])) {
+                $parameters['password'] = $settings['password'];
+            }
+
+            return new RedisClient($parameters, $options);
+        },
+
+        // ─── Helpers ───────────────────────────────────────────────
+        ResponseHelper::class => function (): ResponseHelper {
+            return new ResponseHelper();
+        },
+
+        // ─── JWT Service ───────────────────────────────────────────
+        JwtService::class => function (ContainerInterface $c): JwtService {
+            $settings = $c->get('settings')['jwt'];
+
+            return new JwtService(
+                secret: $settings['secret'],
+                accessTtl: $settings['access_ttl'],
+                refreshTtl: $settings['refresh_ttl'],
+                algorithm: $settings['algorithm'],
+                issuer: $settings['issuer'],
+            );
+        },
+
+        // ─── Auth Middleware (singleton, used in route groups) ─────
+        AuthMiddleware::class => function (ContainerInterface $c): AuthMiddleware {
+            return new AuthMiddleware(
+                jwt: $c->get(JwtService::class),
+            );
+        },
+
+        // ─── Tenant Middleware (singleton, used in route groups) ───
+        TenantMiddleware::class => function (ContainerInterface $c): TenantMiddleware {
+            return new TenantMiddleware(
+                em: $c->get(EntityManagerInterface::class),
+                tenantListener: $c->get(TenantListener::class),
+            );
+        },
+
+        // ─── Rate Limit Middleware ─────────────────────────────────
+        RateLimitMiddleware::class => function (ContainerInterface $c): RateLimitMiddleware {
+            return new RateLimitMiddleware(
+                redis: $c->get(RedisClient::class),
+            );
+        },
+
+        // ─── Middleware Factory (convenience builder for routes) ───
+        MiddlewareFactory::class => function (ContainerInterface $c): MiddlewareFactory {
+            return new MiddlewareFactory($c);
+        },
+
+        // ─── Repositories ──────────────────────────────────────────
+        TenantRepository::class => function (ContainerInterface $c): TenantRepository {
+            return new TenantRepository($c->get(EntityManagerInterface::class));
+        },
+
+        UserRepository::class => function (ContainerInterface $c): UserRepository {
+            return new UserRepository($c->get(EntityManagerInterface::class));
+        },
+
+        RefreshTokenRepository::class => function (ContainerInterface $c): RefreshTokenRepository {
+            return new RefreshTokenRepository($c->get(EntityManagerInterface::class));
+        },
+
+        PropertyRepository::class => function (ContainerInterface $c): PropertyRepository {
+            return new PropertyRepository($c->get(EntityManagerInterface::class));
+        },
+
+        SubscriptionPlanRepository::class => function (ContainerInterface $c): SubscriptionPlanRepository {
+            return new SubscriptionPlanRepository($c->get(EntityManagerInterface::class));
+        },
+
+        // ─── Services ──────────────────────────────────────────────
+        AuditService::class => function (ContainerInterface $c): AuditService {
+            return new AuditService($c->get(EntityManagerInterface::class));
+        },
+
+        ZeptoMailService::class => function (ContainerInterface $c): ZeptoMailService {
+            $settings = $c->get('settings')['zeptomail'];
+
+            return new ZeptoMailService(
+                apiKey: $settings['api_key'],
+                fromEmail: $settings['from_email'],
+                fromName: $settings['from_name'],
+                logger: $c->get(LoggerInterface::class),
+            );
+        },
+
+        // ─── Auth Module ───────────────────────────────────────────
+        AuthService::class => function (ContainerInterface $c): AuthService {
+            return new AuthService(
+                em: $c->get(EntityManagerInterface::class),
+                jwt: $c->get(JwtService::class),
+                tenantRepo: $c->get(TenantRepository::class),
+                userRepo: $c->get(UserRepository::class),
+                refreshTokenRepo: $c->get(RefreshTokenRepository::class),
+                mail: $c->get(ZeptoMailService::class),
+                audit: $c->get(AuditService::class),
+                logger: $c->get(LoggerInterface::class),
+                appUrl: $c->get('settings')['app']['url'],
+            );
+        },
+
+        AuthController::class => function (ContainerInterface $c): AuthController {
+            return new AuthController(
+                authService: $c->get(AuthService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── Staff Module ──────────────────────────────────────────
+        StaffService::class => function (ContainerInterface $c): StaffService {
+            return new StaffService(
+                em: $c->get(EntityManagerInterface::class),
+                userRepo: $c->get(UserRepository::class),
+                tenantRepo: $c->get(TenantRepository::class),
+                mail: $c->get(ZeptoMailService::class),
+                audit: $c->get(AuditService::class),
+                logger: $c->get(LoggerInterface::class),
+                appUrl: $c->get('settings')['app']['url'],
+            );
+        },
+
+        StaffController::class => function (ContainerInterface $c): StaffController {
+            return new StaffController(
+                staffService: $c->get(StaffService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── Tenant Module ─────────────────────────────────────────
+        TenantService::class => function (ContainerInterface $c): TenantService {
+            return new TenantService(
+                em: $c->get(EntityManagerInterface::class),
+                tenantRepo: $c->get(TenantRepository::class),
+                propertyRepo: $c->get(PropertyRepository::class),
+            );
+        },
+
+        TenantController::class => function (ContainerInterface $c): TenantController {
+            return new TenantController(
+                tenantService: $c->get(TenantService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── Admin Module (Super Admin) ────────────────────────────
+        AdminService::class => function (ContainerInterface $c): AdminService {
+            return new AdminService(
+                em: $c->get(EntityManagerInterface::class),
+                tenantRepo: $c->get(TenantRepository::class),
+                planRepo: $c->get(SubscriptionPlanRepository::class),
+            );
+        },
+
+        AdminController::class => function (ContainerInterface $c): AdminController {
+            return new AdminController(
+                adminService: $c->get(AdminService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── Feature Module ────────────────────────────────────────
+        FeatureService::class => function (ContainerInterface $c): FeatureService {
+            return new FeatureService(
+                em: $c->get(EntityManagerInterface::class),
+                tenantRepo: $c->get(TenantRepository::class),
+            );
+        },
+
+        FeatureController::class => function (ContainerInterface $c): FeatureController {
+            return new FeatureController(
+                featureService: $c->get(FeatureService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── File Storage ──────────────────────────────────────────
+        FileStorageService::class => function (ContainerInterface $c): FileStorageService {
+            return new FileStorageService(
+                logger: $c->get(LoggerInterface::class),
+            );
+        },
+
+        // ─── Onboarding Module ─────────────────────────────────────
+        OnboardingService::class => function (ContainerInterface $c): OnboardingService {
+            return new OnboardingService(
+                em: $c->get(EntityManagerInterface::class),
+                tenantRepo: $c->get(TenantRepository::class),
+                audit: $c->get(AuditService::class),
+                fileStorage: $c->get(FileStorageService::class),
+                mailer: $c->get(ZeptoMailService::class),
+            );
+        },
+
+        OnboardingController::class => function (ContainerInterface $c): OnboardingController {
+            return new OnboardingController(
+                onboardingService: $c->get(OnboardingService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── App Distribution Module ───────────────────────────────
+        AppDistributionService::class => function (ContainerInterface $c): AppDistributionService {
+            return new AppDistributionService(
+                em: $c->get(EntityManagerInterface::class),
+                fileStorage: $c->get(FileStorageService::class),
+            );
+        },
+
+        AppDistributionController::class => function (ContainerInterface $c): AppDistributionController {
+            return new AppDistributionController(
+                appService: $c->get(AppDistributionService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── Paystack ──────────────────────────────────────────────
+        PaystackService::class => function (): PaystackService {
+            return new PaystackService();
+        },
+
+        // ─── Subscription Module ───────────────────────────────────
+        SubscriptionService::class => function (ContainerInterface $c): SubscriptionService {
+            return new SubscriptionService(
+                em: $c->get(EntityManagerInterface::class),
+                tenantRepo: $c->get(TenantRepository::class),
+                paystack: $c->get(PaystackService::class),
+                audit: $c->get(AuditService::class),
+            );
+        },
+
+        SubscriptionController::class => function (ContainerInterface $c): SubscriptionController {
+            return new SubscriptionController(
+                subscriptionService: $c->get(SubscriptionService::class),
+                paystack: $c->get(PaystackService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── Usage Module ──────────────────────────────────────────
+        UsageService::class => function (ContainerInterface $c): UsageService {
+            return new UsageService(
+                em: $c->get(EntityManagerInterface::class),
+                tenantRepo: $c->get(TenantRepository::class),
+            );
+        },
+
+        UsageController::class => function (ContainerInterface $c): UsageController {
+            return new UsageController(
+                usageService: $c->get(UsageService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+    ]);
+};

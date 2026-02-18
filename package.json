@@ -1,0 +1,17 @@
+{
+    "name": "lodgik",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Lodgik - Hospitality Operating System",
+    "license": "UNLICENSED",
+    "scripts": {
+        "web:dev": "cd apps/web && ng serve",
+        "web:build": "cd apps/web && ng build --configuration=production",
+        "web:test": "cd apps/web && ng test",
+        "api:test": "cd apps/api && composer test",
+        "api:lint": "cd apps/api && composer lint"
+    },
+    "workspaces": [
+        "libs/*"
+    ]
+}

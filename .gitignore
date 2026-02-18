@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+apps/web/node_modules/
+
+# Build outputs
+apps/web/dist/
+apps/web/.angular/
+apps/api/vendor/
+apps/api/var/
+
+# Storage & uploads
+apps/api/storage/
+
+# Environment
+.env
+*.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
