@@ -36,6 +36,8 @@ use Lodgik\Module\Booking\BookingController;
 use Lodgik\Module\Booking\BookingService;
 use Lodgik\Module\Booking\BookingStateMachine;
 use Lodgik\Module\Booking\RateCalculator;
+use Lodgik\Module\Dashboard\DashboardController;
+use Lodgik\Module\Dashboard\DashboardService;
 use Lodgik\Module\Staff\StaffController;
 use Lodgik\Module\Staff\StaffService;
 use Lodgik\Module\Tenant\TenantController;
@@ -51,6 +53,7 @@ use Lodgik\Repository\GuestDocumentRepository;
 use Lodgik\Repository\BookingRepository;
 use Lodgik\Repository\BookingAddonRepository;
 use Lodgik\Repository\BookingStatusLogRepository;
+use Lodgik\Repository\DailySnapshotRepository;
 use Lodgik\Repository\SubscriptionPlanRepository;
 use Lodgik\Repository\TenantRepository;
 use Lodgik\Repository\UserRepository;
@@ -513,6 +516,28 @@ return function (ContainerBuilder $builder): void {
         BookingController::class => function (ContainerInterface $c): BookingController {
             return new BookingController(
                 bookingService: $c->get(BookingService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── Phase 1: Dashboard Module ────────────────────────────
+        DailySnapshotRepository::class => function (ContainerInterface $c): DailySnapshotRepository {
+            return new DailySnapshotRepository($c->get(EntityManagerInterface::class));
+        },
+
+        DashboardService::class => function (ContainerInterface $c): DashboardService {
+            return new DashboardService(
+                em: $c->get(EntityManagerInterface::class),
+                bookingRepo: $c->get(BookingRepository::class),
+                roomRepo: $c->get(RoomRepository::class),
+                snapshotRepo: $c->get(DailySnapshotRepository::class),
+                logger: $c->get(LoggerInterface::class),
+            );
+        },
+
+        DashboardController::class => function (ContainerInterface $c): DashboardController {
+            return new DashboardController(
+                dashboardService: $c->get(DashboardService::class),
                 response: $c->get(ResponseHelper::class),
             );
         },
