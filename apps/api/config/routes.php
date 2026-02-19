@@ -38,9 +38,10 @@ return function (App $app): void {
     (require __DIR__ . '/../src/Module/Payroll/routes.php')($app);
 
     // ─── Phase 4: Guest Experience ────────────────────────────
-    // (require __DIR__ . '/../src/Module/ServiceRequest/routes.php')($app);
-    // (require __DIR__ . '/../src/Module/Chat/routes.php')($app);
-    // (require __DIR__ . '/../src/Module/Notification/routes.php')($app);
+    (require __DIR__ . '/../src/Module/GuestAuth/routes.php')($app);
+    (require __DIR__ . '/../src/Module/ServiceRequest/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Chat/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Notification/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Tablet/routes.php')($app);
 
     // ─── Phase 5: Gym ─────────────────────────────────────────

@@ -88,6 +88,22 @@ use Lodgik\Repository\PayrollPeriodRepository;
 use Lodgik\Repository\PayrollItemRepository;
 use Lodgik\Module\Payroll\PayrollService;
 use Lodgik\Module\Payroll\PayrollController;
+use Lodgik\Repository\GuestAccessCodeRepository;
+use Lodgik\Repository\GuestSessionRepository;
+use Lodgik\Repository\TabletDeviceRepository;
+use Lodgik\Repository\ServiceRequestRepository;
+use Lodgik\Repository\ChatMessageRepository;
+use Lodgik\Service\TermiiService;
+use Lodgik\Module\GuestAuth\GuestAuthService;
+use Lodgik\Module\GuestAuth\GuestAuthController;
+use Lodgik\Module\ServiceRequest\ServiceRequestService;
+use Lodgik\Module\ServiceRequest\ServiceRequestController;
+use Lodgik\Module\Chat\ChatService;
+use Lodgik\Module\Chat\ChatController;
+use Lodgik\Repository\NotificationRepository;
+use Lodgik\Repository\DeviceTokenRepository;
+use Lodgik\Module\Notification\NotificationService;
+use Lodgik\Module\Notification\NotificationController;
 use Lodgik\Service\FileStorageService;
 use Lodgik\Service\JwtService;
 use Lodgik\Service\PaystackService;
@@ -542,6 +558,7 @@ return function (ContainerBuilder $builder): void {
                 logger: $c->get(LoggerInterface::class),
                 folioService: $c->get(FolioService::class),
                 invoiceService: $c->get(InvoiceService::class),
+                guestAuthService: $c->get(GuestAuthService::class),
             );
         },
 
@@ -677,6 +694,68 @@ return function (ContainerBuilder $builder): void {
         ),
         PayrollController::class => fn(ContainerInterface $c) => new PayrollController(
             service: $c->get(PayrollService::class),
+        ),
+
+        // ─── Phase 4: Guest Experience ───────────────────────────
+
+        GuestAccessCodeRepository::class => fn(ContainerInterface $c) => new GuestAccessCodeRepository($c->get(EntityManagerInterface::class)),
+        GuestSessionRepository::class => fn(ContainerInterface $c) => new GuestSessionRepository($c->get(EntityManagerInterface::class)),
+        TabletDeviceRepository::class => fn(ContainerInterface $c) => new TabletDeviceRepository($c->get(EntityManagerInterface::class)),
+        ServiceRequestRepository::class => fn(ContainerInterface $c) => new ServiceRequestRepository($c->get(EntityManagerInterface::class)),
+        ChatMessageRepository::class => fn(ContainerInterface $c) => new ChatMessageRepository($c->get(EntityManagerInterface::class)),
+
+        TermiiService::class => fn(ContainerInterface $c) => new TermiiService(
+            redis: $c->get(RedisClient::class),
+            logger: $c->get(LoggerInterface::class),
+            apiKey: $_ENV['TERMII_API_KEY'] ?? '',
+            senderId: $_ENV['TERMII_SENDER_ID'] ?? 'Lodgik',
+        ),
+
+        GuestAuthService::class => fn(ContainerInterface $c) => new GuestAuthService(
+            em: $c->get(EntityManagerInterface::class),
+            codeRepo: $c->get(GuestAccessCodeRepository::class),
+            sessionRepo: $c->get(GuestSessionRepository::class),
+            tabletRepo: $c->get(TabletDeviceRepository::class),
+            bookingRepo: $c->get(BookingRepository::class),
+            guestRepo: $c->get(GuestRepository::class),
+            termii: $c->get(TermiiService::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        GuestAuthController::class => fn(ContainerInterface $c) => new GuestAuthController(
+            service: $c->get(GuestAuthService::class),
+        ),
+
+        ServiceRequestService::class => fn(ContainerInterface $c) => new ServiceRequestService(
+            em: $c->get(EntityManagerInterface::class),
+            repo: $c->get(ServiceRequestRepository::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        ServiceRequestController::class => fn(ContainerInterface $c) => new ServiceRequestController(
+            service: $c->get(ServiceRequestService::class),
+        ),
+
+        ChatService::class => fn(ContainerInterface $c) => new ChatService(
+            em: $c->get(EntityManagerInterface::class),
+            repo: $c->get(ChatMessageRepository::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        ChatController::class => fn(ContainerInterface $c) => new ChatController(
+            service: $c->get(ChatService::class),
+        ),
+
+        // ─── Phase 4A: Notifications ─────────────────────────────
+
+        NotificationRepository::class => fn(ContainerInterface $c) => new NotificationRepository($c->get(EntityManagerInterface::class)),
+        DeviceTokenRepository::class => fn(ContainerInterface $c) => new DeviceTokenRepository($c->get(EntityManagerInterface::class)),
+
+        NotificationService::class => fn(ContainerInterface $c) => new NotificationService(
+            em: $c->get(EntityManagerInterface::class),
+            notifRepo: $c->get(NotificationRepository::class),
+            tokenRepo: $c->get(DeviceTokenRepository::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        NotificationController::class => fn(ContainerInterface $c) => new NotificationController(
+            service: $c->get(NotificationService::class),
         ),
     ]);
 };

@@ -42,6 +42,7 @@ final class BookingService
         private readonly LoggerInterface $logger,
         private readonly \Lodgik\Module\Folio\FolioService $folioService,
         private readonly \Lodgik\Module\Invoice\InvoiceService $invoiceService,
+        private readonly ?\Lodgik\Module\GuestAuth\GuestAuthService $guestAuthService = null,
     ) {}
 
     // ═══ List / Get ════════════════════════════════════════════
@@ -259,6 +260,21 @@ final class BookingService
             $this->logger->error("Failed to create folio for {$booking->getBookingRef()}: {$e->getMessage()}");
         }
 
+        // Generate guest access code and bind tablet
+        if ($this->guestAuthService) {
+            try {
+                $this->guestAuthService->generateAccessCode(
+                    $booking->getId(), $booking->getGuestId(), $booking->getPropertyId(),
+                    $booking->getRoomId(), $booking->getTenantId()
+                );
+                if ($booking->getRoomId()) {
+                    $this->guestAuthService->bindTabletToBooking($booking->getRoomId(), $booking->getId(), $booking->getGuestId());
+                }
+            } catch (\Throwable $e) {
+                $this->logger->error("Guest auth setup failed for {$booking->getBookingRef()}: {$e->getMessage()}");
+            }
+        }
+
         return $booking;
     }
 
@@ -309,6 +325,18 @@ final class BookingService
             }
         } catch (\Throwable $e) {
             $this->logger->error("Failed to close folio/generate invoice for {$booking->getBookingRef()}: {$e->getMessage()}");
+        }
+
+        // Invalidate guest sessions and unbind tablet
+        if ($this->guestAuthService) {
+            try {
+                $this->guestAuthService->invalidateBookingSessions($booking->getId());
+                if ($booking->getRoomId()) {
+                    $this->guestAuthService->unbindTablet($booking->getRoomId());
+                }
+            } catch (\Throwable $e) {
+                $this->logger->error("Guest auth cleanup failed for {$booking->getBookingRef()}: {$e->getMessage()}");
+            }
         }
 
         return $booking;

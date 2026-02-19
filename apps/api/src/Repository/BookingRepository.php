@@ -144,4 +144,18 @@ final class BookingRepository extends BaseRepository
             ->getQuery()
             ->getResult();
     }
+
+    /** Find the current checked-in booking for a guest */
+    public function findActiveForGuest(string $guestId): ?Booking
+    {
+        return $this->createQueryBuilder('b')
+            ->where('b.guestId = :gid')
+            ->andWhere('b.status = :s')
+            ->setParameter('gid', $guestId)
+            ->setParameter('s', \Lodgik\Enum\BookingStatus::CHECKED_IN)
+            ->orderBy('b.checkIn', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }
