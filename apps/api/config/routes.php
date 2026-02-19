@@ -22,8 +22,7 @@ return function (App $app): void {
     // (require __DIR__ . '/../src/Module/AppDistribution/routes.php')($app);
 
     // ─── Phase 1: Core PMS ────────────────────────────────────
-    // (require __DIR__ . '/../src/Module/Property/routes.php')($app);
-    // (require __DIR__ . '/../src/Module/Room/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Room/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Guest/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Booking/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Dashboard/routes.php')($app);

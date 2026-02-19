@@ -27,12 +27,19 @@ use Lodgik\Module\Subscription\SubscriptionController;
 use Lodgik\Module\Subscription\SubscriptionService;
 use Lodgik\Module\Usage\UsageController;
 use Lodgik\Module\Usage\UsageService;
+use Lodgik\Module\Room\RoomController;
+use Lodgik\Module\Room\RoomService;
+use Lodgik\Module\Room\RoomStatusMachine;
 use Lodgik\Module\Staff\StaffController;
 use Lodgik\Module\Staff\StaffService;
 use Lodgik\Module\Tenant\TenantController;
 use Lodgik\Module\Tenant\TenantService;
 use Lodgik\Repository\PropertyRepository;
 use Lodgik\Repository\RefreshTokenRepository;
+use Lodgik\Repository\RoomRepository;
+use Lodgik\Repository\RoomTypeRepository;
+use Lodgik\Repository\RoomStatusLogRepository;
+use Lodgik\Repository\AmenityRepository;
 use Lodgik\Repository\SubscriptionPlanRepository;
 use Lodgik\Repository\TenantRepository;
 use Lodgik\Repository\UserRepository;
@@ -386,6 +393,46 @@ return function (ContainerBuilder $builder): void {
         UsageController::class => function (ContainerInterface $c): UsageController {
             return new UsageController(
                 usageService: $c->get(UsageService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── Phase 1: Room Module ─────────────────────────────────
+        RoomTypeRepository::class => function (ContainerInterface $c): RoomTypeRepository {
+            return new RoomTypeRepository($c->get(EntityManagerInterface::class));
+        },
+
+        RoomRepository::class => function (ContainerInterface $c): RoomRepository {
+            return new RoomRepository($c->get(EntityManagerInterface::class));
+        },
+
+        RoomStatusLogRepository::class => function (ContainerInterface $c): RoomStatusLogRepository {
+            return new RoomStatusLogRepository($c->get(EntityManagerInterface::class));
+        },
+
+        AmenityRepository::class => function (ContainerInterface $c): AmenityRepository {
+            return new AmenityRepository($c->get(EntityManagerInterface::class));
+        },
+
+        RoomStatusMachine::class => function (): RoomStatusMachine {
+            return new RoomStatusMachine();
+        },
+
+        RoomService::class => function (ContainerInterface $c): RoomService {
+            return new RoomService(
+                em: $c->get(EntityManagerInterface::class),
+                roomRepo: $c->get(RoomRepository::class),
+                roomTypeRepo: $c->get(RoomTypeRepository::class),
+                statusLogRepo: $c->get(RoomStatusLogRepository::class),
+                amenityRepo: $c->get(AmenityRepository::class),
+                statusMachine: $c->get(RoomStatusMachine::class),
+                logger: $c->get(LoggerInterface::class),
+            );
+        },
+
+        RoomController::class => function (ContainerInterface $c): RoomController {
+            return new RoomController(
+                roomService: $c->get(RoomService::class),
                 response: $c->get(ResponseHelper::class),
             );
         },
