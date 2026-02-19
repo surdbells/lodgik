@@ -54,6 +54,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/rooms/rooms.page').then(m => m.RoomsPage),
       },
       {
+        path: 'rooms/:id',
+        loadComponent: () => import('./pages/rooms/room-detail.page').then(m => m.RoomDetailPage),
+      },
+      {
         path: 'room-types',
         loadComponent: () => import('./pages/room-types/room-types.page').then(m => m.RoomTypesPage),
       },
@@ -70,8 +74,16 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/bookings/bookings.page').then(m => m.BookingsPage),
       },
       {
+        path: 'bookings/new',
+        loadComponent: () => import('./pages/bookings/new-booking.page').then(m => m.NewBookingPage),
+      },
+      {
         path: 'bookings/:id',
         loadComponent: () => import('./pages/bookings/booking-detail.page').then(m => m.BookingDetailPage),
+      },
+      {
+        path: 'properties/:id/edit',
+        loadComponent: () => import('./pages/properties/property-edit.page').then(m => m.PropertyEditPage),
       },
     ],
   },

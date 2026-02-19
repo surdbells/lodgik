@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService, StatsCardComponent } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
@@ -8,12 +8,10 @@ import { AuthService } from '@lodgik/shared';
 @Component({
   selector: 'app-bookings',
   standalone: true,
-  imports: [FormsModule, DatePipe, DecimalPipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
+  imports: [FormsModule, RouterLink, DatePipe, DecimalPipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
     <ui-page-header title="Bookings" subtitle="Reservations, check-ins and check-outs">
-      <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700" (click)="showNew = !showNew; resetForm()">
-        {{ showNew ? 'Cancel' : '+ New Booking' }}
-      </button>
+      <a routerLink="/bookings/new" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">+ New Booking</a>
     </ui-page-header>
 
     <!-- Quick Stats -->

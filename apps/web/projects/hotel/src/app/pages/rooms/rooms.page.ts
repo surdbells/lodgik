@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService, StatsCardComponent, BadgeComponent } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
@@ -136,6 +137,7 @@ export class RoomsPage implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
   private auth = inject(AuthService);
+  private router = inject(Router);
 
   loading = signal(true);
   rooms = signal<any[]>([]);
@@ -176,6 +178,7 @@ export class RoomsPage implements OnInit {
   ];
 
   actions: TableAction[] = [
+    { label: 'Details', handler: (r) => this.router.navigate(['/rooms', r.id]) },
     { label: 'Change Status', handler: (r) => { this.selectedRoom = r; this.showStatusDialog = true; } },
   ];
 
