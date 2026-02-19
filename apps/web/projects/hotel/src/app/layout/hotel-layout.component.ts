@@ -70,6 +70,10 @@ export class HotelLayoutComponent implements OnInit {
 
   allNavItems: NavItem[] = [
     { label: 'Dashboard', icon: '🏠', route: '/dashboard' },
+    { label: 'Bookings', icon: '📋', route: '/bookings' },
+    { label: 'Rooms', icon: '🚪', route: '/rooms' },
+    { label: 'Room Types', icon: '🏷️', route: '/room-types' },
+    { label: 'Guests', icon: '🧑', route: '/guests' },
     { label: 'Staff', icon: '👥', route: '/staff' },
     { label: 'Properties', icon: '🏨', route: '/properties' },
     { label: 'Features', icon: '🧩', route: '/features' },

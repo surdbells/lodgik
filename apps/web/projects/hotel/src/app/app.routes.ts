@@ -49,6 +49,22 @@ export const routes: Routes = [
         path: 'billing',
         loadComponent: () => import('./pages/billing/billing.page').then(m => m.BillingPage),
       },
+      {
+        path: 'rooms',
+        loadComponent: () => import('./pages/rooms/rooms.page').then(m => m.RoomsPage),
+      },
+      {
+        path: 'room-types',
+        loadComponent: () => import('./pages/room-types/room-types.page').then(m => m.RoomTypesPage),
+      },
+      {
+        path: 'guests',
+        loadComponent: () => import('./pages/guests/guests.page').then(m => m.GuestsPage),
+      },
+      {
+        path: 'bookings',
+        loadComponent: () => import('./pages/bookings/bookings.page').then(m => m.BookingsPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
