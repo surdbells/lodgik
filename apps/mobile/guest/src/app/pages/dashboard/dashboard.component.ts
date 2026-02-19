@@ -1,6 +1,8 @@
 import { Component, NO_ERRORS_SCHEMA, OnInit } from '@angular/core';
 import { NativeScriptCommonModule, NativeScriptRouterModule, RouterExtensions } from '@nativescript/angular';
 import { ApiService } from '../../services/api.service';
+import { PushService } from '../../services/push.service';
+import { BiometricService } from '../../services/biometric.service';
 
 @Component({
   selector: 'Dashboard',
@@ -87,8 +89,9 @@ export class DashboardComponent implements OnInit {
   checkOut = '';
   accessCode = '';
   requests: any[] = [];
+  unreadNotifs = 0;
 
-  constructor(private api: ApiService, private router: RouterExtensions) {}
+  constructor(private api: ApiService, private router: RouterExtensions, private push: PushService, private biometric: BiometricService) {}
 
   ngOnInit() {
     const session = this.api.getSession();
@@ -99,6 +102,14 @@ export class DashboardComponent implements OnInit {
       this.checkOut = session.booking?.check_out || '';
     }
     this.loadRequests();
+
+    // Initialize push notifications
+    this.push.init();
+
+    // Load unread notification count
+    this.api.get('/notifications/unread-count').subscribe({
+      next: (r: any) => this.unreadNotifs = r.data?.count || 0,
+    });
   }
 
   loadRequests() {
@@ -112,6 +123,8 @@ export class DashboardComponent implements OnInit {
   nav(path: string) { this.router.navigate([path]); }
 
   logout() {
+    this.push.unregister();
+    this.biometric.clearBiometric();
     this.api.post('/guest-auth/logout', {}).subscribe({ complete: () => {
       this.api.clearSession();
       this.router.navigate(['/login'], { clearHistory: true });

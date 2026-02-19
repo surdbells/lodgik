@@ -9,6 +9,7 @@ use Lodgik\Entity\DeviceToken;
 use Lodgik\Entity\Notification;
 use Lodgik\Repository\DeviceTokenRepository;
 use Lodgik\Repository\NotificationRepository;
+use Lodgik\Service\FcmService;
 use Psr\Log\LoggerInterface;
 
 final class NotificationService
@@ -18,6 +19,7 @@ final class NotificationService
         private readonly NotificationRepository $notifRepo,
         private readonly DeviceTokenRepository $tokenRepo,
         private readonly LoggerInterface $logger,
+        private readonly ?FcmService $fcm = null,
     ) {}
 
     // ─── Notifications ──────────────────────────────────────────
@@ -100,16 +102,26 @@ final class NotificationService
         }
     }
 
-    // ─── FCM Push (stub — implement with Firebase Admin SDK) ────
+    // ─── FCM Push ─────────────────────────────────────────────
 
     private function sendPush(string $recipientId, string $title, ?string $body, ?array $data): void
     {
         $tokens = $this->tokenRepo->findActiveForOwner($recipientId);
-        if (empty($tokens)) return;
+        if (empty($tokens)) {
+            // Also try 'all' tokens for broadcast notifications
+            if ($recipientId !== 'all') return;
+            // For 'all' staff, we'd need property-scoped tokens — skip for now
+            return;
+        }
 
-        // TODO: Integrate Firebase Admin SDK for actual push delivery
-        // For now, log the push attempt
-        $this->logger->info("Push notification: to=$recipientId tokens=" . count($tokens) . " title=$title");
+        $fcmTokens = array_map(fn(DeviceToken $dt) => $dt->getToken(), $tokens);
+
+        if ($this->fcm && $this->fcm->isEnabled()) {
+            $sent = $this->fcm->sendToTokens($fcmTokens, $title, $body, $data);
+            $this->logger->info("[Push] FCM sent to {$sent}/" . count($fcmTokens) . " tokens for recipient={$recipientId}");
+        } else {
+            $this->logger->info("[Push-dev] Would send to " . count($fcmTokens) . " tokens: title={$title}");
+        }
 
         foreach ($tokens as $dt) {
             $dt->markUsed();

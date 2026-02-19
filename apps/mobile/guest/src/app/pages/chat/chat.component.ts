@@ -2,6 +2,7 @@ import { Component, NO_ERRORS_SCHEMA, OnInit, OnDestroy, NgZone } from '@angular
 import { NativeScriptCommonModule, RouterExtensions } from '@nativescript/angular';
 import { NativeScriptFormsModule } from '@nativescript/angular';
 import { ApiService } from '../../services/api.service';
+import { CameraService } from '../../services/camera.service';
 
 @Component({
   selector: 'Chat',
@@ -30,9 +31,10 @@ import { ApiService } from '../../services/api.service';
       </ScrollView>
 
       <!-- Input -->
-      <GridLayout row="1" columns="*, auto" class="bg-white border-t p-2">
-        <TextField col="0" [(ngModel)]="newMessage" hint="Type a message..." class="input border rounded-full p-3 m-r-2" returnKeyType="send" (returnPress)="send()"></TextField>
-        <Button col="1" text="Send" (tap)="send()" [isEnabled]="!!newMessage.trim()" class="bg-blue-600 text-white rounded-full p-3 px-5 font-bold"></Button>
+      <GridLayout row="1" columns="auto, *, auto" class="bg-white border-t p-2">
+        <Button col="0" text="📷" (tap)="sendPhoto()" class="p-3 text-xl"></Button>
+        <TextField col="1" [(ngModel)]="newMessage" hint="Type a message..." class="input border rounded-full p-3 m-r-2" returnKeyType="send" (returnPress)="send()"></TextField>
+        <Button col="2" text="Send" (tap)="send()" [isEnabled]="!!newMessage.trim()" class="bg-blue-600 text-white rounded-full p-3 px-5 font-bold"></Button>
       </GridLayout>
     </GridLayout>
   `,
@@ -42,7 +44,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   newMessage = '';
   private pollTimer: any;
 
-  constructor(private api: ApiService, public router: RouterExtensions, private zone: NgZone) {}
+  constructor(private api: ApiService, public router: RouterExtensions, private zone: NgZone, private camera: CameraService) {}
 
   ngOnInit() {
     this.loadMessages();
@@ -78,5 +80,17 @@ export class ChatComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: () => { this.newMessage = ''; this.loadMessages(); },
     });
+  }
+
+  async sendPhoto() {
+    const base64 = await this.camera.takePhoto();
+    if (!base64) return;
+    const session = this.api.getSession();
+    if (!session?.booking?.id) return;
+    this.api.post('/chat/messages', {
+      booking_id: session.booking.id, property_id: session.property_id,
+      sender_type: 'guest', sender_id: session.guest.id, sender_name: session.guest.name,
+      message: '📷 Photo', image_url: `data:image/jpg;base64,${base64.substring(0, 200)}`,
+    }).subscribe({ next: () => this.loadMessages() });
   }
 }

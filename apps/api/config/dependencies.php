@@ -729,6 +729,7 @@ return function (ContainerBuilder $builder): void {
             em: $c->get(EntityManagerInterface::class),
             repo: $c->get(ServiceRequestRepository::class),
             logger: $c->get(LoggerInterface::class),
+            notifService: $c->get(NotificationService::class),
         ),
         ServiceRequestController::class => fn(ContainerInterface $c) => new ServiceRequestController(
             service: $c->get(ServiceRequestService::class),
@@ -738,9 +739,18 @@ return function (ContainerBuilder $builder): void {
             em: $c->get(EntityManagerInterface::class),
             repo: $c->get(ChatMessageRepository::class),
             logger: $c->get(LoggerInterface::class),
+            notifService: $c->get(NotificationService::class),
         ),
         ChatController::class => fn(ContainerInterface $c) => new ChatController(
             service: $c->get(ChatService::class),
+        ),
+
+        // ─── Phase 4D: FCM Push Notifications ────────────────────
+
+        \Lodgik\Service\FcmService::class => fn(ContainerInterface $c) => new \Lodgik\Service\FcmService(
+            logger: $c->get(LoggerInterface::class),
+            projectId: $_ENV['FCM_PROJECT_ID'] ?? '',
+            serviceAccountJson: $_ENV['FCM_SERVICE_ACCOUNT_JSON'] ?? '',
         ),
 
         // ─── Phase 4A: Notifications ─────────────────────────────
@@ -753,6 +763,7 @@ return function (ContainerBuilder $builder): void {
             notifRepo: $c->get(NotificationRepository::class),
             tokenRepo: $c->get(DeviceTokenRepository::class),
             logger: $c->get(LoggerInterface::class),
+            fcm: $c->get(\Lodgik\Service\FcmService::class),
         ),
         NotificationController::class => fn(ContainerInterface $c) => new NotificationController(
             service: $c->get(NotificationService::class),

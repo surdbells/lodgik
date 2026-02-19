@@ -13,7 +13,12 @@
     "@angular/platform-browser-dynamic": "~20.2.0",
     "@angular/router": "~20.2.0",
     "@nativescript/angular": "^20.0.0",
+    "@nativescript/camera": "^7.0.0",
     "@nativescript/core": "~9.0.0",
+    "@nativescript/imagepicker": "^5.0.0",
+    "@nativescript/local-notifications": "^6.4.0",
+    "nativescript-fingerprint-auth": "^7.0.2",
+    "nativescript-plugin-firebase": "^10.6.3",
     "rxjs": "~7.8.0",
     "zone.js": "~0.15.0"
   },

@@ -6,6 +6,7 @@ namespace Lodgik\Module\Chat;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Entity\ChatMessage;
+use Lodgik\Module\Notification\NotificationService;
 use Lodgik\Repository\ChatMessageRepository;
 use Psr\Log\LoggerInterface;
 
@@ -15,6 +16,7 @@ final class ChatService
         private readonly EntityManagerInterface $em,
         private readonly ChatMessageRepository $repo,
         private readonly LoggerInterface $logger,
+        private readonly ?NotificationService $notifService = null,
     ) {}
 
     public function sendMessage(string $bookingId, string $propertyId, string $senderType, string $senderId, string $senderName, string $message, string $tenantId, ?string $imageUrl = null): ChatMessage
@@ -28,6 +30,12 @@ final class ChatService
         }
         $this->em->persist($msg);
         $this->em->flush();
+
+        // Notify the other party
+        if ($senderType === 'guest') {
+            $this->notifService?->notifyChatMessage($propertyId, $senderName, '', $tenantId);
+        }
+
         return $msg;
     }
 

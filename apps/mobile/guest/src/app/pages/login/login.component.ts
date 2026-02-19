@@ -1,8 +1,9 @@
-import { Component, NO_ERRORS_SCHEMA } from '@angular/core';
+import { Component, NO_ERRORS_SCHEMA, OnInit } from '@angular/core';
 import { NativeScriptCommonModule } from '@nativescript/angular';
 import { NativeScriptFormsModule } from '@nativescript/angular';
 import { RouterExtensions } from '@nativescript/angular';
 import { ApiService } from '../../services/api.service';
+import { BiometricService } from '../../services/biometric.service';
 
 @Component({
   selector: 'Login',
@@ -16,6 +17,13 @@ import { ApiService } from '../../services/api.service';
       <Label text="Welcome" class="text-2xl font-bold text-center m-b-2"></Label>
       <Label text="Sign in to access your room services" class="text-sm text-gray-500 text-center m-b-6"></Label>
 
+      <!-- Biometric Quick Login -->
+      <StackLayout *ngIf="biometricAvailable && biometricEnabled" class="m-b-6 text-center">
+        <Button [text]="biometricType === 'face' ? '😊 Sign in with Face ID' : '👆 Sign in with Fingerprint'" (tap)="biometricLogin()"
+          [isEnabled]="!loading" class="bg-green-600 text-white p-4 rounded-xl font-bold text-lg"></Button>
+        <Label text="— or sign in manually —" class="text-gray-400 text-center m-t-3 m-b-2 text-sm"></Label>
+      </StackLayout>
+
       <!-- Tab Selector -->
       <FlexboxLayout class="m-b-4" justifyContent="center">
         <Button [text]="'📱 Phone OTP'" (tap)="tab='otp'" [class]="tab==='otp' ? 'bg-blue-600 text-white p-2 m-r-2 rounded-lg' : 'bg-gray-200 p-2 m-r-2 rounded-lg'"></Button>
@@ -26,9 +34,7 @@ import { ApiService } from '../../services/api.service';
       <StackLayout *ngIf="tab==='otp'">
         <Label text="Phone Number" class="text-sm font-medium m-b-1"></Label>
         <TextField [(ngModel)]="phone" hint="08012345678" keyboardType="phone" class="input border rounded-lg p-3 m-b-3"></TextField>
-
         <Button *ngIf="!otpSent" text="Send OTP" (tap)="sendOtp()" [isEnabled]="!loading" class="bg-blue-600 text-white p-4 rounded-lg font-bold"></Button>
-
         <StackLayout *ngIf="otpSent">
           <Label text="Enter OTP" class="text-sm font-medium m-b-1"></Label>
           <TextField [(ngModel)]="otp" hint="123456" keyboardType="number" maxLength="6" class="input border rounded-lg p-3 m-b-3 text-center text-2xl tracking-widest"></TextField>
@@ -59,7 +65,7 @@ import { ApiService } from '../../services/api.service';
     </FlexboxLayout>
   `,
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   tab: 'otp' | 'code' = 'code';
   phone = '';
   otp = '';
@@ -70,11 +76,56 @@ export class LoginComponent {
   showConfig = false;
   apiUrl = '';
   tenantId = '';
+  biometricAvailable = false;
+  biometricEnabled = false;
+  biometricType = 'fingerprint';
 
-  constructor(private api: ApiService, private router: RouterExtensions) {
+  constructor(
+    private api: ApiService,
+    private router: RouterExtensions,
+    private biometric: BiometricService,
+  ) {
     this.apiUrl = this.api.getBaseUrl();
     const session = this.api.getSession();
     this.tenantId = session?.tenant_id || '';
+  }
+
+  async ngOnInit() {
+    const bio = await this.biometric.isAvailable();
+    this.biometricAvailable = bio.available;
+    this.biometricType = bio.type;
+    this.biometricEnabled = this.biometric.isBiometricEnabled();
+  }
+
+  async biometricLogin() {
+    this.loading = true; this.error = '';
+    const token = await this.biometric.biometricLogin();
+    if (token) {
+      this.api.setToken(token);
+      this.api.get('/guest-auth/session').subscribe({
+        next: (r: any) => {
+          if (r.data) {
+            this.api.setSession(r.data);
+            this.loading = false;
+            this.router.navigate(['/dashboard'], { clearHistory: true });
+          } else {
+            this.error = 'Session expired. Please sign in again.';
+            this.biometric.clearBiometric();
+            this.biometricEnabled = false;
+            this.loading = false;
+          }
+        },
+        error: () => {
+          this.error = 'Session expired. Please sign in again.';
+          this.biometric.clearBiometric();
+          this.biometricEnabled = false;
+          this.loading = false;
+        },
+      });
+    } else {
+      this.error = 'Biometric verification failed';
+      this.loading = false;
+    }
   }
 
   sendOtp() {
@@ -108,6 +159,8 @@ export class LoginComponent {
     this.api.setToken(data.token);
     this.api.setSession(data);
     this.loading = false;
+    // Enable biometric for next login
+    this.biometric.enableBiometric(data.token);
     this.router.navigate(['/dashboard'], { clearHistory: true });
   }
 

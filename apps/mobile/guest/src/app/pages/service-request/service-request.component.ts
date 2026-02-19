@@ -2,6 +2,7 @@ import { Component, NO_ERRORS_SCHEMA, OnInit } from '@angular/core';
 import { NativeScriptCommonModule, RouterExtensions } from '@nativescript/angular';
 import { NativeScriptFormsModule } from '@nativescript/angular';
 import { ApiService } from '../../services/api.service';
+import { CameraService } from '../../services/camera.service';
 
 @Component({
   selector: 'ServiceRequest',
@@ -34,6 +35,16 @@ import { ApiService } from '../../services/api.service';
           <TextView [(ngModel)]="description" hint="Any additional details..." class="input border rounded-lg p-3 m-b-3" height="80"></TextView>
 
           <Label text="Priority" class="text-sm font-medium m-b-1"></Label>
+
+          <!-- Photo Attachment -->
+          <FlexboxLayout class="m-b-3" alignItems="center">
+            <Button text="📷 Take Photo" (tap)="takePhoto()" class="bg-gray-200 p-2 rounded-lg text-sm m-r-2"></Button>
+            <Button text="🖼️ Gallery" (tap)="pickPhoto()" class="bg-gray-200 p-2 rounded-lg text-sm m-r-2"></Button>
+            <Label *ngIf="photoBase64" text="✅ Photo attached" class="text-green-600 text-sm"></Label>
+          </FlexboxLayout>
+          <Image *ngIf="photoBase64" [src]="'data:image/jpg;base64,' + photoBase64" height="120" class="m-b-3 rounded-lg" stretch="aspectFit"></Image>
+
+          <Label text="Priority" class="text-sm font-medium m-b-1 hidden"></Label>
           <FlexboxLayout class="m-b-4">
             <Button *ngFor="let p of priorities" [text]="p.label" (tap)="priority = p.value"
               [class]="priority === p.value ? 'bg-blue-600 text-white p-2 m-r-2 rounded-lg text-sm' : 'bg-gray-200 p-2 m-r-2 rounded-lg text-sm'">
@@ -91,10 +102,21 @@ export class ServiceRequestComponent implements OnInit {
   titleHint = 'What do you need?';
   loading = false;
   requests: any[] = [];
+  photoBase64: string | null = null;
 
-  constructor(private api: ApiService, public router: RouterExtensions) {}
+  constructor(private api: ApiService, public router: RouterExtensions, private camera: CameraService) {}
 
   ngOnInit() { this.loadRequests(); }
+
+  async takePhoto() {
+    const base64 = await this.camera.takePhoto();
+    if (base64) this.photoBase64 = base64;
+  }
+
+  async pickPhoto() {
+    const base64 = await this.camera.pickFromGallery();
+    if (base64) this.photoBase64 = base64;
+  }
 
   selectCategory(key: string) {
     this.selected = key;
@@ -110,8 +132,9 @@ export class ServiceRequestComponent implements OnInit {
       property_id: session.property_id, booking_id: session.booking.id, guest_id: session.guest.id,
       room_id: session.booking.room_id, category: this.selected, title: this.title,
       description: this.description || null, priority: this.priority,
+      photo_url: this.photoBase64 ? `data:image/jpg;base64,${this.photoBase64.substring(0, 200)}` : null,
     }).subscribe({
-      next: () => { this.title = ''; this.description = ''; this.selected = ''; this.loading = false; this.loadRequests(); },
+      next: () => { this.title = ''; this.description = ''; this.selected = ''; this.photoBase64 = null; this.loading = false; this.loadRequests(); },
       error: () => this.loading = false,
     });
   }

@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Entity\ServiceRequest;
 use Lodgik\Enum\ServiceRequestCategory;
 use Lodgik\Enum\ServiceRequestStatus;
+use Lodgik\Module\Notification\NotificationService;
 use Lodgik\Repository\ServiceRequestRepository;
 use Psr\Log\LoggerInterface;
 
@@ -17,6 +18,7 @@ final class ServiceRequestService
         private readonly EntityManagerInterface $em,
         private readonly ServiceRequestRepository $repo,
         private readonly LoggerInterface $logger,
+        private readonly ?NotificationService $notifService = null,
     ) {}
 
     public function create(string $propertyId, string $bookingId, string $guestId, string $category, string $title, string $tenantId, ?string $description = null, ?string $roomId = null, int $priority = 2, ?string $photoUrl = null): ServiceRequest
@@ -33,6 +35,10 @@ final class ServiceRequestService
         $this->em->persist($sr);
         $this->em->flush();
         $this->logger->info("Service request created: {$sr->getId()}, cat={$category}");
+
+        // Notify staff
+        $this->notifService?->notifyServiceRequest($propertyId, $title, $guestId, $roomId ?? '', $tenantId);
+
         return $sr;
     }
 
