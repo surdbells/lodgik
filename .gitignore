@@ -27,3 +27,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# NativeScript
+apps/mobile/*/node_modules/
+apps/mobile/*/platforms/
+apps/mobile/*/hooks/
