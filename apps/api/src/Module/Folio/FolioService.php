@@ -1,0 +1,273 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Lodgik\Module\Folio;
+
+use Doctrine\ORM\EntityManagerInterface;
+use Lodgik\Entity\Folio;
+use Lodgik\Entity\FolioCharge;
+use Lodgik\Entity\FolioPayment;
+use Lodgik\Entity\FolioAdjustment;
+use Lodgik\Entity\Booking;
+use Lodgik\Enum\FolioStatus;
+use Lodgik\Enum\ChargeCategory;
+use Lodgik\Enum\PaymentMethod;
+use Lodgik\Enum\PaymentStatus;
+use Lodgik\Repository\FolioRepository;
+use Lodgik\Repository\FolioChargeRepository;
+use Lodgik\Repository\FolioPaymentRepository;
+use Lodgik\Repository\FolioAdjustmentRepository;
+use Lodgik\Repository\PropertyBankAccountRepository;
+use Psr\Log\LoggerInterface;
+
+final class FolioService
+{
+    public function __construct(
+        private readonly EntityManagerInterface $em,
+        private readonly FolioRepository $folioRepo,
+        private readonly FolioChargeRepository $chargeRepo,
+        private readonly FolioPaymentRepository $paymentRepo,
+        private readonly FolioAdjustmentRepository $adjustmentRepo,
+        private readonly LoggerInterface $logger,
+    ) {}
+
+    // ═══ Create Folio ══════════════════════════════════════════
+
+    public function createForBooking(Booking $booking): Folio
+    {
+        // Check if folio already exists
+        $existing = $this->folioRepo->findByBooking($booking->getId());
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $folioNumber = $this->folioRepo->generateFolioNumber($booking->getTenantId());
+        $folio = new Folio(
+            $booking->getPropertyId(),
+            $booking->getId(),
+            $booking->getGuestId(),
+            $folioNumber,
+            $booking->getTenantId(),
+        );
+        $this->em->persist($folio);
+
+        // Auto-post room charge
+        $charge = new FolioCharge(
+            $folio->getId(),
+            ChargeCategory::ROOM,
+            'Room charge — ' . $booking->getBookingRef(),
+            $booking->getTotalAmount(),
+            1,
+            $booking->getTenantId(),
+        );
+        $this->em->persist($charge);
+
+        // Recalculate balance
+        $folio->recalculate($booking->getTotalAmount(), '0.00', '0.00');
+
+        $this->em->flush();
+        $this->logger->info("Folio created: {$folioNumber} for booking {$booking->getBookingRef()}");
+
+        return $folio;
+    }
+
+    // ═══ Get ═══════════════════════════════════════════════════
+
+    public function getByBooking(string $bookingId): ?Folio
+    {
+        return $this->folioRepo->findByBooking($bookingId);
+    }
+
+    public function getById(string $folioId): Folio
+    {
+        return $this->folioRepo->findOrFail($folioId);
+    }
+
+    public function getByProperty(string $propertyId, ?string $status = null, int $page = 1, int $limit = 20): array
+    {
+        return $this->folioRepo->findByProperty($propertyId, $status, $page, $limit);
+    }
+
+    public function getDetail(string $folioId): array
+    {
+        $folio = $this->folioRepo->findOrFail($folioId);
+        $charges = $this->chargeRepo->findByFolio($folioId);
+        $payments = $this->paymentRepo->findByFolio($folioId);
+        $adjustments = $this->adjustmentRepo->findByFolio($folioId);
+
+        return [
+            'folio' => $folio->toArray(),
+            'charges' => array_map(fn(FolioCharge $c) => $c->toArray(), $charges),
+            'payments' => array_map(fn(FolioPayment $p) => $p->toArray(), $payments),
+            'adjustments' => array_map(fn(FolioAdjustment $a) => $a->toArray(), $adjustments),
+        ];
+    }
+
+    // ═══ Add Charge ═══════════════════════════════════════════
+
+    public function addCharge(string $folioId, string $category, string $description, string $amount, int $quantity = 1, ?string $userId = null, ?string $notes = null): FolioCharge
+    {
+        $folio = $this->folioRepo->findOrFail($folioId);
+        if ($folio->getStatus() !== FolioStatus::OPEN) {
+            throw new \InvalidArgumentException('Cannot add charges to a closed/voided folio');
+        }
+
+        $cat = ChargeCategory::from($category);
+        $charge = new FolioCharge($folioId, $cat, $description, $amount, $quantity, $folio->getTenantId());
+        $charge->setPostedBy($userId);
+        $charge->setNotes($notes);
+        $this->em->persist($charge);
+
+        $this->recalculate($folio);
+        $this->em->flush();
+
+        return $charge;
+    }
+
+    // ═══ Record Payment ═══════════════════════════════════════
+
+    public function recordPayment(
+        string $folioId,
+        string $method,
+        string $amount,
+        ?string $senderName = null,
+        ?string $transferRef = null,
+        ?string $proofImageUrl = null,
+        ?string $userId = null,
+        ?string $notes = null,
+    ): FolioPayment {
+        $folio = $this->folioRepo->findOrFail($folioId);
+        if ($folio->getStatus() !== FolioStatus::OPEN) {
+            throw new \InvalidArgumentException('Cannot record payments on a closed/voided folio');
+        }
+
+        $pm = PaymentMethod::from($method);
+        $payment = new FolioPayment($folioId, $pm, $amount, $folio->getTenantId());
+        $payment->setRecordedBy($userId);
+        $payment->setNotes($notes);
+
+        // For cash, auto-confirm
+        if ($pm === PaymentMethod::CASH) {
+            $payment->setStatus(PaymentStatus::CONFIRMED);
+            $payment->setConfirmedBy($userId);
+            $payment->setConfirmedAt(new \DateTimeImmutable());
+        }
+
+        // Bank transfer fields
+        if ($pm === PaymentMethod::BANK_TRANSFER) {
+            $payment->setSenderName($senderName);
+            $payment->setTransferReference($transferRef);
+            $payment->setProofImageUrl($proofImageUrl);
+        }
+
+        $this->em->persist($payment);
+        $this->recalculate($folio);
+        $this->em->flush();
+
+        return $payment;
+    }
+
+    // ═══ Confirm / Reject Payment ═════════════════════════════
+
+    public function confirmPayment(string $paymentId, ?string $userId = null): FolioPayment
+    {
+        $payment = $this->paymentRepo->findOrFail($paymentId);
+        if ($payment->getStatus() !== PaymentStatus::PENDING) {
+            throw new \InvalidArgumentException('Payment is not pending');
+        }
+
+        $payment->setStatus(PaymentStatus::CONFIRMED);
+        $payment->setConfirmedBy($userId);
+        $payment->setConfirmedAt(new \DateTimeImmutable());
+
+        $folio = $this->folioRepo->findOrFail($payment->getFolioId());
+        $this->recalculate($folio);
+        $this->em->flush();
+
+        return $payment;
+    }
+
+    public function rejectPayment(string $paymentId, ?string $reason = null, ?string $userId = null): FolioPayment
+    {
+        $payment = $this->paymentRepo->findOrFail($paymentId);
+        if ($payment->getStatus() !== PaymentStatus::PENDING) {
+            throw new \InvalidArgumentException('Payment is not pending');
+        }
+
+        $payment->setStatus(PaymentStatus::REJECTED);
+        $payment->setRejectionReason($reason);
+        $payment->setConfirmedBy($userId);
+
+        $folio = $this->folioRepo->findOrFail($payment->getFolioId());
+        $this->recalculate($folio);
+        $this->em->flush();
+
+        return $payment;
+    }
+
+    // ═══ Add Adjustment ═══════════════════════════════════════
+
+    public function addAdjustment(string $folioId, string $type, string $description, string $amount, ?string $userId = null, ?string $reason = null): FolioAdjustment
+    {
+        $folio = $this->folioRepo->findOrFail($folioId);
+        if ($folio->getStatus() !== FolioStatus::OPEN) {
+            throw new \InvalidArgumentException('Cannot adjust a closed/voided folio');
+        }
+
+        $adj = new FolioAdjustment($folioId, $type, $description, $amount, $folio->getTenantId());
+        $adj->setAdjustedBy($userId);
+        $adj->setReason($reason);
+        $this->em->persist($adj);
+
+        $this->recalculate($folio);
+        $this->em->flush();
+
+        return $adj;
+    }
+
+    // ═══ Close / Void ═════════════════════════════════════════
+
+    public function close(string $folioId, ?string $userId = null): Folio
+    {
+        $folio = $this->folioRepo->findOrFail($folioId);
+        if ($folio->getStatus() !== FolioStatus::OPEN) {
+            throw new \InvalidArgumentException('Folio is not open');
+        }
+
+        $folio->setStatus(FolioStatus::CLOSED);
+        $folio->setClosedAt(new \DateTimeImmutable());
+        $folio->setClosedBy($userId);
+        $this->em->flush();
+
+        return $folio;
+    }
+
+    public function voidFolio(string $folioId, ?string $userId = null): Folio
+    {
+        $folio = $this->folioRepo->findOrFail($folioId);
+        $folio->setStatus(FolioStatus::VOID);
+        $folio->setClosedAt(new \DateTimeImmutable());
+        $folio->setClosedBy($userId);
+        $this->em->flush();
+
+        return $folio;
+    }
+
+    // ═══ Pending Payments ═════════════════════════════════════
+
+    public function getPendingPayments(string $propertyId): array
+    {
+        return $this->paymentRepo->findPendingByProperty($propertyId);
+    }
+
+    // ═══ Internal ═════════════════════════════════════════════
+
+    private function recalculate(Folio $folio): void
+    {
+        $charges = $this->chargeRepo->sumByFolio($folio->getId());
+        $payments = $this->paymentRepo->sumConfirmedByFolio($folio->getId());
+        $adjustments = $this->adjustmentRepo->sumByFolio($folio->getId());
+        $folio->recalculate($charges, $payments, $adjustments);
+    }
+}

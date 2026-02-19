@@ -54,10 +54,21 @@ use Lodgik\Repository\BookingRepository;
 use Lodgik\Repository\BookingAddonRepository;
 use Lodgik\Repository\BookingStatusLogRepository;
 use Lodgik\Repository\DailySnapshotRepository;
+use Lodgik\Repository\FolioRepository;
+use Lodgik\Repository\FolioChargeRepository;
+use Lodgik\Repository\FolioPaymentRepository;
+use Lodgik\Repository\FolioAdjustmentRepository;
+use Lodgik\Repository\InvoiceRepository;
+use Lodgik\Repository\InvoiceItemRepository;
+use Lodgik\Repository\TaxConfigurationRepository;
 use Lodgik\Repository\SubscriptionPlanRepository;
 use Lodgik\Repository\TenantRepository;
 use Lodgik\Repository\UserRepository;
 use Lodgik\Service\AuditService;
+use Lodgik\Module\Folio\FolioService;
+use Lodgik\Module\Folio\FolioController;
+use Lodgik\Module\Invoice\InvoiceService;
+use Lodgik\Module\Invoice\InvoiceController;
 use Lodgik\Service\FileStorageService;
 use Lodgik\Service\JwtService;
 use Lodgik\Service\PaystackService;
@@ -510,6 +521,8 @@ return function (ContainerBuilder $builder): void {
                 roomStateMachine: $c->get(RoomStatusMachine::class),
                 rateCalc: $c->get(RateCalculator::class),
                 logger: $c->get(LoggerInterface::class),
+                folioService: $c->get(FolioService::class),
+                invoiceService: $c->get(InvoiceService::class),
             );
         },
 
@@ -541,5 +554,48 @@ return function (ContainerBuilder $builder): void {
                 response: $c->get(ResponseHelper::class),
             );
         },
+
+        // ─── Phase 2: Finance Module ──────────────────────────────
+        FolioRepository::class => fn(ContainerInterface $c) => new FolioRepository($c->get(EntityManagerInterface::class)),
+        FolioChargeRepository::class => fn(ContainerInterface $c) => new FolioChargeRepository($c->get(EntityManagerInterface::class)),
+        FolioPaymentRepository::class => fn(ContainerInterface $c) => new FolioPaymentRepository($c->get(EntityManagerInterface::class)),
+        FolioAdjustmentRepository::class => fn(ContainerInterface $c) => new FolioAdjustmentRepository($c->get(EntityManagerInterface::class)),
+        InvoiceRepository::class => fn(ContainerInterface $c) => new InvoiceRepository($c->get(EntityManagerInterface::class)),
+        InvoiceItemRepository::class => fn(ContainerInterface $c) => new InvoiceItemRepository($c->get(EntityManagerInterface::class)),
+        TaxConfigurationRepository::class => fn(ContainerInterface $c) => new TaxConfigurationRepository($c->get(EntityManagerInterface::class)),
+
+        FolioService::class => function (ContainerInterface $c): FolioService {
+            return new FolioService(
+                em: $c->get(EntityManagerInterface::class),
+                folioRepo: $c->get(FolioRepository::class),
+                chargeRepo: $c->get(FolioChargeRepository::class),
+                paymentRepo: $c->get(FolioPaymentRepository::class),
+                adjustmentRepo: $c->get(FolioAdjustmentRepository::class),
+                logger: $c->get(LoggerInterface::class),
+            );
+        },
+
+        FolioController::class => fn(ContainerInterface $c) => new FolioController(
+            folioService: $c->get(FolioService::class),
+            response: $c->get(ResponseHelper::class),
+        ),
+
+        InvoiceService::class => function (ContainerInterface $c): InvoiceService {
+            return new InvoiceService(
+                em: $c->get(EntityManagerInterface::class),
+                invoiceRepo: $c->get(InvoiceRepository::class),
+                itemRepo: $c->get(InvoiceItemRepository::class),
+                chargeRepo: $c->get(FolioChargeRepository::class),
+                paymentRepo: $c->get(FolioPaymentRepository::class),
+                taxRepo: $c->get(TaxConfigurationRepository::class),
+                mail: $c->get(ZeptoMailService::class),
+                logger: $c->get(LoggerInterface::class),
+            );
+        },
+
+        InvoiceController::class => fn(ContainerInterface $c) => new InvoiceController(
+            invoiceService: $c->get(InvoiceService::class),
+            response: $c->get(ResponseHelper::class),
+        ),
     ]);
 };

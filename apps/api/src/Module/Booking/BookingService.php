@@ -40,6 +40,8 @@ final class BookingService
         private readonly RoomStatusMachine $roomStateMachine,
         private readonly RateCalculator $rateCalc,
         private readonly LoggerInterface $logger,
+        private readonly \Lodgik\Module\Folio\FolioService $folioService,
+        private readonly \Lodgik\Module\Invoice\InvoiceService $invoiceService,
     ) {}
 
     // ═══ List / Get ════════════════════════════════════════════
@@ -250,6 +252,13 @@ final class BookingService
         $this->em->flush();
         $this->logger->info("Check-in: {$booking->getBookingRef()}");
 
+        // Auto-create folio
+        try {
+            $this->folioService->createForBooking($booking);
+        } catch (\Throwable $e) {
+            $this->logger->error("Failed to create folio for {$booking->getBookingRef()}: {$e->getMessage()}");
+        }
+
         return $booking;
     }
 
@@ -290,6 +299,17 @@ final class BookingService
 
         $this->em->flush();
         $this->logger->info("Check-out: {$booking->getBookingRef()}");
+
+        // Close folio and generate invoice
+        try {
+            $folio = $this->folioService->getByBooking($booking->getId());
+            if ($folio !== null) {
+                $this->folioService->close($folio->getId(), $userId);
+                $this->invoiceService->generateFromFolio($folio);
+            }
+        } catch (\Throwable $e) {
+            $this->logger->error("Failed to close folio/generate invoice for {$booking->getBookingRef()}: {$e->getMessage()}");
+        }
 
         return $booking;
     }

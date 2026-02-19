@@ -28,8 +28,8 @@ return function (App $app): void {
     (require __DIR__ . '/../src/Module/Dashboard/routes.php')($app);
 
     // ─── Phase 2: Finance ─────────────────────────────────────
-    // (require __DIR__ . '/../src/Module/Folio/routes.php')($app);
-    // (require __DIR__ . '/../src/Module/Invoice/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Folio/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Invoice/routes.php')($app);
 
     // ─── Phase 3: HR & Payroll ────────────────────────────────
     // (require __DIR__ . '/../src/Module/Employee/routes.php')($app);
