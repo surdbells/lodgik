@@ -74,6 +74,8 @@ export class HotelLayoutComponent implements OnInit {
     { label: 'Rooms', icon: '🚪', route: '/rooms' },
     { label: 'Room Types', icon: '🏷️', route: '/room-types' },
     { label: 'Guests', icon: '🧑', route: '/guests' },
+    { label: 'Folios', icon: '📂', route: '/folios' },
+    { label: 'Invoices', icon: '📄', route: '/invoices' },
     { label: 'Staff', icon: '👥', route: '/staff' },
     { label: 'Properties', icon: '🏨', route: '/properties' },
     { label: 'Features', icon: '🧩', route: '/features' },

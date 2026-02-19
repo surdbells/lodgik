@@ -83,6 +83,22 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
               <button (click)="doCancel()" class="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">Cancel Booking</button>
             }
           </div>
+
+          <!-- Folio & Invoice Links -->
+          @if (booking()!.status === 'checked_in' || booking()!.status === 'checked_out') {
+            <div class="flex gap-3 mt-4">
+              @if (folioId()) {
+                <a [routerLink]="['/folios', folioId()]" class="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100">
+                  📂 View Folio
+                </a>
+              }
+              @if (invoiceId()) {
+                <a [routerLink]="['/invoices', invoiceId()]" class="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100">
+                  📄 View Invoice
+                </a>
+              }
+            </div>
+          }
         </div>
 
         <!-- Timeline Sidebar -->
@@ -136,6 +152,8 @@ export class BookingDetailPage implements OnInit {
   loading = signal(true);
   booking = signal<any>(null);
   statusHistory = signal<any[]>([]);
+  folioId = signal<string>('');
+  invoiceId = signal<string>('');
 
   private bookingId = '';
 
@@ -149,6 +167,7 @@ export class BookingDetailPage implements OnInit {
       if (r.success) {
         this.booking.set(r.data);
         this.loadHistory();
+        this.loadFolioAndInvoice();
       }
       this.loading.set(false);
     });
@@ -157,6 +176,15 @@ export class BookingDetailPage implements OnInit {
   loadHistory(): void {
     this.api.get(`/bookings/${this.bookingId}/status-history`).subscribe(r => {
       if (r.success) this.statusHistory.set(r.data ?? []);
+    });
+  }
+
+  loadFolioAndInvoice(): void {
+    this.api.get(`/folios/by-booking/${this.bookingId}`).subscribe(r => {
+      if (r.success && r.data?.folio) this.folioId.set(r.data.folio.id);
+    });
+    this.api.get(`/invoices/by-booking/${this.bookingId}`).subscribe(r => {
+      if (r.success && r.data?.invoice) this.invoiceId.set(r.data.invoice.id);
     });
   }
 

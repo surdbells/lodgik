@@ -85,6 +85,22 @@ export const routes: Routes = [
         path: 'properties/:id/edit',
         loadComponent: () => import('./pages/properties/property-edit.page').then(m => m.PropertyEditPage),
       },
+      {
+        path: 'folios',
+        loadComponent: () => import('./pages/folios/folios.page').then(m => m.FoliosPage),
+      },
+      {
+        path: 'folios/:id',
+        loadComponent: () => import('./pages/folios/folio-detail.page').then(m => m.FolioDetailPage),
+      },
+      {
+        path: 'invoices',
+        loadComponent: () => import('./pages/invoices/invoices.page').then(m => m.InvoicesPage),
+      },
+      {
+        path: 'invoices/:id',
+        loadComponent: () => import('./pages/invoices/invoice-detail.page').then(m => m.InvoiceDetailPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
