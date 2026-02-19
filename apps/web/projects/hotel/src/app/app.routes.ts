@@ -101,6 +101,27 @@ export const routes: Routes = [
         path: 'invoices/:id',
         loadComponent: () => import('./pages/invoices/invoice-detail.page').then(m => m.InvoiceDetailPage),
       },
+      // Phase 3: HR & Payroll
+      {
+        path: 'employees',
+        loadComponent: () => import('./pages/employees/employees.page').then(m => m.EmployeesPage),
+      },
+      {
+        path: 'employees/:id',
+        loadComponent: () => import('./pages/employees/employee-detail.page').then(m => m.EmployeeDetailPage),
+      },
+      {
+        path: 'attendance',
+        loadComponent: () => import('./pages/attendance/attendance.page').then(m => m.AttendancePage),
+      },
+      {
+        path: 'leave',
+        loadComponent: () => import('./pages/leave/leave.page').then(m => m.LeavePage),
+      },
+      {
+        path: 'payroll',
+        loadComponent: () => import('./pages/payroll/payroll.page').then(m => m.PayrollPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

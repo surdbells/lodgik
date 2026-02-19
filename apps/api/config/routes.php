@@ -35,7 +35,7 @@ return function (App $app): void {
     (require __DIR__ . '/../src/Module/Employee/routes.php')($app);
     (require __DIR__ . '/../src/Module/Attendance/routes.php')($app);
     (require __DIR__ . '/../src/Module/Leave/routes.php')($app);
-    // (require __DIR__ . '/../src/Module/Payroll/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Payroll/routes.php')($app);
 
     // ─── Phase 4: Guest Experience ────────────────────────────
     // (require __DIR__ . '/../src/Module/ServiceRequest/routes.php')($app);

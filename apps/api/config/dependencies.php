@@ -83,6 +83,11 @@ use Lodgik\Module\Attendance\AttendanceService;
 use Lodgik\Module\Attendance\AttendanceController;
 use Lodgik\Module\Leave\LeaveService;
 use Lodgik\Module\Leave\LeaveController;
+use Lodgik\Repository\TaxBracketRepository;
+use Lodgik\Repository\PayrollPeriodRepository;
+use Lodgik\Repository\PayrollItemRepository;
+use Lodgik\Module\Payroll\PayrollService;
+use Lodgik\Module\Payroll\PayrollController;
 use Lodgik\Service\FileStorageService;
 use Lodgik\Service\JwtService;
 use Lodgik\Service\PaystackService;
@@ -653,6 +658,25 @@ return function (ContainerBuilder $builder): void {
         ),
         LeaveController::class => fn(ContainerInterface $c) => new LeaveController(
             service: $c->get(LeaveService::class),
+        ),
+
+        // ─── Phase 3C: Payroll ───────────────────────────────────
+
+        TaxBracketRepository::class => fn(ContainerInterface $c) => new TaxBracketRepository($c->get(EntityManagerInterface::class)),
+        PayrollPeriodRepository::class => fn(ContainerInterface $c) => new PayrollPeriodRepository($c->get(EntityManagerInterface::class)),
+        PayrollItemRepository::class => fn(ContainerInterface $c) => new PayrollItemRepository($c->get(EntityManagerInterface::class)),
+
+        PayrollService::class => fn(ContainerInterface $c) => new PayrollService(
+            em: $c->get(EntityManagerInterface::class),
+            periodRepo: $c->get(PayrollPeriodRepository::class),
+            itemRepo: $c->get(PayrollItemRepository::class),
+            bracketRepo: $c->get(TaxBracketRepository::class),
+            empRepo: $c->get(EmployeeRepository::class),
+            mailer: $c->get(ZeptoMailService::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        PayrollController::class => fn(ContainerInterface $c) => new PayrollController(
+            service: $c->get(PayrollService::class),
         ),
     ]);
 };
