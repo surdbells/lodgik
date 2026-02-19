@@ -151,7 +151,7 @@ class Guest implements TenantAware
     public function setTotalSpent(string $v): void { $this->totalSpent = $v; }
     public function addSpent(string $amount): void
     {
-        $this->totalSpent = bcadd($this->totalSpent, $amount, 2);
+        $this->totalSpent = number_format((float) $this->totalSpent + (float) $amount, 2, '.', '');
     }
 
     public function getLastVisitAt(): ?\DateTimeImmutable { return $this->lastVisitAt; }

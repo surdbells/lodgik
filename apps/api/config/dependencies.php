@@ -32,6 +32,10 @@ use Lodgik\Module\Room\RoomService;
 use Lodgik\Module\Room\RoomStatusMachine;
 use Lodgik\Module\Guest\GuestController;
 use Lodgik\Module\Guest\GuestService;
+use Lodgik\Module\Booking\BookingController;
+use Lodgik\Module\Booking\BookingService;
+use Lodgik\Module\Booking\BookingStateMachine;
+use Lodgik\Module\Booking\RateCalculator;
 use Lodgik\Module\Staff\StaffController;
 use Lodgik\Module\Staff\StaffService;
 use Lodgik\Module\Tenant\TenantController;
@@ -44,6 +48,9 @@ use Lodgik\Repository\RoomStatusLogRepository;
 use Lodgik\Repository\AmenityRepository;
 use Lodgik\Repository\GuestRepository;
 use Lodgik\Repository\GuestDocumentRepository;
+use Lodgik\Repository\BookingRepository;
+use Lodgik\Repository\BookingAddonRepository;
+use Lodgik\Repository\BookingStatusLogRepository;
 use Lodgik\Repository\SubscriptionPlanRepository;
 use Lodgik\Repository\TenantRepository;
 use Lodgik\Repository\UserRepository;
@@ -462,6 +469,50 @@ return function (ContainerBuilder $builder): void {
         GuestController::class => function (ContainerInterface $c): GuestController {
             return new GuestController(
                 guestService: $c->get(GuestService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── Phase 1: Booking Module ──────────────────────────────
+        BookingRepository::class => function (ContainerInterface $c): BookingRepository {
+            return new BookingRepository($c->get(EntityManagerInterface::class));
+        },
+
+        BookingAddonRepository::class => function (ContainerInterface $c): BookingAddonRepository {
+            return new BookingAddonRepository($c->get(EntityManagerInterface::class));
+        },
+
+        BookingStatusLogRepository::class => function (ContainerInterface $c): BookingStatusLogRepository {
+            return new BookingStatusLogRepository($c->get(EntityManagerInterface::class));
+        },
+
+        BookingStateMachine::class => function (): BookingStateMachine {
+            return new BookingStateMachine();
+        },
+
+        RateCalculator::class => function (): RateCalculator {
+            return new RateCalculator();
+        },
+
+        BookingService::class => function (ContainerInterface $c): BookingService {
+            return new BookingService(
+                em: $c->get(EntityManagerInterface::class),
+                bookingRepo: $c->get(BookingRepository::class),
+                addonRepo: $c->get(BookingAddonRepository::class),
+                statusLogRepo: $c->get(BookingStatusLogRepository::class),
+                guestRepo: $c->get(GuestRepository::class),
+                roomRepo: $c->get(RoomRepository::class),
+                roomTypeRepo: $c->get(RoomTypeRepository::class),
+                stateMachine: $c->get(BookingStateMachine::class),
+                roomStateMachine: $c->get(RoomStatusMachine::class),
+                rateCalc: $c->get(RateCalculator::class),
+                logger: $c->get(LoggerInterface::class),
+            );
+        },
+
+        BookingController::class => function (ContainerInterface $c): BookingController {
+            return new BookingController(
+                bookingService: $c->get(BookingService::class),
                 response: $c->get(ResponseHelper::class),
             );
         },
