@@ -69,6 +69,20 @@ use Lodgik\Module\Folio\FolioService;
 use Lodgik\Module\Folio\FolioController;
 use Lodgik\Module\Invoice\InvoiceService;
 use Lodgik\Module\Invoice\InvoiceController;
+use Lodgik\Repository\DepartmentRepository;
+use Lodgik\Repository\EmployeeRepository;
+use Lodgik\Repository\ShiftRepository;
+use Lodgik\Repository\ShiftAssignmentRepository;
+use Lodgik\Repository\AttendanceRecordRepository;
+use Lodgik\Repository\LeaveTypeRepository;
+use Lodgik\Repository\LeaveBalanceRepository;
+use Lodgik\Repository\LeaveRequestRepository;
+use Lodgik\Module\Employee\EmployeeService;
+use Lodgik\Module\Employee\EmployeeController;
+use Lodgik\Module\Attendance\AttendanceService;
+use Lodgik\Module\Attendance\AttendanceController;
+use Lodgik\Module\Leave\LeaveService;
+use Lodgik\Module\Leave\LeaveController;
 use Lodgik\Service\FileStorageService;
 use Lodgik\Service\JwtService;
 use Lodgik\Service\PaystackService;
@@ -596,6 +610,49 @@ return function (ContainerBuilder $builder): void {
         InvoiceController::class => fn(ContainerInterface $c) => new InvoiceController(
             invoiceService: $c->get(InvoiceService::class),
             response: $c->get(ResponseHelper::class),
+        ),
+
+        // ─── Phase 3: HR & Payroll ───────────────────────────────
+
+        DepartmentRepository::class => fn(ContainerInterface $c) => new DepartmentRepository($c->get(EntityManagerInterface::class)),
+        EmployeeRepository::class => fn(ContainerInterface $c) => new EmployeeRepository($c->get(EntityManagerInterface::class)),
+        ShiftRepository::class => fn(ContainerInterface $c) => new ShiftRepository($c->get(EntityManagerInterface::class)),
+        ShiftAssignmentRepository::class => fn(ContainerInterface $c) => new ShiftAssignmentRepository($c->get(EntityManagerInterface::class)),
+        AttendanceRecordRepository::class => fn(ContainerInterface $c) => new AttendanceRecordRepository($c->get(EntityManagerInterface::class)),
+        LeaveTypeRepository::class => fn(ContainerInterface $c) => new LeaveTypeRepository($c->get(EntityManagerInterface::class)),
+        LeaveBalanceRepository::class => fn(ContainerInterface $c) => new LeaveBalanceRepository($c->get(EntityManagerInterface::class)),
+        LeaveRequestRepository::class => fn(ContainerInterface $c) => new LeaveRequestRepository($c->get(EntityManagerInterface::class)),
+
+        EmployeeService::class => fn(ContainerInterface $c) => new EmployeeService(
+            em: $c->get(EntityManagerInterface::class),
+            empRepo: $c->get(EmployeeRepository::class),
+            deptRepo: $c->get(DepartmentRepository::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        EmployeeController::class => fn(ContainerInterface $c) => new EmployeeController(
+            service: $c->get(EmployeeService::class),
+        ),
+
+        AttendanceService::class => fn(ContainerInterface $c) => new AttendanceService(
+            em: $c->get(EntityManagerInterface::class),
+            attRepo: $c->get(AttendanceRecordRepository::class),
+            shiftRepo: $c->get(ShiftRepository::class),
+            assignRepo: $c->get(ShiftAssignmentRepository::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        AttendanceController::class => fn(ContainerInterface $c) => new AttendanceController(
+            service: $c->get(AttendanceService::class),
+        ),
+
+        LeaveService::class => fn(ContainerInterface $c) => new LeaveService(
+            em: $c->get(EntityManagerInterface::class),
+            typeRepo: $c->get(LeaveTypeRepository::class),
+            balRepo: $c->get(LeaveBalanceRepository::class),
+            reqRepo: $c->get(LeaveRequestRepository::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        LeaveController::class => fn(ContainerInterface $c) => new LeaveController(
+            service: $c->get(LeaveService::class),
         ),
     ]);
 };
