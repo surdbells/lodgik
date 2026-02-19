@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { DecimalPipe, UpperCasePipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService } from '@lodgik/shared';
 
@@ -117,6 +118,7 @@ export class GuestsPage implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
+  private router = inject(Router);
 
   loading = signal(true);
   guests = signal<any[]>([]);
@@ -142,7 +144,7 @@ export class GuestsPage implements OnInit {
   ];
 
   actions: TableAction[] = [
-    { label: 'View', handler: (r) => { this.detailGuest = r; this.showDetail = true; } },
+    { label: 'Profile', handler: (r) => this.router.navigate(['/guests', r.id]) },
     { label: 'Edit', handler: (r) => this.edit(r) },
   ];
 

@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService, StatsCardComponent } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
@@ -137,6 +138,7 @@ export class BookingsPage implements OnInit {
   private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
   private auth = inject(AuthService);
+  private router = inject(Router);
 
   loading = signal(true);
   bookings = signal<any[]>([]);
@@ -176,7 +178,7 @@ export class BookingsPage implements OnInit {
   ];
 
   actions: TableAction[] = [
-    { label: 'View', handler: (r) => this.viewDetail(r) },
+    { label: 'View', handler: (r) => this.router.navigate(['/bookings', r.id]) },
     { label: 'Check In', color: 'primary', handler: (r) => this.doCheckIn(r.id), hidden: (r) => r.status !== 'confirmed' },
     { label: 'Check Out', color: 'primary', handler: (r) => this.doCheckOut(r.id), hidden: (r) => r.status !== 'checked_in' },
     { label: 'Cancel', color: 'danger', handler: (r) => this.doCancel(r.id), hidden: (r) => !['pending', 'confirmed'].includes(r.status) },
