@@ -30,6 +30,8 @@ use Lodgik\Module\Usage\UsageService;
 use Lodgik\Module\Room\RoomController;
 use Lodgik\Module\Room\RoomService;
 use Lodgik\Module\Room\RoomStatusMachine;
+use Lodgik\Module\Guest\GuestController;
+use Lodgik\Module\Guest\GuestService;
 use Lodgik\Module\Staff\StaffController;
 use Lodgik\Module\Staff\StaffService;
 use Lodgik\Module\Tenant\TenantController;
@@ -40,6 +42,8 @@ use Lodgik\Repository\RoomRepository;
 use Lodgik\Repository\RoomTypeRepository;
 use Lodgik\Repository\RoomStatusLogRepository;
 use Lodgik\Repository\AmenityRepository;
+use Lodgik\Repository\GuestRepository;
+use Lodgik\Repository\GuestDocumentRepository;
 use Lodgik\Repository\SubscriptionPlanRepository;
 use Lodgik\Repository\TenantRepository;
 use Lodgik\Repository\UserRepository;
@@ -433,6 +437,31 @@ return function (ContainerBuilder $builder): void {
         RoomController::class => function (ContainerInterface $c): RoomController {
             return new RoomController(
                 roomService: $c->get(RoomService::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
+
+        // ─── Phase 1: Guest Module ────────────────────────────────
+        GuestRepository::class => function (ContainerInterface $c): GuestRepository {
+            return new GuestRepository($c->get(EntityManagerInterface::class));
+        },
+
+        GuestDocumentRepository::class => function (ContainerInterface $c): GuestDocumentRepository {
+            return new GuestDocumentRepository($c->get(EntityManagerInterface::class));
+        },
+
+        GuestService::class => function (ContainerInterface $c): GuestService {
+            return new GuestService(
+                em: $c->get(EntityManagerInterface::class),
+                guestRepo: $c->get(GuestRepository::class),
+                docRepo: $c->get(GuestDocumentRepository::class),
+                logger: $c->get(LoggerInterface::class),
+            );
+        },
+
+        GuestController::class => function (ContainerInterface $c): GuestController {
+            return new GuestController(
+                guestService: $c->get(GuestService::class),
                 response: $c->get(ResponseHelper::class),
             );
         },
