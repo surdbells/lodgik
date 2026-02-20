@@ -40,7 +40,7 @@ import { BiometricService } from '../../services/biometric.service';
 
         <!-- Quick Actions Grid -->
         <Label text="Quick Actions" class="text-lg font-bold m-b-3"></Label>
-        <GridLayout columns="*, *" rows="auto, auto, auto" class="m-b-4">
+        <GridLayout columns="*, *" rows="auto, auto, auto, auto, auto, auto" class="m-b-4">
           <StackLayout col="0" row="0" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/service-request')">
             <Label text="🛎️" class="text-3xl"></Label>
             <Label text="Room Service" class="text-sm font-medium m-t-1"></Label>
@@ -49,19 +49,43 @@ import { BiometricService } from '../../services/biometric.service';
             <Label text="💰" class="text-3xl"></Label>
             <Label text="View Bill" class="text-sm font-medium m-t-1"></Label>
           </StackLayout>
-          <StackLayout col="0" row="1" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/chat')">
+          <StackLayout col="0" row="1" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/room-controls')">
+            <Label text="🔕" class="text-3xl"></Label>
+            <Label text="Room Controls" class="text-sm font-medium m-t-1"></Label>
+          </StackLayout>
+          <StackLayout col="1" row="1" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/chat')">
             <Label text="💬" class="text-3xl"></Label>
             <Label text="Chat" class="text-sm font-medium m-t-1"></Label>
           </StackLayout>
-          <StackLayout col="1" row="1" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/extend-stay')">
+          <StackLayout col="0" row="2" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/visitor-codes')">
+            <Label text="👥" class="text-3xl"></Label>
+            <Label text="Visitor Access" class="text-sm font-medium m-t-1"></Label>
+          </StackLayout>
+          <StackLayout col="1" row="2" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/gate-pass')">
+            <Label text="🚶" class="text-3xl"></Label>
+            <Label text="Gate Pass" class="text-sm font-medium m-t-1"></Label>
+          </StackLayout>
+          <StackLayout col="0" row="3" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/amenity-vouchers')">
+            <Label text="🎟️" class="text-3xl"></Label>
+            <Label text="Vouchers" class="text-sm font-medium m-t-1"></Label>
+          </StackLayout>
+          <StackLayout col="1" row="3" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/extend-stay')">
             <Label text="📅" class="text-3xl"></Label>
             <Label text="Extend Stay" class="text-sm font-medium m-t-1"></Label>
           </StackLayout>
-          <StackLayout col="0" row="2" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/access-code')">
+          <StackLayout col="0" row="4" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/waitlist')">
+            <Label text="📋" class="text-3xl"></Label>
+            <Label text="Waitlist" class="text-sm font-medium m-t-1"></Label>
+          </StackLayout>
+          <StackLayout col="1" row="4" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/charge-transfer')">
+            <Label text="💸" class="text-3xl"></Label>
+            <Label text="Transfer Charge" class="text-sm font-medium m-t-1"></Label>
+          </StackLayout>
+          <StackLayout col="0" row="5" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/access-code')">
             <Label text="🔑" class="text-3xl"></Label>
             <Label text="Access Code" class="text-sm font-medium m-t-1"></Label>
           </StackLayout>
-          <StackLayout col="1" row="2" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/checkout')">
+          <StackLayout col="1" row="5" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/checkout')">
             <Label text="🚪" class="text-3xl"></Label>
             <Label text="Checkout" class="text-sm font-medium m-t-1"></Label>
           </StackLayout>

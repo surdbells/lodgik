@@ -42,4 +42,34 @@ export const routes: Routes = [
     canActivate: [guestAuthGuard],
     loadComponent: () => import('./pages/access-code/access-code.component').then(m => m.AccessCodeComponent),
   },
+  {
+    path: 'visitor-codes',
+    canActivate: [guestAuthGuard],
+    loadComponent: () => import('./pages/visitor-codes/visitor-codes.component').then(m => m.VisitorCodesComponent),
+  },
+  {
+    path: 'amenity-vouchers',
+    canActivate: [guestAuthGuard],
+    loadComponent: () => import('./pages/amenity-vouchers/amenity-vouchers.component').then(m => m.AmenityVouchersComponent),
+  },
+  {
+    path: 'gate-pass',
+    canActivate: [guestAuthGuard],
+    loadComponent: () => import('./pages/gate-pass/gate-pass.component').then(m => m.GatePassComponent),
+  },
+  {
+    path: 'room-controls',
+    canActivate: [guestAuthGuard],
+    loadComponent: () => import('./pages/room-controls/room-controls.component').then(m => m.RoomControlsComponent),
+  },
+  {
+    path: 'waitlist',
+    canActivate: [guestAuthGuard],
+    loadComponent: () => import('./pages/waitlist/waitlist.component').then(m => m.WaitlistComponent),
+  },
+  {
+    path: 'charge-transfer',
+    canActivate: [guestAuthGuard],
+    loadComponent: () => import('./pages/charge-transfer/charge-transfer.component').then(m => m.ChargeTransferComponent),
+  },
 ];

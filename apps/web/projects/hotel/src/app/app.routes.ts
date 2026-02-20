@@ -160,6 +160,18 @@ export const routes: Routes = [
         path: 'pos',
         loadComponent: () => import('./pages/pos/pos.page').then(m => m.PosPage),
       },
+      {
+        path: 'security',
+        loadComponent: () => import('./pages/security/security.page').then(m => m.SecurityPage),
+      },
+      {
+        path: 'room-controls',
+        loadComponent: () => import('./pages/room-controls/room-controls.page').then(m => m.RoomControlsPage),
+      },
+      {
+        path: 'guest-services',
+        loadComponent: () => import('./pages/guest-services/guest-services.page').then(m => m.GuestServicesPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
