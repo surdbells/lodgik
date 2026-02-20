@@ -1,74 +1,75 @@
-import { Component, OnInit } from '@angular/core';
-import { RouterExtensions } from '@nativescript/angular';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ApplicationSettings } from '@nativescript/core';
+import { Component, OnInit, NO_ERRORS_SCHEMA, OnDestroy, NgZone } from '@angular/core';
+import { NativeScriptCommonModule, RouterExtensions } from '@nativescript/angular';
+import { ReceptionApiService } from '../services/reception-api.service';
 
 @Component({
   selector: 'reception-dashboard',
   standalone: true,
+  imports: [NativeScriptCommonModule],
+  schemas: [NO_ERRORS_SCHEMA],
   template: `
-    <ActionBar title="Reception"></ActionBar>
-    <GridLayout rows="auto,auto,*">
-      <!-- Quick Actions -->
-      <GridLayout row="0" columns="*,*,*" class="p-4">
-        <Button col="0" text="✅ Check In" (tap)="router.navigate(['/checkin'])" class="btn btn-primary m-r-2 p-4"></Button>
-        <Button col="1" text="📤 Check Out" (tap)="checkOut()" class="btn btn-warning m-r-2 p-4"></Button>
-        <Button col="2" text="🚶 Walk-in" (tap)="router.navigate(['/walkin'])" class="btn btn-success p-4"></Button>
+    <ActionBar title="Reception">
+      <ActionItem text="💬" (tap)="router.navigate(['/chat'])" ios.position="right"></ActionItem>
+    </ActionBar>
+    <GridLayout rows="auto,auto,auto,*">
+      <GridLayout row="0" columns="*,*,*,*" class="p-4">
+        <StackLayout col="0" (tap)="router.navigate(['/checkin'])" class="bg-green-600 rounded-xl p-3 m-r-2 text-center">
+          <Label text="✅" class="text-2xl"></Label><Label text="Check In" class="text-white text-xs font-bold"></Label>
+        </StackLayout>
+        <StackLayout col="1" (tap)="router.navigate(['/checkout'])" class="bg-orange-500 rounded-xl p-3 m-r-2 text-center">
+          <Label text="📤" class="text-2xl"></Label><Label text="Check Out" class="text-white text-xs font-bold"></Label>
+        </StackLayout>
+        <StackLayout col="2" (tap)="router.navigate(['/walkin'])" class="bg-blue-600 rounded-xl p-3 m-r-2 text-center">
+          <Label text="🚶" class="text-2xl"></Label><Label text="Walk-in" class="text-white text-xs font-bold"></Label>
+        </StackLayout>
+        <StackLayout col="3" (tap)="router.navigate(['/housekeeping'])" class="bg-purple-600 rounded-xl p-3 text-center">
+          <Label text="🧹" class="text-2xl"></Label><Label text="Cleaning" class="text-white text-xs font-bold"></Label>
+        </StackLayout>
       </GridLayout>
-
-      <!-- Stats -->
-      <GridLayout row="1" columns="*,*,*,*" class="p-x-4 m-b-4">
-        <StackLayout col="0" class="bg-green-100 rounded-lg p-3 m-r-2 text-center"><Label [text]="stats.available" class="text-2xl font-bold text-green"></Label><Label text="Available" class="text-xs"></Label></StackLayout>
-        <StackLayout col="1" class="bg-blue-100 rounded-lg p-3 m-r-2 text-center"><Label [text]="stats.occupied" class="text-2xl font-bold text-blue"></Label><Label text="Occupied" class="text-xs"></Label></StackLayout>
-        <StackLayout col="2" class="bg-yellow-100 rounded-lg p-3 m-r-2 text-center"><Label [text]="stats.arrivals" class="text-2xl font-bold text-warning"></Label><Label text="Arrivals" class="text-xs"></Label></StackLayout>
-        <StackLayout col="3" class="bg-purple-100 rounded-lg p-3 text-center"><Label [text]="stats.departures" class="text-2xl font-bold text-purple"></Label><Label text="Departures" class="text-xs"></Label></StackLayout>
+      <GridLayout row="1" columns="*,*,*,*,*" class="p-x-4 m-b-2">
+        <StackLayout col="0" class="bg-white rounded-lg p-2 m-r-2 text-center border"><Label [text]="stats.available" class="text-xl font-bold text-green"></Label><Label text="Available" class="text-xs text-gray-500"></Label></StackLayout>
+        <StackLayout col="1" class="bg-white rounded-lg p-2 m-r-2 text-center border"><Label [text]="stats.occupied" class="text-xl font-bold text-blue"></Label><Label text="Occupied" class="text-xs text-gray-500"></Label></StackLayout>
+        <StackLayout col="2" class="bg-white rounded-lg p-2 m-r-2 text-center border"><Label [text]="stats.dirty" class="text-xl font-bold text-amber"></Label><Label text="Dirty" class="text-xs text-gray-500"></Label></StackLayout>
+        <StackLayout col="3" class="bg-white rounded-lg p-2 m-r-2 text-center border"><Label [text]="stats.arrivals" class="text-xl font-bold text-purple"></Label><Label text="Arrivals" class="text-xs text-gray-500"></Label></StackLayout>
+        <StackLayout col="4" class="bg-white rounded-lg p-2 text-center border"><Label [text]="stats.departures" class="text-xl font-bold text-orange"></Label><Label text="Departures" class="text-xs text-gray-500"></Label></StackLayout>
       </GridLayout>
-
-      <!-- Room Grid -->
-      <ScrollView row="2">
+      <Label row="2" [text]="'Room Grid · ' + stats.occupancy + '% occupancy'" class="text-sm text-gray-500 m-x-4 m-b-2"></Label>
+      <ScrollView row="3">
         <WrapLayout class="p-2">
-          <StackLayout *ngFor="let room of rooms" (tap)="selectRoom(room)" class="m-1 rounded-lg p-3 text-center" [ngStyle]="{'width': '90', 'height': '80', 'background-color': room.status_color || '#e5e7eb'}">
-            <Label [text]="room.room_number" class="text-lg font-bold text-white"></Label>
-            <Label [text]="room.status_label || room.status" class="text-xs text-white"></Label>
+          <StackLayout *ngFor="let room of rooms" (tap)="selectRoom(room)" class="m-1 rounded-lg p-2 text-center" [ngStyle]="{'width': '80', 'height': '70', 'background-color': room.status_color || '#e5e7eb'}">
+            <Label [text]="room.room_number" class="text-base font-bold text-white"></Label>
+            <Label [text]="room.status_label" class="text-xs text-white" style="opacity: 0.8"></Label>
           </StackLayout>
         </WrapLayout>
       </ScrollView>
     </GridLayout>
   `,
 })
-export class ReceptionDashboardComponent implements OnInit {
+export class ReceptionDashboardComponent implements OnInit, OnDestroy {
   rooms: any[] = [];
-  stats = { available: 0, occupied: 0, arrivals: 0, departures: 0 };
-  private baseUrl = '';
+  stats = { available: 0, occupied: 0, dirty: 0, arrivals: 0, departures: 0, occupancy: 0 };
+  private timer: any;
 
-  constructor(private http: HttpClient, public router: RouterExtensions) {
-    this.baseUrl = ApplicationSettings.getString('reception_api_url', 'http://10.0.2.2:8080');
+  constructor(private api: ReceptionApiService, public router: RouterExtensions, private zone: NgZone) {}
+
+  ngOnInit() { this.load(); this.timer = setInterval(() => this.zone.run(() => this.load()), 30000); }
+  ngOnDestroy() { if (this.timer) clearInterval(this.timer); }
+
+  load() {
+    this.api.getRooms().subscribe({ next: (r: any) => {
+      this.rooms = r.data || [];
+      const total = this.rooms.length || 1;
+      this.stats.available = this.rooms.filter((rm: any) => rm.status === 'vacant_clean').length;
+      this.stats.occupied = this.rooms.filter((rm: any) => rm.status === 'occupied').length;
+      this.stats.dirty = this.rooms.filter((rm: any) => rm.status === 'vacant_dirty').length;
+      this.stats.occupancy = Math.round((this.stats.occupied / total) * 100);
+    }});
+    this.api.getDashboard().subscribe({ next: (r: any) => {
+      const d = r.data || {};
+      this.stats.arrivals = d.pending_check_ins || 0;
+      this.stats.departures = d.today_check_outs || 0;
+    }});
   }
 
-  private headers() { return new HttpHeaders({ Authorization: `Bearer ${ApplicationSettings.getString('reception_token', '')}` }); }
-
-  ngOnInit() { this.loadRooms(); this.loadStats(); }
-
-  loadRooms() {
-    const pid = ApplicationSettings.getString('reception_property_id', '');
-    this.http.get(`${this.baseUrl}/rooms?property_id=${pid}`, { headers: this.headers() }).subscribe({
-      next: (r: any) => this.rooms = r.data || [],
-    });
-  }
-
-  loadStats() {
-    const pid = ApplicationSettings.getString('reception_property_id', '');
-    this.http.get(`${this.baseUrl}/dashboard/overview?property_id=${pid}`, { headers: this.headers() }).subscribe({
-      next: (r: any) => {
-        const d = r.data || {};
-        this.stats = {
-          available: d.rooms?.available || 0, occupied: d.rooms?.occupied || 0,
-          arrivals: d.pending_check_ins || 0, departures: d.today_check_outs || 0,
-        };
-      },
-    });
-  }
-
-  selectRoom(room: any) { /* Show room actions overlay */ }
-  checkOut() { /* Navigate to checkout flow */ }
+  selectRoom(room: any) {}
 }

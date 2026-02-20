@@ -36,6 +36,10 @@ class ChatMessage implements TenantAware
     #[ORM\Column(name: 'sender_type', type: Types::STRING, length: 10)]
     private string $senderType;
 
+    /** 'reception' | 'kitchen' | 'bar' | 'general' */
+    #[ORM\Column(type: Types::STRING, length: 20, options: ['default' => 'reception'])]
+    private string $department = 'reception';
+
     /** Guest ID or User/Staff ID */
     #[ORM\Column(name: 'sender_id', type: Types::STRING, length: 36)]
     private string $senderId;
@@ -74,6 +78,8 @@ class ChatMessage implements TenantAware
     public function getBookingId(): string { return $this->bookingId; }
     public function getPropertyId(): string { return $this->propertyId; }
     public function getSenderType(): string { return $this->senderType; }
+    public function getDepartment(): string { return $this->department; }
+    public function setDepartment(string $v): void { $this->department = $v; }
     public function getSenderId(): string { return $this->senderId; }
     public function getSenderName(): string { return $this->senderName; }
     public function getMessage(): string { return $this->message; }
@@ -96,6 +102,7 @@ class ChatMessage implements TenantAware
             'id' => $this->getId(),
             'booking_id' => $this->bookingId,
             'sender_type' => $this->senderType,
+            'department' => $this->department,
             'sender_id' => $this->senderId,
             'sender_name' => $this->senderName,
             'message' => $this->message,

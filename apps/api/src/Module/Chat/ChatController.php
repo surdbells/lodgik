@@ -19,7 +19,7 @@ final class ChatController
         foreach (['booking_id', 'property_id', 'sender_type', 'sender_id', 'sender_name', 'message'] as $f) {
             if (empty($d[$f])) return JsonResponse::error($res, "$f required", 422);
         }
-        $msg = $this->service->sendMessage($d['booking_id'], $d['property_id'], $d['sender_type'], $d['sender_id'], $d['sender_name'], $d['message'], $req->getAttribute('auth.tenant_id'), $d['image_url'] ?? null);
+        $msg = $this->service->sendMessage($d['booking_id'], $d['property_id'], $d['sender_type'], $d['sender_id'], $d['sender_name'], $d['message'], $req->getAttribute('auth.tenant_id'), $d['image_url'] ?? null, $d['department'] ?? 'reception');
         return JsonResponse::ok($res, $msg->toArray(), 'Message sent');
     }
 

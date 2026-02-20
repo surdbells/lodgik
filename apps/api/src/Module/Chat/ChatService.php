@@ -19,11 +19,13 @@ final class ChatService
         private readonly ?NotificationService $notifService = null,
     ) {}
 
-    public function sendMessage(string $bookingId, string $propertyId, string $senderType, string $senderId, string $senderName, string $message, string $tenantId, ?string $imageUrl = null): ChatMessage
+    public function sendMessage(string $bookingId, string $propertyId, string $senderType, string $senderId, string $senderName, string $message, string $tenantId, ?string $imageUrl = null, string $department = 'reception'): ChatMessage
     {
         if (!in_array($senderType, ['guest', 'staff'], true)) throw new \RuntimeException('Invalid sender type');
+        if (!in_array($department, ['reception', 'kitchen', 'bar', 'general'], true)) $department = 'reception';
 
         $msg = new ChatMessage($bookingId, $propertyId, $senderType, $senderId, $senderName, $message, $tenantId);
+        $msg->setDepartment($department);
         if ($imageUrl) {
             $msg->setMessageType('image');
             $msg->setImageUrl($imageUrl);

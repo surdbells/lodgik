@@ -10,12 +10,19 @@ import { CameraService } from '../../services/camera.service';
   imports: [NativeScriptCommonModule, NativeScriptFormsModule],
   schemas: [NO_ERRORS_SCHEMA],
   template: `
-    <ActionBar title="Chat with Reception" class="bg-white">
+    <ActionBar [title]="'Chat · ' + departmentLabel" class="bg-white">
       <NavigationButton text="Back" (tap)="router.back()"></NavigationButton>
     </ActionBar>
-    <GridLayout rows="*, auto">
+    <GridLayout rows="auto, *, auto">
+      <!-- Department Tabs -->
+      <SegmentedBar row="0" [selectedIndex]="deptIndex" (selectedIndexChanged)="onDeptChange($event)" class="m-2">
+        <SegmentedBarItem title="Reception"></SegmentedBarItem>
+        <SegmentedBarItem title="Kitchen"></SegmentedBarItem>
+        <SegmentedBarItem title="Bar"></SegmentedBarItem>
+      </SegmentedBar>
+
       <!-- Messages -->
-      <ScrollView row="0" #scrollView>
+      <ScrollView row="1" #scrollView>
         <StackLayout class="p-3">
           <Label *ngIf="!messages.length" text="Start a conversation with the front desk" class="text-gray-400 text-center m-t-8"></Label>
           <StackLayout *ngFor="let m of messages" class="m-b-2">
@@ -42,6 +49,11 @@ import { CameraService } from '../../services/camera.service';
 export class ChatComponent implements OnInit, OnDestroy {
   messages: any[] = [];
   newMessage = '';
+  department = 'reception';
+  departmentLabel = 'Reception';
+  deptIndex = 0;
+  private deptMap = ['reception', 'kitchen', 'bar'];
+  private deptLabels = ['Reception', 'Kitchen', 'Bar'];
   private pollTimer: any;
 
   constructor(private api: ApiService, public router: RouterExtensions, private zone: NgZone, private camera: CameraService) {}
@@ -49,11 +61,17 @@ export class ChatComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.loadMessages();
     this.markRead();
-    // Poll every 5 seconds
     this.pollTimer = setInterval(() => this.zone.run(() => this.loadMessages()), 5000);
   }
 
   ngOnDestroy() { if (this.pollTimer) clearInterval(this.pollTimer); }
+
+  onDeptChange(e: any) {
+    this.deptIndex = e.object?.selectedIndex || 0;
+    this.department = this.deptMap[this.deptIndex];
+    this.departmentLabel = this.deptLabels[this.deptIndex];
+    this.loadMessages();
+  }
 
   loadMessages() {
     const session = this.api.getSession();
@@ -76,7 +94,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.api.post('/chat/messages', {
       booking_id: session.booking.id, property_id: session.property_id,
       sender_type: 'guest', sender_id: session.guest.id, sender_name: session.guest.name,
-      message: this.newMessage.trim(),
+      message: this.newMessage.trim(), department: this.department,
     }).subscribe({
       next: () => { this.newMessage = ''; this.loadMessages(); },
     });
@@ -91,6 +109,7 @@ export class ChatComponent implements OnInit, OnDestroy {
       booking_id: session.booking.id, property_id: session.property_id,
       sender_type: 'guest', sender_id: session.guest.id, sender_name: session.guest.name,
       message: '📷 Photo', image_url: `data:image/jpg;base64,${base64.substring(0, 200)}`,
+      department: this.department,
     }).subscribe({ next: () => this.loadMessages() });
   }
 }
