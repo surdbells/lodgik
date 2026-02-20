@@ -43,6 +43,7 @@ final class BookingService
         private readonly \Lodgik\Module\Folio\FolioService $folioService,
         private readonly \Lodgik\Module\Invoice\InvoiceService $invoiceService,
         private readonly ?\Lodgik\Module\GuestAuth\GuestAuthService $guestAuthService = null,
+        private readonly ?\Lodgik\Module\Housekeeping\HousekeepingService $housekeepingService = null,
     ) {}
 
     // ═══ List / Get ════════════════════════════════════════════
@@ -336,6 +337,23 @@ final class BookingService
                 }
             } catch (\Throwable $e) {
                 $this->logger->error("Guest auth cleanup failed for {$booking->getBookingRef()}: {$e->getMessage()}");
+            }
+        }
+
+        // Auto-generate housekeeping task on checkout
+        if ($this->housekeepingService && $booking->getRoomId()) {
+            try {
+                $roomNum = '';
+                if ($booking->getRoomId()) {
+                    $rm = $this->roomRepo->find($booking->getRoomId());
+                    $roomNum = $rm ? $rm->getRoomNumber() : '';
+                }
+                $this->housekeepingService->generateCheckoutTask(
+                    $booking->getPropertyId(), $booking->getRoomId(), $roomNum,
+                    $booking->getId(), $booking->getTenantId()
+                );
+            } catch (\Throwable $e) {
+                $this->logger->error("Housekeeping task gen failed for {$booking->getBookingRef()}: {$e->getMessage()}");
             }
         }
 

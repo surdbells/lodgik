@@ -147,6 +147,15 @@ export const routes: Routes = [
         path: 'gym/payments',
         loadComponent: () => import('./pages/gym/gym-payments.page').then(m => m.GymPaymentsPage),
       },
+      // Phase 6: Operations & F&B
+      {
+        path: 'housekeeping',
+        loadComponent: () => import('./pages/housekeeping/housekeeping.page').then(m => m.HousekeepingPage),
+      },
+      {
+        path: 'pos',
+        loadComponent: () => import('./pages/pos/pos.page').then(m => m.PosPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

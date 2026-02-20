@@ -43,6 +43,8 @@ return function (App $app): void {
     (require __DIR__ . '/../src/Module/Chat/routes.php')($app);
     (require __DIR__ . '/../src/Module/Notification/routes.php')($app);
     (require __DIR__ . '/../src/Module/Gym/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Housekeeping/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Pos/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Tablet/routes.php')($app);
 
     // ─── Phase 5: Gym ─────────────────────────────────────────

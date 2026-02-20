@@ -559,6 +559,7 @@ return function (ContainerBuilder $builder): void {
                 folioService: $c->get(FolioService::class),
                 invoiceService: $c->get(InvoiceService::class),
                 guestAuthService: $c->get(GuestAuthService::class),
+                housekeepingService: $c->get(\Lodgik\Module\Housekeeping\HousekeepingService::class),
             );
         },
 
@@ -778,6 +779,27 @@ return function (ContainerBuilder $builder): void {
         ),
         \Lodgik\Module\Gym\GymController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Gym\GymController(
             service: $c->get(\Lodgik\Module\Gym\GymService::class),
+        ),
+
+        // ─── Phase 6: Housekeeping ──────────────────────────────
+
+        \Lodgik\Module\Housekeeping\HousekeepingService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Housekeeping\HousekeepingService(
+            em: $c->get(EntityManagerInterface::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        \Lodgik\Module\Housekeeping\HousekeepingController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Housekeeping\HousekeepingController(
+            service: $c->get(\Lodgik\Module\Housekeeping\HousekeepingService::class),
+        ),
+
+        // ─── Phase 6: POS / F&B ────────────────────────────────
+
+        \Lodgik\Module\Pos\PosService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\PosService(
+            em: $c->get(EntityManagerInterface::class),
+            logger: $c->get(LoggerInterface::class),
+            folioService: $c->get(\Lodgik\Module\Folio\FolioService::class),
+        ),
+        \Lodgik\Module\Pos\PosController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\PosController(
+            service: $c->get(\Lodgik\Module\Pos\PosService::class),
         ),
     ]);
 };
