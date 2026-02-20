@@ -768,5 +768,16 @@ return function (ContainerBuilder $builder): void {
         NotificationController::class => fn(ContainerInterface $c) => new NotificationController(
             service: $c->get(NotificationService::class),
         ),
+
+        // ─── Phase 5: Gym Membership Management ─────────────────
+
+        \Lodgik\Module\Gym\GymService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Gym\GymService(
+            em: $c->get(EntityManagerInterface::class),
+            logger: $c->get(LoggerInterface::class),
+            mail: $c->get(\Lodgik\Service\ZeptoMailService::class),
+        ),
+        \Lodgik\Module\Gym\GymController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Gym\GymController(
+            service: $c->get(\Lodgik\Module\Gym\GymService::class),
+        ),
     ]);
 };

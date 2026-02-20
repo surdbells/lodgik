@@ -122,6 +122,31 @@ export const routes: Routes = [
         path: 'payroll',
         loadComponent: () => import('./pages/payroll/payroll.page').then(m => m.PayrollPage),
       },
+      // Phase 5: Gym & Fitness
+      {
+        path: 'gym',
+        loadComponent: () => import('./pages/gym/gym-dashboard.page').then(m => m.GymDashboardPage),
+      },
+      {
+        path: 'gym/members',
+        loadComponent: () => import('./pages/gym/gym-members.page').then(m => m.GymMembersPage),
+      },
+      {
+        path: 'gym/plans',
+        loadComponent: () => import('./pages/gym/gym-plans.page').then(m => m.GymPlansPage),
+      },
+      {
+        path: 'gym/check-in',
+        loadComponent: () => import('./pages/gym/gym-checkin.page').then(m => m.GymCheckinPage),
+      },
+      {
+        path: 'gym/classes',
+        loadComponent: () => import('./pages/gym/gym-classes.page').then(m => m.GymClassesPage),
+      },
+      {
+        path: 'gym/payments',
+        loadComponent: () => import('./pages/gym/gym-payments.page').then(m => m.GymPaymentsPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
