@@ -801,5 +801,33 @@ return function (ContainerBuilder $builder): void {
         \Lodgik\Module\Pos\PosController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\PosController(
             service: $c->get(\Lodgik\Module\Pos\PosService::class),
         ),
+
+        // Phase 7: Security
+        \Lodgik\Module\Security\SecurityService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Security\SecurityService(
+            em: $c->get(EntityManagerInterface::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        \Lodgik\Module\Security\SecurityController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Security\SecurityController(
+            service: $c->get(\Lodgik\Module\Security\SecurityService::class),
+        ),
+
+        // Phase 7: Room Controls
+        \Lodgik\Module\RoomControl\RoomControlService::class => fn(ContainerInterface $c) => new \Lodgik\Module\RoomControl\RoomControlService(
+            em: $c->get(EntityManagerInterface::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        \Lodgik\Module\RoomControl\RoomControlController::class => fn(ContainerInterface $c) => new \Lodgik\Module\RoomControl\RoomControlController(
+            service: $c->get(\Lodgik\Module\RoomControl\RoomControlService::class),
+        ),
+
+        // Phase 7: Guest Services
+        \Lodgik\Module\GuestServices\GuestServicesService::class => fn(ContainerInterface $c) => new \Lodgik\Module\GuestServices\GuestServicesService(
+            em: $c->get(EntityManagerInterface::class),
+            logger: $c->get(LoggerInterface::class),
+            folioService: $c->get(\Lodgik\Module\Folio\FolioService::class),
+        ),
+        \Lodgik\Module\GuestServices\GuestServicesController::class => fn(ContainerInterface $c) => new \Lodgik\Module\GuestServices\GuestServicesController(
+            service: $c->get(\Lodgik\Module\GuestServices\GuestServicesService::class),
+        ),
     ]);
 };

@@ -45,6 +45,11 @@ return function (App $app): void {
     (require __DIR__ . '/../src/Module/Gym/routes.php')($app);
     (require __DIR__ . '/../src/Module/Housekeeping/routes.php')($app);
     (require __DIR__ . '/../src/Module/Pos/routes.php')($app);
+
+    // Phase 7: Smart Guest Services
+    (require __DIR__ . '/../src/Module/Security/routes.php')($app);
+    (require __DIR__ . '/../src/Module/RoomControl/routes.php')($app);
+    (require __DIR__ . '/../src/Module/GuestServices/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Tablet/routes.php')($app);
 
     // ─── Phase 5: Gym ─────────────────────────────────────────
