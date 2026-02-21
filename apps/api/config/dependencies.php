@@ -859,5 +859,39 @@ return function (ContainerBuilder $builder): void {
         \Lodgik\Module\WhatsApp\WhatsAppController::class => fn(ContainerInterface $c) => new \Lodgik\Module\WhatsApp\WhatsAppController(
             svc: $c->get(\Lodgik\Module\WhatsApp\WhatsAppService::class),
         ),
+
+        // ─── Phase 8D: Loyalty/CRM + Analytics ──────────────────
+        \Lodgik\Module\Loyalty\LoyaltyService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Loyalty\LoyaltyService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Loyalty\LoyaltyController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Loyalty\LoyaltyController(
+            svc: $c->get(\Lodgik\Module\Loyalty\LoyaltyService::class),
+        ),
+        \Lodgik\Module\Analytics\AnalyticsService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Analytics\AnalyticsService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Analytics\AnalyticsController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Analytics\AnalyticsController(
+            svc: $c->get(\Lodgik\Module\Analytics\AnalyticsService::class),
+        ),
+
+        // ─── Phase 8E: Spa, OTA, IoT ────────────────────────────
+        \Lodgik\Module\Spa\SpaService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Spa\SpaService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Spa\SpaController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Spa\SpaController(
+            svc: $c->get(\Lodgik\Module\Spa\SpaService::class),
+        ),
+        \Lodgik\Module\Ota\OtaService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Ota\OtaService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Ota\OtaController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Ota\OtaController(
+            svc: $c->get(\Lodgik\Module\Ota\OtaService::class),
+        ),
+        \Lodgik\Module\IoT\IoTService::class => fn(ContainerInterface $c) => new \Lodgik\Module\IoT\IoTService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\IoT\IoTController::class => fn(ContainerInterface $c) => new \Lodgik\Module\IoT\IoTController(
+            svc: $c->get(\Lodgik\Module\IoT\IoTService::class),
+        ),
     ]);
 };

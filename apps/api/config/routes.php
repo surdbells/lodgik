@@ -59,6 +59,15 @@ return function (App $app): void {
 
     // ─── Phase 8C: WhatsApp (Termii) ─────────────────────────────
     (require __DIR__ . '/../src/Module/WhatsApp/routes.php')($app);
+
+    // ─── Phase 8D: Loyalty/CRM + Analytics ──────────────────────
+    (require __DIR__ . '/../src/Module/Loyalty/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Analytics/routes.php')($app);
+
+    // ─── Phase 8E: Spa/Pool, OTA, IoT ───────────────────────────
+    (require __DIR__ . '/../src/Module/Spa/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Ota/routes.php')($app);
+    (require __DIR__ . '/../src/Module/IoT/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Tablet/routes.php')($app);
 
     // ─── Phase 5: Gym ─────────────────────────────────────────
