@@ -13,9 +13,9 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Total Reports</p><p class="text-2xl font-bold">{{reports().length}}</p></div>
-      <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Pending Submission</p><p class="text-2xl font-bold text-yellow-600">{{reports().filter(r => r.status === 'pending').length}}</p></div>
-      <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Submitted</p><p class="text-2xl font-bold text-green-600">{{reports().filter(r => r.status === 'submitted').length}}</p></div>
-      <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Nigerians</p><p class="text-2xl font-bold text-blue-600">{{reports().filter(r => r.nationality === 'Nigerian').length}}</p></div>
+      <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Pending Submission</p><p class="text-2xl font-bold text-yellow-600">{{pendingCount()}}</p></div>
+      <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Submitted</p><p class="text-2xl font-bold text-green-600">{{submittedCount()}}</p></div>
+      <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Nigerians</p><p class="text-2xl font-bold text-blue-600">{{nigerianCount()}}</p></div>
     </div>
 
     <div class="bg-white rounded-lg border overflow-x-auto">
@@ -44,6 +44,9 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
 export default class PoliceReportsPage implements OnInit {
   private api = inject(ApiService);
   loading = signal(true); reports = signal<any[]>([]);
+  pendingCount() { return this.reports().filter(r => r.status === 'pending').length; }
+  submittedCount() { return this.reports().filter(r => r.status === 'submitted').length; }
+  nigerianCount() { return this.reports().filter(r => r.nationality === 'Nigerian').length; }
   ngOnInit() { this.api.get('/finance/police-reports').subscribe((r: any) => { this.reports.set(r?.data || []); this.loading.set(false); }); }
   submit(id: string) { this.api.post(`/finance/police-reports/${id}/submit`, {}).subscribe(() => this.ngOnInit()); }
   exportAll() { /* trigger CSV/PDF export */ }

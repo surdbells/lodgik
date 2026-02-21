@@ -48,6 +48,15 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () => import('./pages/settings/settings.page').then(m => m.SettingsPage),
       },
+      // ─── Phase 8 ───────────────────────────
+      {
+        path: 'whatsapp-config',
+        loadComponent: () => import('./pages/whatsapp-config/whatsapp-config.page').then(m => m.WhatsAppConfigPage),
+      },
+      {
+        path: 'platform-analytics',
+        loadComponent: () => import('./pages/platform-analytics/platform-analytics.page').then(m => m.PlatformAnalyticsPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

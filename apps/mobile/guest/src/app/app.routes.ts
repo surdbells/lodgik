@@ -82,4 +82,9 @@ export const routes: Routes = [
     canActivate: [guestAuthGuard],
     loadComponent: () => import('./pages/spa/spa.component').then(m => m.SpaComponent),
   },
+  {
+    path: 'pool-access',
+    canActivate: [guestAuthGuard],
+    loadComponent: () => import('./pages/pool-access/pool-access.component').then(m => m.PoolAccessComponent),
+  },
 ];

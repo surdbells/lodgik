@@ -175,59 +175,75 @@ export const routes: Routes = [
       // ─── Phase 8A ─────────────────────────
       {
         path: 'expenses',
-        loadComponent: () => import('./pages/expenses/expenses.component').then(m => m.ExpensesComponent),
+        loadComponent: () => import('./pages/expenses/expenses.page'),
       },
       {
         path: 'night-audit',
-        loadComponent: () => import('./pages/night-audit/night-audit.component').then(m => m.NightAuditComponent),
+        loadComponent: () => import('./pages/night-audit/night-audit.page'),
       },
       {
         path: 'police-reports',
-        loadComponent: () => import('./pages/police-reports/police-reports.component').then(m => m.PoliceReportsComponent),
+        loadComponent: () => import('./pages/police-reports/police-reports.page'),
       },
       {
         path: 'performance-reviews',
-        loadComponent: () => import('./pages/performance-reviews/performance-reviews.component').then(m => m.PerformanceReviewsComponent),
+        loadComponent: () => import('./pages/reviews/reviews.page'),
       },
       {
         path: 'pricing-rules',
-        loadComponent: () => import('./pages/pricing-rules/pricing-rules.component').then(m => m.PricingRulesComponent),
+        loadComponent: () => import('./pages/pricing-rules/pricing-rules.page'),
       },
       {
         path: 'group-bookings',
-        loadComponent: () => import('./pages/group-bookings/group-bookings.component').then(m => m.GroupBookingsComponent),
+        loadComponent: () => import('./pages/group-bookings/group-bookings.page'),
       },
       // ─── Phase 8B ─────────────────────────
       {
         path: 'assets',
-        loadComponent: () => import('./pages/assets/assets.component').then(m => m.AssetsComponent),
+        loadComponent: () => import('./pages/assets/assets.page'),
+      },
+      {
+        path: 'incidents',
+        loadComponent: () => import('./pages/incidents/incidents.page'),
+      },
+      {
+        path: 'maintenance',
+        loadComponent: () => import('./pages/maintenance/maintenance.page'),
+      },
+      {
+        path: 'engineers',
+        loadComponent: () => import('./pages/engineers/engineers.page'),
       },
       // ─── Phase 8C ─────────────────────────
       {
         path: 'whatsapp',
-        loadComponent: () => import('./pages/whatsapp/whatsapp.component').then(m => m.WhatsappComponent),
+        loadComponent: () => import('./pages/whatsapp/whatsapp.page'),
       },
       // ─── Phase 8D ─────────────────────────
       {
         path: 'loyalty',
-        loadComponent: () => import('./pages/loyalty/loyalty.component').then(m => m.LoyaltyComponent),
+        loadComponent: () => import('./pages/loyalty/loyalty.page'),
       },
       {
         path: 'analytics',
-        loadComponent: () => import('./pages/analytics/analytics.component').then(m => m.AnalyticsComponent),
+        loadComponent: () => import('./pages/analytics/analytics.page'),
+      },
+      {
+        path: 'guest-preferences',
+        loadComponent: () => import('./pages/guest-preferences/guest-preferences.page'),
       },
       // ─── Phase 8E ─────────────────────────
       {
         path: 'ota',
-        loadComponent: () => import('./pages/ota/ota.component').then(m => m.OtaComponent),
+        loadComponent: () => import('./pages/ota-channels/ota-channels.page'),
       },
       {
         path: 'spa',
-        loadComponent: () => import('./pages/spa/spa.component').then(m => m.SpaComponent),
+        loadComponent: () => import('./pages/spa/spa.page'),
       },
       {
         path: 'iot',
-        loadComponent: () => import('./pages/iot/iot.component').then(m => m.IoTComponent),
+        loadComponent: () => import('./pages/iot/iot.page'),
       },
     ],
   },

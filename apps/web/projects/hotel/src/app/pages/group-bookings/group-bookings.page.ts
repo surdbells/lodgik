@@ -1,10 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgik/shared';
 
 @Component({
   selector: 'app-group-bookings',
   standalone: true,
-  imports: [PageHeaderComponent, LoadingSpinnerComponent],
+  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Group Bookings" subtitle="Manage conference groups, tours, and block bookings">
       <button (click)="showForm = !showForm" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ New Group</button>

@@ -30,4 +30,8 @@ export const routes: Routes = [
     path: 'local-info',
     loadComponent: () => import('./pages/info/info.component').then(m => m.LocalInfoComponent),
   },
+  {
+    path: 'iot-controls',
+    loadComponent: () => import('./pages/iot-controls/iot-controls.component').then(m => m.IoTControlsComponent),
+  },
 ];

@@ -1,10 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgik/shared';
 
 @Component({
   selector: 'app-pricing-rules',
   standalone: true,
-  imports: [PageHeaderComponent, LoadingSpinnerComponent],
+  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Dynamic Pricing" subtitle="Automated rate adjustments based on demand, season, and occupancy">
       <button (click)="showForm = !showForm" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ New Rule</button>

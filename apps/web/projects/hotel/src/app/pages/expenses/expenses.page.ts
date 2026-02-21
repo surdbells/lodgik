@@ -1,11 +1,12 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgik/shared';
 
 @Component({
   selector: 'app-expenses',
   standalone: true,
-  imports: [DatePipe, CurrencyPipe, PageHeaderComponent, LoadingSpinnerComponent],
+  imports: [FormsModule, DatePipe, CurrencyPipe, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Expenses" subtitle="Track and approve operational expenses">
       <button (click)="showForm = !showForm" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ New Expense</button>
