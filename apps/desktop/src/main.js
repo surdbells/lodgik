@@ -128,3 +128,11 @@ app.on('activate', () => {
 });
 
 app.on('before-quit', () => { app.isQuitting = true; });
+
+// ─── Offline Manager ──────────────────────────────────────────
+const { OfflineManager } = require('./offline-manager');
+let offlineManager;
+app.on('ready', () => {
+  offlineManager = new OfflineManager();
+  offlineManager.registerIPC();
+});

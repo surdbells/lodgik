@@ -845,5 +845,19 @@ return function (ContainerBuilder $builder): void {
         \Lodgik\Module\Asset\AssetController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Asset\AssetController(
             svc: $c->get(\Lodgik\Module\Asset\AssetService::class),
         ),
+
+        // ─── Phase 8C: WhatsApp (Termii) ────────────────────────
+        \Lodgik\Module\WhatsApp\TermiiClient::class => fn(ContainerInterface $c) => new \Lodgik\Module\WhatsApp\TermiiClient(
+            apiKey: $_ENV['TERMII_API_KEY'] ?? '',
+            senderId: $_ENV['TERMII_SENDER_ID'] ?? 'Lodgik',
+        ),
+        \Lodgik\Module\WhatsApp\WhatsAppService::class => fn(ContainerInterface $c) => new \Lodgik\Module\WhatsApp\WhatsAppService(
+            em: $c->get(EntityManagerInterface::class),
+            termii: $c->get(\Lodgik\Module\WhatsApp\TermiiClient::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        \Lodgik\Module\WhatsApp\WhatsAppController::class => fn(ContainerInterface $c) => new \Lodgik\Module\WhatsApp\WhatsAppController(
+            svc: $c->get(\Lodgik\Module\WhatsApp\WhatsAppService::class),
+        ),
     ]);
 };

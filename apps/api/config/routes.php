@@ -56,6 +56,9 @@ return function (App $app): void {
 
     // ─── Phase 8B: Asset Management ─────────────────────────────
     (require __DIR__ . '/../src/Module/Asset/routes.php')($app);
+
+    // ─── Phase 8C: WhatsApp (Termii) ─────────────────────────────
+    (require __DIR__ . '/../src/Module/WhatsApp/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Tablet/routes.php')($app);
 
     // ─── Phase 5: Gym ─────────────────────────────────────────
