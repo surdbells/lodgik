@@ -40,7 +40,7 @@ import { BiometricService } from '../../services/biometric.service';
 
         <!-- Quick Actions Grid -->
         <Label text="Quick Actions" class="text-lg font-bold m-b-3"></Label>
-        <GridLayout columns="*, *" rows="auto, auto, auto, auto, auto, auto" class="m-b-4">
+        <GridLayout columns="*, *" rows="auto, auto, auto, auto, auto, auto, auto, auto" class="m-b-4">
           <StackLayout col="0" row="0" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/service-request')">
             <Label text="🛎️" class="text-3xl"></Label>
             <Label text="Room Service" class="text-sm font-medium m-t-1"></Label>
@@ -88,6 +88,18 @@ import { BiometricService } from '../../services/biometric.service';
           <StackLayout col="1" row="5" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/checkout')">
             <Label text="🚪" class="text-3xl"></Label>
             <Label text="Checkout" class="text-sm font-medium m-t-1"></Label>
+          </StackLayout>
+          <StackLayout col="0" row="6" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/loyalty')">
+            <Label text="🎁" class="text-3xl"></Label>
+            <Label text="My Rewards" class="text-sm font-medium m-t-1"></Label>
+          </StackLayout>
+          <StackLayout col="1" row="6" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/spa')">
+            <Label text="💆" class="text-3xl"></Label>
+            <Label text="Spa & Wellness" class="text-sm font-medium m-t-1"></Label>
+          </StackLayout>
+          <StackLayout col="0" row="7" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/pool-access')">
+            <Label text="🏊" class="text-3xl"></Label>
+            <Label text="Pool Access" class="text-sm font-medium m-t-1"></Label>
           </StackLayout>
         </GridLayout>
 

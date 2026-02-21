@@ -71,6 +71,11 @@ import { Subscription } from 'rxjs';
             <Label text="Transport" class="text-lg font-bold"></Label>
             <Label text="Taxi, shuttle, car hire" class="text-gray-400 text-sm m-t-1"></Label>
           </StackLayout>
+          <StackLayout col="0" row="2" class="bg-white rounded-2xl p-6 m-2 text-center shadow-sm" (tap)="nav('/iot-controls')">
+            <Label text="🎛️" class="text-5xl m-b-2"></Label>
+            <Label text="Smart Room" class="text-lg font-bold"></Label>
+            <Label text="AC, lights, curtains" class="text-gray-400 text-sm m-t-1"></Label>
+          </StackLayout>
         </GridLayout>
       </ScrollView>
 

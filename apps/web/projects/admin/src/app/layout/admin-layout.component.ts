@@ -60,6 +60,8 @@ export class AdminLayoutComponent {
     { label: 'Apps', icon: '📱', route: '/apps' },
     { label: 'Usage', icon: '📈', route: '/usage' },
     { label: 'Invitations', icon: '✉️', route: '/invitations' },
+    { label: 'WhatsApp Config', icon: '📲', route: '/whatsapp-config' },
+    { label: 'Platform Analytics', icon: '🔍', route: '/platform-analytics' },
     { label: 'Settings', icon: '⚙️', route: '/settings' },
   ];
 
