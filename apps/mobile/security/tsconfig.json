@@ -1,0 +1,1 @@
+{ "compilerOptions": { "target": "ES2020", "module": "ESNext", "moduleResolution": "node", "lib": ["ES2020", "dom"], "strict": false, "skipLibCheck": true, "esModuleInterop": true, "experimentalDecorators": true, "emitDecoratorMetadata": true, "baseUrl": ".", "paths": { "~/*": ["src/*"] } }, "include": ["src/**/*.ts"], "exclude": ["node_modules"] }
