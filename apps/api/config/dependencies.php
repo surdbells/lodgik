@@ -837,5 +837,13 @@ return function (ContainerBuilder $builder): void {
         \Lodgik\Module\Finance\FinanceController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Finance\FinanceController(
             service: $c->get(\Lodgik\Module\Finance\FinanceService::class),
         ),
+
+        // ─── Phase 8B: Asset Management ─────────────────────────
+        \Lodgik\Module\Asset\AssetService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Asset\AssetService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Asset\AssetController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Asset\AssetController(
+            svc: $c->get(\Lodgik\Module\Asset\AssetService::class),
+        ),
     ]);
 };

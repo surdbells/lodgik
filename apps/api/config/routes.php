@@ -53,6 +53,9 @@ return function (App $app): void {
 
     // ─── Phase 8A: Finance, Compliance, HR Reviews, Pricing ────
     (require __DIR__ . '/../src/Module/Finance/routes.php')($app);
+
+    // ─── Phase 8B: Asset Management ─────────────────────────────
+    (require __DIR__ . '/../src/Module/Asset/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Tablet/routes.php')($app);
 
     // ─── Phase 5: Gym ─────────────────────────────────────────
