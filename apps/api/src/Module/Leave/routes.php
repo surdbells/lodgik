@@ -1,9 +1,10 @@
 <?php
-
 declare(strict_types=1);
-
 use Lodgik\Module\Leave\LeaveController;
 use Lodgik\Middleware\FeatureMiddleware;
+use Lodgik\Middleware\RoleMiddleware;
+use Lodgik\Middleware\AuthMiddleware;
+use Lodgik\Middleware\TenantMiddleware;
 use Predis\Client as RedisClient;
 use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
@@ -12,11 +13,14 @@ return function (App $app): void {
     $c = $app->getContainer();
     $featureGate = new FeatureMiddleware('leave_management', 'professional', $c->get(RedisClient::class));
 
+    // Admin: manage types
     $app->group('/leave-types', function (RouteCollectorProxy $g) {
         $g->get('', [LeaveController::class, 'listTypes']);
         $g->post('', [LeaveController::class, 'createType']);
-    })->add($featureGate);
+    })->add(new RoleMiddleware(['property_admin', 'manager', 'hr']))->add($featureGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
+    // All authenticated staff: submit/view/cancel own requests
+    // Approve/reject: managers/hr only (enforced in controller via role check)
     $app->group('/leave-requests', function (RouteCollectorProxy $g) {
         $g->get('/pending', [LeaveController::class, 'pendingRequests']);
         $g->get('/{id}', [LeaveController::class, 'getRequest']);
@@ -24,14 +28,10 @@ return function (App $app): void {
         $g->post('/{id}/approve', [LeaveController::class, 'approveRequest']);
         $g->post('/{id}/reject', [LeaveController::class, 'rejectRequest']);
         $g->post('/{id}/cancel', [LeaveController::class, 'cancelRequest']);
-    })->add($featureGate);
+    })->add($featureGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     $app->group('/leave-balances', function (RouteCollectorProxy $g) {
-        $g->get('/{employee_id}', [LeaveController::class, 'getBalances']);
-        $g->post('/{employee_id}/initialize', [LeaveController::class, 'initBalances']);
-    })->add($featureGate);
-
-    $app->group('/leave-history', function (RouteCollectorProxy $g) {
-        $g->get('/{employee_id}', [LeaveController::class, 'employeeRequests']);
-    })->add($featureGate);
+        $g->get('', [LeaveController::class, 'getBalances']);
+        $g->post('/init/{employeeId}', [LeaveController::class, 'initBalances']);
+    })->add($featureGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 };

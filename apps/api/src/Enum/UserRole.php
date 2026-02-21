@@ -18,6 +18,8 @@ enum UserRole: string
     case CONCIERGE = 'concierge';
     case MAINTENANCE = 'maintenance';
     case GYM_STAFF = 'gym_staff';
+    case SECURITY = 'security';
+    case ENGINEER = 'engineer';
 
     /**
      * Roles that can manage a property's settings.
@@ -65,6 +67,8 @@ enum UserRole: string
             self::CONCIERGE => 'Concierge',
             self::MAINTENANCE => 'Maintenance',
             self::GYM_STAFF => 'Gym Staff',
+            self::SECURITY => 'Security',
+            self::ENGINEER => 'Engineer',
         };
     }
 }

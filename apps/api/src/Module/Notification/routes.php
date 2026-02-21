@@ -1,8 +1,8 @@
 <?php
-
 declare(strict_types=1);
-
 use Lodgik\Module\Notification\NotificationController;
+use Lodgik\Middleware\AuthMiddleware;
+use Lodgik\Middleware\TenantMiddleware;
 use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
@@ -12,10 +12,10 @@ return function (App $app): void {
         $g->get('/unread-count', [NotificationController::class, 'unreadCount']);
         $g->post('/read-all', [NotificationController::class, 'markAllRead']);
         $g->post('/{id}/read', [NotificationController::class, 'markRead']);
-    });
+    })->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     $app->group('/device-tokens', function (RouteCollectorProxy $g) {
         $g->post('', [NotificationController::class, 'registerToken']);
         $g->post('/remove', [NotificationController::class, 'removeToken']);
-    });
+    })->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 };
