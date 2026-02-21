@@ -829,5 +829,13 @@ return function (ContainerBuilder $builder): void {
         \Lodgik\Module\GuestServices\GuestServicesController::class => fn(ContainerInterface $c) => new \Lodgik\Module\GuestServices\GuestServicesController(
             service: $c->get(\Lodgik\Module\GuestServices\GuestServicesService::class),
         ),
+
+        // ─── Phase 8A: Finance ──────────────────────────────────
+        \Lodgik\Module\Finance\FinanceService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Finance\FinanceService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Finance\FinanceController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Finance\FinanceController(
+            service: $c->get(\Lodgik\Module\Finance\FinanceService::class),
+        ),
     ]);
 };

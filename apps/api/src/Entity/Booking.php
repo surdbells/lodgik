@@ -90,6 +90,12 @@ class Booking implements TenantAware
     #[ORM\Column(name: 'checked_out_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $checkedOutAt = null;
 
+    #[ORM\Column(name: 'group_booking_id', type: Types::STRING, length: 36, nullable: true)]
+    private ?string $groupBookingId = null;
+
+    #[ORM\Column(name: 'corporate_name', type: Types::STRING, length: 200, nullable: true)]
+    private ?string $corporateName = null;
+
     public function __construct(
         string $bookingRef,
         BookingType $bookingType,
@@ -151,6 +157,11 @@ class Booking implements TenantAware
     public function setCheckedInAt(?\DateTimeImmutable $v): void { $this->checkedInAt = $v; }
     public function getCheckedOutAt(): ?\DateTimeImmutable { return $this->checkedOutAt; }
     public function setCheckedOutAt(?\DateTimeImmutable $v): void { $this->checkedOutAt = $v; }
+
+    public function getGroupBookingId(): ?string { return $this->groupBookingId; }
+    public function setGroupBookingId(?string $v): void { $this->groupBookingId = $v; }
+    public function getCorporateName(): ?string { return $this->corporateName; }
+    public function setCorporateName(?string $v): void { $this->corporateName = $v; }
 
     public function getNights(): int
     {

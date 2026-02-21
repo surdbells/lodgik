@@ -50,6 +50,9 @@ return function (App $app): void {
     (require __DIR__ . '/../src/Module/Security/routes.php')($app);
     (require __DIR__ . '/../src/Module/RoomControl/routes.php')($app);
     (require __DIR__ . '/../src/Module/GuestServices/routes.php')($app);
+
+    // ─── Phase 8A: Finance, Compliance, HR Reviews, Pricing ────
+    (require __DIR__ . '/../src/Module/Finance/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Tablet/routes.php')($app);
 
     // ─── Phase 5: Gym ─────────────────────────────────────────
