@@ -172,6 +172,63 @@ export const routes: Routes = [
         path: 'guest-services',
         loadComponent: () => import('./pages/guest-services/guest-services.page').then(m => m.GuestServicesPage),
       },
+      // ─── Phase 8A ─────────────────────────
+      {
+        path: 'expenses',
+        loadComponent: () => import('./pages/expenses/expenses.component').then(m => m.ExpensesComponent),
+      },
+      {
+        path: 'night-audit',
+        loadComponent: () => import('./pages/night-audit/night-audit.component').then(m => m.NightAuditComponent),
+      },
+      {
+        path: 'police-reports',
+        loadComponent: () => import('./pages/police-reports/police-reports.component').then(m => m.PoliceReportsComponent),
+      },
+      {
+        path: 'performance-reviews',
+        loadComponent: () => import('./pages/performance-reviews/performance-reviews.component').then(m => m.PerformanceReviewsComponent),
+      },
+      {
+        path: 'pricing-rules',
+        loadComponent: () => import('./pages/pricing-rules/pricing-rules.component').then(m => m.PricingRulesComponent),
+      },
+      {
+        path: 'group-bookings',
+        loadComponent: () => import('./pages/group-bookings/group-bookings.component').then(m => m.GroupBookingsComponent),
+      },
+      // ─── Phase 8B ─────────────────────────
+      {
+        path: 'assets',
+        loadComponent: () => import('./pages/assets/assets.component').then(m => m.AssetsComponent),
+      },
+      // ─── Phase 8C ─────────────────────────
+      {
+        path: 'whatsapp',
+        loadComponent: () => import('./pages/whatsapp/whatsapp.component').then(m => m.WhatsappComponent),
+      },
+      // ─── Phase 8D ─────────────────────────
+      {
+        path: 'loyalty',
+        loadComponent: () => import('./pages/loyalty/loyalty.component').then(m => m.LoyaltyComponent),
+      },
+      {
+        path: 'analytics',
+        loadComponent: () => import('./pages/analytics/analytics.component').then(m => m.AnalyticsComponent),
+      },
+      // ─── Phase 8E ─────────────────────────
+      {
+        path: 'ota',
+        loadComponent: () => import('./pages/ota/ota.component').then(m => m.OtaComponent),
+      },
+      {
+        path: 'spa',
+        loadComponent: () => import('./pages/spa/spa.component').then(m => m.SpaComponent),
+      },
+      {
+        path: 'iot',
+        loadComponent: () => import('./pages/iot/iot.component').then(m => m.IoTComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

@@ -72,4 +72,14 @@ export const routes: Routes = [
     canActivate: [guestAuthGuard],
     loadComponent: () => import('./pages/charge-transfer/charge-transfer.component').then(m => m.ChargeTransferComponent),
   },
+  {
+    path: 'loyalty',
+    canActivate: [guestAuthGuard],
+    loadComponent: () => import('./pages/loyalty/loyalty.component').then(m => m.LoyaltyComponent),
+  },
+  {
+    path: 'spa',
+    canActivate: [guestAuthGuard],
+    loadComponent: () => import('./pages/spa/spa.component').then(m => m.SpaComponent),
+  },
 ];
