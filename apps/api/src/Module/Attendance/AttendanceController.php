@@ -149,4 +149,17 @@ final class AttendanceController
         $records = $this->service->getEmployeeAttendance($args['employee_id'], $q['from'], $q['to']);
         return JsonResponse::ok($res, array_map(fn($r) => $r->toArray(), $records));
     }
+
+    public function listRecords(Request $req, Response $res): Response { return $this->dailyAttendance($req, $res); }
+    public function todayRecords(Request $req, Response $res): Response { return $this->dailyAttendance($req, $res); }
+
+    public function report(Request $req, Response $res): Response
+    {
+        $propertyId = $req->getAttribute('property_id');
+        $params = $req->getQueryParams();
+        $from = $params['from'] ?? date('Y-m-01');
+        $to = $params['to'] ?? date('Y-m-d');
+        $records = $this->service->getDailyAttendance($from, $propertyId);
+        return JsonResponse::ok($res, ['records' => array_map(fn($r) => $r->toArray(), $records), 'from' => $from, 'to' => $to, 'total' => count($records)]);
+    }
 }

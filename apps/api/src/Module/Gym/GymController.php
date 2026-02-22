@@ -245,4 +245,27 @@ final class GymController
         $bookings = $this->service->getClassBookings($args['id']);
         return JsonResponse::ok($res, array_map(fn($b) => $b->toArray(), $bookings));
     }
+
+    public function listCheckIns(Request $req, Response $res): Response { return $this->todayVisits($req, $res); }
+
+    public function updateClass(Request $req, Response $res, array $args): Response
+    {
+        $body = (array) ($req->getParsedBody() ?? []);
+        $cls = $this->service->updateClass($args['id'], $body);
+        return JsonResponse::ok($res, $cls->toArray());
+    }
+
+    public function enroll(Request $req, Response $res, array $args): Response
+    {
+        return $this->bookClass($req, $res);
+    }
+
+    public function recordPayment(Request $req, Response $res): Response
+    {
+        $body = (array) ($req->getParsedBody() ?? []);
+        $body['tenant_id'] = $req->getAttribute('tenant_id');
+        $body['property_id'] = $req->getAttribute('property_id');
+        $payment = $this->service->recordPayment($body);
+        return JsonResponse::created($res, $payment->toArray());
+    }
 }

@@ -143,4 +143,42 @@ final class PosController
         try { return JsonResponse::ok($res, $this->service->markItemReady($args['item_id'])->toArray()); }
         catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 404); }
     }
+
+    public function updateItemStatus(Request $req, Response $res, array $args): Response
+    {
+        $body = (array) ($req->getParsedBody() ?? []);
+        $status = $body['status'] ?? '';
+        try {
+            $item = match ($status) {
+                'preparing' => $this->service->markItemPreparing($args['item_id']),
+                'ready' => $this->service->markItemReady($args['item_id']),
+                default => throw new \RuntimeException("Invalid status: $status"),
+            };
+            return JsonResponse::ok($res, $item->toArray());
+        } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 400); }
+    }
+
+    public function closeOrder(Request $req, Response $res, array $args): Response
+    {
+        try { return JsonResponse::ok($res, $this->service->serveOrder($args['id'])->toArray()); }
+        catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 400); }
+    }
+
+    public function cancelOrder(Request $req, Response $res, array $args): Response
+    {
+        try {
+            $order = $this->service->payOrder($args['id'], 'cancelled');
+            return JsonResponse::ok($res, $order->toArray());
+        } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 400); }
+    }
+
+    public function postToFolio(Request $req, Response $res, array $args): Response
+    {
+        $body = (array) ($req->getParsedBody() ?? []);
+        $folioId = $body['folio_id'] ?? '';
+        try {
+            $order = $this->service->payOrder($args['id'], 'room_charge', 'room_charge', $folioId);
+            return JsonResponse::ok($res, $order->toArray());
+        } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 400); }
+    }
 }

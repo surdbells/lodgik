@@ -181,6 +181,153 @@ final class AdminController
         return $this->response->noContent($response);
     }
 
+    // ─── Tenant detail: usage, features, impersonate ──────────
+
+    public function tenantUsage(Request $request, Response $response, array $args): Response
+    {
+        $usage = $this->adminService->getTenantUsage($args['id']);
+        return $this->response->success($response, $usage);
+    }
+
+    public function tenantFeatures(Request $request, Response $response, array $args): Response
+    {
+        $features = $this->adminService->getTenantFeatures($args['id']);
+        return $this->response->success($response, $features);
+    }
+
+    public function enableTenantFeature(Request $request, Response $response, array $args): Response
+    {
+        $this->adminService->setTenantFeature($args['id'], $args['moduleKey'], true);
+        return $this->response->success($response, ['enabled' => true, 'module_key' => $args['moduleKey']]);
+    }
+
+    public function disableTenantFeature(Request $request, Response $response, array $args): Response
+    {
+        $this->adminService->setTenantFeature($args['id'], $args['moduleKey'], false);
+        return $this->response->success($response, ['enabled' => false, 'module_key' => $args['moduleKey']]);
+    }
+
+    public function impersonateTenant(Request $request, Response $response, array $args): Response
+    {
+        $result = $this->adminService->impersonateTenant($args['id'], $request->getAttribute('user_id'));
+        return $this->response->success($response, $result);
+    }
+
+    // ─── Platform settings ─────────────────────────────────────
+
+    public function getSettings(Request $request, Response $response): Response
+    {
+        return $this->response->success($response, $this->adminService->getSettings());
+    }
+
+    public function updateSettings(Request $request, Response $response): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $this->adminService->updateSettings($body);
+        return $this->response->success($response, ['saved' => true]);
+    }
+
+    public function testEmail(Request $request, Response $response): Response
+    {
+        $sent = $this->adminService->sendTestEmail();
+        return $sent ? $this->response->success($response, ['sent' => true]) : $this->response->error($response, 'Failed to send test email');
+    }
+
+    public function testSms(Request $request, Response $response): Response
+    {
+        $sent = $this->adminService->sendTestSms();
+        return $sent ? $this->response->success($response, ['sent' => true]) : $this->response->error($response, 'Failed to send test SMS');
+    }
+
+    // ─── Platform analytics ────────────────────────────────────
+
+    public function analytics(Request $request, Response $response): Response
+    {
+        $days = (int) ($request->getQueryParams()['days'] ?? 30);
+        return $this->response->success($response, $this->adminService->getAnalytics($days));
+    }
+
+    // ─── WhatsApp admin config ─────────────────────────────────
+
+    public function whatsappConfig(Request $request, Response $response): Response
+    {
+        return $this->response->success($response, $this->adminService->getWhatsAppConfig());
+    }
+
+    public function updateWhatsappConfig(Request $request, Response $response): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $this->adminService->updateWhatsAppConfig($body);
+        return $this->response->success($response, ['saved' => true]);
+    }
+
+    public function whatsappStats(Request $request, Response $response): Response
+    {
+        return $this->response->success($response, $this->adminService->getWhatsAppStats());
+    }
+
+    public function whatsappTemplates(Request $request, Response $response): Response
+    {
+        return $this->response->success($response, $this->adminService->getWhatsAppTemplates());
+    }
+
+    public function createWhatsappTemplate(Request $request, Response $response): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $template = $this->adminService->createWhatsAppTemplate($body);
+        return $this->response->success($response, $template->toArray(), 201);
+    }
+
+    public function whatsappLogs(Request $request, Response $response): Response
+    {
+        return $this->response->success($response, $this->adminService->getWhatsAppLogs());
+    }
+
+    public function testWhatsapp(Request $request, Response $response): Response
+    {
+        $sent = $this->adminService->sendTestWhatsApp();
+        return $sent ? $this->response->success($response, ['sent' => true]) : $this->response->error($response, 'Failed');
+    }
+
+    // ─── App release management ────────────────────────────────
+
+    public function listAppReleases(Request $request, Response $response): Response
+    {
+        $appType = $request->getQueryParams()['app_type'] ?? null;
+        $releases = $this->adminService->listAppReleases($appType);
+        return $this->response->success($response, $releases);
+    }
+
+    public function createAppRelease(Request $request, Response $response): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $release = $this->adminService->createAppRelease($body, $request->getAttribute('user_id'));
+        return $this->response->success($response, $release->toArray(), 201);
+    }
+
+    public function publishRelease(Request $request, Response $response, array $args): Response
+    {
+        $release = $this->adminService->publishRelease($args['id']);
+        return $this->response->success($response, $release->toArray());
+    }
+
+    public function deprecateRelease(Request $request, Response $response, array $args): Response
+    {
+        $release = $this->adminService->deprecateRelease($args['id']);
+        return $this->response->success($response, $release->toArray());
+    }
+
+    public function appAnalytics(Request $request, Response $response): Response
+    {
+        return $this->response->success($response, $this->adminService->getAppAnalytics());
+    }
+
+    public function duplicatePlan(Request $request, Response $response, array $args): Response
+    {
+        $plan = $this->adminService->duplicatePlan($args['id']);
+        return $this->response->success($response, $this->serializePlan($plan), 201);
+    }
+
     // ─── Serializers ───────────────────────────────────────────
 
     private function serializeTenantAdmin(object $t): array

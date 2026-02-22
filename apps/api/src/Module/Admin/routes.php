@@ -30,6 +30,39 @@ return function (App $app): void {
         $group->post('/plans', [AdminController::class, 'createPlan']);
         $group->patch('/plans/{id}', [AdminController::class, 'updatePlan']);
         $group->delete('/plans/{id}', [AdminController::class, 'deletePlan']);
+        $group->post('/plans/{id}/duplicate', [AdminController::class, 'duplicatePlan']);
+
+        // Tenant detail: usage, features, impersonate
+        $group->get('/tenants/{id}/usage', [AdminController::class, 'tenantUsage']);
+        $group->get('/tenants/{id}/features', [AdminController::class, 'tenantFeatures']);
+        $group->post('/tenants/{id}/features/enable/{moduleKey}', [AdminController::class, 'enableTenantFeature']);
+        $group->post('/tenants/{id}/features/disable/{moduleKey}', [AdminController::class, 'disableTenantFeature']);
+        $group->post('/tenants/{id}/impersonate', [AdminController::class, 'impersonateTenant']);
+
+        // Platform settings
+        $group->get('/settings', [AdminController::class, 'getSettings']);
+        $group->patch('/settings', [AdminController::class, 'updateSettings']);
+        $group->post('/settings/test-email', [AdminController::class, 'testEmail']);
+        $group->post('/settings/test-sms', [AdminController::class, 'testSms']);
+
+        // Platform analytics
+        $group->get('/analytics', [AdminController::class, 'analytics']);
+
+        // WhatsApp admin config
+        $group->get('/whatsapp/config', [AdminController::class, 'whatsappConfig']);
+        $group->patch('/whatsapp/config', [AdminController::class, 'updateWhatsappConfig']);
+        $group->get('/whatsapp/stats', [AdminController::class, 'whatsappStats']);
+        $group->get('/whatsapp/templates', [AdminController::class, 'whatsappTemplates']);
+        $group->post('/whatsapp/templates', [AdminController::class, 'createWhatsappTemplate']);
+        $group->get('/whatsapp/logs', [AdminController::class, 'whatsappLogs']);
+        $group->post('/whatsapp/test', [AdminController::class, 'testWhatsapp']);
+
+        // App release management
+        $group->get('/apps/releases', [AdminController::class, 'listAppReleases']);
+        $group->post('/apps/releases', [AdminController::class, 'createAppRelease']);
+        $group->patch('/apps/releases/{id}/publish', [AdminController::class, 'publishRelease']);
+        $group->patch('/apps/releases/{id}/deprecate', [AdminController::class, 'deprecateRelease']);
+        $group->get('/apps/analytics', [AdminController::class, 'appAnalytics']);
     })
         ->add(new RoleMiddleware(['super_admin']))
         ->add(AuthMiddleware::class);

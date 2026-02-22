@@ -422,4 +422,36 @@ final class GymService
             'month_revenue' => $monthRevenue,
         ];
     }
+
+    public function updateClass(string $id, array $data): GymClass
+    {
+        $cls = $this->em->find(GymClass::class, $id);
+        if (!$cls) throw new \RuntimeException('Class not found');
+        if (isset($data['name'])) $cls->setName($data['name']);
+        if (isset($data['description'])) $cls->setDescription($data['description']);
+        if (isset($data['instructor_name'])) $cls->setInstructorName($data['instructor_name']);
+        if (isset($data['max_capacity'])) $cls->setMaxCapacity((int) $data['max_capacity']);
+        if (isset($data['scheduled_at'])) $cls->setScheduledAt(new \DateTimeImmutable($data['scheduled_at']));
+        if (isset($data['duration_minutes'])) $cls->setDurationMinutes((int) $data['duration_minutes']);
+        $this->em->flush();
+        return $cls;
+    }
+
+    public function recordPayment(array $data): GymMembershipPayment
+    {
+        $membership = $this->em->find(GymMembership::class, $data['membership_id'] ?? '');
+        if (!$membership) throw new \RuntimeException('Membership not found');
+
+        $payment = new GymMembershipPayment();
+        $payment->setMembershipId($membership->getId());
+        $payment->setMemberId($membership->getMemberId());
+        $payment->setAmount((string) ($data['amount'] ?? '0'));
+        $payment->setPaymentMethod($data['payment_method'] ?? 'cash');
+        $payment->setTenantId($data['tenant_id']);
+        $payment->setPropertyId($data['property_id']);
+        if (isset($data['recorded_by'])) $payment->setRecordedBy($data['recorded_by']);
+        $this->em->persist($payment);
+        $this->em->flush();
+        return $payment;
+    }
 }
