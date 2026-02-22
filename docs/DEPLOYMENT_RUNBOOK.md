@@ -156,7 +156,7 @@ Create `.env` in `apps/api/` (copy from `.env.example`):
 # ─── Application ─────────────────────────────────
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://api.lodgik.io
+APP_URL=https://api.lodgik.co
 
 # ─── Database (PostgreSQL) ───────────────────────
 DB_DRIVER=pdo_pgsql
@@ -189,10 +189,10 @@ TERMII_SENDER_ID=Lodgik
 # ─── Email (SMTP) ───────────────────────────────
 MAIL_HOST=smtp.example.com
 MAIL_PORT=587
-MAIL_USER=noreply@lodgik.io
+MAIL_USER=noreply@lodgik.co
 MAIL_PASSWORD=<password>
 MAIL_FROM_NAME=Lodgik
-MAIL_FROM_ADDRESS=noreply@lodgik.io
+MAIL_FROM_ADDRESS=noreply@lodgik.co
 
 # ─── Storage ────────────────────────────────────
 STORAGE_DRIVER=local
@@ -205,7 +205,7 @@ Each mobile app's API service must point to production:
 
 ```typescript
 // apps/mobile/{app}/src/app/services/*-api.service.ts
-private readonly API_BASE_URL = 'https://api.lodgik.io/api';
+private readonly API_BASE_URL = 'https://api.lodgik.co/api';
 ```
 
 ---
@@ -280,9 +280,9 @@ Create three Pages projects in Cloudflare Dashboard → Workers & Pages:
 
 | Project | Build Command | Output Directory | Custom Domain |
 |---------|--------------|-----------------|---------------|
-| lodgik-hotel | `npx ng build hotel --configuration=production` | `dist/hotel/browser` | hotel.lodgik.io |
-| lodgik-admin | `npx ng build admin --configuration=production` | `dist/admin/browser` | admin.lodgik.io |
-| lodgik-merchant | `npx ng build merchant --configuration=production` | `dist/merchant/browser` | merchant.lodgik.io |
+| lodgik-hotel | `npx ng build hotel --configuration=production` | `dist/hotel/browser` | hotel.lodgik.co |
+| lodgik-admin | `npx ng build admin --configuration=production` | `dist/admin/browser` | admin.lodgik.co |
+| lodgik-merchant | `npx ng build merchant --configuration=production` | `dist/merchant/browser` | merchant.lodgik.co |
 
 Set **Root Directory** to `apps/web` for all three.
 
@@ -586,7 +586,7 @@ APNS_KEY_PATH=/etc/lodgik/apns-auth-key.p8
 ```nginx
 server {
     listen 443 ssl http2;
-    server_name api.lodgik.io;
+    server_name api.lodgik.co;
 
     ssl_certificate     /etc/ssl/lodgik/fullchain.pem;
     ssl_certificate_key /etc/ssl/lodgik/privkey.pem;
@@ -609,10 +609,10 @@ server {
     location ~ /\. { deny all; }
     client_max_body_size 12M;
 }
-server { listen 80; server_name api.lodgik.io; return 301 https://$host$request_uri; }
+server { listen 80; server_name api.lodgik.co; return 301 https://$host$request_uri; }
 ```
 
-SSL: `sudo certbot --nginx -d api.lodgik.io`
+SSL: `sudo certbot --nginx -d api.lodgik.co`
 
 ---
 
@@ -660,15 +660,15 @@ volumes:
 
 ```bash
 # API health
-curl -s https://api.lodgik.io/api/health | python3 -m json.tool
+curl -s https://api.lodgik.co/api/health | python3 -m json.tool
 
 # Web apps
 for d in hotel admin merchant; do
-  echo "$d: $(curl -s -o /dev/null -w '%{http_code}' https://$d.lodgik.io/)"
+  echo "$d: $(curl -s -o /dev/null -w '%{http_code}' https://$d.lodgik.co/)"
 done
 
 # Smoke test: register → login → dashboard
-curl -X POST https://api.lodgik.io/api/auth/register \
+curl -X POST https://api.lodgik.co/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"tenant_name":"Test Hotel","first_name":"Test","last_name":"User","email":"test@test.com","password":"Pass123!"}'
 
@@ -683,7 +683,7 @@ adb install apps/mobile/guest/platforms/android/app/build/outputs/apk/debug/app-
 
 Paystack Dashboard → Settings → Webhooks:
 
-**URL:** `https://api.lodgik.io/api/subscriptions/webhook`
+**URL:** `https://api.lodgik.co/api/subscriptions/webhook`
 
 **Events:** charge.success, subscription.create, subscription.not_renew, subscription.disable, invoice.payment_failed
 
