@@ -9,6 +9,7 @@ use Lodgik\Module\Auth\DTO\ForgotPasswordRequest;
 use Lodgik\Module\Auth\DTO\LoginRequest;
 use Lodgik\Module\Auth\DTO\RegisterRequest;
 use Lodgik\Module\Auth\DTO\ResetPasswordRequest;
+use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -18,6 +19,27 @@ final class AuthController
         private readonly AuthService $authService,
         private readonly ResponseHelper $response,
     ) {}
+
+    #[OA\Post(
+        path: "/api/auth/register",
+        summary: "Register new tenant and admin user",
+        tags: ["Auth"],
+        security: [],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(properties: [
+                new OA\Property(property: "tenant_name", type: "string", example: "Grand Palace Hotel"),
+                new OA\Property(property: "first_name", type: "string", example: "John"),
+                new OA\Property(property: "last_name", type: "string", example: "Doe"),
+                new OA\Property(property: "email", type: "string", format: "email"),
+                new OA\Property(property: "password", type: "string", format: "password"),
+            ])
+        ),
+        responses: [
+            new OA\Response(response: 201, description: "Tenant created with admin user"),
+            new OA\Response(response: 422, description: "Validation error")
+        ]
+    )]
 
     /**
      * POST /api/auth/register
@@ -55,6 +77,23 @@ final class AuthController
     /**
      * POST /api/auth/login
      */
+    #[OA\Post(
+        path: "/api/auth/login",
+        summary: "Authenticate user and get JWT tokens",
+        tags: ["Auth"],
+        security: [],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(properties: [
+                new OA\Property(property: "email", type: "string", format: "email"),
+                new OA\Property(property: "password", type: "string", format: "password"),
+            ])
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Access and refresh tokens returned"),
+            new OA\Response(response: 401, description: "Invalid credentials")
+        ]
+    )]
     public function login(Request $request, Response $response): Response
     {
         $body = (array) ($request->getParsedBody() ?? []);
@@ -232,6 +271,15 @@ final class AuthController
     /**
      * GET /api/auth/me
      */
+    #[OA\Get(
+        path: "/api/auth/me",
+        summary: "Get current authenticated user profile",
+        tags: ["Auth"],
+        responses: [
+            new OA\Response(response: 200, description: "User profile"),
+            new OA\Response(response: 401, description: "Unauthorized")
+        ]
+    )]
     public function me(Request $request, Response $response): Response
     {
         $userId = $request->getAttribute('auth.user_id');

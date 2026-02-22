@@ -6,6 +6,7 @@ namespace Lodgik\Module\Health;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Helper\ResponseHelper;
+use OpenApi\Attributes as OA;
 use Predis\Client as RedisClient;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -21,6 +22,16 @@ final class HealthController
     /**
      * Basic health check.
      */
+    #[OA\Get(
+        path: "/api/health",
+        summary: "System health check",
+        tags: ["Health"],
+        security: [],
+        responses: [
+            new OA\Response(response: 200, description: "System healthy"),
+            new OA\Response(response: 503, description: "System unhealthy")
+        ]
+    )]
     public function check(Request $request, Response $response): Response
     {
         return $this->response->success($response, [

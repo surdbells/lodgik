@@ -204,6 +204,7 @@ final class SubscriptionService
         ?string $paystackAuthorizationCode = null,
         ?string $paystackSubscriptionCode = null,
         ?array $paymentData = null,
+        string $commissionScope = 'new_subscription',
     ): array {
         $tenant = $this->tenantRepo->find($tenantId);
         $plan = $this->em->find(SubscriptionPlan::class, $planId);
@@ -254,6 +255,9 @@ final class SubscriptionService
         $this->audit->log('subscription.activated', $tenantId, $sub->getId(), null,
             "Activated {$plan->getName()} ({$billingCycle}) for ₦" . number_format($amount / 100),
         );
+
+        // Phase 9D: Auto-trigger merchant commission if hotel bound to merchant
+        $this->triggerMerchantCommission($tenantId, $sub->getId(), $plan->getName(), $billingCycle, $amount, $commissionScope);
 
         return [
             'subscription_id' => $sub->getId(),
@@ -359,6 +363,10 @@ final class SubscriptionService
         $billingCycle = $metadata['billing_cycle'] ?? 'monthly';
 
         if ($planId !== null) {
+            // Detect if renewal (tenant already has active subscription)
+            $existingSub = $this->getCurrentSubscription($tenantId);
+            $scope = ($existingSub !== null && $existingSub->getStatus() === 'active') ? 'renewal' : 'new_subscription';
+
             $result = $this->activateSubscription(
                 tenantId: $tenantId,
                 planId: $planId,
@@ -369,6 +377,7 @@ final class SubscriptionService
                 paystackChannel: $data['channel'] ?? null,
                 paystackCustomerCode: $data['customer']['customer_code'] ?? null,
                 paymentData: $data,
+                commissionScope: $scope,
             );
             return ['handled' => true, 'result' => $result];
         }
@@ -444,5 +453,67 @@ final class SubscriptionService
     {
         return $this->em->getRepository(SubscriptionInvoice::class)
             ->findBy(['tenantId' => $tenantId], ['createdAt' => 'DESC'], $limit);
+    }
+
+    // ─── Phase 9D: Merchant Commission Auto-Trigger ───────────
+
+    /**
+     * If this tenant's hotel is bound to a merchant, auto-calculate commission.
+     */
+    private function triggerMerchantCommission(
+        string $tenantId, string $subscriptionId, string $planName,
+        string $billingCycle, int $amountKobo, string $scope
+    ): void {
+        try {
+            $hotel = $this->em->getRepository(\Lodgik\Entity\MerchantHotel::class)
+                ->findOneBy(['tenantId' => $tenantId]);
+            if (!$hotel) return;
+
+            $merchant = $this->em->find(\Lodgik\Entity\Merchant::class, $hotel->getMerchantId());
+            if (!$merchant || !$merchant->isActive()) return;
+
+            $tier = $merchant->getCommissionTierId()
+                ? $this->em->find(\Lodgik\Entity\CommissionTier::class, $merchant->getCommissionTierId())
+                : $this->em->getRepository(\Lodgik\Entity\CommissionTier::class)->findOneBy(['isDefault' => true, 'isActive' => true]);
+            if (!$tier) return;
+
+            $commissionScope = \Lodgik\Enum\CommissionScope::from($scope);
+            $amountNaira = bcdiv((string) $amountKobo, '100', 2);
+            $rate = $tier->getRateForScope($scope, $planName);
+            $commissionAmount = $tier->getType() === 'percentage'
+                ? bcmul($amountNaira, bcdiv($rate, '100', 4), 2)
+                : $rate;
+
+            $c = new \Lodgik\Entity\Commission();
+            $c->setMerchantId($merchant->getId());
+            $c->setHotelId($hotel->getId());
+            $c->setTenantId($tenantId);
+            $c->setSubscriptionId($subscriptionId);
+            $c->setCommissionTierId($tier->getId());
+            $c->setScope($commissionScope);
+            $c->setPlanName($planName);
+            $c->setBillingCycle($billingCycle);
+            $c->setSubscriptionAmount($amountNaira);
+            $c->setCommissionRate($rate);
+            $c->setCommissionAmount($commissionAmount);
+            $c->setStatus(\Lodgik\Enum\CommissionStatus::PENDING);
+            $c->setCoolingPeriodEnds(new \DateTimeImmutable('+7 days'));
+            $this->em->persist($c);
+
+            // Notify merchant
+            $n = new \Lodgik\Entity\MerchantNotification();
+            $n->setMerchantId($merchant->getId());
+            $n->setType('commission_approved');
+            $n->setTitle('New Commission Earned');
+            $n->setBody("You earned ₦{$commissionAmount} commission on a {$commissionScope->label()} payment for {$hotel->getHotelName()}.");
+            $n->setData(['commission_amount' => $commissionAmount, 'hotel_id' => $hotel->getId(), 'scope' => $scope]);
+            $this->em->persist($n);
+
+            $this->em->flush();
+        } catch (\Throwable $e) {
+            // Commission trigger must never break subscription flow
+            // Log silently and continue
+            error_log("Merchant commission trigger failed: " . $e->getMessage());
+        }
     }
 }

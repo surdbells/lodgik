@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Slim\App;
 
 return function (App $app): void {
-    // ─── Health Check (always available) ───────────────────────
+    // ─── Health Check ─────────────────────────────────────────
     (require __DIR__ . '/../src/Module/Health/routes.php')($app);
 
     // ─── Phase 0: SaaS Platform ───────────────────────────────
@@ -18,8 +18,6 @@ return function (App $app): void {
     (require __DIR__ . '/../src/Module/AppDistribution/routes.php')($app);
     (require __DIR__ . '/../src/Module/Subscription/routes.php')($app);
     (require __DIR__ . '/../src/Module/Usage/routes.php')($app);
-    // (require __DIR__ . '/../src/Module/Onboarding/routes.php')($app);
-    // (require __DIR__ . '/../src/Module/AppDistribution/routes.php')($app);
 
     // ─── Phase 1: Core PMS ────────────────────────────────────
     (require __DIR__ . '/../src/Module/Room/routes.php')($app);
@@ -42,42 +40,40 @@ return function (App $app): void {
     (require __DIR__ . '/../src/Module/ServiceRequest/routes.php')($app);
     (require __DIR__ . '/../src/Module/Chat/routes.php')($app);
     (require __DIR__ . '/../src/Module/Notification/routes.php')($app);
+
+    // ─── Phase 5: Gym ─────────────────────────────────────────
     (require __DIR__ . '/../src/Module/Gym/routes.php')($app);
+
+    // ─── Phase 6: Operations & F&B ────────────────────────────
     (require __DIR__ . '/../src/Module/Housekeeping/routes.php')($app);
     (require __DIR__ . '/../src/Module/Pos/routes.php')($app);
+    // Note: Bar & Kitchen operations handled via POS module
+    // (sendToKitchen, kitchenQueue, markItemPreparing, markItemReady)
 
-    // Phase 7: Smart Guest Services
+    // ─── Phase 7: Smart Guest Services ────────────────────────
     (require __DIR__ . '/../src/Module/Security/routes.php')($app);
     (require __DIR__ . '/../src/Module/RoomControl/routes.php')($app);
     (require __DIR__ . '/../src/Module/GuestServices/routes.php')($app);
+    (require __DIR__ . '/../src/Module/Tablet/routes.php')($app);
 
-    // ─── Phase 8A: Finance, Compliance, HR Reviews, Pricing ────
+    // ─── Phase 8A: Finance & Compliance ───────────────────────
     (require __DIR__ . '/../src/Module/Finance/routes.php')($app);
 
-    // ─── Phase 8B: Asset Management ─────────────────────────────
+    // ─── Phase 8B: Asset Management ───────────────────────────
     (require __DIR__ . '/../src/Module/Asset/routes.php')($app);
 
-    // ─── Phase 8C: WhatsApp (Termii) ─────────────────────────────
+    // ─── Phase 8C: WhatsApp (Termii) ──────────────────────────
     (require __DIR__ . '/../src/Module/WhatsApp/routes.php')($app);
 
-    // ─── Phase 8D: Loyalty/CRM + Analytics ──────────────────────
+    // ─── Phase 8D: Loyalty/CRM + Analytics ────────────────────
     (require __DIR__ . '/../src/Module/Loyalty/routes.php')($app);
     (require __DIR__ . '/../src/Module/Analytics/routes.php')($app);
 
-    // ─── Phase 8E: Spa/Pool, OTA, IoT ───────────────────────────
+    // ─── Phase 8E: Spa/Pool, OTA, IoT ─────────────────────────
     (require __DIR__ . '/../src/Module/Spa/routes.php')($app);
     (require __DIR__ . '/../src/Module/Ota/routes.php')($app);
     (require __DIR__ . '/../src/Module/IoT/routes.php')($app);
-    // (require __DIR__ . '/../src/Module/Tablet/routes.php')($app);
 
     // ─── Phase 9: Merchant Module ─────────────────────────────
     (require __DIR__ . '/../src/Module/Merchant/routes.php')($app);
-
-    // ─── Phase 5: Gym ─────────────────────────────────────────
-    // (require __DIR__ . '/../src/Module/Gym/routes.php')($app);
-
-    // ─── Phase 6: Operations & F&B ────────────────────────────
-    // (require __DIR__ . '/../src/Module/Housekeeping/routes.php')($app);
-    // (require __DIR__ . '/../src/Module/Bar/routes.php')($app);
-    // (require __DIR__ . '/../src/Module/Kitchen/routes.php')($app);
 };
