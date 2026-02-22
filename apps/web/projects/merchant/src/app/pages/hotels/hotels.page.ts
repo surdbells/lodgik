@@ -1,13 +1,13 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, DataTableComponent, ToastService } from '@lodgik/shared';
+import { PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, ToastService } from '@lodgik/shared';
 import { MerchantApiService } from '../../services/merchant-api.service';
 
 @Component({
   selector: 'app-hotels',
   standalone: true,
-  imports: [RouterLink, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, DataTableComponent],
+  imports: [RouterLink, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
   template: `
     <ui-page-header title="Hotels" subtitle="Manage your registered hotels">
       <button (click)="showForm.set(true)" class="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">+ Register Hotel</button>
