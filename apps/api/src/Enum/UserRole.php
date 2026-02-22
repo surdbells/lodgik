@@ -20,6 +20,8 @@ enum UserRole: string
     case GYM_STAFF = 'gym_staff';
     case SECURITY = 'security';
     case ENGINEER = 'engineer';
+    case MERCHANT_ADMIN = 'merchant_admin';
+    case MERCHANT_AGENT = 'merchant_agent';
 
     /**
      * Roles that can manage a property's settings.
@@ -41,6 +43,17 @@ enum UserRole: string
             self::SUPER_ADMIN,
             self::PROPERTY_ADMIN,
             self::MANAGER,
+        ];
+    }
+
+    /**
+     * Merchant portal roles.
+     */
+    public static function merchantRoles(): array
+    {
+        return [
+            self::MERCHANT_ADMIN,
+            self::MERCHANT_AGENT,
         ];
     }
 
@@ -69,6 +82,8 @@ enum UserRole: string
             self::GYM_STAFF => 'Gym Staff',
             self::SECURITY => 'Security',
             self::ENGINEER => 'Engineer',
+            self::MERCHANT_ADMIN => 'Merchant Admin',
+            self::MERCHANT_AGENT => 'Merchant Agent',
         };
     }
 }

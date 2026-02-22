@@ -893,5 +893,13 @@ return function (ContainerBuilder $builder): void {
         \Lodgik\Module\IoT\IoTController::class => fn(ContainerInterface $c) => new \Lodgik\Module\IoT\IoTController(
             svc: $c->get(\Lodgik\Module\IoT\IoTService::class),
         ),
+
+        // Phase 9: Merchant
+        \Lodgik\Module\Merchant\MerchantService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Merchant\MerchantService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Merchant\MerchantController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Merchant\MerchantController(
+            service: $c->get(\Lodgik\Module\Merchant\MerchantService::class),
+        ),
     ]);
 };

@@ -70,6 +70,9 @@ return function (App $app): void {
     (require __DIR__ . '/../src/Module/IoT/routes.php')($app);
     // (require __DIR__ . '/../src/Module/Tablet/routes.php')($app);
 
+    // ─── Phase 9: Merchant Module ─────────────────────────────
+    (require __DIR__ . '/../src/Module/Merchant/routes.php')($app);
+
     // ─── Phase 5: Gym ─────────────────────────────────────────
     // (require __DIR__ . '/../src/Module/Gym/routes.php')($app);
 
