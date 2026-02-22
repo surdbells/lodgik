@@ -57,6 +57,27 @@ export const routes: Routes = [
         path: 'platform-analytics',
         loadComponent: () => import('./pages/platform-analytics/platform-analytics.page').then(m => m.PlatformAnalyticsPage),
       },
+      // ─── Phase 9: Merchant Admin ───────────
+      {
+        path: 'merchants',
+        loadComponent: () => import('./pages/merchants/merchants.page').then(m => m.MerchantsPage),
+      },
+      {
+        path: 'kyc-review',
+        loadComponent: () => import('./pages/kyc-review/kyc-review.page').then(m => m.KycReviewPage),
+      },
+      {
+        path: 'commission-config',
+        loadComponent: () => import('./pages/commission-config/commission-config.page').then(m => m.CommissionConfigPage),
+      },
+      {
+        path: 'payout-processing',
+        loadComponent: () => import('./pages/payout-processing/payout-processing.page').then(m => m.PayoutProcessingPage),
+      },
+      {
+        path: 'merchant-resources',
+        loadComponent: () => import('./pages/merchant-resources/merchant-resources.page').then(m => m.MerchantResourcesPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

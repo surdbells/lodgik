@@ -62,6 +62,11 @@ export class AdminLayoutComponent {
     { label: 'Invitations', icon: '✉️', route: '/invitations' },
     { label: 'WhatsApp Config', icon: '📲', route: '/whatsapp-config' },
     { label: 'Platform Analytics', icon: '🔍', route: '/platform-analytics' },
+    { label: 'Merchants', icon: '🤝', route: '/merchants' },
+    { label: 'KYC Review', icon: '📋', route: '/kyc-review' },
+    { label: 'Commission Config', icon: '💰', route: '/commission-config' },
+    { label: 'Payout Processing', icon: '🏦', route: '/payout-processing' },
+    { label: 'Merchant Resources', icon: '📁', route: '/merchant-resources' },
     { label: 'Settings', icon: '⚙️', route: '/settings' },
   ];
 
