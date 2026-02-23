@@ -11,16 +11,10 @@ return function (App $app): void {
 
     // ─── Super Admin: Merchant lifecycle + KYC review + commissions admin + payouts + resources admin ───
     $app->group('/api/admin/merchants', function (RouteCollectorProxy $g) {
-        // Merchant CRUD
+        // Merchant list
         $g->get('', [MerchantController::class, 'list']);
-        $g->get('/{id}', [MerchantController::class, 'show']);
-        $g->post('/{id}/approve', [MerchantController::class, 'approve']);
-        $g->post('/{id}/suspend', [MerchantController::class, 'suspend']);
-        $g->post('/{id}/terminate', [MerchantController::class, 'terminate']);
-        $g->get('/{id}/audit-log', [MerchantController::class, 'auditLog']);
 
-        // KYC review
-        $g->get('/{id}/kyc', [MerchantController::class, 'kycStatus']);
+        // KYC review (static paths first)
         $g->post('/kyc/{id}/review', [MerchantController::class, 'reviewKyc']);
         $g->get('/kyc/pending', [MerchantController::class, 'pendingKyc']);
 
@@ -54,6 +48,14 @@ return function (App $app): void {
 
         // Statements
         $g->post('/statements', [MerchantController::class, 'generateStatement']);
+
+        // Merchant detail (parameterized — must come after all static paths)
+        $g->get('/{id}', [MerchantController::class, 'show']);
+        $g->post('/{id}/approve', [MerchantController::class, 'approve']);
+        $g->post('/{id}/suspend', [MerchantController::class, 'suspend']);
+        $g->post('/{id}/terminate', [MerchantController::class, 'terminate']);
+        $g->get('/{id}/audit-log', [MerchantController::class, 'auditLog']);
+        $g->get('/{id}/kyc', [MerchantController::class, 'kycStatus']);
     })
         ->add(new RoleMiddleware(['super_admin']))
         ->add(AuthMiddleware::class);
