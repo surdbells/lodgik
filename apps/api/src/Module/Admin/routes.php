@@ -62,7 +62,6 @@ return function (App $app): void {
         $group->post('/apps/releases', [AdminController::class, 'createAppRelease']);
         $group->patch('/apps/releases/{id}/publish', [AdminController::class, 'publishRelease']);
         $group->patch('/apps/releases/{id}/deprecate', [AdminController::class, 'deprecateRelease']);
-        $group->get('/apps/analytics', [AdminController::class, 'appAnalytics']);
     })
         ->add(new RoleMiddleware(['super_admin']))
         ->add(AuthMiddleware::class);
