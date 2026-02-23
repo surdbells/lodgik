@@ -29,7 +29,7 @@ return function (App $app): void {
         ->add(AuthMiddleware::class);
 
     // Plan duplicate (super admin) — add to existing admin routes
-    $app->post('/api/admin/plans/{id}/duplicate', [FeatureController::class, 'duplicatePlan'])
+    /*$app->post('/api/admin/plans/{id}/duplicate', [FeatureController::class, 'duplicatePlan'])
         ->add(new RoleMiddleware(['super_admin']))
-        ->add(AuthMiddleware::class);
+        ->add(AuthMiddleware::class);*/
 };
