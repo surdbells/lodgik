@@ -1,1 +1,1 @@
-export const environment = { apiUrl: 'http://localhost:8080/api', production: false };
+export const environment = { apiUrl: 'https://api.lodgik.co/api', production: false };
