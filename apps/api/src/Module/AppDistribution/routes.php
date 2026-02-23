@@ -35,9 +35,9 @@ return function (App $app): void {
         ->add(AuthMiddleware::class);
 
     // Super Admin: analytics & installations
-    $app->get('/api/admin/apps/analytics', [AppDistributionController::class, 'analytics'])
+   /* $app->get('/api/admin/apps/analytics', [AppDistributionController::class, 'analytics'])
         ->add(new RoleMiddleware(['super_admin']))
-        ->add(AuthMiddleware::class);
+        ->add(AuthMiddleware::class); */
 
     $app->get('/api/admin/apps/installations', [AppDistributionController::class, 'installations'])
         ->add(new RoleMiddleware(['super_admin']))
