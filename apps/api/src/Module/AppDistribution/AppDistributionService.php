@@ -188,7 +188,7 @@ final class AppDistributionService
         $payload = "{$releaseId}:{$expires}";
         $signature = hash_hmac('sha256', $payload, $this->signingKey);
 
-        $baseUrl = $_ENV['APP_URL'] ?? 'https://api.lodgik.com';
+        $baseUrl = $_ENV['APP_URL'] ?? 'https://api.lodgik.co';
         $url = "{$baseUrl}/api/apps/download/{$releaseId}?expires={$expires}&signature={$signature}";
 
         return [

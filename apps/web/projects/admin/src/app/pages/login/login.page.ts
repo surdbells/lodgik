@@ -21,7 +21,7 @@ import { AuthService, ToastService } from '@lodgik/shared';
               <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input type="email" [(ngModel)]="email" name="email" required
                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                     placeholder="admin&#64;lodgik.com">
+                     placeholder="admin&#64;lodgik.co">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>

@@ -395,7 +395,7 @@ final class Phase9Test extends TestCase
     {
         $r = new MerchantResource();
         $r->setTitle('Sales Deck 2026');
-        $r->setFileUrl('https://files.lodgik.com/deck.pdf');
+        $r->setFileUrl('https://files.lodgik.co/deck.pdf');
         $r->setCategory('sales_deck');
         $r->setFileType('pdf');
         $r->setVersion('v2.0');
@@ -526,7 +526,7 @@ final class Phase9Test extends TestCase
         $s->setTotalEarned('50000.00');
         $s->setTotalPaid('30000.00');
         $s->setClosingBalance('20000.00');
-        $s->setFileUrl('https://files.lodgik.com/statement.pdf');
+        $s->setFileUrl('https://files.lodgik.co/statement.pdf');
         $this->assertSame('50000.00', $s->getTotalEarned());
         $this->assertSame('20000.00', $s->getClosingBalance());
     }

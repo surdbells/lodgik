@@ -264,7 +264,7 @@ final class ZeptoMailService
         string $inviteToken,
         ?string $contactName = null,
     ): bool {
-        $appUrl = $_ENV['APP_URL'] ?? 'https://app.lodgik.com';
+        $appUrl = $_ENV['APP_URL'] ?? 'https://app.lodgik.co';
         $inviteUrl = "{$appUrl}/onboarding/register?token={$inviteToken}";
 
         $html = str_replace(

@@ -62,9 +62,9 @@ if ((int)cnt($pdo, "SELECT COUNT(*) FROM users WHERE role = 'super_admin'") > 0 
     echo "   Skipped.\n\n";
 } else {
     $ptid = uuid();
-    ins($pdo, 'tenants', ['id'=>$ptid,'name'=>'Lodgik Platform','slug'=>'lodgik-platform','email'=>'admin@lodgik.com','subscription_status'=>'active','max_rooms'=>999,'max_staff'=>999,'max_properties'=>999,'enabled_modules'=>json_encode(['all']),'is_active'=>'true','created_at'=>$now,'updated_at'=>$now]);
-    ins($pdo, 'users', ['id'=>uuid(),'firstname'=>'Platform','lastname'=>'Admin','email'=>'admin@lodgik.com','password_hash'=>password_hash('LodgikAdmin2026!',PASSWORD_ARGON2ID),'role'=>'super_admin','tenant_id'=>$ptid,'is_active'=>'true','email_verified_at'=>$now,'created_at'=>$now,'updated_at'=>$now]);
-    echo "   ✅ admin@lodgik.com / LodgikAdmin2026!\n\n";
+    ins($pdo, 'tenants', ['id'=>$ptid,'name'=>'Lodgik Platform','slug'=>'lodgik-platform','email'=>'admin@lodgik.co','subscription_status'=>'active','max_rooms'=>999,'max_staff'=>999,'max_properties'=>999,'enabled_modules'=>json_encode(['all']),'is_active'=>'true','created_at'=>$now,'updated_at'=>$now]);
+    ins($pdo, 'users', ['id'=>uuid(),'firstname'=>'Platform','lastname'=>'Admin','email'=>'admin@lodgik.co','password_hash'=>password_hash('LodgikAdmin2026!',PASSWORD_ARGON2ID),'role'=>'super_admin','tenant_id'=>$ptid,'is_active'=>'true','email_verified_at'=>$now,'created_at'=>$now,'updated_at'=>$now]);
+    echo "   ✅ admin@lodgik.co / LodgikAdmin2026!\n\n";
 }
 
 // ─── Tenant 1: Grand Palace Hotel ──────────────────────────────
@@ -132,7 +132,7 @@ if ((int)cnt($pdo, "SELECT COUNT(*) FROM tenants WHERE slug = 'sunshine-lodge-ik
 echo "📊 Summary\n";
 foreach (['tenants','users','properties','property_bank_accounts','subscription_plans','user_properties'] as $t) echo "   {$t}: ".cnt($pdo,"SELECT COUNT(*) FROM {$t}")."\n";
 echo "\n🔑 Credentials\n";
-echo "   Super Admin:    admin@lodgik.com / LodgikAdmin2026!\n";
+echo "   Super Admin:    admin@lodgik.co / LodgikAdmin2026!\n";
 echo "   Grand Palace:   adebayo@grandpalace.ng / Demo1234!\n";
 echo "   Sunshine Lodge: ngozi@sunshinelodge.ng / Demo1234!\n";
 echo "\n✅ Complete!\n";

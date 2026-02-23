@@ -9,12 +9,12 @@ info:
   version: 1.0.0
   contact:
     name: Lodgik Support
-    email: support@lodgik.com
-    url: https://lodgik.com
+    email: support@lodgik.co
+    url: https://lodgik.co
 servers:
   - url: http://localhost:8080
     description: Development
-  - url: https://api.lodgik.com
+  - url: https://api.lodgik.co
     description: Production
 components:
   securitySchemes:

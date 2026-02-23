@@ -44,7 +44,7 @@ return [
 
     'zeptomail' => [
         'api_key' => $_ENV['ZEPTOMAIL_API_KEY'] ?? '',
-        'from_email' => $_ENV['ZEPTOMAIL_FROM_EMAIL'] ?? 'noreply@lodgik.com',
+        'from_email' => $_ENV['ZEPTOMAIL_FROM_EMAIL'] ?? 'noreply@lodgik.co',
         'from_name' => $_ENV['ZEPTOMAIL_FROM_NAME'] ?? 'Lodgik',
     ],
 

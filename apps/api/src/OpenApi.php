@@ -8,10 +8,10 @@ use OpenApi\Attributes as OA;
     title: "Lodgik Hotel Management System API",
     version: "1.0.0",
     description: "Comprehensive REST API for the Lodgik multi-tenant SaaS hotel management platform. Covers property management, guest services, finance, HR, F&B, merchant ecosystem, IoT, and more. **Authentication:** Bearer JWT token required for all endpoints except /api/health, /api/auth/login, /api/auth/register, and /api/subscriptions/webhook.",
-    contact: new OA\Contact(name: "Lodgik Support", email: "support@lodgik.com", url: "https://lodgik.com")
+    contact: new OA\Contact(name: "Lodgik Support", email: "support@lodgik.co", url: "https://lodgik.co")
 )]
 #[OA\Server(url: "http://localhost:8080", description: "Development")]
-#[OA\Server(url: "https://api.lodgik.com", description: "Production")]
+#[OA\Server(url: "https://api.lodgik.co", description: "Production")]
 #[OA\SecurityScheme(
     securityScheme: "bearerAuth",
     type: "http",

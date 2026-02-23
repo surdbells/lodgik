@@ -24,7 +24,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
             <div><label class="block text-xs font-medium text-gray-600 mb-1">API Key</label>
               <input [(ngModel)]="zeptomail.api_key" type="password" placeholder="zm-****" class="w-full px-3 py-2 border rounded-lg text-sm font-mono"></div>
             <div><label class="block text-xs font-medium text-gray-600 mb-1">From Email</label>
-              <input [(ngModel)]="zeptomail.from_email" placeholder="noreply@lodgik.com" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+              <input [(ngModel)]="zeptomail.from_email" placeholder="noreply@lodgik.co" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
             <div><label class="block text-xs font-medium text-gray-600 mb-1">From Name</label>
               <input [(ngModel)]="zeptomail.from_name" placeholder="Lodgik" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
           </div>
@@ -121,7 +121,7 @@ export class SettingsPage implements OnInit {
   loading = signal(true);
   config = signal<any>({});
 
-  zeptomail: any = { api_key: '', from_email: 'noreply@lodgik.com', from_name: 'Lodgik' };
+  zeptomail: any = { api_key: '', from_email: 'noreply@lodgik.co', from_name: 'Lodgik' };
   termii: any = { api_key: '', sender_id: 'Lodgik', default_channel: 'whatsapp' };
   paystack: any = { secret_key: '', public_key: '', webhook_secret: '' };
   defaults: any = { trial_days: 14, default_max_rooms: 10, default_max_staff: 5, default_currency: 'NGN' };
