@@ -39,6 +39,7 @@ return function (App $app): void {
         $g->post('/payouts/{id}/process', [MerchantController::class, 'processPayout']);
 
         // Resources (admin manage)
+        $g->get('/resources', [MerchantController::class, 'listResources']);
         $g->post('/resources', [MerchantController::class, 'createResource']);
         $g->post('/resources/{id}/archive', [MerchantController::class, 'archiveResource']);
         $g->get('/resources/{id}/analytics', [MerchantController::class, 'resourceAnalytics']);

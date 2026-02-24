@@ -235,10 +235,19 @@ final class MerchantController
     public function listPayouts(Request $req, Response $res): Response
     {
         $q = $req->getQueryParams();
-        $merchantId = $this->resolveMerchantId($req);
+        // Admin users won't have a merchant context
+        $merchantId = $req->getAttribute('auth.merchant_id');
+        if (!$merchantId) {
+            $userId = $req->getAttribute('auth.user_id');
+            if ($userId) {
+                $m = $this->service->getMerchantByUserId($userId);
+                if ($m) $merchantId = $m->getId();
+            }
+        }
         if ($merchantId) {
             return JsonResponse::ok($res, $this->service->listPayouts($merchantId));
         }
+        // Admin: return all payouts
         return JsonResponse::ok($res, $this->service->listAllPayouts($q['status'] ?? null));
     }
 

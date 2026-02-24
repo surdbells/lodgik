@@ -14,7 +14,7 @@ import { DonutChartComponent, BarChartComponent, ChartDataPoint } from '@lodgik/
         @if (t.is_active) {
           <button class="px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50" (click)="suspend()">Suspend</button>
         } @else {
-          <button class="px-3 py-1.5 text-sm text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50" (click)="activate()">Activate</button>
+          <button class="px-3 py-1.5 text-sm text-sage-600 border border-emerald-200 rounded-lg hover:bg-sage-50" (click)="activate()">Activate</button>
         }
         <button class="px-3 py-1.5 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50" (click)="impersonate()">🎭 Impersonate</button>
         <button class="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" (click)="router.navigate(['/tenants'])">← Back</button>
@@ -111,9 +111,9 @@ import { DonutChartComponent, BarChartComponent, ChartDataPoint } from '@lodgik/
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           @for (m of tenantModules(); track m.module_key) {
             <label class="flex items-center gap-2 px-2 py-1.5 rounded text-xs cursor-pointer hover:bg-gray-50"
-                   [class.bg-emerald-50]="m.is_enabled" [class.bg-gray-50]="!m.is_enabled">
-              <input type="checkbox" [checked]="m.is_enabled" (change)="toggleFeature(m)" class="rounded text-emerald-600" [disabled]="m.is_core">
-              <span>{{ m.icon || '📦' }} {{ m.name }}</span>
+                   [class.bg-sage-50]="m.is_enabled" [class.bg-gray-50]="!m.is_enabled">
+              <input type="checkbox" [checked]="m.is_enabled" (change)="toggleFeature(m)" class="rounded text-sage-600" [disabled]="m.is_core">
+              <span>{{ m.name }}</span>
               @if (m.is_core) { <span class="text-gray-400">(core)</span> }
             </label>
           }

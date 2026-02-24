@@ -68,7 +68,7 @@ export class CommissionConfigPage implements OnInit {
   form: any = { name: '', type: 'percentage', new_subscription_rate: '10.00', renewal_rate: '5.00', upgrade_rate: '8.00', description: '', is_default: false };
 
   ngOnInit(): void { this.load(); }
-  load(): void { this.api.get('/admin/merchants/tiers').subscribe({ next: (d: any) => { this.tiers.set(d); this.loading.set(false); } }); }
+  load(): void { this.api.get('/admin/merchants/tiers').subscribe({ next: (r: any) => { this.tiers.set(r.data || []); this.loading.set(false); }, error: () => this.loading.set(false) }); }
   save(): void {
     const obs = this.editId() ? this.api.put(`/admin/merchants/tiers/${this.editId()}`, this.form) : this.api.post('/admin/merchants/tiers', this.form);
     obs.subscribe({ next: () => { this.toast.success(this.editId() ? 'Tier updated' : 'Tier created'); this.cancel(); this.load(); } });

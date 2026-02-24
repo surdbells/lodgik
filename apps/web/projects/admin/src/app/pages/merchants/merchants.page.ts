@@ -77,9 +77,9 @@ export class MerchantsPage implements OnInit {
   filters = [{ label: 'All', value: '' }, { label: 'Pending', value: 'pending_approval' }, { label: 'KYC', value: 'kyc_in_progress' }, { label: 'Active', value: 'active' }, { label: 'Suspended', value: 'suspended' }];
 
   ngOnInit(): void { this.load(); }
-  load(): void { this.api.get(`/admin/merchants?status=${this.filterStatus()}&search=${this.search}`).subscribe({ next: (d: any) => { this.merchants.set(d); this.loading.set(false); } }); }
+  load(): void { this.api.get(`/admin/merchants?status=${this.filterStatus()}&search=${this.search}`).subscribe({ next: (r: any) => { this.merchants.set(r.data || []); this.loading.set(false); }, error: () => this.loading.set(false) }); }
   approve(id: string): void { this.api.post(`/admin/merchants/${id}/approve`, {}).subscribe({ next: () => { this.toast.success('Merchant approved'); this.load(); } }); }
   suspend(id: string): void { this.api.post(`/admin/merchants/${id}/suspend`, { reason: 'Admin action' }).subscribe({ next: () => { this.toast.success('Merchant suspended'); this.load(); } }); }
-  viewDetail(m: any): void { this.api.get(`/admin/merchants/${m.id}`).subscribe({ next: (d: any) => this.detail.set(d) }); }
+  viewDetail(m: any): void { this.api.get(`/admin/merchants/${m.id}`).subscribe({ next: (r: any) => this.detail.set(r.data) }); }
   statusVariant(s: string): 'success' | 'danger' | 'warning' | 'info' | 'neutral' { return ({ active: 'success', suspended: 'danger', terminated: 'danger', pending_approval: 'warning', kyc_in_progress: 'info' } as any)[s] || 'neutral'; }
 }

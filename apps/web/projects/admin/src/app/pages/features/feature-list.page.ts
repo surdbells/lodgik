@@ -43,7 +43,7 @@ export class FeatureListPage implements OnInit {
   categories = signal<any[]>([]);
 
   ngOnInit(): void {
-    this.api.get('/features').subscribe({
+    this.api.get('/features/modules').subscribe({
       next: res => {
         if (res.success) {
           const byCategory: Record<string, any[]> = {};

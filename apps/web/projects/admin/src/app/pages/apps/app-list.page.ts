@@ -100,19 +100,19 @@ export class AppListPage implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    const url = this.filterType ? `/admin/apps/releases?app_type=${this.filterType}` : '/admin/apps/releases';
+    const url = this.filterType ? `/admin/releases?app_type=${this.filterType}` : '/admin/releases';
     this.api.get(url).subscribe({ next: r => { this.releases.set(r.data || []); this.filteredReleases.set(r.data || []); this.loading.set(false); }, error: () => this.loading.set(false) });
   }
 
   countByType(type: string): number { return this.releases().filter(r => r.app_type === type).length; }
 
   createRelease(): void {
-    this.api.post('/admin/apps/releases', this.uploadForm).subscribe({ next: r => {
+    this.api.post('/admin/releases', this.uploadForm).subscribe({ next: r => {
       if (r.success) { this.toast.success('Release created'); this.showUpload = false; this.load(); }
       else this.toast.error(r.message || 'Failed');
     }, error: () => this.toast.error('Failed') });
   }
 
-  publish(r: any): void { this.api.patch(`/admin/apps/releases/${r.id}/publish`).subscribe({ next: () => { this.toast.success('Published'); this.load(); } }); }
-  deprecate(r: any): void { this.api.patch(`/admin/apps/releases/${r.id}/deprecate`).subscribe({ next: () => { this.toast.success('Deprecated'); this.load(); } }); }
+  publish(r: any): void { this.api.post(`/admin/releases/${r.id}/publish`).subscribe({ next: () => { this.toast.success('Published'); this.load(); } }); }
+  deprecate(r: any): void { this.api.post(`/admin/releases/${r.id}/deprecate`).subscribe({ next: () => { this.toast.success('Deprecated'); this.load(); } }); }
 }

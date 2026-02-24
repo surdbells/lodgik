@@ -77,14 +77,14 @@ export class MerchantResourcesPage implements OnInit {
   form: any = { title: '', file_url: '', category: 'user_manual', file_type: 'pdf', version: 'v1.0', visibility: 'merchant', description: '' };
 
   ngOnInit(): void { this.load(); }
-  load(): void { this.api.get('/admin/merchants/resources').subscribe({ next: () => {}, error: () => {} }); this.loadResources(); }
+  load(): void { this.loadResources(); }
   loadResources(): void {
     // Resources are listed from merchant endpoint
     this.api.get('/admin/merchants/tiers').subscribe({ error: () => {} }); // Preload
     // For now, show empty; resources are managed via the createResource admin endpoint
     this.loading.set(false);
     // Try to list resources through a general approach
-    this.api.get('/merchant/resources').subscribe({ next: (d: any) => this.resources.set(d), error: () => {} });
+    this.api.get('/admin/merchants/resources').subscribe({ next: (r: any) => { this.resources.set(r.data || []); this.loading.set(false); }, error: () => this.loading.set(false) });
   }
   upload(): void {
     this.api.post('/admin/merchants/resources', this.form).subscribe({

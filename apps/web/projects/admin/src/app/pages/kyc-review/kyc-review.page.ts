@@ -50,7 +50,7 @@ export class KycReviewPage implements OnInit {
   rejectReason = '';
 
   ngOnInit(): void { this.load(); }
-  load(): void { this.api.get('/admin/merchants/kyc/pending').subscribe({ next: (d: any) => { this.pending.set(d); this.loading.set(false); } }); }
+  load(): void { this.api.get('/admin/merchants/kyc/pending').subscribe({ next: (r: any) => { this.pending.set(r.data || []); this.loading.set(false); }, error: () => this.loading.set(false) }); }
   review(id: string, status: string): void {
     this.api.post(`/admin/merchants/kyc/${id}/review`, { status, reason: this.rejectReason || undefined }).subscribe({
       next: () => { this.toast.success(`KYC ${status}`); this.rejectReason = ''; this.load(); },

@@ -84,7 +84,7 @@ export class PayoutProcessingPage implements OnInit {
   filters = [{ label: 'All', value: '' }, { label: 'Pending', value: 'pending' }, { label: 'Paid', value: 'paid' }, { label: 'Failed', value: 'failed' }];
 
   ngOnInit(): void { this.load(); }
-  load(): void { this.api.get(`/admin/merchants/payouts?status=${this.filterStatus()}`).subscribe({ next: (d: any) => { this.payouts.set(d); this.loading.set(false); } }); }
+  load(): void { this.api.get(`/admin/merchants/payouts?status=${this.filterStatus()}`).subscribe({ next: (r: any) => { this.payouts.set(r.data || []); this.loading.set(false); }, error: () => this.loading.set(false) }); }
   generate(): void {
     this.api.post('/admin/merchants/payouts', this.genForm).subscribe({
       next: () => { this.toast.success('Payout generated'); this.showGenerate.set(false); this.load(); },

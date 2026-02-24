@@ -75,7 +75,6 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
                            [disabled]="m.is_core"
                            (change)="toggleModule(m.module_key, m)"
                            class="rounded text-sage-600">
-                    <span>{{ m.icon || '📦' }}</span>
                     <span class="truncate">{{ m.name }}</span>
                     @if (m.is_core) { <span class="text-gray-400">(core)</span> }
                   </label>
