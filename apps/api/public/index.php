@@ -15,10 +15,11 @@ $dotenv->safeLoad();
 $containerBuilder = new ContainerBuilder();
 
 // Enable compilation in production for performance
-$appEnv = $_ENV['APP_ENV'] ?? ($_SERVER['APP_ENV'] ?? 'production');
-if ($appEnv !== 'development') {
-    $containerBuilder->enableCompilation(__DIR__ . '/../var/cache');
-}
+// TEMPORARILY DISABLED: Force fresh container rebuild after entity fixes
+// $appEnv = $_ENV['APP_ENV'] ?? ($_SERVER['APP_ENV'] ?? 'production');
+// if ($appEnv !== 'development') {
+//     $containerBuilder->enableCompilation(__DIR__ . '/../var/cache');
+// }
 
 // Load dependency definitions
 (require __DIR__ . '/../config/dependencies.php')($containerBuilder);
