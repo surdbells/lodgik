@@ -13,65 +13,63 @@ try {
     (require __DIR__ . '/../config/dependencies.php')($cb);
     $container = $cb->build();
 
-    $app = Slim\Factory\AppFactory::createFromContainer($container);
-    (require __DIR__ . '/../config/routes.php')($app);
-    $app->addRoutingMiddleware();
-    (require __DIR__ . '/../config/middleware.php')($app);
-
+    // Directly call the controller method, bypassing middleware
     $em = $container->get(Doctrine\ORM\EntityManagerInterface::class);
     $conn = $em->getConnection();
+
+    // Test 1: Direct service call
+    $svc = $container->get(Lodgik\Module\Merchant\MerchantService::class);
+    $results['service_listMerchants'] = 'OK: ' . count($svc->listMerchants()) . ' rows';
+    $results['service_listTiers'] = 'OK: ' . count($svc->listTiers()) . ' rows';
+    $results['service_listPendingKyc'] = 'OK: ' . count($svc->listPendingKyc()) . ' rows';
+    $results['service_listResources'] = 'OK: ' . count($svc->listResources()) . ' rows';
+    $results['service_listAllPayouts'] = 'OK: ' . count($svc->listAllPayouts()) . ' rows';
+
+    // Test 2: Direct controller call with mocked request
+    $ctrl = $container->get(Lodgik\Module\Merchant\MerchantController::class);
+    
+    // Create a mock request with auth attributes
     $admin = $conn->fetchAssociative("SELECT id, role, tenant_id FROM users WHERE role = 'super_admin' LIMIT 1");
+    
+    $factory = new Slim\Psr7\Factory\ServerRequestFactory();
+    $req = $factory->createServerRequest('GET', '/api/admin/merchants?status=&search=');
+    $req = $req
+        ->withAttribute('auth.user_id', $admin['id'])
+        ->withAttribute('auth.tenant_id', $admin['tenant_id'])
+        ->withAttribute('auth.role', $admin['role'])
+        ->withQueryParams(['status' => '', 'search' => '']);
+    
+    $res = new Slim\Psr7\Response();
+    
+    $response = $ctrl->list($req, $res);
+    $results['controller_list'] = 'HTTP ' . $response->getStatusCode() . ': ' . substr((string)$response->getBody(), 0, 200);
 
-    if (!$admin) { echo json_encode(['error' => 'No super_admin']); exit; }
+    // Test tiers
+    $req2 = $factory->createServerRequest('GET', '/api/admin/merchants/tiers');
+    $req2 = $req2->withAttribute('auth.user_id', $admin['id']);
+    $res2 = new Slim\Psr7\Response();
+    $response2 = $ctrl->listTiers($req2, $res2);
+    $results['controller_tiers'] = 'HTTP ' . $response2->getStatusCode();
 
-    // Generate proper JWT with type claim
-    $jwt = $container->get('settings')['jwt'];
-    $payload = [
-        'iss' => $jwt['issuer'] ?? 'lodgik',
-        'sub' => $admin['id'],
-        'role' => $admin['role'],
-        'tenant_id' => $admin['tenant_id'],
-        'type' => 'access',
-        'iat' => time(),
-        'exp' => time() + 900,
-    ];
-    $token = Firebase\JWT\JWT::encode($payload, $jwt['secret'], 'HS256');
-
-    // Test each failing endpoint
-    $endpoints = [
-        '/api/admin/merchants?status=&search=',
-        '/api/admin/merchants/kyc/pending',
-        '/api/admin/merchants/tiers',
-        '/api/admin/merchants/payouts?status=',
-        '/api/admin/merchants/resources',
-    ];
-
-    foreach ($endpoints as $ep) {
-        try {
-            $req = (new Slim\Psr7\Factory\ServerRequestFactory())
-                ->createServerRequest('GET', $ep);
-            $req = $req
-                ->withHeader('Content-Type', 'application/json')
-                ->withHeader('Authorization', 'Bearer ' . $token);
-
-            $resp = $app->handle($req);
-            $body = (string)$resp->getBody();
-            $status = $resp->getStatusCode();
-            $results[$ep] = [
-                'status' => $status,
-                'body' => json_decode($body, true) ?? substr($body, 0, 300),
-            ];
-        } catch (\Throwable $e) {
-            $results[$ep] = [
-                'error' => $e->getMessage(),
-                'file' => basename($e->getFile()) . ':' . $e->getLine(),
-            ];
-        }
-    }
+    // Test payouts
+    $req3 = $factory->createServerRequest('GET', '/api/admin/merchants/payouts?status=');
+    $req3 = $req3
+        ->withAttribute('auth.user_id', $admin['id'])
+        ->withAttribute('auth.role', 'super_admin')
+        ->withQueryParams(['status' => '']);
+    $res3 = new Slim\Psr7\Response();
+    $response3 = $ctrl->listPayouts($req3, $res3);
+    $results['controller_payouts'] = 'HTTP ' . $response3->getStatusCode();
 
 } catch (\Throwable $e) {
-    $results['fatal'] = $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
-    if ($p = $e->getPrevious()) $results['caused_by'] = $p->getMessage();
+    $results['ERROR'] = $e->getMessage();
+    $results['file'] = $e->getFile() . ':' . $e->getLine();
+    $results['trace'] = array_slice(array_map(fn($t) =>
+        basename($t['file'] ?? '?') . ':' . ($t['line'] ?? '?') . ' ' . ($t['class'] ?? '') . ($t['type'] ?? '') . ($t['function'] ?? ''),
+        $e->getTrace()), 0, 15);
+    if ($p = $e->getPrevious()) {
+        $results['caused_by'] = $p->getMessage();
+    }
 }
 
 echo json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
