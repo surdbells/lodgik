@@ -141,7 +141,7 @@ export class HotelLayoutComponent implements OnInit {
 
   notificationCount = signal(0);
 
-  propertyName = computed(() => this.user()?.property_name || this.branding().appName || 'My Hotel');
+  propertyName = computed(() => this.branding().appName || 'My Hotel');
   propertyInitial = computed(() => this.propertyName().charAt(0).toUpperCase());
   staffRole = computed(() => {
     const role = this.user()?.role;
