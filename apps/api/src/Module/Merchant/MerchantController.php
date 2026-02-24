@@ -33,6 +33,21 @@ final class MerchantController
         return JsonResponse::created($res, $merchant->toArray());
     }
 
+    /** Admin-initiated merchant onboarding */
+    public function adminRegister(Request $req, Response $res): Response
+    {
+        $body = (array) ($req->getParsedBody() ?? []);
+        $required = ['legal_name', 'business_name', 'email'];
+        foreach ($required as $f) {
+            if (empty($body[$f])) {
+                return JsonResponse::validationError($res, [$f => "$f is required"]);
+            }
+        }
+        $body['user_id'] = $body['user_id'] ?? $req->getAttribute('auth.user_id');
+        $merchant = $this->service->registerMerchant($body);
+        return JsonResponse::created($res, $merchant->toArray());
+    }
+
     public function list(Request $req, Response $res): Response
     {
         $q = $req->getQueryParams();

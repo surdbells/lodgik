@@ -63,6 +63,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/merchants/merchants.page').then(m => m.MerchantsPage),
       },
       {
+        path: 'merchants/:id',
+        loadComponent: () => import('./pages/merchant-detail/merchant-detail.page').then(m => m.MerchantDetailPage),
+      },
+      {
         path: 'kyc-review',
         loadComponent: () => import('./pages/kyc-review/kyc-review.page').then(m => m.KycReviewPage),
       },

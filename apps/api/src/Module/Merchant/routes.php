@@ -11,8 +11,9 @@ return function (App $app): void {
 
     // ─── Super Admin: Merchant lifecycle + KYC review + commissions admin + payouts + resources admin ───
     $app->group('/api/admin/merchants', function (RouteCollectorProxy $g) {
-        // Merchant list
+        // Merchant list + onboard
         $g->get('', [MerchantController::class, 'list']);
+        $g->post('', [MerchantController::class, 'adminRegister']);
 
         // KYC review (static paths first)
         $g->post('/kyc/{id}/review', [MerchantController::class, 'reviewKyc']);
