@@ -46,6 +46,6 @@ export class CommissionsPage implements OnInit {
   filterStatus = signal<string>('');
   filters = [{ label: 'All', value: '' }, { label: 'Pending', value: 'pending' }, { label: 'Approved', value: 'approved' }, { label: 'Paid', value: 'paid' }, { label: 'Reversed', value: 'reversed' }];
 
-  ngOnInit(): void { this.api.earnings().subscribe({ next: (e: any) => this.earnings.set(e) }); this.loadCommissions(); }
-  loadCommissions(): void { this.api.listCommissions(this.filterStatus() ? { status: this.filterStatus() } : {}).subscribe({ next: (c: any[]) => { this.commissions.set(c); this.loading.set(false); } }); }
+  ngOnInit(): void { this.api.earnings().subscribe({ next: (e: any) => this.earnings.set(e), error: () => {} }); this.loadCommissions(); }
+  loadCommissions(): void { this.api.listCommissions(this.filterStatus() ? { status: this.filterStatus() } : {}).subscribe({ next: (c: any[]) => { this.commissions.set(c || []); this.loading.set(false); }, error: () => this.loading.set(false) }); }
 }

@@ -68,7 +68,7 @@ export class HotelsPage implements OnInit {
   form: any = { hotel_name: '', location: '', contact_person: '', contact_phone: '', contact_email: '', rooms_count: 0, hotel_category: 'budget' };
 
   ngOnInit(): void { this.load(); }
-  load(): void { this.api.listHotels().subscribe({ next: (h: any[]) => { this.hotels.set(h); this.loading.set(false); } }); }
+  load(): void { this.api.listHotels().subscribe({ next: (h: any[]) => { this.hotels.set(h || []); this.loading.set(false); }, error: () => this.loading.set(false) }); }
   register(): void {
     this.api.registerHotel(this.form).subscribe({ next: () => {
       this.toast.success('Hotel registered successfully'); this.showForm.set(false);

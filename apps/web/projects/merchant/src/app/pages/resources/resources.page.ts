@@ -41,7 +41,7 @@ export class ResourcesPage implements OnInit {
   categories = [{ label: 'All', value: '' }, { label: 'Sales Deck', value: 'sales_deck' }, { label: 'User Manual', value: 'user_manual' }, { label: 'Marketing', value: 'marketing' }, { label: 'Training', value: 'training' }];
 
   ngOnInit(): void { this.load(); }
-  load(): void { this.api.listResources(this.filterCat() ? { category: this.filterCat() } : {}).subscribe({ next: (r: any[]) => { this.resources.set(r); this.loading.set(false); } }); }
-  download(r: any): void { this.api.downloadResource(r.id).subscribe({ next: (d: any) => { window.open(d.file_url, '_blank'); this.toast.success('Download started'); } }); }
+  load(): void { this.api.listResources(this.filterCat() ? { category: this.filterCat() } : {}).subscribe({ next: (r: any[]) => { this.resources.set(r || []); this.loading.set(false); }, error: () => this.loading.set(false) }); }
+  download(r: any): void { this.api.downloadResource(r.id).subscribe({ next: (d: any) => { window.open(d.file_url, '_blank'); this.toast.success('Download started'); }, error: () => this.toast.error('Download failed') }); }
   fileIcon(type: string): string { return { pdf: '📄', doc: '📝', docx: '📝', pptx: '📊', xlsx: '📈', zip: '📦', mp4: '🎬' }[type] || '📁'; }
 }

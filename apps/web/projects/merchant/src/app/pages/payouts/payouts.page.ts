@@ -40,7 +40,7 @@ export class PayoutsPage implements OnInit {
   private api = inject(MerchantApiService);
   loading = signal(true); payouts = signal<any[]>([]); statements = signal<any[]>([]);
   ngOnInit(): void {
-    this.api.listPayouts().subscribe({ next: (p: any[]) => this.payouts.set(p) });
-    this.api.listStatements().subscribe({ next: (s: any[]) => { this.statements.set(s); this.loading.set(false); } });
+    this.api.listPayouts().subscribe({ next: (p: any[]) => this.payouts.set(p || []), error: () => {} });
+    this.api.listStatements().subscribe({ next: (s: any[]) => { this.statements.set(s || []); this.loading.set(false); }, error: () => this.loading.set(false) });
   }
 }

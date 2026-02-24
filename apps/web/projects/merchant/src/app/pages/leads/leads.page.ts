@@ -73,7 +73,7 @@ export class LeadsPage implements OnInit {
   statusFilters = [{ label: 'All', value: '' }, { label: 'Lead', value: 'lead' }, { label: 'Contacted', value: 'contacted' }, { label: 'Demo', value: 'demo' }, { label: 'Converted', value: 'converted' }];
 
   ngOnInit(): void { this.load(); }
-  load(): void { this.api.listLeads(this.filterStatus() || undefined).subscribe({ next: (l: any[]) => { this.leads.set(l); this.loading.set(false); } }); }
+  load(): void { this.api.listLeads(this.filterStatus() || undefined).subscribe({ next: (l: any[]) => { this.leads.set(l || []); this.loading.set(false); }, error: () => this.loading.set(false) }); }
   create(): void {
     this.api.createLead(this.form).subscribe({ next: () => {
       this.toast.success('Lead created'); this.showForm.set(false);

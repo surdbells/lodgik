@@ -50,6 +50,6 @@ export class HotelDetailPage implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id')!;
-    this.api.hotelDetail(id).subscribe({ next: (h: any) => { this.hotel.set(h); this.loading.set(false); } });
+    this.api.hotelDetail(id).subscribe({ next: (h: any) => { this.hotel.set(h); this.loading.set(false); }, error: () => this.loading.set(false) });
   }
 }

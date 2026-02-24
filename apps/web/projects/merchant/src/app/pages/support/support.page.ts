@@ -60,7 +60,7 @@ export class SupportPage implements OnInit {
   form: any = { subject: '', description: '', priority_tag: 'sales' };
 
   ngOnInit(): void { this.load(); }
-  load(): void { this.api.listTickets().subscribe({ next: (t: any[]) => { this.tickets.set(t); this.loading.set(false); } }); }
+  load(): void { this.api.listTickets().subscribe({ next: (t: any[]) => { this.tickets.set(t || []); this.loading.set(false); }, error: () => this.loading.set(false) }); }
   create(): void {
     this.api.createTicket(this.form).subscribe({ next: () => {
       this.toast.success('Ticket created'); this.showForm.set(false); this.form = { subject: '', description: '', priority_tag: 'sales' }; this.load();

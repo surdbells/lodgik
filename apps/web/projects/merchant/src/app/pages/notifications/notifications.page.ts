@@ -36,8 +36,8 @@ export class NotificationsPage implements OnInit {
   private toast = inject(ToastService);
   loading = signal(true); notifications = signal<any[]>([]);
 
-  ngOnInit(): void { this.api.listNotifications().subscribe({ next: (n: any[]) => { this.notifications.set(n); this.loading.set(false); } }); }
-  markRead(n: any): void { if (!n.is_read) { this.api.markRead(n.id).subscribe({ next: () => { n.is_read = true; } }); } }
-  markAll(): void { this.api.markAllRead().subscribe({ next: () => { this.notifications().forEach(n => n.is_read = true); this.toast.success('All notifications marked read'); } }); }
+  ngOnInit(): void { this.api.listNotifications().subscribe({ next: (n: any[]) => { this.notifications.set(n || []); this.loading.set(false); }, error: () => this.loading.set(false) }); }
+  markRead(n: any): void { if (!n.is_read) { this.api.markRead(n.id).subscribe({ next: () => { n.is_read = true; }, error: () => {} }); } }
+  markAll(): void { this.api.markAllRead().subscribe({ next: () => { this.notifications().forEach(n => n.is_read = true); this.toast.success('All notifications marked read'); }, error: () => {} }); }
   typeIcon(type: string): string { return { commission_approved: '💰', commission_paid: '🏦', kyc_update: '📋', new_resource: '📁', policy_change: '⚠️' }[type] || '🔔'; }
 }

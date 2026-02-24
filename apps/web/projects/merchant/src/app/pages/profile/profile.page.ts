@@ -93,8 +93,8 @@ export class ProfilePage implements OnInit {
   bankForm: any = { bank_name: '', account_name: '', account_number: '' };
 
   ngOnInit(): void {
-    this.api.profile().subscribe({ next: (p: any) => { this.profile.set(p); this.kyc.set(p.kyc || {}); this.loading.set(false); } });
+    this.api.profile().subscribe({ next: (p: any) => { this.profile.set(p); this.kyc.set(p.kyc || {}); this.loading.set(false); }, error: () => this.loading.set(false) });
   }
-  submitKyc(): void { this.api.submitKyc(this.kycForm).subscribe({ next: () => { this.toast.success('KYC submitted for review'); this.ngOnInit(); } }); }
-  addBank(): void { this.api.addBank(this.bankForm).subscribe({ next: () => { this.toast.success('Bank account added'); this.ngOnInit(); } }); }
+  submitKyc(): void { this.api.submitKyc(this.kycForm).subscribe({ next: () => { this.toast.success('KYC submitted for review'); this.ngOnInit(); }, error: (e: any) => this.toast.error(e?.error?.message || 'KYC submission failed') }); }
+  addBank(): void { this.api.addBank(this.bankForm).subscribe({ next: () => { this.toast.success('Bank account added'); this.ngOnInit(); }, error: (e: any) => this.toast.error(e?.error?.message || 'Failed to add bank') }); }
 }
