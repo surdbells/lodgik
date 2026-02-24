@@ -13,7 +13,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
         @if (emp()?.employment_status === 'active' || emp()?.employment_status === 'probation') {
           <button (click)="showTerminate = true" class="bg-red-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-red-700">Terminate</button>
         }
-        <button (click)="editing = !editing" class="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-700">{{ editing ? 'Cancel' : 'Edit' }}</button>
+        <button (click)="editing = !editing" class="bg-sage-600 text-white px-4 py-2 text-sm rounded-xl hover:bg-sage-700 transition-colors">{{ editing ? 'Cancel' : 'Edit' }}</button>
       </div>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
@@ -108,14 +108,14 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
 
       @if (editing) {
         <div class="flex justify-end mt-4">
-          <button (click)="save()" class="bg-blue-600 text-white px-6 py-2 text-sm rounded-lg hover:bg-blue-700">Save Changes</button>
+          <button (click)="save()" class="bg-sage-600 text-white px-6 py-2 text-sm rounded-xl hover:bg-sage-700 transition-colors">Save Changes</button>
         </div>
       }
     }
 
     @if (showTerminate) {
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" (click)="showTerminate = false">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold text-red-600 mb-4">⚠️ Terminate Employee</h3>
           <textarea [(ngModel)]="terminateReason" placeholder="Reason for termination *" rows="3" class="border rounded-lg px-3 py-2 text-sm w-full mb-3"></textarea>
           <input [(ngModel)]="terminateDate" type="date" class="border rounded-lg px-3 py-2 text-sm w-full mb-3" />

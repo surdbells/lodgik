@@ -19,7 +19,7 @@ import { AuthService } from '@lodgik/shared';
     @if (!loading() && room()) {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Room Info Card -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-14 h-14 rounded-xl flex items-center justify-center text-white text-xl font-bold"
                  [style.background-color]="room()!.status_color">
@@ -58,11 +58,11 @@ import { AuthService } from '@lodgik/shared';
         <!-- Current Booking + Amenities -->
         <div class="space-y-6">
           <!-- Current Booking -->
-          <div class="bg-white rounded-lg border border-gray-200 p-5">
+          <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">Current Booking</h3>
             @if (currentBooking()) {
               <div class="space-y-2 text-sm">
-                <div class="flex justify-between"><span class="text-gray-400">Ref</span><a [routerLink]="['/bookings', currentBooking()!.id]" class="font-medium text-blue-600 hover:underline">{{ currentBooking()!.booking_ref }}</a></div>
+                <div class="flex justify-between"><span class="text-gray-400">Ref</span><a [routerLink]="['/bookings', currentBooking()!.id]" class="font-medium text-sage-600 hover:underline">{{ currentBooking()!.booking_ref }}</a></div>
                 <div class="flex justify-between"><span class="text-gray-400">Guest</span><span class="font-medium">{{ currentBooking()!.guest_id }}</span></div>
                 <div class="flex justify-between"><span class="text-gray-400">Status</span><span class="px-2 py-0.5 rounded-full text-xs font-medium text-white" [style.background-color]="currentBooking()!.status_color">{{ currentBooking()!.status_label }}</span></div>
                 <div class="flex justify-between"><span class="text-gray-400">Check-in</span><span class="font-medium">{{ currentBooking()!.check_in | date:'mediumDate' }}</span></div>
@@ -75,12 +75,12 @@ import { AuthService } from '@lodgik/shared';
           </div>
 
           <!-- Amenities -->
-          <div class="bg-white rounded-lg border border-gray-200 p-5">
+          <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">Amenities</h3>
             @if (amenitiesList().length > 0) {
               <div class="flex flex-wrap gap-2">
                 @for (a of amenitiesList(); track a) {
-                  <span class="inline-block px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">{{ a }}</span>
+                  <span class="inline-block px-2.5 py-1 bg-sage-50 text-sage-700 text-xs font-medium rounded-full">{{ a }}</span>
                 }
               </div>
             } @else {
@@ -90,7 +90,7 @@ import { AuthService } from '@lodgik/shared';
         </div>
 
         <!-- Status History -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-4">Status History</h3>
           <div class="space-y-0 max-h-[400px] overflow-y-auto">
             @for (log of statusHistory(); track log.id) {

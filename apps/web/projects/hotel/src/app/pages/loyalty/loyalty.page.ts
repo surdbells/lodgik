@@ -5,8 +5,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
   template: `
     <ui-page-header title="Loyalty & Promotions" subtitle="CRM loyalty tiers, points, and promotional codes">
       <div class="flex gap-2">
-        <button (click)="tab = 'tiers'" [class]="tab === 'tiers' ? 'bg-blue-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Tiers</button>
-        <button (click)="tab = 'promos'" [class]="tab === 'promos' ? 'bg-blue-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Promotions</button>
+        <button (click)="tab = 'tiers'" [class]="tab === 'tiers' ? 'bg-sage-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Tiers</button>
+        <button (click)="tab = 'promos'" [class]="tab === 'promos' ? 'bg-sage-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Promotions</button>
       </div>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
@@ -15,7 +15,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
         @for (t of tiers(); track t.id) {
           <div class="bg-white rounded-lg border p-4 text-center" [style.border-left-color]="t.color || '#ccc'" style="border-left-width: 4px">
             <p class="text-lg font-bold">{{t.name}}</p><p class="text-sm text-gray-500">{{t.min_points}} pts min</p>
-            <p class="text-2xl font-bold text-blue-600 mt-2">{{t.discount_percentage}}%</p><p class="text-xs text-gray-400">discount</p>
+            <p class="text-2xl font-bold text-sage-600 mt-2">{{t.discount_percentage}}%</p><p class="text-xs text-gray-400">discount</p>
           </div>
         } @empty { <p class="col-span-5 text-center text-gray-400 py-8">No loyalty tiers configured</p> }
       </div>
@@ -26,7 +26,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
         <th class="px-4 py-3 text-right">Value</th><th class="px-4 py-3 text-left">Period</th><th class="px-4 py-3 text-center">Used</th><th class="px-4 py-3 text-center">Active</th>
       </tr></thead><tbody>
         @for (p of promos(); track p.id) {
-          <tr class="border-t hover:bg-gray-50"><td class="px-4 py-3 font-mono font-bold text-blue-600">{{p.code}}</td><td class="px-4 py-3">{{p.name}}</td><td class="px-4 py-3">{{p.type}}</td>
+          <tr class="border-t hover:bg-gray-50"><td class="px-4 py-3 font-mono font-bold text-sage-600">{{p.code}}</td><td class="px-4 py-3">{{p.name}}</td><td class="px-4 py-3">{{p.type}}</td>
             <td class="px-4 py-3 text-right">{{p.type === 'percentage' ? p.value + '%' : '₦' + ((+p.value)/100).toLocaleString()}}</td>
             <td class="px-4 py-3">{{p.start_date}} → {{p.end_date}}</td><td class="px-4 py-3 text-center">{{p.usage_count}}{{p.usage_limit ? '/' + p.usage_limit : ''}}</td>
             <td class="px-4 py-3 text-center"><span [class]="p.is_active ? 'text-green-600' : 'text-gray-400'">{{p.is_active ? '●' : '○'}}</span></td></tr>

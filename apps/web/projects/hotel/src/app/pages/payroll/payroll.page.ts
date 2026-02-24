@@ -8,8 +8,8 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Payroll" subtitle="Monthly payroll processing & payslips">
-      <button (click)="showCreate = true" class="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-700">+ New Payroll</button>
+    <ui-page-header title="Payroll" icon="💵" [breadcrumbs]="['Human Resources', 'Payroll']" subtitle="Monthly payroll processing & payslips">
+      <button (click)="showCreate = true" class="bg-sage-600 text-white px-4 py-2 text-sm rounded-xl hover:bg-sage-700 transition-colors">+ New Payroll</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
@@ -35,7 +35,7 @@ import { AuthService } from '@lodgik/shared';
                 <td class="px-4 py-3 text-right font-medium text-green-600">₦{{ fmt(p.total_net) }}</td>
                 <td class="px-4 py-3">
                   @if (p.status === 'draft' || p.status === 'calculated') {
-                    <button (click)="calculate(p.id); $event.stopPropagation()" class="text-blue-600 hover:underline text-xs mr-2">Calculate</button>
+                    <button (click)="calculate(p.id); $event.stopPropagation()" class="text-sage-600 hover:underline text-xs mr-2">Calculate</button>
                   }
                   @if (p.status === 'calculated') {
                     <button (click)="review(p.id); $event.stopPropagation()" class="text-purple-600 hover:underline text-xs mr-2">Review</button>
@@ -59,7 +59,7 @@ import { AuthService } from '@lodgik/shared';
     <!-- Period Detail View -->
     @if (selectedPeriod()) {
       <div class="mb-4">
-        <button (click)="selectedPeriod.set(null); payslips.set([])" class="text-blue-600 hover:underline text-sm">← Back to list</button>
+        <button (click)="selectedPeriod.set(null); payslips.set([])" class="text-sage-600 hover:underline text-sm">← Back to list</button>
       </div>
 
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
@@ -79,9 +79,9 @@ import { AuthService } from '@lodgik/shared';
           <p class="text-xs text-purple-600 font-medium">NHF (2.5%)</p>
           <p class="text-lg font-bold text-purple-700">₦{{ fmt(selectedPeriod()!.total_nhf) }}</p>
         </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-          <p class="text-xs text-blue-600 font-medium">PAYE Tax</p>
-          <p class="text-lg font-bold text-blue-700">₦{{ fmt(selectedPeriod()!.total_tax) }}</p>
+        <div class="bg-sage-50 border border-sage-200 rounded-xl p-4 text-center">
+          <p class="text-xs text-sage-600 font-medium">PAYE Tax</p>
+          <p class="text-lg font-bold text-sage-700">₦{{ fmt(selectedPeriod()!.total_tax) }}</p>
         </div>
       </div>
 
@@ -110,7 +110,7 @@ import { AuthService } from '@lodgik/shared';
                 <td class="px-4 py-3 text-right font-medium text-green-600">₦{{ fmt(s.net_pay) }}</td>
                 <td class="px-4 py-3 text-xs">{{ s.bank_name || '—' }}</td>
                 <td class="px-4 py-3">
-                  <button (click)="showPayslipDetail(s)" class="text-blue-600 hover:underline text-xs mr-2">View</button>
+                  <button (click)="showPayslipDetail(s)" class="text-sage-600 hover:underline text-xs mr-2">View</button>
                   <button (click)="emailPayslip(s.id)" class="text-green-600 hover:underline text-xs">Email</button>
                 </td>
               </tr>
@@ -123,7 +123,7 @@ import { AuthService } from '@lodgik/shared';
     <!-- Create Dialog -->
     @if (showCreate) {
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" (click)="showCreate = false">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-4">Create Payroll Period</h3>
           <div class="grid grid-cols-2 gap-3 mb-3">
             <select [(ngModel)]="createMonth" class="border rounded-lg px-3 py-2 text-sm">
@@ -133,7 +133,7 @@ import { AuthService } from '@lodgik/shared';
           </div>
           <div class="flex justify-end gap-2">
             <button (click)="showCreate = false" class="px-4 py-2 text-sm border rounded-lg">Cancel</button>
-            <button (click)="createPeriod()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create & Calculate</button>
+            <button (click)="createPeriod()" class="px-4 py-2 text-sm bg-sage-600 text-white rounded-lg hover:bg-sage-700">Create & Calculate</button>
           </div>
         </div>
       </div>
@@ -142,7 +142,7 @@ import { AuthService } from '@lodgik/shared';
     <!-- Payslip Detail Dialog -->
     @if (detailPayslip()) {
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" (click)="detailPayslip.set(null)">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-1">{{ detailPayslip()!.employee_name }}</h3>
           <p class="text-xs text-gray-400 mb-4">{{ detailPayslip()!.employee_staff_id }}</p>
 
@@ -169,9 +169,9 @@ import { AuthService } from '@lodgik/shared';
             </div>
 
             @if (detailPayslip()!.bank_name) {
-              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
-                <p class="text-xs text-blue-600">{{ detailPayslip()!.bank_name }} — {{ detailPayslip()!.bank_account_number }}</p>
-                <p class="text-xs text-blue-500">{{ detailPayslip()!.bank_account_name }}</p>
+              <div class="bg-sage-50 border border-sage-200 rounded-lg p-3 mt-3">
+                <p class="text-xs text-sage-600">{{ detailPayslip()!.bank_name }} — {{ detailPayslip()!.bank_account_number }}</p>
+                <p class="text-xs text-sage-500">{{ detailPayslip()!.bank_account_name }}</p>
               </div>
             }
           </div>

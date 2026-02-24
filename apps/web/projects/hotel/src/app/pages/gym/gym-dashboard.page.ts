@@ -12,7 +12,7 @@ import { BarChartComponent, GaugeChartComponent, LineChartComponent, ChartDataPo
     <ui-page-header title="Gym & Fitness" subtitle="Membership management and access control">
       <div class="flex gap-2">
         <a routerLink="/gym/check-in" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">🔍 Check-in</a>
-        <a routerLink="/gym/members" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">+ New Member</a>
+        <a routerLink="/gym/members" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Member</a>
       </div>
     </ui-page-header>
 
@@ -29,7 +29,7 @@ import { BarChartComponent, GaugeChartComponent, LineChartComponent, ChartDataPo
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <!-- Visits Bar Chart -->
-        <div class="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-5">
+        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Visits Per Day (30 days)</h3>
           @if (visitsData().length) {
             <chart-bar [data]="visitsData()" barColor="#3b82f6" [height]="240"></chart-bar>
@@ -39,7 +39,7 @@ import { BarChartComponent, GaugeChartComponent, LineChartComponent, ChartDataPo
         </div>
 
         <!-- Capacity Gauge -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5 flex flex-col items-center justify-center">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 flex flex-col items-center justify-center">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Gym Utilization Today</h3>
           <chart-gauge [value]="capacityPercent()" [max]="100" label="Capacity" suffix="%" [width]="180" [height]="120" lowColor="#22c55e"></chart-gauge>
           <p class="text-xs text-gray-500 mt-2">{{ dashboard().visits_today }} visits today</p>
@@ -47,7 +47,7 @@ import { BarChartComponent, GaugeChartComponent, LineChartComponent, ChartDataPo
       </div>
 
       <!-- Revenue Trend -->
-      <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">Monthly Revenue Trend</h3>
         @if (revenueData().length) {
           <chart-line [series]="revenueSeries()" [labels]="revenueLabels()" [height]="200"></chart-line>

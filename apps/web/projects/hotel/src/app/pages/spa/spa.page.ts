@@ -5,8 +5,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
   template: `
     <ui-page-header title="Spa & Pool" subtitle="Manage spa services, bookings, and pool access">
       <div class="flex gap-2">
-        <button (click)="tab = 'services'" [class]="tab === 'services' ? 'bg-blue-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Services</button>
-        <button (click)="tab = 'bookings'" [class]="tab === 'bookings' ? 'bg-blue-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Bookings</button>
+        <button (click)="tab = 'services'" [class]="tab === 'services' ? 'bg-sage-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Services</button>
+        <button (click)="tab = 'bookings'" [class]="tab === 'bookings' ? 'bg-sage-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Bookings</button>
         <button (click)="tab = 'pool'" [class]="tab === 'pool' ? 'bg-cyan-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Pool ({{poolOccupancy()}})</button>
       </div>
     </ui-page-header>
@@ -15,7 +15,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (s of services(); track s.id) {
           <div class="bg-white rounded-lg border p-4"><p class="font-semibold">{{s.name}}</p><p class="text-sm text-gray-500">{{s.category}} • {{s.duration_minutes}} min</p>
-            <p class="text-lg font-bold text-blue-600 mt-2">₦{{((+s.price)/100).toLocaleString()}}</p>
+            <p class="text-lg font-bold text-sage-600 mt-2">₦{{((+s.price)/100).toLocaleString()}}</p>
             <p class="text-xs text-gray-400 mt-1">{{s.description || ''}}</p></div>
         } @empty { <p class="col-span-3 text-center text-gray-400 py-8">No spa services</p> }
       </div>
@@ -50,5 +50,5 @@ export default class SpaPage implements OnInit {
     this.api.get('/spa/bookings').subscribe((r: any) => this.bookings.set(r?.data || []));
     this.api.get('/spa/pool').subscribe((r: any) => this.poolLogs.set(r?.data || []));
     this.api.get('/spa/pool/occupancy').subscribe((r: any) => this.poolOccupancy.set(r?.data?.current_occupancy || 0)); }
-  spaStatClass(s: string): string { return { booked: 'bg-blue-100 text-blue-700', in_progress: 'bg-purple-100 text-purple-700', completed: 'bg-green-100 text-green-700', cancelled: 'bg-red-100 text-red-700' }[s] || ''; }
+  spaStatClass(s: string): string { return { booked: 'bg-sage-100 text-sage-700', in_progress: 'bg-purple-100 text-purple-700', completed: 'bg-green-100 text-green-700', cancelled: 'bg-red-100 text-red-700' }[s] || ''; }
 }

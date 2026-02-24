@@ -19,8 +19,8 @@ import { AuthService } from '@lodgik/shared';
       @for (s of steps; track s.num; let i = $index) {
         <div class="flex items-center gap-1">
           <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
-               [class]="step() >= s.num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'">{{ s.num }}</div>
-          <span class="text-xs font-medium mr-2" [class]="step() >= s.num ? 'text-blue-600' : 'text-gray-400'">{{ s.label }}</span>
+               [class]="step() >= s.num ? 'bg-sage-600 text-white' : 'bg-gray-200 text-gray-500'">{{ s.num }}</div>
+          <span class="text-xs font-medium mr-2" [class]="step() >= s.num ? 'text-sage-600' : 'text-gray-400'">{{ s.label }}</span>
           @if (i < steps.length - 1) { <div class="w-6 h-px bg-gray-300 mr-1"></div> }
         </div>
       }
@@ -28,14 +28,14 @@ import { AuthService } from '@lodgik/shared';
 
     <!-- Step 1: Select Guest -->
     @if (step() === 1) {
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-6">
         <h3 class="text-base font-semibold text-gray-700 mb-4">Select Guest</h3>
         <div class="relative mb-4">
-          <input [(ngModel)]="guestSearch" (ngModelChange)="searchGuests()" placeholder="Search by name, phone, or email..." class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm" autofocus>
+          <input [(ngModel)]="guestSearch" (ngModelChange)="searchGuests()" placeholder="Search by name, phone, or email..." class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50" autofocus>
           @if (guestResults().length > 0) {
             <div class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-y-auto">
               @for (g of guestResults(); track g.id) {
-                <button (click)="selectGuest(g)" class="w-full text-left px-4 py-3 text-sm hover:bg-blue-50 border-b border-gray-50 flex justify-between items-center">
+                <button (click)="selectGuest(g)" class="w-full text-left px-4 py-3 text-sm hover:bg-sage-50 border-b border-gray-50 flex justify-between items-center">
                   <div><span class="font-medium">{{ g.full_name }}</span><br><span class="text-gray-400 text-xs">{{ g.phone || g.email || '' }}</span></div>
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500">{{ g.vip_status }}</span>
                 </button>
@@ -44,25 +44,25 @@ import { AuthService } from '@lodgik/shared';
           }
         </div>
         @if (booking.guest_id) {
-          <div class="p-4 bg-blue-50 rounded-lg flex items-center justify-between">
-            <div><span class="font-medium text-blue-800">{{ selectedGuestName }}</span><p class="text-xs text-blue-500 mt-0.5">Guest selected</p></div>
-            <button (click)="booking.guest_id = ''; selectedGuestName = ''" class="text-xs text-blue-600 hover:underline">Change</button>
+          <div class="p-4 bg-sage-50 rounded-lg flex items-center justify-between">
+            <div><span class="font-medium text-sage-800">{{ selectedGuestName }}</span><p class="text-xs text-sage-500 mt-0.5">Guest selected</p></div>
+            <button (click)="booking.guest_id = ''; selectedGuestName = ''" class="text-xs text-sage-600 hover:underline">Change</button>
           </div>
         }
         <div class="flex justify-end mt-6">
-          <button (click)="nextStep()" [disabled]="!booking.guest_id" class="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-40">Next →</button>
+          <button (click)="nextStep()" [disabled]="!booking.guest_id" class="px-6 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700 disabled:opacity-40">Next →</button>
         </div>
       </div>
     }
 
     <!-- Step 2: Dates & Type -->
     @if (step() === 2) {
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-6">
         <h3 class="text-base font-semibold text-gray-700 mb-4">Dates & Booking Type</h3>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Booking Type</label>
-            <select [(ngModel)]="booking.booking_type" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm">
+            <select [(ngModel)]="booking.booking_type" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50">
               <option value="overnight">Overnight</option>
               <option value="short_rest_3hr">Short Rest (3hrs)</option>
               <option value="short_rest_6hr">Short Rest (6hrs)</option>
@@ -74,33 +74,33 @@ import { AuthService } from '@lodgik/shared';
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Check-in</label>
-            <input [(ngModel)]="booking.check_in" type="date" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm">
+            <input [(ngModel)]="booking.check_in" type="date" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50">
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Check-out</label>
-            <input [(ngModel)]="booking.check_out" type="date" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm">
+            <input [(ngModel)]="booking.check_out" type="date" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50">
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4 mt-4">
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Adults</label>
-            <input [(ngModel)]="booking.adults" type="number" min="1" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm">
+            <input [(ngModel)]="booking.adults" type="number" min="1" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50">
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Children</label>
-            <input [(ngModel)]="booking.children" type="number" min="0" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm">
+            <input [(ngModel)]="booking.children" type="number" min="0" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50">
           </div>
         </div>
         <div class="flex justify-between mt-6">
           <button (click)="prevStep()" class="px-6 py-2.5 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">← Back</button>
-          <button (click)="nextStep()" [disabled]="!booking.check_in || !booking.check_out" class="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-40">Next →</button>
+          <button (click)="nextStep()" [disabled]="!booking.check_in || !booking.check_out" class="px-6 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700 disabled:opacity-40">Next →</button>
         </div>
       </div>
     }
 
     <!-- Step 3: Select Room -->
     @if (step() === 3) {
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-6">
         <h3 class="text-base font-semibold text-gray-700 mb-4">Select Room</h3>
         @if (availableRooms().length === 0) {
           <p class="text-gray-400 py-8 text-center">No rooms available for selected dates</p>
@@ -108,7 +108,7 @@ import { AuthService } from '@lodgik/shared';
           <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
             @for (r of availableRooms(); track r.id) {
               <button (click)="selectRoom(r)" class="p-3 rounded-lg border-2 text-center transition-all hover:shadow-md"
-                      [class.border-blue-500]="booking.room_id === r.id" [class.bg-blue-50]="booking.room_id === r.id"
+                      [class.border-sage-500]="booking.room_id === r.id" [class.bg-sage-50]="booking.room_id === r.id"
                       [class.border-gray-200]="booking.room_id !== r.id">
                 <div class="text-sm font-bold">{{ r.room_number }}</div>
                 <div class="text-[10px] text-gray-500">{{ getRoomTypeName(r.room_type_id) }}</div>
@@ -119,36 +119,36 @@ import { AuthService } from '@lodgik/shared';
         }
         <div class="flex justify-between mt-6">
           <button (click)="prevStep()" class="px-6 py-2.5 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">← Back</button>
-          <button (click)="nextStep(); previewRate()" [disabled]="!booking.room_id" class="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-40">Next →</button>
+          <button (click)="nextStep(); previewRate()" [disabled]="!booking.room_id" class="px-6 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700 disabled:opacity-40">Next →</button>
         </div>
       </div>
     }
 
     <!-- Step 4: Addons -->
     @if (step() === 4) {
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-6">
         <h3 class="text-base font-semibold text-gray-700 mb-4">Add-ons (Optional)</h3>
         <div class="space-y-3">
           @for (addon of addons; track $index; let i = $index) {
             <div class="flex items-center gap-3">
-              <input [(ngModel)]="addon.name" placeholder="Add-on name" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
-              <input [(ngModel)]="addon.amount" type="number" placeholder="₦ Amount" class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm">
-              <input [(ngModel)]="addon.quantity" type="number" min="1" class="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <input [(ngModel)]="addon.name" placeholder="Add-on name" class="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              <input [(ngModel)]="addon.amount" type="number" placeholder="₦ Amount" class="w-32 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              <input [(ngModel)]="addon.quantity" type="number" min="1" class="w-20 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               <button (click)="removeAddon(i)" class="text-red-400 hover:text-red-600 text-lg">✕</button>
             </div>
           }
         </div>
-        <button (click)="addAddon()" class="mt-3 px-4 py-2 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50">+ Add Item</button>
+        <button (click)="addAddon()" class="mt-3 px-4 py-2 text-sm text-sage-600 border border-sage-200 rounded-lg hover:bg-sage-50">+ Add Item</button>
         <div class="flex justify-between mt-6">
           <button (click)="prevStep()" class="px-6 py-2.5 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">← Back</button>
-          <button (click)="nextStep(); previewRate()" class="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">Next →</button>
+          <button (click)="nextStep(); previewRate()" class="px-6 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">Next →</button>
         </div>
       </div>
     }
 
     <!-- Step 5: Pricing -->
     @if (step() === 5) {
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-6">
         <h3 class="text-base font-semibold text-gray-700 mb-4">Pricing Summary</h3>
         <div class="space-y-3 text-sm max-w-md">
           <div class="flex justify-between py-2 border-b border-gray-100"><span class="text-gray-500">Rate</span><span class="font-medium">₦{{ (+ratePreview().rate || 0).toLocaleString() }} {{ ratePreview().hours ? '/hr' : '/night' }}</span></div>
@@ -161,7 +161,7 @@ import { AuthService } from '@lodgik/shared';
           }
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Discount (₦)</label>
-            <input [(ngModel)]="booking.discount_amount" type="number" min="0" (ngModelChange)="previewRate()" class="w-48 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            <input [(ngModel)]="booking.discount_amount" type="number" min="0" (ngModelChange)="previewRate()" class="w-48 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
           </div>
           @if (+booking.discount_amount > 0) {
             <div class="flex justify-between py-2 border-b border-gray-100 text-red-500"><span>Discount</span><span>-₦{{ (+booking.discount_amount).toLocaleString() }}</span></div>
@@ -170,14 +170,14 @@ import { AuthService } from '@lodgik/shared';
         </div>
         <div class="flex justify-between mt-6">
           <button (click)="prevStep()" class="px-6 py-2.5 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">← Back</button>
-          <button (click)="nextStep()" class="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">Next →</button>
+          <button (click)="nextStep()" class="px-6 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">Next →</button>
         </div>
       </div>
     }
 
     <!-- Step 6: Confirm -->
     @if (step() === 6) {
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-6">
         <h3 class="text-base font-semibold text-gray-700 mb-4">Confirm Booking</h3>
         <div class="grid grid-cols-2 gap-4 text-sm max-w-lg">
           <div><span class="text-gray-400">Guest</span><p class="font-medium mt-0.5">{{ selectedGuestName }}</p></div>
@@ -189,7 +189,7 @@ import { AuthService } from '@lodgik/shared';
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1 mt-4">Special Requests</label>
-          <textarea [(ngModel)]="booking.special_requests" rows="2" class="w-full max-w-lg px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Any special requests..."></textarea>
+          <textarea [(ngModel)]="booking.special_requests" rows="2" class="w-full max-w-lg px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50" placeholder="Any special requests..."></textarea>
         </div>
         <div class="flex justify-between mt-6">
           <button (click)="prevStep()" class="px-6 py-2.5 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">← Back</button>

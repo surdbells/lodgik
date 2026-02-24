@@ -14,7 +14,7 @@ import { ApiService, ToastService, PageHeaderComponent, LoadingSpinnerComponent 
           <h1 class="text-2xl font-bold text-gray-900">Complete Your Setup</h1>
           <p class="text-gray-500 mt-1">{{ progress().completed }}/{{ progress().total }} steps complete</p>
           <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
-            <div class="bg-blue-600 h-2 rounded-full transition-all" [style.width.%]="progress().percent"></div>
+            <div class="bg-sage-600 h-2 rounded-full transition-all" [style.width.%]="progress().percent"></div>
           </div>
         </div>
 
@@ -34,25 +34,25 @@ import { ApiService, ToastService, PageHeaderComponent, LoadingSpinnerComponent 
                 @switch (step.step) {
                   @case (4) {
                     <div class="grid grid-cols-2 gap-3">
-                      <input [(ngModel)]="bank.bank_name" placeholder="Bank name" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                      <input [(ngModel)]="bank.account_number" placeholder="Account number (10 digits)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                      <input [(ngModel)]="bank.account_name" placeholder="Account name" class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                      <input [(ngModel)]="bank.bank_name" placeholder="Bank name" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+                      <input [(ngModel)]="bank.account_number" placeholder="Account number (10 digits)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+                      <input [(ngModel)]="bank.account_name" placeholder="Account name" class="col-span-2 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
                     </div>
-                    <button (click)="saveBank()" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Save Bank</button>
+                    <button (click)="saveBank()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Save Bank</button>
                   }
                   @case (5) {
                     <div class="grid grid-cols-2 gap-3">
                       <input [(ngModel)]="branding.primary_color" type="color" class="h-10 w-full rounded-lg cursor-pointer">
                       <input [(ngModel)]="branding.secondary_color" type="color" class="h-10 w-full rounded-lg cursor-pointer">
                     </div>
-                    <button (click)="saveBranding()" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Save Branding</button>
+                    <button (click)="saveBranding()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Save Branding</button>
                   }
                   @case (6) {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       @for (plan of plans(); track plan.id) {
                         <button (click)="selectPlan(plan.id)"
                                 class="p-4 border rounded-lg text-left hover:border-blue-400 transition-colors"
-                                [class.border-blue-500]="selectedPlan === plan.id" [class.border-gray-200]="selectedPlan !== plan.id">
+                                [class.border-sage-500]="selectedPlan === plan.id" [class.border-gray-200]="selectedPlan !== plan.id">
                           <div class="text-sm font-semibold">{{ plan.name }}</div>
                           <div class="text-xs text-gray-500">₦{{ plan.monthly_price?.toLocaleString() }}/mo</div>
                         </button>
@@ -70,7 +70,7 @@ import { ApiService, ToastService, PageHeaderComponent, LoadingSpinnerComponent 
 
         @if (progress().is_complete) {
           <div class="mt-6 text-center">
-            <button (click)="goToDashboard()" class="px-6 py-3 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-600">
+            <button (click)="goToDashboard()" class="px-6 py-3 bg-sage-700 text-white font-medium rounded-lg hover:bg-sage-600">
               Go to Dashboard →
             </button>
           </div>

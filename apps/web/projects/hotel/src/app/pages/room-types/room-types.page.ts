@@ -8,25 +8,25 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Room Types" subtitle="Manage room categories and pricing">
-      <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700" (click)="showForm = !showForm; resetForm()">
+    <ui-page-header title="Room Types" icon="🏷️" [breadcrumbs]="['Room Operation', 'Room Types']" subtitle="Manage room categories and pricing">
+      <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showForm = !showForm; resetForm()">
         {{ showForm ? 'Cancel' : '+ Add Room Type' }}
       </button>
     </ui-page-header>
 
     @if (showForm) {
-      <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ editId ? 'Edit' : 'New' }} Room Type</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <input [(ngModel)]="form.name" placeholder="Name (e.g. Deluxe)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.base_rate" type="number" placeholder="Nightly Rate (₦)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.hourly_rate" type="number" placeholder="Hourly Rate (₦)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.max_occupancy" type="number" placeholder="Max Occupancy" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.sort_order" type="number" placeholder="Sort Order" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <textarea [(ngModel)]="form.description" placeholder="Description" rows="1" class="px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+          <input [(ngModel)]="form.name" placeholder="Name (e.g. Deluxe)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.base_rate" type="number" placeholder="Nightly Rate (₦)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.hourly_rate" type="number" placeholder="Hourly Rate (₦)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.max_occupancy" type="number" placeholder="Max Occupancy" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.sort_order" type="number" placeholder="Sort Order" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <textarea [(ngModel)]="form.description" placeholder="Description" rows="1" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></textarea>
         </div>
         <div class="flex gap-2 mt-3">
-          <button (click)="save()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+          <button (click)="save()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">
             {{ editId ? 'Update' : 'Create' }}
           </button>
           @if (editId) {

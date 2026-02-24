@@ -8,7 +8,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Group Bookings" subtitle="Manage conference groups, tours, and block bookings">
-      <button (click)="showForm = !showForm" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ New Group</button>
+      <button (click)="showForm = !showForm" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">+ New Group</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
@@ -24,7 +24,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
           <div><label class="block text-sm font-medium mb-1">Negotiated Rate (₦)</label><input type="number" [(ngModel)]="form.negotiated_rate" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
         </div>
         <div class="flex gap-2 mt-4">
-          <button (click)="create()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">Create</button>
+          <button (click)="create()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg">Create</button>
           <button (click)="showForm = false" class="px-4 py-2 bg-gray-200 text-sm rounded-lg">Cancel</button>
         </div>
       </div>
@@ -57,5 +57,5 @@ export default class GroupBookingsPage implements OnInit {
   showForm = false; form: any = { group_name: '', organizer_name: '', rooms_blocked: '', check_in: '', check_out: '', negotiated_rate: '' };
   ngOnInit() { this.api.get('/finance/group-bookings').subscribe((r: any) => { this.groups.set(r?.data || []); this.loading.set(false); }); }
   create() { this.api.post('/finance/group-bookings', { ...this.form, negotiated_rate: Math.round(+this.form.negotiated_rate * 100) }).subscribe(() => { this.showForm = false; this.ngOnInit(); }); }
-  groupStatusClass(s: string): string { return { provisional: 'bg-yellow-100 text-yellow-800', confirmed: 'bg-green-100 text-green-800', cancelled: 'bg-red-100 text-red-800', completed: 'bg-blue-100 text-blue-800' }[s] || 'bg-gray-100'; }
+  groupStatusClass(s: string): string { return { provisional: 'bg-yellow-100 text-yellow-800', confirmed: 'bg-green-100 text-green-800', cancelled: 'bg-red-100 text-red-800', completed: 'bg-sage-100 text-sage-800' }[s] || 'bg-gray-100'; }
 }

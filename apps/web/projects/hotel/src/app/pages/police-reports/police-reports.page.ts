@@ -15,7 +15,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
       <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Total Reports</p><p class="text-2xl font-bold">{{reports().length}}</p></div>
       <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Pending Submission</p><p class="text-2xl font-bold text-yellow-600">{{pendingCount()}}</p></div>
       <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Submitted</p><p class="text-2xl font-bold text-green-600">{{submittedCount()}}</p></div>
-      <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Nigerians</p><p class="text-2xl font-bold text-blue-600">{{nigerianCount()}}</p></div>
+      <div class="bg-white rounded-lg border p-4"><p class="text-xs text-gray-500">Nigerians</p><p class="text-2xl font-bold text-sage-600">{{nigerianCount()}}</p></div>
     </div>
 
     <div class="bg-white rounded-lg border overflow-x-auto">
@@ -33,7 +33,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
               <td class="px-4 py-3 font-mono text-xs">{{r.passport_number || r.nin || '-'}}</td><td class="px-4 py-3">{{r.room_number}}</td>
               <td class="px-4 py-3">{{r.arrival_date}}</td>
               <td class="px-4 py-3 text-center"><span [class]="'px-2 py-1 rounded-full text-xs font-medium ' + (r.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800')">{{r.status}}</span></td>
-              <td class="px-4 py-3 text-center">@if (r.status === 'pending') { <button (click)="submit(r.id)" class="text-blue-600 hover:underline text-xs">Submit</button> }</td>
+              <td class="px-4 py-3 text-center">@if (r.status === 'pending') { <button (click)="submit(r.id)" class="text-sage-600 hover:underline text-xs">Submit</button> }</td>
             </tr>
           } @empty { <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">No police reports found</td></tr> }
         </tbody>

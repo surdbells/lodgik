@@ -8,8 +8,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
   standalone: true,
   imports: [FormsModule, DatePipe, CurrencyPipe, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Expenses" subtitle="Track and approve operational expenses">
-      <button (click)="showForm = !showForm" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ New Expense</button>
+    <ui-page-header title="Expenses" icon="💸" [breadcrumbs]="['Finance', 'Expenses']" subtitle="Track and approve operational expenses">
+      <button (click)="showForm = !showForm" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">+ New Expense</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
@@ -32,7 +32,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
             <input type="text" [(ngModel)]="form.description" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="What was purchased"></div>
         </div>
         <div class="flex gap-2 mt-4">
-          <button (click)="submitExpense()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Submit</button>
+          <button (click)="submitExpense()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Submit</button>
           <button (click)="showForm = false" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg">Cancel</button>
         </div>
       </div>
@@ -86,5 +86,5 @@ export default class ExpensesPage implements OnInit {
   submitExpense() { this.api.post('/finance/expenses', { ...this.form, amount: Math.round(+this.form.amount * 100) }).subscribe(() => { this.showForm = false; this.load(); }); }
   approve(id: string) { this.api.post(`/finance/expenses/${id}/approve`, {}).subscribe(() => this.load()); }
   reject(id: string) { this.api.post(`/finance/expenses/${id}/reject`, {}).subscribe(() => this.load()); }
-  statusClass(s: string): string { return { pending: 'bg-yellow-100 text-yellow-800', approved: 'bg-green-100 text-green-800', rejected: 'bg-red-100 text-red-800', paid: 'bg-blue-100 text-blue-800' }[s] || 'bg-gray-100 text-gray-800'; }
+  statusClass(s: string): string { return { pending: 'bg-yellow-100 text-yellow-800', approved: 'bg-green-100 text-green-800', rejected: 'bg-red-100 text-red-800', paid: 'bg-sage-100 text-sage-800' }[s] || 'bg-gray-100 text-gray-800'; }
 }

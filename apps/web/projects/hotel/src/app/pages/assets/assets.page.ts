@@ -5,7 +5,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
   selector: 'app-assets', standalone: true, imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Asset Registry" subtitle="Track all property assets with QR codes">
-      <button (click)="showForm = !showForm" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ Register Asset</button>
+      <button (click)="showForm = !showForm" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">+ Register Asset</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -26,7 +26,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
           <div><label class="block text-sm font-medium mb-1">Criticality</label>
             <select [(ngModel)]="form.criticality" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select></div>
         </div>
-        <div class="flex gap-2 mt-4"><button (click)="create()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">Register</button><button (click)="showForm = false" class="px-4 py-2 bg-gray-200 text-sm rounded-lg">Cancel</button></div>
+        <div class="flex gap-2 mt-4"><button (click)="create()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg">Register</button><button (click)="showForm = false" class="px-4 py-2 bg-gray-200 text-sm rounded-lg">Cancel</button></div>
       </div>
     }
     <div class="bg-white rounded-lg border overflow-x-auto">
@@ -36,7 +36,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
       </tr></thead><tbody>
         @for (a of assets(); track a.id) {
           <tr class="border-t hover:bg-gray-50">
-            <td class="px-4 py-3 font-mono text-xs text-blue-600">{{a.qr_code}}</td><td class="px-4 py-3 font-medium">{{a.name}}</td><td class="px-4 py-3">{{a.room_number || a.floor || '-'}}</td>
+            <td class="px-4 py-3 font-mono text-xs text-sage-600">{{a.qr_code}}</td><td class="px-4 py-3 font-medium">{{a.name}}</td><td class="px-4 py-3">{{a.room_number || a.floor || '-'}}</td>
             <td class="px-4 py-3">{{a.brand || '-'}}</td>
             <td class="px-4 py-3 text-center"><span [class]="'px-2 py-0.5 rounded text-xs font-medium ' + critClass(a.criticality)">{{a.criticality}}</span></td>
             <td class="px-4 py-3 text-center"><span [class]="'px-2 py-0.5 rounded text-xs font-medium ' + statClass(a.status)">{{a.status}}</span></td>

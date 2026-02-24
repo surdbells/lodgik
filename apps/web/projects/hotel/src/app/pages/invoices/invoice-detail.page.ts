@@ -11,7 +11,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
     <ui-page-header [title]="invoice()?.invoice_number || 'Invoice'" subtitle="Invoice details">
       <div class="flex gap-2">
         <a routerLink="/invoices" class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">← Back</a>
-        <button (click)="downloadPdf()" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">📄 PDF</button>
+        <button (click)="downloadPdf()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">📄 PDF</button>
         <button (click)="emailInvoice()" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700">📧 Email</button>
       </div>
     </ui-page-header>
@@ -21,12 +21,12 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
     @if (!loading() && invoice()) {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Invoice Preview -->
-        <div class="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
+        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-card p-6">
           <!-- Header -->
           <div class="flex justify-between items-start mb-6">
             <div>
               <h2 class="text-xl font-bold text-gray-900">INVOICE</h2>
-              <p class="text-lg font-semibold text-blue-700 mt-1">{{ invoice()!.invoice_number }}</p>
+              <p class="text-lg font-semibold text-sage-700 mt-1">{{ invoice()!.invoice_number }}</p>
             </div>
             <div class="text-right text-sm">
               <p>Date: {{ invoice()!.invoice_date }}</p>
@@ -93,12 +93,12 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
 
           <!-- Bank Details -->
           @if (invoice()!.bank_name) {
-            <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 class="text-xs font-semibold text-blue-700 uppercase mb-2">Bank Details for Payment</h4>
+            <div class="mt-6 p-4 bg-sage-50 border border-sage-200 rounded-lg">
+              <h4 class="text-xs font-semibold text-sage-700 uppercase mb-2">Bank Details for Payment</h4>
               <div class="grid grid-cols-3 gap-4 text-sm">
-                <div><span class="text-blue-400">Bank</span><p class="font-bold text-blue-900">{{ invoice()!.bank_name }}</p></div>
-                <div><span class="text-blue-400">Account</span><p class="font-bold text-blue-900">{{ invoice()!.bank_account_number }}</p></div>
-                <div><span class="text-blue-400">Name</span><p class="font-bold text-blue-900">{{ invoice()!.bank_account_name }}</p></div>
+                <div><span class="text-gray-400">Bank</span><p class="font-bold text-gray-900">{{ invoice()!.bank_name }}</p></div>
+                <div><span class="text-gray-400">Account</span><p class="font-bold text-gray-900">{{ invoice()!.bank_account_number }}</p></div>
+                <div><span class="text-gray-400">Name</span><p class="font-bold text-gray-900">{{ invoice()!.bank_account_name }}</p></div>
               </div>
             </div>
           }
@@ -106,11 +106,11 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
 
         <!-- Sidebar Info -->
         <div class="space-y-6">
-          <div class="bg-white rounded-lg border border-gray-200 p-5">
+          <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">Details</h3>
             <div class="space-y-2 text-sm">
-              <div class="flex justify-between"><span class="text-gray-400">Booking</span><a [routerLink]="['/bookings', invoice()!.booking_id]" class="text-blue-600 hover:underline">View →</a></div>
-              <div class="flex justify-between"><span class="text-gray-400">Folio</span><a [routerLink]="['/folios', invoice()!.folio_id]" class="text-blue-600 hover:underline">View →</a></div>
+              <div class="flex justify-between"><span class="text-gray-400">Booking</span><a [routerLink]="['/bookings', invoice()!.booking_id]" class="text-sage-600 hover:underline">View →</a></div>
+              <div class="flex justify-between"><span class="text-gray-400">Folio</span><a [routerLink]="['/folios', invoice()!.folio_id]" class="text-sage-600 hover:underline">View →</a></div>
               @if (invoice()!.emailed_at) {
                 <div class="flex justify-between"><span class="text-gray-400">Emailed</span><span>{{ invoice()!.emailed_at | date:'short' }}</span></div>
               }

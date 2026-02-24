@@ -5,7 +5,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
   selector: 'app-engineers', standalone: true, imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Service Engineers" subtitle="Internal and external maintenance engineers">
-      <button (click)="showForm = !showForm" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ Add Engineer</button>
+      <button (click)="showForm = !showForm" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">+ Add Engineer</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (showForm) {
@@ -18,7 +18,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
           <div><label class="block text-sm font-medium mb-1">Email</label><input type="email" [(ngModel)]="form.email" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
           <div><label class="block text-sm font-medium mb-1">Availability</label><select [(ngModel)]="form.availability" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="24x7">24/7</option><option value="business_hours">Business Hours</option><option value="on_call">On Call</option></select></div>
         </div>
-        <div class="flex gap-2 mt-4"><button (click)="create()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">Add</button><button (click)="showForm = false" class="px-4 py-2 bg-gray-200 text-sm rounded-lg">Cancel</button></div>
+        <div class="flex gap-2 mt-4"><button (click)="create()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg">Add</button><button (click)="showForm = false" class="px-4 py-2 bg-gray-200 text-sm rounded-lg">Cancel</button></div>
       </div>
     }
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

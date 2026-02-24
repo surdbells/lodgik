@@ -14,7 +14,7 @@ import { AuthService } from '@lodgik/shared';
       <div class="flex gap-2">
         <a routerLink="/folios" class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">← Back</a>
         @if (folio()?.status === 'open') {
-          <button (click)="showChargeForm = true" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">+ Charge</button>
+          <button (click)="showChargeForm = true" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ Charge</button>
           <button (click)="showPaymentForm = true" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700">+ Payment</button>
         }
       </div>
@@ -39,19 +39,19 @@ import { AuthService } from '@lodgik/shared';
 
       <!-- Hotel Bank Account (prominent) -->
       @if (bankAccount()) {
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <h4 class="text-xs font-semibold text-blue-700 uppercase mb-2">Hotel Bank Account for Payment</h4>
+        <div class="bg-sage-50 border border-sage-200 rounded-lg p-4 mb-6">
+          <h4 class="text-xs font-semibold text-sage-700 uppercase mb-2">Hotel Bank Account for Payment</h4>
           <div class="grid grid-cols-3 gap-4 text-sm">
-            <div><span class="text-blue-400">Bank</span><p class="font-bold text-blue-900">{{ bankAccount()!.bank_name }}</p></div>
-            <div><span class="text-blue-400">Account Number</span><p class="font-bold text-blue-900">{{ bankAccount()!.account_number }}</p></div>
-            <div><span class="text-blue-400">Account Name</span><p class="font-bold text-blue-900">{{ bankAccount()!.account_name }}</p></div>
+            <div><span class="text-gray-400">Bank</span><p class="font-bold text-gray-900">{{ bankAccount()!.bank_name }}</p></div>
+            <div><span class="text-gray-400">Account Number</span><p class="font-bold text-gray-900">{{ bankAccount()!.account_number }}</p></div>
+            <div><span class="text-gray-400">Account Name</span><p class="font-bold text-gray-900">{{ bankAccount()!.account_name }}</p></div>
           </div>
         </div>
       }
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Charges -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Charges</h3>
           <div class="space-y-2 max-h-[400px] overflow-y-auto">
             @for (c of charges(); track c.id) {
@@ -71,7 +71,7 @@ import { AuthService } from '@lodgik/shared';
         </div>
 
         <!-- Payments -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Payments</h3>
           <div class="space-y-2 max-h-[400px] overflow-y-auto">
             @for (p of payments(); track p.id) {
@@ -104,7 +104,7 @@ import { AuthService } from '@lodgik/shared';
 
         <!-- Adjustments + Actions -->
         <div class="space-y-6">
-          <div class="bg-white rounded-lg border border-gray-200 p-5">
+          <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">Adjustments</h3>
             @for (a of adjustments(); track a.id) {
               <div class="flex justify-between py-2 border-b border-gray-50 text-sm">
@@ -116,13 +116,13 @@ import { AuthService } from '@lodgik/shared';
               <p class="text-gray-400 text-sm py-4 text-center">No adjustments</p>
             }
             @if (folio()!.status === 'open') {
-              <button (click)="showAdjForm = true" class="mt-3 text-xs text-blue-600 hover:underline">+ Add Adjustment</button>
+              <button (click)="showAdjForm = true" class="mt-3 text-xs text-sage-600 hover:underline">+ Add Adjustment</button>
             }
           </div>
 
           <!-- Folio Actions -->
           @if (folio()!.status === 'open') {
-            <div class="bg-white rounded-lg border border-gray-200 p-5">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
               <h3 class="text-sm font-semibold text-gray-700 mb-3">Actions</h3>
               <div class="space-y-2">
                 <button (click)="closeFolio()" class="w-full px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded-lg hover:bg-gray-800">Close Folio</button>
@@ -131,31 +131,31 @@ import { AuthService } from '@lodgik/shared';
             </div>
           }
           @if (folio()!.status === 'closed') {
-            <a [routerLink]="['/invoices']" [queryParams]="{booking_id: folio()!.booking_id}" class="block text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">View Invoice</a>
+            <a [routerLink]="['/invoices']" [queryParams]="{booking_id: folio()!.booking_id}" class="block text-center px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">View Invoice</a>
           }
         </div>
       </div>
 
       <!-- Add Charge Dialog -->
       @if (showChargeForm) {
-        <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="showChargeForm = false">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showChargeForm = false">
           <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl" (click)="$event.stopPropagation()">
             <h3 class="text-base font-semibold mb-4">Add Charge</h3>
             <div class="space-y-3">
-              <select [(ngModel)]="chargeForm.category" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <select [(ngModel)]="chargeForm.category" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
                 <option value="room">Room</option><option value="service">Service</option><option value="minibar">Minibar</option>
                 <option value="bar">Bar</option><option value="laundry">Laundry</option><option value="restaurant">Restaurant</option>
                 <option value="telephone">Telephone</option><option value="other">Other</option>
               </select>
-              <input [(ngModel)]="chargeForm.description" placeholder="Description" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <input [(ngModel)]="chargeForm.description" placeholder="Description" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               <div class="grid grid-cols-2 gap-3">
-                <input [(ngModel)]="chargeForm.amount" type="number" placeholder="Amount (₦)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                <input [(ngModel)]="chargeForm.quantity" type="number" min="1" placeholder="Qty" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <input [(ngModel)]="chargeForm.amount" type="number" placeholder="Amount (₦)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+                <input [(ngModel)]="chargeForm.quantity" type="number" min="1" placeholder="Qty" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               </div>
             </div>
             <div class="flex justify-end gap-2 mt-4">
               <button (click)="showChargeForm = false" class="px-4 py-2 text-sm text-gray-500 border rounded-lg">Cancel</button>
-              <button (click)="submitCharge()" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg">Add</button>
+              <button (click)="submitCharge()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg">Add</button>
             </div>
           </div>
         </div>
@@ -163,19 +163,19 @@ import { AuthService } from '@lodgik/shared';
 
       <!-- Record Payment Dialog -->
       @if (showPaymentForm) {
-        <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="showPaymentForm = false">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showPaymentForm = false">
           <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl" (click)="$event.stopPropagation()">
             <h3 class="text-base font-semibold mb-4">Record Payment</h3>
             <div class="space-y-3">
-              <select [(ngModel)]="payForm.payment_method" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <select [(ngModel)]="payForm.payment_method" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
                 <option value="cash">Cash</option><option value="bank_transfer">Bank Transfer</option><option value="pos_card">POS Card</option>
               </select>
-              <input [(ngModel)]="payForm.amount" type="number" placeholder="Amount (₦)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <input [(ngModel)]="payForm.amount" type="number" placeholder="Amount (₦)" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               @if (payForm.payment_method === 'bank_transfer') {
-                <input [(ngModel)]="payForm.sender_name" placeholder="Sender Name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                <input [(ngModel)]="payForm.transfer_reference" placeholder="Transfer Reference" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <input [(ngModel)]="payForm.sender_name" placeholder="Sender Name" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+                <input [(ngModel)]="payForm.transfer_reference" placeholder="Transfer Reference" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               }
-              <textarea [(ngModel)]="payForm.notes" placeholder="Notes (optional)" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+              <textarea [(ngModel)]="payForm.notes" placeholder="Notes (optional)" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></textarea>
             </div>
             <div class="flex justify-end gap-2 mt-4">
               <button (click)="showPaymentForm = false" class="px-4 py-2 text-sm text-gray-500 border rounded-lg">Cancel</button>
@@ -187,16 +187,16 @@ import { AuthService } from '@lodgik/shared';
 
       <!-- Adjustment Dialog -->
       @if (showAdjForm) {
-        <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="showAdjForm = false">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showAdjForm = false">
           <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl" (click)="$event.stopPropagation()">
             <h3 class="text-base font-semibold mb-4">Add Adjustment</h3>
             <div class="space-y-3">
-              <select [(ngModel)]="adjForm.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <select [(ngModel)]="adjForm.type" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
                 <option value="discount">Discount</option><option value="refund">Refund</option><option value="correction">Correction</option><option value="comp">Complimentary</option>
               </select>
-              <input [(ngModel)]="adjForm.description" placeholder="Description" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-              <input [(ngModel)]="adjForm.amount" type="number" placeholder="Amount (₦)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-              <textarea [(ngModel)]="adjForm.reason" placeholder="Reason" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+              <input [(ngModel)]="adjForm.description" placeholder="Description" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              <input [(ngModel)]="adjForm.amount" type="number" placeholder="Amount (₦)" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              <textarea [(ngModel)]="adjForm.reason" placeholder="Reason" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></textarea>
             </div>
             <div class="flex justify-end gap-2 mt-4">
               <button (click)="showAdjForm = false" class="px-4 py-2 text-sm text-gray-500 border rounded-lg">Cancel</button>

@@ -11,7 +11,7 @@ import { AuthService } from '@lodgik/shared';
   imports: [FormsModule, RouterLink, DatePipe, DecimalPipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
     <ui-page-header title="Bookings" subtitle="Reservations, check-ins and check-outs">
-      <a routerLink="/bookings/new" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">+ New Booking</a>
+      <a routerLink="/bookings/new" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Booking</a>
     </ui-page-header>
 
     <!-- Quick Stats -->
@@ -24,16 +24,16 @@ import { AuthService } from '@lodgik/shared';
 
     <!-- New Booking Form -->
     @if (showNew) {
-      <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">New Booking</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <!-- Guest search -->
           <div class="relative">
-            <input [(ngModel)]="guestSearch" (ngModelChange)="searchGuests()" placeholder="Search guest by name/phone..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            <input [(ngModel)]="guestSearch" (ngModelChange)="searchGuests()" placeholder="Search guest by name/phone..." class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             @if (guestResults().length > 0) {
               <div class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                 @for (g of guestResults(); track g.id) {
-                  <button (click)="selectGuest(g)" class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b border-gray-50">
+                  <button (click)="selectGuest(g)" class="w-full text-left px-3 py-2 text-sm hover:bg-sage-50 border-b border-gray-50">
                     <span class="font-medium">{{ g.full_name }}</span>
                     <span class="text-gray-400 ml-2">{{ g.phone || g.email || '' }}</span>
                   </button>
@@ -45,14 +45,14 @@ import { AuthService } from '@lodgik/shared';
             }
           </div>
 
-          <select [(ngModel)]="form.room_id" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <select [(ngModel)]="form.room_id" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             <option value="">Select Room</option>
             @for (r of availableRooms(); track r.id) {
               <option [value]="r.id">{{ r.room_number }} ({{ getRoomTypeName(r.room_type_id) }})</option>
             }
           </select>
 
-          <select [(ngModel)]="form.booking_type" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <select [(ngModel)]="form.booking_type" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             <option value="overnight">Overnight</option>
             <option value="short_rest_3hr">Short Rest (3hrs)</option>
             <option value="short_rest_6hr">Short Rest (6hrs)</option>
@@ -61,15 +61,15 @@ import { AuthService } from '@lodgik/shared';
             <option value="corporate">Corporate</option>
           </select>
 
-          <input [(ngModel)]="form.check_in" type="date" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.check_out" type="date" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <input [(ngModel)]="form.check_in" type="date" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.check_out" type="date" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
 
-          <input [(ngModel)]="form.adults" type="number" min="1" placeholder="Adults" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <input [(ngModel)]="form.adults" type="number" min="1" placeholder="Adults" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
         </div>
         <div class="mt-3">
-          <textarea [(ngModel)]="form.special_requests" placeholder="Special requests" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+          <textarea [(ngModel)]="form.special_requests" placeholder="Special requests" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></textarea>
         </div>
-        <button (click)="createBooking()" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Create Booking</button>
+        <button (click)="createBooking()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Create Booking</button>
       </div>
     }
 
@@ -92,8 +92,8 @@ import { AuthService } from '@lodgik/shared';
 
     <!-- Booking Detail Modal -->
     @if (showDetail && detail) {
-      <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="showDetail = false">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6" (click)="$event.stopPropagation()">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showDetail = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" (click)="$event.stopPropagation()">
           <div class="flex justify-between items-start mb-4">
             <div>
               <h3 class="text-lg font-semibold">{{ detail.booking_ref }}</h3>
@@ -119,7 +119,7 @@ import { AuthService } from '@lodgik/shared';
               <button (click)="doCancel(detail.id)" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Cancel</button>
             }
             @if (detail.status === 'checked_in') {
-              <button (click)="doCheckOut(detail.id)" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Check Out</button>
+              <button (click)="doCheckOut(detail.id)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Check Out</button>
             }
             @if (detail.status === 'pending') {
               <button (click)="doCancel(detail.id)" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Cancel</button>

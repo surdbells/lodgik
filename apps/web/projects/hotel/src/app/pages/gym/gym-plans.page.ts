@@ -8,7 +8,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Membership Plans" subtitle="Configure gym membership pricing and features">
-      <button (click)="showForm = true; editPlan = null; resetForm()" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">+ New Plan</button>
+      <button (click)="showForm = true; editPlan = null; resetForm()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Plan</button>
     </ui-page-header>
 
     <ui-loading [loading]="loading()"></ui-loading>
@@ -18,14 +18,14 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
         <div class="bg-white border rounded-xl p-5 relative" [class.opacity-50]="!p.is_active">
           @if (!p.is_active) { <span class="absolute top-2 right-2 bg-gray-200 text-gray-500 px-2 py-0.5 rounded text-xs">Inactive</span> }
           <h3 class="text-lg font-semibold mb-1">{{ p.name }}</h3>
-          <p class="text-2xl font-bold text-blue-600 mb-2">₦{{ formatAmount(p.price) }}<span class="text-sm text-gray-400 font-normal"> / {{ p.duration_days }} days</span></p>
+          <p class="text-2xl font-bold text-sage-600 mb-2">₦{{ formatAmount(p.price) }}<span class="text-sm text-gray-400 font-normal"> / {{ p.duration_days }} days</span></p>
           @if (p.description) { <p class="text-xs text-gray-500 mb-3">{{ p.description }}</p> }
           <div class="space-y-1 text-xs text-gray-600">
             <div>{{ p.includes_classes ? '✅' : '❌' }} Group classes {{ p.max_classes ? '(' + p.max_classes + '/period)' : '(unlimited)' }}</div>
             <div>{{ p.includes_pool ? '✅' : '❌' }} Pool & spa access</div>
           </div>
           <div class="flex gap-2 mt-4">
-            <button (click)="editPlanFn(p)" class="px-3 py-1.5 border rounded-lg text-xs text-blue-600 hover:bg-blue-50">Edit</button>
+            <button (click)="editPlanFn(p)" class="px-3 py-1.5 border rounded-lg text-xs text-sage-600 hover:bg-sage-50">Edit</button>
             <button (click)="toggleActive(p)" class="px-3 py-1.5 border rounded-lg text-xs" [class]="p.is_active ? 'text-red-500 hover:bg-red-50' : 'text-green-500 hover:bg-green-50'">
               {{ p.is_active ? 'Deactivate' : 'Activate' }}
             </button>
@@ -35,8 +35,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
     </div>
 
     @if (showForm) {
-      <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="showForm = false">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6" (click)="$event.stopPropagation()">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showForm = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-4">{{ editPlan ? 'Edit Plan' : 'New Membership Plan' }}</h3>
           <div class="space-y-3">
             <div><label class="text-xs text-gray-500">Plan Name *</label><input [(ngModel)]="form.name" class="w-full border rounded-lg px-3 py-2 text-sm"/></div>
@@ -56,7 +56,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
           </div>
           <div class="flex justify-end gap-2 mt-4">
             <button (click)="showForm = false" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-            <button (click)="save()" [disabled]="saving" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">{{ saving ? 'Saving...' : 'Save' }}</button>
+            <button (click)="save()" [disabled]="saving" class="px-4 py-2 bg-sage-600 text-white rounded-lg text-sm font-medium">{{ saving ? 'Saving...' : 'Save' }}</button>
           </div>
         </div>
       </div>

@@ -7,8 +7,8 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Housekeeping" subtitle="Task management, cleaning schedules, and inspections">
-      <button (click)="showCreateTask = true" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">+ Create Task</button>
+    <ui-page-header title="Housekeeping" icon="🧹" [breadcrumbs]="['Daily Operation', 'Housekeeping']" subtitle="Task management, cleaning schedules, and inspections">
+      <button (click)="showCreateTask = true" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ Create Task</button>
     </ui-page-header>
 
     <ui-loading [loading]="loading()"></ui-loading>
@@ -24,7 +24,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
       <!-- Filter Tabs -->
       <div class="flex gap-2 mb-4">
         @for (f of filters; track f.value) {
-          <button (click)="filterStatus = f.value; load()" [class]="filterStatus === f.value ? 'px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium' : 'px-4 py-2 bg-white border rounded-lg text-sm'">{{ f.label }}</button>
+          <button (click)="filterStatus = f.value; load()" [class]="filterStatus === f.value ? 'px-4 py-2 bg-sage-600 text-white rounded-lg text-sm font-medium' : 'px-4 py-2 bg-white border rounded-lg text-sm'">{{ f.label }}</button>
         }
       </div>
 
@@ -45,7 +45,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
             <div class="flex items-center justify-between">
               <div class="text-xs text-gray-400">{{ t.assigned_to_name || 'Unassigned' }} · {{ t.created_at }}</div>
               <div class="flex gap-2">
-                @if (t.status === 'pending') { <button (click)="assignPrompt(t)" class="text-xs px-2 py-1 border rounded hover:bg-blue-50 text-blue-600">Assign</button> }
+                @if (t.status === 'pending') { <button (click)="assignPrompt(t)" class="text-xs px-2 py-1 border rounded hover:bg-sage-50 text-sage-600">Assign</button> }
                 @if (t.status === 'completed') {
                   <button (click)="inspect(t, true)" class="text-xs px-2 py-1 bg-green-100 rounded text-green-700">✅ Pass</button>
                   <button (click)="inspect(t, false)" class="text-xs px-2 py-1 bg-red-100 rounded text-red-700">🔄 Rework</button>
@@ -67,7 +67,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
       <div class="mt-8">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-lg font-semibold">Lost & Found</h3>
-          <button (click)="showLostForm = true" class="text-sm text-blue-600 hover:underline">+ Report Item</button>
+          <button (click)="showLostForm = true" class="text-sm text-sage-600 hover:underline">+ Report Item</button>
         </div>
         <div class="space-y-2">
           @for (item of lostItems(); track item.id) {

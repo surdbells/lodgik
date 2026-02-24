@@ -10,7 +10,7 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, DatePipe, RouterLink, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Folios" subtitle="Guest accounts and charges"></ui-page-header>
+    <ui-page-header title="Folios" icon="📂" [breadcrumbs]="['Finance', 'Folios']" subtitle="Guest accounts and charges"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
@@ -26,7 +26,7 @@ import { AuthService } from '@lodgik/shared';
       <div class="flex gap-2 mb-4">
         @for (tab of statusTabs; track tab.value) {
           <button (click)="filterStatus = tab.value; loadFolios()" class="px-3 py-1.5 text-xs font-medium rounded-full border transition-colors"
-            [class]="filterStatus === tab.value ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-500 hover:bg-gray-50'">
+            [class]="filterStatus === tab.value ? 'bg-sage-600 text-white border-sage-600' : 'border-gray-300 text-gray-500 hover:bg-gray-50'">
             {{ tab.label }}
           </button>
         }

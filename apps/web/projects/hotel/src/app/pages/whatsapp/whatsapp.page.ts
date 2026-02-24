@@ -52,5 +52,5 @@ export default class WhatsAppPage implements OnInit {
   ngOnInit() { this.api.get('/whatsapp/messages').subscribe((r: any) => { this.messages.set(r?.data || []); this.loading.set(false); });
     this.api.get('/whatsapp/templates').subscribe((r: any) => this.templates.set(r?.data || [])); }
   send() { this.api.post('/whatsapp/send', this.sendForm).subscribe(() => { this.tab = 'messages'; this.ngOnInit(); }); }
-  msgStatClass(s: string): string { return { pending: 'bg-yellow-100 text-yellow-700', sent: 'bg-blue-100 text-blue-700', delivered: 'bg-green-100 text-green-700', read: 'bg-green-200 text-green-800', failed: 'bg-red-100 text-red-700' }[s] || ''; }
+  msgStatClass(s: string): string { return { pending: 'bg-yellow-100 text-yellow-700', sent: 'bg-sage-100 text-sage-700', delivered: 'bg-green-100 text-green-700', read: 'bg-green-200 text-green-800', failed: 'bg-red-100 text-red-700' }[s] || ''; }
 }

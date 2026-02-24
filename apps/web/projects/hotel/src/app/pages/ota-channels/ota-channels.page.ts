@@ -14,7 +14,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
           <div class="mt-4 flex gap-2">
             @if (c.sync_status !== 'active') { <button (click)="activate(c.id)" class="px-3 py-1 bg-green-600 text-white text-xs rounded">Activate</button> }
             @if (c.sync_status === 'active') { <button (click)="pause(c.id)" class="px-3 py-1 bg-yellow-600 text-white text-xs rounded">Pause</button> }
-            <button (click)="sync(c.id)" class="px-3 py-1 bg-blue-600 text-white text-xs rounded">Sync Now</button>
+            <button (click)="sync(c.id)" class="px-3 py-1 bg-sage-600 text-white text-xs rounded">Sync Now</button>
             <button (click)="disconnect(c.id)" class="px-3 py-1 bg-gray-300 text-gray-700 text-xs rounded">Disconnect</button>
           </div>
         </div>

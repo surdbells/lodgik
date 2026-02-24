@@ -8,7 +8,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Class Schedule" subtitle="Manage fitness classes and bookings">
-      <button (click)="showForm = true; resetForm()" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">+ New Class</button>
+      <button (click)="showForm = true; resetForm()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Class</button>
     </ui-page-header>
 
     <ui-loading [loading]="loading()"></ui-loading>
@@ -26,7 +26,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
         <div class="bg-white border rounded-lg p-3 min-h-[120px]">
           <div class="text-xs font-medium text-gray-500 mb-2">{{ day.label }}</div>
           @for (c of getClassesForDay(day.date); track c.id) {
-            <div class="p-2 rounded mb-1 text-xs cursor-pointer hover:opacity-80" [class]="c.is_cancelled ? 'bg-gray-100 line-through' : 'bg-blue-50 border-l-2 border-blue-400'" (click)="selectClass(c)">
+            <div class="p-2 rounded mb-1 text-xs cursor-pointer hover:opacity-80" [class]="c.is_cancelled ? 'bg-gray-100 line-through' : 'bg-sage-50 border-l-2 border-blue-400'" (click)="selectClass(c)">
               <div class="font-medium">{{ c.name }}</div>
               <div class="text-gray-500">{{ formatTime(c.scheduled_at) }}</div>
               <div class="text-gray-400">{{ c.spots_left }}/{{ c.max_capacity }} spots</div>
@@ -46,7 +46,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
             @if (selectedClass().instructor_name) { <div class="text-sm text-gray-500">Instructor: {{ selectedClass().instructor_name }}</div> }
           </div>
           <div class="text-right">
-            <div class="text-2xl font-bold text-blue-600">{{ selectedClass().spots_left }}</div>
+            <div class="text-2xl font-bold text-sage-600">{{ selectedClass().spots_left }}</div>
             <div class="text-xs text-gray-400">spots left</div>
           </div>
         </div>
@@ -58,9 +58,9 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
         @if (bookSearchResults().length) {
           <div class="space-y-1 mb-4">
             @for (m of bookSearchResults(); track m.id) {
-              <div class="flex justify-between items-center p-2 border rounded hover:bg-blue-50">
+              <div class="flex justify-between items-center p-2 border rounded hover:bg-sage-50">
                 <span class="text-sm">{{ m.full_name }}</span>
-                <button (click)="bookMember(m.id)" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">Book</button>
+                <button (click)="bookMember(m.id)" class="bg-sage-600 text-white px-3 py-1 rounded text-xs">Book</button>
               </div>
             }
           </div>
@@ -72,7 +72,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
           @for (b of classBookings(); track b.id) {
             <div class="flex justify-between items-center p-2 border rounded text-sm">
               <span>{{ b.member_id }}</span>
-              <span class="text-xs px-2 py-0.5 rounded" [class]="b.status === 'booked' ? 'bg-blue-100 text-blue-700' : b.status === 'attended' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">{{ b.status }}</span>
+              <span class="text-xs px-2 py-0.5 rounded" [class]="b.status === 'booked' ? 'bg-sage-100 text-sage-700' : b.status === 'attended' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">{{ b.status }}</span>
             </div>
           }
         </div>
@@ -81,8 +81,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
 
     <!-- New Class Modal -->
     @if (showForm) {
-      <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="showForm = false">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6" (click)="$event.stopPropagation()">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showForm = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-4">Schedule New Class</h3>
           <div class="space-y-3">
             <div><label class="text-xs text-gray-500">Class Name *</label><input [(ngModel)]="form.name" class="w-full border rounded-lg px-3 py-2 text-sm"/></div>
@@ -103,7 +103,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
           </div>
           <div class="flex justify-end gap-2 mt-4">
             <button (click)="showForm = false" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-            <button (click)="saveClass()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Create</button>
+            <button (click)="saveClass()" class="px-4 py-2 bg-sage-600 text-white rounded-lg text-sm font-medium">Create</button>
           </div>
         </div>
       </div>

@@ -25,7 +25,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComp
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Profile Card -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold"
                  [style.background-color]="vipColor(guest()!.vip_status)">
@@ -61,7 +61,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComp
         </div>
 
         <!-- Booking History -->
-        <div class="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-5">
+        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-4">Booking History</h3>
           @if (bookings().length === 0) {
             <p class="text-gray-400 text-sm py-8 text-center">No bookings yet</p>

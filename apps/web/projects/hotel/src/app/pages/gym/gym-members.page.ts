@@ -9,14 +9,14 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
   imports: [FormsModule, RouterLink, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Gym Members" subtitle="Member directory and registration">
-      <button (click)="showForm = true; editMember = null; resetForm()" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">+ Register Member</button>
+      <button (click)="showForm = true; editMember = null; resetForm()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ Register Member</button>
     </ui-page-header>
 
     <ui-loading [loading]="loading()"></ui-loading>
 
     <!-- Search -->
     <div class="mb-4 flex gap-3">
-      <input [(ngModel)]="search" (ngModelChange)="load()" placeholder="Search by name, phone, or email..." class="flex-1 border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/>
+      <input [(ngModel)]="search" (ngModelChange)="load()" placeholder="Search by name, phone, or email..." class="flex-1 border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white"/>
       <select [(ngModel)]="filterType" (ngModelChange)="load()" class="border rounded-lg px-3 py-2 text-sm">
         <option value="">All Types</option>
         <option value="external">External</option>
@@ -25,7 +25,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
     </div>
 
     <!-- Members Table -->
-    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 border-b">
           <tr>
@@ -58,7 +58,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
                 }
               </td>
               <td class="px-4 py-3 text-right">
-                <button (click)="editMemberFn(m)" class="text-blue-600 text-xs hover:underline mr-2">Edit</button>
+                <button (click)="editMemberFn(m)" class="text-sage-600 text-xs hover:underline mr-2">Edit</button>
                 <button (click)="viewProfile(m)" class="text-gray-500 text-xs hover:underline">Profile</button>
               </td>
             </tr>
@@ -72,8 +72,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
 
     <!-- Register/Edit Modal -->
     @if (showForm) {
-      <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="showForm = false">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6" (click)="$event.stopPropagation()">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showForm = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-4">{{ editMember ? 'Edit Member' : 'Register New Member' }}</h3>
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -113,7 +113,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
           </div>
           <div class="flex justify-end gap-2 mt-4">
             <button (click)="showForm = false" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-            <button (click)="saveMember()" [disabled]="saving" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">{{ saving ? 'Saving...' : 'Save' }}</button>
+            <button (click)="saveMember()" [disabled]="saving" class="px-4 py-2 bg-sage-600 text-white rounded-lg text-sm font-medium">{{ saving ? 'Saving...' : 'Save' }}</button>
           </div>
         </div>
       </div>
@@ -121,7 +121,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
 
     <!-- Profile Drawer -->
     @if (selectedMember) {
-      <div class="fixed inset-0 bg-black/40 flex justify-end z-50" (click)="selectedMember = null">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-50" (click)="selectedMember = null">
         <div class="bg-white w-full max-w-md h-full overflow-y-auto p-6" (click)="$event.stopPropagation()">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold">{{ selectedMember.full_name }}</h3>

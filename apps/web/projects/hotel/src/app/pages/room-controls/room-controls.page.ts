@@ -8,7 +8,7 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
     <ui-page-header title="Room Controls" subtitle="DND status, make-up requests, maintenance reports"></ui-page-header>
     <div class="flex gap-1 mb-4">
       @for (tab of tabs; track tab.key) {
-        <button (click)="activeTab = tab.key; load()" [class]="activeTab === tab.key ? 'px-4 py-2 bg-blue-600 text-white rounded-lg text-sm' : 'px-4 py-2 border rounded-lg text-sm hover:bg-gray-50'">{{ tab.label }}</button>
+        <button (click)="activeTab = tab.key; load()" [class]="activeTab === tab.key ? 'px-4 py-2 bg-sage-600 text-white rounded-lg text-sm' : 'px-4 py-2 border rounded-lg text-sm hover:bg-gray-50'">{{ tab.label }}</button>
       }
     </div>
     <div class="space-y-2">
@@ -18,14 +18,14 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
             <div>
               <div class="font-medium">{{ typeIcon(r.request_type) }} Room {{ r.room_number }} <span class="text-xs bg-gray-100 rounded px-2 py-0.5 ml-2">{{ r.request_type.replace('_', ' ') }}</span></div>
               @if (r.description) { <div class="text-sm text-gray-600 mt-1">{{ r.description }}</div> }
-              @if (r.photo_url) { <div class="text-xs text-blue-500 mt-1">📷 Photo attached</div> }
+              @if (r.photo_url) { <div class="text-xs text-sage-500 mt-1">📷 Photo attached</div> }
               @if (r.assigned_to_name) { <div class="text-xs text-gray-400 mt-1">Assigned: {{ r.assigned_to_name }}</div> }
               @if (r.staff_notes) { <div class="text-xs text-green-600 mt-1">Notes: {{ r.staff_notes }}</div> }
             </div>
             <div class="flex gap-2 items-center">
               <span [class]="'text-xs font-bold px-2 py-1 rounded ' + statusBadge(r.status)">{{ r.status }}</span>
               @if (r.request_type === 'maintenance' && r.status === 'pending') {
-                <button (click)="assign(r.id)" class="px-3 py-1 bg-blue-600 text-white rounded text-xs">Assign</button>
+                <button (click)="assign(r.id)" class="px-3 py-1 bg-sage-600 text-white rounded text-xs">Assign</button>
               }
               @if (r.request_type === 'maintenance' && (r.status === 'acknowledged' || r.status === 'in_progress')) {
                 <button (click)="resolve(r.id)" class="px-3 py-1 bg-green-600 text-white rounded text-xs">Resolve</button>
@@ -62,5 +62,5 @@ export class RoomControlsPage implements OnInit {
   }
 
   typeIcon(t: string): string { return t === 'dnd' ? '🔕' : t === 'make_up_room' ? '🧹' : '🔧'; }
-  statusBadge(s: string): string { return s === 'resolved' ? 'bg-green-100 text-green-700' : s === 'in_progress' ? 'bg-blue-100 text-blue-700' : s === 'acknowledged' ? 'bg-amber-100 text-amber-700' : s === 'cancelled' ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-700'; }
+  statusBadge(s: string): string { return s === 'resolved' ? 'bg-green-100 text-green-700' : s === 'in_progress' ? 'bg-sage-100 text-sage-700' : s === 'acknowledged' ? 'bg-amber-100 text-amber-700' : s === 'cancelled' ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-700'; }
 }

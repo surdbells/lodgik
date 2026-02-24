@@ -7,7 +7,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
   standalone: true,
   imports: [PageHeaderComponent, LoadingSpinnerComponent, FormsModule, BadgeComponent],
   template: `
-    <ui-page-header title="Settings" subtitle="Manage your hotel, staff, and integrations"></ui-page-header>
+    <ui-page-header title="Settings" icon="⚙️" [breadcrumbs]="['System', 'Settings']" subtitle="Manage your hotel, staff, and integrations"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
@@ -23,24 +23,24 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
             <div><label class="block text-xs font-medium text-gray-600 mb-1">Secondary Color</label>
               <div class="flex gap-2"><input [(ngModel)]="branding.secondary_color" type="color" class="w-12 h-9 rounded cursor-pointer"><input [(ngModel)]="branding.secondary_color" class="flex-1 px-3 py-2 border rounded-lg text-sm font-mono"></div></div>
             <div><label class="block text-xs font-medium text-gray-600 mb-1">Logo</label>
-              <input type="file" (change)="onLogoSelect($event)" accept="image/*" class="w-full text-sm text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-blue-50 file:text-blue-600">
+              <input type="file" (change)="onLogoSelect($event)" accept="image/*" class="w-full text-sm text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-sage-50 file:text-sage-600">
               @if (branding.logo_url) { <img [src]="branding.logo_url" class="mt-2 h-10 rounded"> }</div>
           </div>
-          <button (click)="saveBranding()" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Save Branding</button>
+          <button (click)="saveBranding()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Save Branding</button>
         </div>
 
         <!-- Bank Accounts -->
         <div class="bg-white rounded-lg border p-5">
           <div class="flex items-center justify-between mb-3">
             <h3 class="text-sm font-semibold text-gray-700">🏦 Bank Accounts (for guest payments)</h3>
-            <button (click)="showAddBank = !showAddBank" class="text-xs text-blue-600 hover:underline">{{ showAddBank ? 'Cancel' : '+ Add Bank' }}</button>
+            <button (click)="showAddBank = !showAddBank" class="text-xs text-sage-600 hover:underline">{{ showAddBank ? 'Cancel' : '+ Add Bank' }}</button>
           </div>
           @if (showAddBank) {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
               <input [(ngModel)]="newBank.bank_name" placeholder="Bank name" class="px-3 py-2 border rounded-lg text-sm">
               <input [(ngModel)]="newBank.account_number" placeholder="Account number" class="px-3 py-2 border rounded-lg text-sm">
               <input [(ngModel)]="newBank.account_name" placeholder="Account name" class="px-3 py-2 border rounded-lg text-sm">
-              <button (click)="addBank()" class="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg">Add</button>
+              <button (click)="addBank()" class="px-3 py-2 bg-sage-600 text-white text-sm rounded-lg">Add</button>
             </div>
           }
           <div class="space-y-2">
@@ -49,7 +49,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                 <div><p class="text-sm font-medium">{{ b.bank_name }}</p><p class="text-xs text-gray-500">{{ b.account_number }} — {{ b.account_name }}</p></div>
                 <div class="flex items-center gap-2">
                   @if (b.is_primary) { <ui-badge variant="success">Primary</ui-badge> }
-                  @else { <button (click)="setPrimary(b.id)" class="text-xs text-blue-600 hover:underline">Set Primary</button> }
+                  @else { <button (click)="setPrimary(b.id)" class="text-xs text-sage-600 hover:underline">Set Primary</button> }
                 </div>
               </div>
             } @empty { <p class="text-sm text-gray-400 py-2">No bank accounts configured</p> }
@@ -69,7 +69,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
               <option value="restaurant">Restaurant</option><option value="accountant">Accountant</option><option value="security">Security</option><option value="concierge">Concierge</option>
             </select>
           </div>
-          <button (click)="sendInvite()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">📧 Send Invitation</button>
+          <button (click)="sendInvite()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">📧 Send Invitation</button>
 
           @if (staffList().length) {
             <div class="mt-4 border-t pt-3">
@@ -103,7 +103,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                 <option value="NGN">NGN (₦)</option><option value="USD">USD ($)</option><option value="GBP">GBP (£)</option>
               </select></div>
           </div>
-          <button (click)="saveLocale()" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">Save</button>
+          <button (click)="saveLocale()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-lg">Save</button>
         </div>
       </div>
     }

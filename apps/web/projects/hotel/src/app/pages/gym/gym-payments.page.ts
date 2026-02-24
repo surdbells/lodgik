@@ -50,7 +50,7 @@ import { LineChartComponent, ChartDataPoint, ChartSeries } from '@lodgik/charts'
                 <td class="px-4 py-3 text-xs font-mono">{{ p.member_id?.substring(0, 8) }}...</td>
                 <td class="px-4 py-3 font-medium">₦{{ formatAmount(p.amount) }}</td>
                 <td class="px-4 py-3"><span class="px-2 py-0.5 bg-gray-100 rounded text-xs">{{ p.payment_method_label }}</span></td>
-                <td class="px-4 py-3"><span class="text-xs" [class]="p.payment_type === 'renewal' ? 'text-blue-600' : 'text-gray-600'">{{ p.payment_type }}</span></td>
+                <td class="px-4 py-3"><span class="text-xs" [class]="p.payment_type === 'renewal' ? 'text-sage-600' : 'text-gray-600'">{{ p.payment_type }}</span></td>
                 <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs" [class]="p.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'">{{ p.status_label }}</span></td>
                 <td class="px-4 py-3 text-xs text-gray-400">{{ p.transfer_reference || '—' }}</td>
               </tr>

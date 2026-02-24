@@ -17,7 +17,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
       <div class="bg-white rounded-lg border p-6 mb-6">
         <h3 class="text-lg font-semibold mb-4">Last Audit — {{lastAudit().audit_date}}</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="p-3 bg-blue-50 rounded-lg"><p class="text-xs text-gray-500">Occupancy</p><p class="text-xl font-bold text-blue-700">{{lastAudit().occupancy_rate}}%</p><p class="text-xs text-gray-400">{{lastAudit().rooms_occupied}}/{{lastAudit().total_rooms}} rooms</p></div>
+          <div class="p-3 bg-sage-50 rounded-lg"><p class="text-xs text-gray-500">Occupancy</p><p class="text-xl font-bold text-sage-700">{{lastAudit().occupancy_rate}}%</p><p class="text-xs text-gray-400">{{lastAudit().rooms_occupied}}/{{lastAudit().total_rooms}} rooms</p></div>
           <div class="p-3 bg-green-50 rounded-lg"><p class="text-xs text-gray-500">Room Revenue</p><p class="text-xl font-bold text-green-700">₦{{(lastAudit().room_revenue / 100).toLocaleString()}}</p></div>
           <div class="p-3 bg-purple-50 rounded-lg"><p class="text-xs text-gray-500">F&B Revenue</p><p class="text-xl font-bold text-purple-700">₦{{(lastAudit().fnb_revenue / 100).toLocaleString()}}</p></div>
           <div class="p-3 bg-orange-50 rounded-lg"><p class="text-xs text-gray-500">Total Revenue</p><p class="text-xl font-bold text-orange-700">₦{{(lastAudit().total_revenue / 100).toLocaleString()}}</p></div>

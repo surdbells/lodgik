@@ -7,7 +7,7 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
     <ui-page-header title="Guest Services" subtitle="Waitlist, charge transfers, amenity vouchers"></ui-page-header>
     <div class="flex gap-1 mb-4">
       @for (tab of tabs; track tab.key) {
-        <button (click)="activeTab = tab.key; load()" [class]="activeTab === tab.key ? 'px-4 py-2 bg-blue-600 text-white rounded-lg text-sm' : 'px-4 py-2 border rounded-lg text-sm hover:bg-gray-50'">{{ tab.label }}</button>
+        <button (click)="activeTab = tab.key; load()" [class]="activeTab === tab.key ? 'px-4 py-2 bg-sage-600 text-white rounded-lg text-sm' : 'px-4 py-2 border rounded-lg text-sm hover:bg-gray-50'">{{ tab.label }}</button>
       }
     </div>
 
@@ -61,7 +61,7 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
         @for (v of vouchers(); track v.id) {
           <div class="bg-white border rounded-lg p-4 flex justify-between items-center">
             <div>
-              <div class="font-medium">{{ v.amenity_name }} <span class="text-xs bg-blue-100 text-blue-700 rounded px-2 py-0.5 ml-1">{{ v.code }}</span></div>
+              <div class="font-medium">{{ v.amenity_name }} <span class="text-xs bg-sage-100 text-sage-700 rounded px-2 py-0.5 ml-1">{{ v.code }}</span></div>
               <div class="text-xs text-gray-400">{{ v.amenity_type }} · Valid {{ v.valid_date }} · Uses {{ v.use_count }}/{{ v.max_uses }}</div>
             </div>
             <span [class]="'text-xs font-bold px-2 py-1 rounded ' + (v.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')">{{ v.status }}</span>

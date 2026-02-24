@@ -17,24 +17,24 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
     @if (!loading()) {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Basic Info -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-4">Basic Information</h3>
           <div class="space-y-3">
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Property Name *</label>
-              <input [(ngModel)]="form.name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <input [(ngModel)]="form.name" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Email</label>
-              <input [(ngModel)]="form.email" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <input [(ngModel)]="form.email" type="email" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Phone</label>
-              <input [(ngModel)]="form.phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <input [(ngModel)]="form.phone" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Star Rating</label>
-              <select [(ngModel)]="form.star_rating" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <select [(ngModel)]="form.star_rating" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
                 <option [ngValue]="null">Not Rated</option>
                 <option [ngValue]="1">★</option><option [ngValue]="2">★★</option><option [ngValue]="3">★★★</option>
                 <option [ngValue]="4">★★★★</option><option [ngValue]="5">★★★★★</option>
@@ -44,42 +44,42 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
         </div>
 
         <!-- Address -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-4">Address</h3>
           <div class="space-y-3">
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Address</label>
-              <input [(ngModel)]="form.address" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <input [(ngModel)]="form.address" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">City</label>
-                <input [(ngModel)]="form.city" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <input [(ngModel)]="form.city" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               </div>
               <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">State</label>
-                <input [(ngModel)]="form.state" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <input [(ngModel)]="form.state" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               </div>
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Country</label>
-              <input [(ngModel)]="form.country" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" value="NG">
+              <input [(ngModel)]="form.country" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50" value="NG">
             </div>
           </div>
         </div>
 
         <!-- Operations -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-4">Operations</h3>
           <div class="space-y-3">
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">Check-in Time</label>
-                <input [(ngModel)]="form.check_in_time" type="time" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <input [(ngModel)]="form.check_in_time" type="time" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               </div>
               <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">Check-out Time</label>
-                <input [(ngModel)]="form.check_out_time" type="time" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <input [(ngModel)]="form.check_out_time" type="time" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               </div>
             </div>
             <div class="flex items-center gap-2 mt-2">
@@ -90,7 +90,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
         </div>
 
         <!-- Bank Accounts -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-4">Bank Accounts</h3>
           @if (bankAccounts().length > 0) {
             <div class="space-y-2">
@@ -101,7 +101,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
                     <p class="text-xs text-gray-400">{{ ba.account_number }} · {{ ba.account_name }}</p>
                   </div>
                   @if (ba.is_primary) {
-                    <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">Primary</span>
+                    <span class="px-2 py-0.5 bg-sage-100 text-sage-700 text-xs rounded-full">Primary</span>
                   }
                 </div>
               }
@@ -114,7 +114,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
 
       <!-- Save -->
       <div class="mt-6 flex gap-3">
-        <button (click)="save()" class="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">Save Changes</button>
+        <button (click)="save()" class="px-6 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">Save Changes</button>
         <a routerLink="/properties" class="px-6 py-2.5 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</a>
       </div>
     }

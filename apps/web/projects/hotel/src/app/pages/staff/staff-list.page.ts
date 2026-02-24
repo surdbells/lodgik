@@ -8,20 +8,20 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
   imports: [PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, FormsModule],
   template: `
     <ui-page-header title="Staff" subtitle="Manage hotel staff members">
-      <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700" (click)="showAdd = !showAdd">
+      <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showAdd = !showAdd">
         {{ showAdd ? 'Cancel' : '+ Add Staff' }}
       </button>
     </ui-page-header>
 
     @if (showAdd) {
-      <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">Add Staff Member</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <input [(ngModel)]="form.first_name" placeholder="First name" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.last_name" placeholder="Last name" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.email" type="email" placeholder="Email" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.password" type="password" placeholder="Password" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <select [(ngModel)]="form.role" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <input [(ngModel)]="form.first_name" placeholder="First name" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.last_name" placeholder="Last name" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.email" type="email" placeholder="Email" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.password" type="password" placeholder="Password" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <select [(ngModel)]="form.role" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             <option value="manager">Manager</option><option value="front_desk">Front Desk</option>
             <option value="housekeeping">Housekeeping</option><option value="maintenance">Maintenance</option>
             <option value="restaurant">Restaurant</option><option value="bar">Bar</option>
@@ -29,7 +29,7 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
             <option value="security">Security</option><option value="concierge">Concierge</option>
           </select>
         </div>
-        <button (click)="addStaff()" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Add</button>
+        <button (click)="addStaff()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Add</button>
       </div>
     }
 

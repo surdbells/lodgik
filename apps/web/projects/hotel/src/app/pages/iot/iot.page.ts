@@ -6,8 +6,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
   template: `
     <ui-page-header title="IoT Smart Rooms" subtitle="Connected devices, automations, and energy monitoring">
       <div class="flex gap-2">
-        <button (click)="tab = 'devices'" [class]="tab === 'devices' ? 'bg-blue-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Devices</button>
-        <button (click)="tab = 'automations'" [class]="tab === 'automations' ? 'bg-blue-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Automations</button>
+        <button (click)="tab = 'devices'" [class]="tab === 'devices' ? 'bg-sage-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Devices</button>
+        <button (click)="tab = 'automations'" [class]="tab === 'automations' ? 'bg-sage-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Automations</button>
         <button (click)="tab = 'energy'" [class]="tab === 'energy' ? 'bg-green-600 text-white' : 'bg-gray-200'" class="px-3 py-2 text-sm rounded-lg">Energy</button>
       </div>
     </ui-page-header>

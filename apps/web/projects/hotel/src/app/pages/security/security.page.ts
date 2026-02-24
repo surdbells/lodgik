@@ -6,13 +6,13 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
   template: `
     <ui-page-header title="Security & Gate Pass" subtitle="Visitor management, gate passes, guest movement tracking"></ui-page-header>
     <div class="grid grid-cols-3 gap-4 mb-4">
-      <div class="bg-white border rounded-lg p-4 text-center"><div class="text-2xl font-bold text-blue-600">{{ stats().onPremise }}</div><div class="text-xs text-gray-500">On Premise</div></div>
+      <div class="bg-white border rounded-lg p-4 text-center"><div class="text-2xl font-bold text-sage-600">{{ stats().onPremise }}</div><div class="text-xs text-gray-500">On Premise</div></div>
       <div class="bg-white border rounded-lg p-4 text-center"><div class="text-2xl font-bold text-amber-600">{{ stats().pendingPasses }}</div><div class="text-xs text-gray-500">Pending Passes</div></div>
       <div class="bg-white border rounded-lg p-4 text-center"><div class="text-2xl font-bold text-green-600">{{ stats().todayVisitors }}</div><div class="text-xs text-gray-500">Visitors Today</div></div>
     </div>
     <div class="flex gap-1 mb-4">
       @for (tab of tabs; track tab.key) {
-        <button (click)="activeTab = tab.key" [class]="activeTab === tab.key ? 'px-4 py-2 bg-blue-600 text-white rounded-lg text-sm' : 'px-4 py-2 border rounded-lg text-sm hover:bg-gray-50'">{{ tab.label }}</button>
+        <button (click)="activeTab = tab.key" [class]="activeTab === tab.key ? 'px-4 py-2 bg-sage-600 text-white rounded-lg text-sm' : 'px-4 py-2 border rounded-lg text-sm hover:bg-gray-50'">{{ tab.label }}</button>
       }
     </div>
     <!-- Gate Passes -->
@@ -28,7 +28,7 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
             <div class="flex gap-2 items-center">
               <span [class]="'text-xs font-bold px-2 py-1 rounded ' + statusBadge(gp.status)">{{ gp.status }}</span>
               @if (gp.status === 'pending') { <button (click)="approvePass(gp.id)" class="px-3 py-1 bg-green-600 text-white rounded text-xs">Approve</button> <button (click)="denyPass(gp.id)" class="px-3 py-1 bg-red-500 text-white rounded text-xs">Deny</button> }
-              @if (gp.status === 'approved') { <button (click)="passCheckIn(gp.id)" class="px-3 py-1 bg-blue-600 text-white rounded text-xs">Check In</button> }
+              @if (gp.status === 'approved') { <button (click)="passCheckIn(gp.id)" class="px-3 py-1 bg-sage-600 text-white rounded text-xs">Check In</button> }
               @if (gp.status === 'checked_in') { <button (click)="passCheckOut(gp.id)" class="px-3 py-1 bg-orange-500 text-white rounded text-xs">Check Out</button> }
             </div>
           </div>
@@ -79,5 +79,5 @@ export class SecurityPage implements OnInit, OnDestroy {
   denyPass(id: string) { this.api.post(`/security/gate-passes/${id}/deny`, { notes: '' }).subscribe({ next: () => this.load() }); }
   passCheckIn(id: string) { this.api.post(`/security/gate-passes/${id}/check-in`, {}).subscribe({ next: () => this.load() }); }
   passCheckOut(id: string) { this.api.post(`/security/gate-passes/${id}/check-out`, {}).subscribe({ next: () => this.load() }); }
-  statusBadge(s: string): string { return s === 'approved' ? 'bg-green-100 text-green-700' : s === 'checked_in' ? 'bg-blue-100 text-blue-700' : s === 'denied' ? 'bg-red-100 text-red-700' : s === 'checked_out' ? 'bg-gray-100 text-gray-500' : 'bg-amber-100 text-amber-700'; }
+  statusBadge(s: string): string { return s === 'approved' ? 'bg-green-100 text-green-700' : s === 'checked_in' ? 'bg-sage-100 text-sage-700' : s === 'denied' ? 'bg-red-100 text-red-700' : s === 'checked_out' ? 'bg-gray-100 text-gray-500' : 'bg-amber-100 text-amber-700'; }
 }

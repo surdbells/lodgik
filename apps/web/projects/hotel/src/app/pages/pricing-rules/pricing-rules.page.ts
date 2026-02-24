@@ -8,7 +8,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Dynamic Pricing" subtitle="Automated rate adjustments based on demand, season, and occupancy">
-      <button (click)="showForm = !showForm" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ New Rule</button>
+      <button (click)="showForm = !showForm" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">+ New Rule</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
@@ -27,7 +27,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
           <div><label class="block text-sm font-medium text-gray-700 mb-1">End Date</label><input type="date" [(ngModel)]="form.end_date" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
         </div>
         <div class="flex gap-2 mt-4">
-          <button (click)="createRule()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">Create</button>
+          <button (click)="createRule()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg">Create</button>
           <button (click)="showForm = false" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg">Cancel</button>
         </div>
       </div>

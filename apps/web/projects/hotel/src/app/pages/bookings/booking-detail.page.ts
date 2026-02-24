@@ -31,7 +31,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
           </div>
 
           <!-- Details Grid -->
-          <div class="bg-white rounded-lg border border-gray-200 p-5">
+          <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
             <h3 class="text-sm font-semibold text-gray-700 mb-4">Booking Details</h3>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
               <div><span class="text-gray-400">Reference</span><p class="font-medium mt-0.5">{{ booking()!.booking_ref }}</p></div>
@@ -56,7 +56,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
 
           <!-- Addons -->
           @if (booking()!.addons?.length > 0) {
-            <div class="bg-white rounded-lg border border-gray-200 p-5">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
               <h3 class="text-sm font-semibold text-gray-700 mb-3">Add-ons</h3>
               <div class="space-y-2">
                 @for (a of booking()!.addons; track a.id) {
@@ -77,7 +77,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
               <button (click)="doNoShow()" class="px-5 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700">Mark No-Show</button>
             }
             @if (booking()!.status === 'checked_in') {
-              <button (click)="doCheckOut()" class="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">Check Out Guest</button>
+              <button (click)="doCheckOut()" class="px-5 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">Check Out Guest</button>
             }
             @if (booking()!.status === 'pending') {
               <button (click)="doCancel()" class="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">Cancel Booking</button>
@@ -93,7 +93,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                 </a>
               }
               @if (invoiceId()) {
-                <a [routerLink]="['/invoices', invoiceId()]" class="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100">
+                <a [routerLink]="['/invoices', invoiceId()]" class="flex items-center gap-2 px-4 py-2 bg-sage-50 border border-sage-200 text-sage-700 text-sm font-medium rounded-lg hover:bg-sage-100">
                   📄 View Invoice
                 </a>
               }
@@ -102,7 +102,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
         </div>
 
         <!-- Timeline Sidebar -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-4">Timeline</h3>
           <div class="space-y-0">
             @for (log of statusHistory(); track log.id) {

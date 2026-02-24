@@ -21,12 +21,12 @@ interface RoomFilters {
     <ui-page-header title="Rooms" subtitle="Manage rooms and room status">
       <div class="flex gap-2">
         <button class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-                [class.bg-blue-50]="viewMode() === 'grid'" [class.border-blue-300]="viewMode() === 'grid'"
+                [class.bg-sage-50]="viewMode() === 'grid'" [class.border-blue-300]="viewMode() === 'grid'"
                 (click)="viewMode.set('grid')">Grid</button>
         <button class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-                [class.bg-blue-50]="viewMode() === 'list'" [class.border-blue-300]="viewMode() === 'list'"
+                [class.bg-sage-50]="viewMode() === 'list'" [class.border-blue-300]="viewMode() === 'list'"
                 (click)="viewMode.set('list')">List</button>
-        <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700" (click)="showAdd = !showAdd">
+        <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showAdd = !showAdd">
           {{ showAdd ? 'Cancel' : '+ Add Room' }}
         </button>
       </div>
@@ -44,25 +44,25 @@ interface RoomFilters {
 
     <!-- Add Room Form -->
     @if (showAdd) {
-      <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">Add Room</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <select [(ngModel)]="addForm.room_type_id" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <select [(ngModel)]="addForm.room_type_id" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             <option value="">Select Room Type</option>
             @for (rt of roomTypes(); track rt.id) {
               <option [value]="rt.id">{{ rt.name }} — ₦{{ rt.base_rate | number }}</option>
             }
           </select>
-          <input [(ngModel)]="addForm.room_number" placeholder="Room number (e.g. 101)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="addForm.floor" type="number" placeholder="Floor" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <button (click)="createRoom()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Create</button>
+          <input [(ngModel)]="addForm.room_number" placeholder="Room number (e.g. 101)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="addForm.floor" type="number" placeholder="Floor" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <button (click)="createRoom()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Create</button>
         </div>
       </div>
     }
 
     <!-- Filters -->
     <div class="flex flex-wrap items-center gap-3 mb-4">
-      <select [(ngModel)]="filters.status" (ngModelChange)="load()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+      <select [(ngModel)]="filters.status" (ngModelChange)="load()" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
         <option value="">All Statuses</option>
         <option value="vacant_clean">Vacant Clean</option>
         <option value="vacant_dirty">Vacant Dirty</option>
@@ -71,13 +71,13 @@ interface RoomFilters {
         <option value="out_of_order">Out of Order</option>
         <option value="maintenance">Maintenance</option>
       </select>
-      <select [(ngModel)]="filters.room_type_id" (ngModelChange)="load()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+      <select [(ngModel)]="filters.room_type_id" (ngModelChange)="load()" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
         <option value="">All Types</option>
         @for (rt of roomTypes(); track rt.id) {
           <option [value]="rt.id">{{ rt.name }}</option>
         }
       </select>
-      <select [(ngModel)]="filters.floor" (ngModelChange)="load()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+      <select [(ngModel)]="filters.floor" (ngModelChange)="load()" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
         <option value="">All Floors</option>
         @for (f of floors(); track f) {
           <option [value]="f">Floor {{ f }}</option>
@@ -115,14 +115,14 @@ interface RoomFilters {
 
     <!-- Status Change Dialog -->
     @if (showStatusDialog && selectedRoom) {
-      <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="showStatusDialog = false">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-5" (click)="$event.stopPropagation()">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showStatusDialog = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-1">Room {{ selectedRoom.room_number }}</h3>
           <p class="text-sm text-gray-500 mb-4">Current: <span class="font-medium" [style.color]="selectedRoom.status_color">{{ selectedRoom.status_label }}</span></p>
           <div class="space-y-2">
             @for (s of getTransitions(selectedRoom.status); track s) {
               <button (click)="changeStatus(selectedRoom.id, s)"
-                      class="w-full text-left px-4 py-2.5 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 transition-colors">
+                      class="w-full text-left px-4 py-2.5 rounded-xl border border-gray-100 text-sm hover:bg-gray-50 transition-colors">
                 → {{ statusLabels[s] }}
               </button>
             }

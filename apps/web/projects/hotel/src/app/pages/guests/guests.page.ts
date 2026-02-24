@@ -9,21 +9,21 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
   standalone: true,
   imports: [FormsModule, DecimalPipe, UpperCasePipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Guests" subtitle="Manage guest profiles and history">
-      <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700" (click)="showForm = !showForm; resetForm()">
+    <ui-page-header title="Guests" subtitle="Manage guest profiles and history" icon="👤" [breadcrumbs]="['Manage Guests', 'Guest List']">
+      <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showForm = !showForm; resetForm()">
         {{ showForm ? 'Cancel' : '+ Add Guest' }}
       </button>
     </ui-page-header>
 
     @if (showForm) {
-      <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ editId ? 'Edit' : 'New' }} Guest</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <input [(ngModel)]="form.first_name" placeholder="First name *" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.last_name" placeholder="Last name *" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.email" type="email" placeholder="Email" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.phone" placeholder="Phone (+234...)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <select [(ngModel)]="form.id_type" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <input [(ngModel)]="form.first_name" placeholder="First name *" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.last_name" placeholder="Last name *" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.email" type="email" placeholder="Email" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.phone" placeholder="Phone (+234...)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <select [(ngModel)]="form.id_type" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             <option value="">ID Type</option>
             <option value="national_id">National ID</option>
             <option value="passport">Passport</option>
@@ -31,30 +31,30 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
             <option value="voters_card">Voter's Card</option>
             <option value="nin">NIN</option>
           </select>
-          <input [(ngModel)]="form.id_number" placeholder="ID Number" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.nationality" placeholder="Nationality" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <select [(ngModel)]="form.gender" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <input [(ngModel)]="form.id_number" placeholder="ID Number" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.nationality" placeholder="Nationality" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <select [(ngModel)]="form.gender" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             <option value="">Gender</option>
             <option value="male">Male</option>
             <option value="female">Female</option>
             <option value="other">Other</option>
           </select>
-          <select [(ngModel)]="form.vip_status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <select [(ngModel)]="form.vip_status" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             <option value="regular">Regular</option>
             <option value="silver">Silver</option>
             <option value="gold">Gold</option>
             <option value="platinum">Platinum</option>
             <option value="vvip">VVIP</option>
           </select>
-          <input [(ngModel)]="form.company_name" placeholder="Company" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.city" placeholder="City" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.state" placeholder="State" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <input [(ngModel)]="form.company_name" placeholder="Company" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.city" placeholder="City" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.state" placeholder="State" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
         </div>
         <div class="mt-3">
-          <textarea [(ngModel)]="form.notes" placeholder="Notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+          <textarea [(ngModel)]="form.notes" placeholder="Notes" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></textarea>
         </div>
         <div class="flex gap-2 mt-3">
-          <button (click)="save()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">{{ editId ? 'Update' : 'Create' }}</button>
+          <button (click)="save()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">{{ editId ? 'Update' : 'Create' }}</button>
           @if (editId) {
             <button (click)="showForm = false; editId = ''" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
           }
@@ -64,8 +64,8 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
 
     <!-- Filters -->
     <div class="flex flex-wrap items-center gap-3 mb-4">
-      <input [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Search guests..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-64">
-      <select [(ngModel)]="vipFilter" (ngModelChange)="load()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+      <input [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Search guests..." class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50 w-64">
+      <select [(ngModel)]="vipFilter" (ngModelChange)="load()" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
         <option value="">All VIP Levels</option>
         <option value="regular">Regular</option>
         <option value="silver">Silver</option>
@@ -82,8 +82,8 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
 
     <!-- Guest Detail Modal -->
     @if (showDetail && detailGuest) {
-      <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="showDetail = false">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto" (click)="$event.stopPropagation()">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showDetail = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto" (click)="$event.stopPropagation()">
           <div class="flex items-center justify-between mb-4">
             <div>
               <h3 class="text-lg font-semibold">{{ detailGuest.full_name }}</h3>
@@ -99,14 +99,14 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
             <div><span class="text-gray-400">ID</span><p class="font-medium">{{ detailGuest.id_type ? detailGuest.id_type + ': ' + detailGuest.id_number : '—' }}</p></div>
             <div><span class="text-gray-400">Company</span><p class="font-medium">{{ detailGuest.company_name || '—' }}</p></div>
             <div><span class="text-gray-400">Gender</span><p class="font-medium">{{ detailGuest.gender || '—' }}</p></div>
-            <div><span class="text-gray-400">Total Stays</span><p class="font-medium text-blue-600">{{ detailGuest.total_stays }}</p></div>
+            <div><span class="text-gray-400">Total Stays</span><p class="font-medium text-sage-600">{{ detailGuest.total_stays }}</p></div>
             <div><span class="text-gray-400">Total Spent</span><p class="font-medium text-emerald-600">₦{{ detailGuest.total_spent | number }}</p></div>
           </div>
           @if (detailGuest.notes) {
             <div class="mt-3 text-sm"><span class="text-gray-400">Notes</span><p class="mt-1 text-gray-700">{{ detailGuest.notes }}</p></div>
           }
           <div class="flex gap-2 mt-5">
-            <button (click)="edit(detailGuest); showDetail = false" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Edit</button>
+            <button (click)="edit(detailGuest); showDetail = false" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Edit</button>
             <button (click)="showDetail = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">Close</button>
           </div>
         </div>

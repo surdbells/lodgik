@@ -9,8 +9,8 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, RouterLink, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Employees" subtitle="Employee directory and management">
-      <button (click)="showAdd = true" class="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-700">+ Add Employee</button>
+    <ui-page-header title="Employees" icon="🧑‍💼" [breadcrumbs]="['Human Resources', 'Employees']" subtitle="Employee directory and management">
+      <button (click)="showAdd = true" class="bg-sage-600 text-white px-4 py-2 text-sm rounded-xl hover:bg-sage-700 transition-colors">+ Add Employee</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
@@ -42,7 +42,7 @@ import { AuthService } from '@lodgik/shared';
 
     @if (showAdd) {
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" (click)="showAdd = false">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-4">Add Employee</h3>
           <div class="grid grid-cols-2 gap-3">
             <input [(ngModel)]="form.first_name" placeholder="First Name *" class="border rounded-lg px-3 py-2 text-sm" />
@@ -59,7 +59,7 @@ import { AuthService } from '@lodgik/shared';
           </div>
           <div class="flex justify-end gap-2 mt-4">
             <button (click)="showAdd = false" class="px-4 py-2 text-sm border rounded-lg">Cancel</button>
-            <button (click)="addEmployee()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add</button>
+            <button (click)="addEmployee()" class="px-4 py-2 text-sm bg-sage-600 text-white rounded-lg hover:bg-sage-700">Add</button>
           </div>
         </div>
       </div>

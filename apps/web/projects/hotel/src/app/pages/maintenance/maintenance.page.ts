@@ -5,8 +5,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
   template: `
     <ui-page-header title="Preventive Maintenance" subtitle="Scheduled maintenance and service logs">
       <div class="flex gap-2">
-        <button (click)="tab = 'pm'" [class]="tab === 'pm' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-2 text-sm rounded-lg">Schedules</button>
-        <button (click)="tab = 'logs'" [class]="tab === 'logs' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-2 text-sm rounded-lg">Logs</button>
+        <button (click)="tab = 'pm'" [class]="tab === 'pm' ? 'bg-sage-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-2 text-sm rounded-lg">Schedules</button>
+        <button (click)="tab = 'logs'" [class]="tab === 'logs' ? 'bg-sage-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-2 text-sm rounded-lg">Logs</button>
         <button (click)="tab = 'overdue'" [class]="tab === 'overdue' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-2 text-sm rounded-lg">Overdue ({{overdue().length}})</button>
       </div>
     </ui-page-header>

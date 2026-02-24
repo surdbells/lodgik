@@ -9,7 +9,7 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, SlicePipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Attendance" subtitle="Daily attendance & clock in/out"></ui-page-header>
+    <ui-page-header title="Attendance" icon="🕐" [breadcrumbs]="['Human Resources', 'Attendance']" subtitle="Daily attendance & clock in/out"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
@@ -60,7 +60,7 @@ import { AuthService } from '@lodgik/shared';
     <!-- Clock In Dialog -->
     @if (showClockIn) {
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" (click)="showClockIn = false">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-4">🕐 Clock In</h3>
           <select [(ngModel)]="clockEmpId" class="border rounded-lg px-3 py-2 text-sm w-full mb-3">
             <option value="">Select Employee</option>
@@ -77,7 +77,7 @@ import { AuthService } from '@lodgik/shared';
     <!-- Clock Out Dialog -->
     @if (showClockOut) {
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" (click)="showClockOut = false">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-4">🕕 Clock Out</h3>
           <select [(ngModel)]="clockEmpId" class="border rounded-lg px-3 py-2 text-sm w-full mb-3">
             <option value="">Select Employee</option>
@@ -94,7 +94,7 @@ import { AuthService } from '@lodgik/shared';
     <!-- Manual Record Dialog -->
     @if (showRecord) {
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" (click)="showRecord = false">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-4">📝 Record Attendance</h3>
           <select [(ngModel)]="clockEmpId" class="border rounded-lg px-3 py-2 text-sm w-full mb-2">
             <option value="">Select Employee</option>

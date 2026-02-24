@@ -13,14 +13,14 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
       <!-- Check-in Panel -->
       <div class="bg-white border rounded-xl p-6">
         <div class="flex gap-2 mb-4">
-          <button (click)="mode = 'qr'" [class]="mode === 'qr' ? 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium' : 'bg-gray-100 px-4 py-2 rounded-lg text-sm'">📷 QR Code</button>
-          <button (click)="mode = 'search'" [class]="mode === 'search' ? 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium' : 'bg-gray-100 px-4 py-2 rounded-lg text-sm'">🔍 Name Search</button>
+          <button (click)="mode = 'qr'" [class]="mode === 'qr' ? 'bg-sage-600 text-white px-4 py-2 rounded-lg text-sm font-medium' : 'bg-gray-100 px-4 py-2 rounded-lg text-sm'">📷 QR Code</button>
+          <button (click)="mode = 'search'" [class]="mode === 'search' ? 'bg-sage-600 text-white px-4 py-2 rounded-lg text-sm font-medium' : 'bg-gray-100 px-4 py-2 rounded-lg text-sm'">🔍 Name Search</button>
         </div>
 
         @if (mode === 'qr') {
           <div class="text-center">
             <label class="text-sm text-gray-600 mb-2 block">Enter or scan QR code value</label>
-            <input [(ngModel)]="qrCode" placeholder="GYM-XXXXXXXX" class="border-2 border-blue-300 rounded-xl px-4 py-3 text-center text-lg font-mono w-full mb-3 focus:ring-2 focus:ring-blue-500"/>
+            <input [(ngModel)]="qrCode" placeholder="GYM-XXXXXXXX" class="border-2 border-blue-300 rounded-xl px-4 py-3 text-center text-lg font-mono w-full mb-3 focus:ring-2 focus:ring-sage-200"/>
             <button (click)="checkInByQr()" [disabled]="!qrCode || loading()" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold text-lg hover:bg-green-700 disabled:opacity-50">✅ Check In</button>
           </div>
         }
@@ -29,7 +29,7 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
           <input [(ngModel)]="search" (ngModelChange)="searchMembers()" placeholder="Search by name or phone..." class="w-full border rounded-lg px-4 py-2 text-sm mb-3"/>
           <div class="max-h-60 overflow-y-auto space-y-2">
             @for (m of searchResults(); track m.id) {
-              <div class="flex items-center justify-between p-3 border rounded-lg hover:bg-blue-50 cursor-pointer" (click)="checkInMember(m.id)">
+              <div class="flex items-center justify-between p-3 border rounded-lg hover:bg-sage-50 cursor-pointer" (click)="checkInMember(m.id)">
                 <div>
                   <div class="font-medium text-sm">{{ m.full_name }}</div>
                   <div class="text-xs text-gray-400">{{ m.phone }} · {{ m.qr_code }}</div>
@@ -55,7 +55,7 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
       <div class="bg-white border rounded-xl p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-semibold text-gray-700">Today's Visits</h3>
-          <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">{{ visits().length }}</span>
+          <span class="bg-sage-100 text-sage-700 px-2 py-0.5 rounded text-xs font-medium">{{ visits().length }}</span>
         </div>
         <div class="space-y-2 max-h-[500px] overflow-y-auto">
           @for (v of visits(); track v.id) {

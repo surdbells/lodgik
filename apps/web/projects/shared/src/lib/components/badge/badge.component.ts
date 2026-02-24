@@ -21,7 +21,7 @@ export class BadgeComponent {
       danger: 'bg-red-50 text-red-700',
       warning: 'bg-amber-50 text-amber-700',
       info: 'bg-blue-50 text-blue-700',
-      primary: 'bg-indigo-50 text-indigo-700',
+      primary: 'bg-sage-50 text-sage-700',
       neutral: 'bg-gray-100 text-gray-600',
     };
     return map[this.variant] ?? map['neutral'];
@@ -33,7 +33,7 @@ export class BadgeComponent {
       danger: 'bg-red-500',
       warning: 'bg-amber-500',
       info: 'bg-blue-500',
-      primary: 'bg-indigo-500',
+      primary: 'bg-sage-500',
       neutral: 'bg-gray-400',
     };
     return map[this.variant] ?? map['neutral'];

@@ -32,8 +32,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
             <td class="px-4 py-3 text-center"><span [class]="'px-2 py-0.5 rounded text-xs font-medium ' + critClass(i.priority)">{{i.priority}}</span></td>
             <td class="px-4 py-3 text-center"><span [class]="'px-2 py-0.5 rounded text-xs font-medium ' + statClass(i.status)">{{i.status}}</span></td>
             <td class="px-4 py-3 text-center flex gap-1 justify-center">
-              @if (i.status === 'new') { <button (click)="assign(i.id)" class="text-blue-600 text-xs hover:underline">Assign</button> }
-              @if (i.status === 'assigned') { <button (click)="startProgress(i.id)" class="text-blue-600 text-xs hover:underline">Start</button> }
+              @if (i.status === 'new') { <button (click)="assign(i.id)" class="text-sage-600 text-xs hover:underline">Assign</button> }
+              @if (i.status === 'assigned') { <button (click)="startProgress(i.id)" class="text-sage-600 text-xs hover:underline">Start</button> }
               @if (i.status === 'in_progress') { <button (click)="resolve(i.id)" class="text-green-600 text-xs hover:underline">Resolve</button> }
             </td>
           </tr>
@@ -51,5 +51,5 @@ export default class IncidentsPage implements OnInit {
   startProgress(id: string) { this.api.post(`/asset-incidents/${id}/start`, {}).subscribe(() => this.ngOnInit()); }
   resolve(id: string) { this.api.post(`/asset-incidents/${id}/resolve`, { resolution_notes: 'Resolved' }).subscribe(() => this.ngOnInit()); }
   critClass(c: string): string { return { low: 'bg-gray-100 text-gray-700', medium: 'bg-yellow-100 text-yellow-700', high: 'bg-orange-100 text-orange-700', critical: 'bg-red-100 text-red-700' }[c] || ''; }
-  statClass(s: string): string { return { new: 'bg-blue-100 text-blue-700', assigned: 'bg-yellow-100 text-yellow-700', in_progress: 'bg-purple-100 text-purple-700', resolved: 'bg-green-100 text-green-700', closed: 'bg-gray-100 text-gray-700' }[s] || ''; }
+  statClass(s: string): string { return { new: 'bg-sage-100 text-sage-700', assigned: 'bg-yellow-100 text-yellow-700', in_progress: 'bg-purple-100 text-purple-700', resolved: 'bg-green-100 text-green-700', closed: 'bg-gray-100 text-gray-700' }[s] || ''; }
 }

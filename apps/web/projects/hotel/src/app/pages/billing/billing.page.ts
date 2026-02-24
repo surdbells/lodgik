@@ -10,8 +10,8 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
   template: `
     <ui-page-header title="Billing & Subscription" subtitle="Manage your plan, payments, and invoices">
       <div class="flex gap-2">
-        <button (click)="tab = 'plan'" [class]="tab === 'plan' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-2 text-sm rounded-lg">Plan</button>
-        <button (click)="tab = 'invoices'; loadInvoices()" [class]="tab === 'invoices' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-2 text-sm rounded-lg">Invoices</button>
+        <button (click)="tab = 'plan'" [class]="tab === 'plan' ? 'bg-sage-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-2 text-sm rounded-lg">Plan</button>
+        <button (click)="tab = 'invoices'; loadInvoices()" [class]="tab === 'invoices' ? 'bg-sage-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-2 text-sm rounded-lg">Invoices</button>
       </div>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
@@ -35,7 +35,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
                 <span>{{ usage()[r]?.used || 0 }} / {{ usage()[r]?.limit || 0 }}</span></div>
               <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
                 <div class="h-3 rounded-full transition-all" [style.width.%]="usage()[r]?.percent || 0"
-                     [class]="(usage()[r]?.percent || 0) > 80 ? 'bg-red-500' : (usage()[r]?.percent || 0) > 60 ? 'bg-amber-500' : 'bg-blue-500'"></div>
+                     [class]="(usage()[r]?.percent || 0) > 80 ? 'bg-red-500' : (usage()[r]?.percent || 0) > 60 ? 'bg-amber-500' : 'bg-sage-500'"></div>
               </div>
             </div>
           }
@@ -47,21 +47,21 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
         <h3 class="text-sm font-semibold text-gray-700 mb-1">Choose a Plan</h3>
         <p class="text-xs text-gray-400 mb-4">Select billing cycle then pick a plan to subscribe or upgrade.</p>
         <div class="flex gap-2 mb-4">
-          <button (click)="billingCycle = 'monthly'" [class]="billingCycle === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 text-sm rounded-lg">Monthly</button>
-          <button (click)="billingCycle = 'annually'" [class]="billingCycle === 'annually' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 text-sm rounded-lg">Annual <span class="text-xs opacity-75">(Save ~20%)</span></button>
+          <button (click)="billingCycle = 'monthly'" [class]="billingCycle === 'monthly' ? 'bg-sage-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 text-sm rounded-lg">Monthly</button>
+          <button (click)="billingCycle = 'annually'" [class]="billingCycle === 'annually' ? 'bg-sage-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 text-sm rounded-lg">Annual <span class="text-xs opacity-75">(Save ~20%)</span></button>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           @for (plan of plans(); track plan.id) {
             <div class="border rounded-lg p-5 transition-all hover:shadow-md"
-                 [class.border-blue-500]="plan.id === currentPlanId()"
+                 [class.border-sage-500]="plan.id === currentPlanId()"
                  [class.ring-2]="plan.id === currentPlanId()"
-                 [class.ring-blue-200]="plan.id === currentPlanId()"
+                 [class.ring-sage-200]="plan.id === currentPlanId()"
                  [class.border-gray-200]="plan.id !== currentPlanId()">
               <div class="flex items-center justify-between mb-2">
                 <h4 class="font-semibold text-gray-800">{{ plan.name }}</h4>
                 @if (plan.id === currentPlanId()) { <ui-badge variant="success">Current</ui-badge> }
               </div>
-              <div class="text-2xl font-bold text-blue-700 mb-1">
+              <div class="text-2xl font-bold text-sage-700 mb-1">
                 ₦{{ (billingCycle === 'monthly' ? plan.monthly_price : plan.annual_price)?.toLocaleString() }}
                 <span class="text-xs text-gray-500 font-normal">{{ billingCycle === 'monthly' ? '/mo' : '/yr' }}</span>
               </div>
@@ -77,7 +77,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
                 <div class="w-full py-2 text-xs font-medium text-center text-emerald-700 bg-emerald-50 rounded-lg">Current Plan</div>
               } @else {
                 <button (click)="subscribeToPlan(plan)" [disabled]="processing()"
-                        class="w-full py-2 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                        class="w-full py-2 text-xs font-medium bg-sage-600 text-white rounded-lg hover:bg-sage-700 disabled:opacity-50">
                   {{ processing() ? 'Processing...' : (currentPlanId() ? 'Upgrade' : 'Subscribe') }}
                 </button>
               }

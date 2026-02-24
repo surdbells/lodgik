@@ -10,7 +10,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
     <ui-page-header title="Bar & Restaurant" subtitle="POS, table management, and kitchen display">
       <div class="flex gap-2">
         <button (click)="showTableForm = true" class="px-4 py-2 border rounded-lg text-sm">+ Add Table</button>
-        <button (click)="showProductForm = true" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">+ New Order</button>
+        <button (click)="showProductForm = true" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Order</button>
       </div>
     </ui-page-header>
 
