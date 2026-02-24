@@ -145,9 +145,18 @@ return function (ContainerBuilder $builder): void {
             $settings = $c->get('settings')['database'];
             $appSettings = $c->get('settings')['app'];
 
+            // Use file-based metadata cache (controllable, easy to clear)
+            // Avoids stale APCu/Redis/Memcached caches that survive PHP-FPM restarts
+            $metadataCache = new \Symfony\Component\Cache\Adapter\FilesystemAdapter(
+                'doctrine_meta',
+                0,
+                __DIR__ . '/../var/cache/doctrine'
+            );
+
             $config = ORMSetup::createAttributeMetadataConfiguration(
                 paths: [__DIR__ . '/../src/Entity'],
                 isDevMode: $appSettings['debug'],
+                cache: $metadataCache,
             );
 
             // Register global filters
