@@ -102,3 +102,39 @@ try {
 }
 
 echo "\nDone.\n";
+
+echo "\n=== Entity File Check ===\n";
+$entityFile = __DIR__ . '/../src/Entity/Merchant.php';
+echo "File: {$entityFile}\n";
+echo "Exists: " . (file_exists($entityFile) ? 'YES' : 'NO') . "\n";
+$content = file_get_contents($entityFile);
+
+// Check if the fix is present
+if (strpos($content, "name: 'merchant_id'") !== false) {
+    echo "✅ Column name fix IS present (name: 'merchant_id')\n";
+} else {
+    echo "❌ Column name fix NOT present!\n";
+}
+
+// Show the first ORM\Column line
+preg_match_all('/#\[ORM\\\\Column.*merchantId.*$/m', $content, $matches);
+echo "Column annotation: " . ($matches[0][0] ?? 'NOT FOUND') . "\n";
+
+// Also check what Doctrine actually sees
+echo "\n=== Doctrine Metadata Check ===\n";
+try {
+    $containerBuilder = new DI\ContainerBuilder();
+    (require __DIR__ . '/../config/dependencies.php')($containerBuilder);
+    $container = $containerBuilder->build();
+    $em = $container->get(\Doctrine\ORM\EntityManagerInterface::class);
+    
+    $meta = $em->getClassMetadata(\Lodgik\Entity\Merchant::class);
+    echo "Doctrine column for 'merchantId': " . ($meta->getColumnName('merchantId') ?? 'UNKNOWN') . "\n";
+    echo "All column mappings:\n";
+    foreach ($meta->fieldMappings as $field => $mapping) {
+        $col = $mapping['columnName'] ?? $mapping->columnName ?? '???';
+        echo "  \${$field} → {$col}\n";
+    }
+} catch (\Throwable $e) {
+    echo "❌ Metadata check failed: {$e->getMessage()}\n";
+}
