@@ -28,14 +28,17 @@ $container = $containerBuilder->build();
 // ─── Create Slim App with PHP-DI ──────────────────────────
 $app = AppFactory::createFromContainer($container);
 
-// ─── Register Middleware ──────────────────────────────────
-(require __DIR__ . '/../config/middleware.php')($app);
-
 // ─── Register Routes ─────────────────────────────────────
 (require __DIR__ . '/../config/routes.php')($app);
 
-// ─── Slim Routing Middleware (resolves routes & parses params) ─
+// ─── Register Middleware ──────────────────────────────────
+// Slim middleware is LIFO: last added = first executed.
+// Order of execution: ErrorHandler → CORS → RequestId → JsonBodyParser → RoutingMiddleware → Route
+//
+// RoutingMiddleware must be added FIRST (runs last, closest to route).
+// ErrorHandler must be added LAST (runs first, catches everything).
 $app->addRoutingMiddleware();
+(require __DIR__ . '/../config/middleware.php')($app);
 
 // ─── Run ──────────────────────────────────────────────────
 $app->run();

@@ -13,9 +13,9 @@ final class MerchantController
     private function resolveMerchantId(Request $req): string
     {
         // Try direct merchant_id attribute first, then resolve from user_id
-        $mid = $this->resolveMerchantId($req);
+        $mid = $req->getAttribute('auth.merchant_id');
         if ($mid) return $mid;
-        $userId = $req->getAttribute('user_id');
+        $userId = $req->getAttribute('auth.user_id');
         if ($userId) {
             $m = $this->service->getMerchantByUserId($userId);
             if ($m) return $m->getId();
