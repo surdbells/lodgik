@@ -3,14 +3,108 @@ declare(strict_types=1);
 namespace Lodgik\Module\Merchant;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Lodgik\Entity\{Merchant, MerchantKyc, MerchantBankAccount, MerchantHotel, CommissionTier, Commission, CommissionPayout, MerchantResource, MerchantResourceDownload, MerchantSupportTicket, MerchantAuditLog, MerchantNotification, MerchantLead, MerchantStatement};
-use Lodgik\Enum\{MerchantStatus, MerchantCategory, CommissionScope, CommissionStatus};
+use Lodgik\Entity\{Merchant, MerchantKyc, MerchantBankAccount, MerchantHotel, CommissionTier, Commission, CommissionPayout, MerchantResource, MerchantResourceDownload, MerchantSupportTicket, MerchantAuditLog, MerchantNotification, MerchantLead, MerchantStatement, User};
+use Lodgik\Enum\{MerchantStatus, MerchantCategory, CommissionScope, CommissionStatus, UserRole};
+use Lodgik\Service\ZeptoMailService;
 
 final class MerchantService
 {
-    public function __construct(private readonly EntityManagerInterface $em) {}
+    public function __construct(
+        private readonly EntityManagerInterface $em,
+        private readonly ZeptoMailService $mailer,
+    ) {}
 
     // ─── Registration & Lifecycle ──────────────────────────────
+
+    /**
+     * Admin-initiated merchant onboarding.
+     * Creates: User (merchant_admin) + Merchant + KYC placeholder.
+     * Returns merchant + invitation link for the merchant to set password.
+     */
+    public function onboardMerchant(array $data, string $adminUserId, string $adminTenantId): array
+    {
+        // Check email uniqueness
+        $filters = $this->em->getFilters();
+        $tenantWasEnabled = $filters->isEnabled('tenant_filter');
+        if ($tenantWasEnabled) $filters->disable('tenant_filter');
+
+        $existingUser = $this->em->getRepository(User::class)->findOneBy(['email' => strtolower(trim($data['email']))]);
+
+        if ($tenantWasEnabled) $filters->enable('tenant_filter');
+
+        if ($existingUser) {
+            throw new \RuntimeException('A user with this email already exists');
+        }
+
+        // 1. Create user with merchant_admin role and a random unusable password
+        $tempHash = password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID);
+        $names = $this->splitName($data['contact_name'] ?? $data['business_name']);
+
+        $user = new User(
+            $names['first'],
+            $names['last'],
+            $data['email'],
+            $tempHash,
+            UserRole::MERCHANT_ADMIN,
+            $adminTenantId,
+        );
+
+        // Generate invitation token so merchant can set their password
+        $inviteToken = bin2hex(random_bytes(32));
+        $user->setInvitationToken($inviteToken);
+        $this->em->persist($user);
+
+        // 2. Create merchant linked to the new user
+        $m = new Merchant();
+        $m->setLegalName($data['legal_name']);
+        $m->setBusinessName($data['business_name']);
+        $m->setEmail($data['email']);
+        if (isset($data['phone'])) $m->setPhone($data['phone']);
+        if (isset($data['address'])) $m->setAddress($data['address']);
+        if (isset($data['operating_region'])) $m->setOperatingRegion($data['operating_region']);
+        if (isset($data['type'])) $m->setType($data['type']);
+        if (isset($data['category'])) $m->setCategory(MerchantCategory::from($data['category']));
+        if (isset($data['settlement_currency'])) $m->setSettlementCurrency($data['settlement_currency']);
+        $m->setUserId($user->getId());
+        $this->em->persist($m);
+
+        // 3. Auto-create KYC placeholder
+        $kyc = new MerchantKyc();
+        $kyc->setMerchantId($m->getId());
+        $kyc->setKycType(($data['type'] ?? 'individual') === 'company' ? 'business' : 'individual');
+        $this->em->persist($kyc);
+
+        $this->em->flush();
+        $this->audit($m->getId(), $adminUserId, 'admin', 'merchant_onboarded', 'Merchant', $m->getId());
+
+        // 4. Send invitation email
+        $merchantPortalUrl = $_ENV['MERCHANT_APP_URL'] ?? 'https://merchant.lodgik.co';
+        $inviteUrl = rtrim($merchantPortalUrl, '/') . '/login?invite=' . urlencode($inviteToken);
+
+        try {
+            $this->mailer->sendMerchantInvitation(
+                $data['email'],
+                $names['first'],
+                $data['business_name'],
+                $inviteUrl,
+            );
+        } catch (\Throwable $e) {
+            // Log but don't fail — admin can copy the link manually
+        }
+
+        return [
+            'merchant' => $m->toArray(),
+            'user_id' => $user->getId(),
+            'invite_token' => $inviteToken,
+            'invite_url' => $inviteUrl,
+        ];
+    }
+
+    private function splitName(string $fullName): array
+    {
+        $parts = explode(' ', trim($fullName), 2);
+        return ['first' => $parts[0] ?: 'Merchant', 'last' => $parts[1] ?? 'User'];
+    }
 
     public function registerMerchant(array $data): Merchant
     {
@@ -98,9 +192,37 @@ final class MerchantService
         $bank = $this->em->getRepository(MerchantBankAccount::class)->findOneBy(['merchantId' => $id]);
         $hotelCount = (int) $this->em->createQuery("SELECT COUNT(h) FROM Lodgik\Entity\MerchantHotel h WHERE h.merchantId = :m")->setParameter('m', $id)->getSingleScalarResult();
         $tier = $m->getCommissionTierId() ? $this->em->find(CommissionTier::class, $m->getCommissionTierId()) : null;
+
+        // Fetch linked user info
+        $userInfo = null;
+        if ($m->getUserId()) {
+            $filters = $this->em->getFilters();
+            $tenantWasEnabled = $filters->isEnabled('tenant_filter');
+            if ($tenantWasEnabled) $filters->disable('tenant_filter');
+
+            $user = $this->em->find(User::class, $m->getUserId());
+
+            if ($tenantWasEnabled) $filters->enable('tenant_filter');
+
+            if ($user) {
+                $merchantPortalUrl = $_ENV['MERCHANT_APP_URL'] ?? 'https://merchant.lodgik.co';
+                $userInfo = [
+                    'id' => $user->getId(),
+                    'email' => $user->getEmail(),
+                    'name' => $user->getFirstName() . ' ' . $user->getLastName(),
+                    'is_active' => $user->isActive(),
+                    'has_invitation' => $user->getInvitationToken() !== null,
+                    'invite_url' => $user->getInvitationToken()
+                        ? rtrim($merchantPortalUrl, '/') . '/login?invite=' . urlencode($user->getInvitationToken())
+                        : null,
+                ];
+            }
+        }
+
         return array_merge($m->toArray(), [
             'kyc' => $kyc?->toArray(), 'bank_account' => $bank?->toArray(),
             'hotel_count' => $hotelCount, 'commission_tier' => $tier?->toArray(),
+            'user' => $userInfo,
         ]);
     }
 

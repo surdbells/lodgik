@@ -111,6 +111,37 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
                     }
                   </div>
 
+                  <!-- User / Invitation -->
+                  <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mt-6">Portal Access</h3>
+                  @if (merchant().user) {
+                    <div class="space-y-3">
+                      <div class="flex justify-between py-2 border-b border-gray-100">
+                        <span class="text-sm text-gray-500">Login Email</span>
+                        <span class="text-sm text-gray-900">{{ merchant().user.email }}</span>
+                      </div>
+                      <div class="flex justify-between py-2 border-b border-gray-100">
+                        <span class="text-sm text-gray-500">Account Status</span>
+                        <span class="text-sm" [class]="merchant().user.is_active ? 'text-green-600' : 'text-amber-600'">
+                          {{ merchant().user.is_active ? 'Active' : 'Pending Setup' }}
+                        </span>
+                      </div>
+                      @if (merchant().user.invite_url) {
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
+                          <div class="text-xs font-medium text-amber-800 mb-1">Invitation Pending</div>
+                          <div class="text-xs text-amber-600 mb-2">Merchant hasn't set their password yet. Share this link:</div>
+                          <div class="flex gap-2">
+                            <input readonly [value]="merchant().user.invite_url" class="flex-1 text-xs px-2 py-1.5 bg-white border rounded font-mono truncate">
+                            <button (click)="copyInviteUrl()" class="px-3 py-1.5 text-xs bg-amber-600 text-white rounded hover:bg-amber-700 whitespace-nowrap">
+                              {{ copied() ? 'Copied!' : 'Copy Link' }}
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="text-sm text-gray-400 py-2">No user account linked (legacy merchant)</div>
+                  }
+
                   @if (merchant().commission_tier) {
                     <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mt-6">Commission Tier</h3>
                     <div class="space-y-3">
@@ -279,6 +310,7 @@ export class MerchantDetailPage implements OnInit {
   hotels = signal<any[]>([]);
   auditLog = signal<any[]>([]);
   activeTab = signal('overview');
+  copied = signal(false);
 
   tabs = [
     { key: 'overview', label: 'Overview' },
@@ -330,8 +362,10 @@ export class MerchantDetailPage implements OnInit {
   }
 
   loadHotels(): void {
-    // Hotels are listed under the merchant portal context, but admin can access via detail
-    // For now, show hotel_count from profile data
+    this.api.get(`/admin/merchants/${this.merchantId}/hotels`).subscribe({
+      next: (r: any) => this.hotels.set(r.data || []),
+      error: () => {},
+    });
   }
 
   loadAuditLog(): void {
@@ -402,6 +436,16 @@ export class MerchantDetailPage implements OnInit {
   }
 
   goBack(): void { this.router.navigate(['/merchants']); }
+
+  copyInviteUrl(): void {
+    const url = this.merchant()?.user?.invite_url;
+    if (url) {
+      navigator.clipboard.writeText(url).then(() => {
+        this.copied.set(true);
+        setTimeout(() => this.copied.set(false), 2000);
+      });
+    }
+  }
 
   formatStatus(s: string): string { return (s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
   statusVariant(s: string): any { return ({ active: 'success', suspended: 'danger', terminated: 'danger', pending_approval: 'warning', kyc_in_progress: 'info' } as any)[s] || 'neutral'; }

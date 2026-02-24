@@ -33,7 +33,7 @@ final class MerchantController
         return JsonResponse::created($res, $merchant->toArray());
     }
 
-    /** Admin-initiated merchant onboarding */
+    /** Admin-initiated merchant onboarding — creates User + Merchant + sends invitation */
     public function adminRegister(Request $req, Response $res): Response
     {
         $body = (array) ($req->getParsedBody() ?? []);
@@ -43,9 +43,16 @@ final class MerchantController
                 return JsonResponse::validationError($res, [$f => "$f is required"]);
             }
         }
-        $body['user_id'] = $body['user_id'] ?? $req->getAttribute('auth.user_id');
-        $merchant = $this->service->registerMerchant($body);
-        return JsonResponse::created($res, $merchant->toArray());
+        try {
+            $result = $this->service->onboardMerchant(
+                $body,
+                $req->getAttribute('auth.user_id'),
+                $req->getAttribute('auth.tenant_id'),
+            );
+            return JsonResponse::created($res, $result);
+        } catch (\RuntimeException $e) {
+            return JsonResponse::error($res, $e->getMessage(), 422);
+        }
     }
 
     public function list(Request $req, Response $res): Response
@@ -188,6 +195,12 @@ final class MerchantController
         $merchantId = $this->resolveMerchantId($req);
         $q = $req->getQueryParams();
         return JsonResponse::ok($res, $this->service->listMerchantHotels($merchantId, $q['status'] ?? null));
+    }
+
+    /** Admin: list hotels for a specific merchant */
+    public function adminListHotels(Request $req, Response $res, array $args): Response
+    {
+        return JsonResponse::ok($res, $this->service->listMerchantHotels($args['id']));
     }
 
     public function hotelDetail(Request $req, Response $res, array $args): Response

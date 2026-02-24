@@ -287,4 +287,31 @@ final class ZeptoMailService
         <p>This link is valid for 30 days. Start your free 14-day trial today!</p>
         HTML;
     }
+
+    public function sendMerchantInvitation(
+        string $toEmail,
+        string $toName,
+        string $businessName,
+        string $inviteUrl,
+    ): bool {
+        $html = str_replace(
+            ['{{name}}', '{{business_name}}', '{{invite_url}}'],
+            [htmlspecialchars($toName), htmlspecialchars($businessName), $inviteUrl],
+            $this->merchantInvitationTemplate(),
+        );
+
+        return $this->send($toEmail, $toName, "Welcome to the Lodgik Merchant Portal — {$businessName}", $html);
+    }
+
+    private function merchantInvitationTemplate(): string
+    {
+        return <<<HTML
+        <h2>Welcome to Lodgik Merchant Portal!</h2>
+        <p>Hi {{name}},</p>
+        <p>Your merchant account for <strong>{{business_name}}</strong> has been created on the Lodgik platform.</p>
+        <p>As a Lodgik merchant, you can refer hotels, track commissions, manage payouts, and access resources.</p>
+        <p><a href="{{invite_url}}" class="btn">Set Up Your Account</a></p>
+        <p>Click the link above to set your password and get started.</p>
+        HTML;
+    }
 }

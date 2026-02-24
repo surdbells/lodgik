@@ -125,6 +125,10 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
                 <input [(ngModel)]="form.business_name" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-sage-300 focus:border-sage-400 outline-none" placeholder="Trading name">
               </div>
             </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Contact Person Name</label>
+              <input [(ngModel)]="form.contact_name" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-sage-300 focus:border-sage-400 outline-none" placeholder="e.g. John Doe">
+            </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
@@ -206,6 +210,7 @@ export class MerchantsPage implements OnInit {
 
   form: any = this.resetForm();
   stats = signal<{ label: string; count: number }[]>([]);
+  inviteResult = signal<{ url: string; email: string } | null>(null);
 
   ngOnInit(): void { this.load(); }
 
@@ -240,12 +245,17 @@ export class MerchantsPage implements OnInit {
     this.submitting.set(true);
     this.api.post('/admin/merchants', this.form).subscribe({
       next: (r: any) => {
-        this.toast.success('Merchant onboarded successfully');
+        const data = r.data;
         this.showOnboard.set(false);
         this.form = this.resetForm();
         this.submitting.set(false);
         this.load();
-        if (r.data?.id) this.router.navigate(['/merchants', r.data.id]);
+        // Show invitation link
+        if (data?.invite_url) {
+          this.inviteResult.set({ url: data.invite_url, email: this.form.email || data.merchant?.email });
+        }
+        if (data?.merchant?.id) this.router.navigate(['/merchants', data.merchant.id]);
+        else this.toast.success('Merchant onboarded successfully');
       },
       error: (err: any) => {
         this.toast.error(err.error?.message || 'Failed to create merchant');
@@ -279,6 +289,6 @@ export class MerchantsPage implements OnInit {
   }
 
   private resetForm() {
-    return { legal_name: '', business_name: '', email: '', phone: '', address: '', operating_region: '', category: 'sales_agent', type: 'individual', settlement_currency: 'NGN' };
+    return { legal_name: '', business_name: '', contact_name: '', email: '', phone: '', address: '', operating_region: '', category: 'sales_agent', type: 'individual', settlement_currency: 'NGN' };
   }
 }
