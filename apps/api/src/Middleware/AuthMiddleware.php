@@ -30,6 +30,14 @@ final class AuthMiddleware implements MiddlewareInterface
     {
         $authHeader = $request->getHeaderLine('Authorization');
 
+        // Fallback: Apache + PHP-FPM may strip Authorization header
+        if ($authHeader === '') {
+            $serverParams = $request->getServerParams();
+            $authHeader = $serverParams['HTTP_AUTHORIZATION']
+                ?? $serverParams['REDIRECT_HTTP_AUTHORIZATION']
+                ?? '';
+        }
+
         if ($authHeader === '' || !str_starts_with($authHeader, 'Bearer ')) {
             return $this->unauthorized('Missing or invalid Authorization header');
         }

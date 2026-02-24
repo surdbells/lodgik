@@ -21,7 +21,7 @@ use Lodgik\Enum\FolioStatus;
 use Lodgik\Enum\PaymentMethod;
 use Lodgik\Enum\PaymentStatus;
 
-$container = (require __DIR__ . '/../config/app.php')();
+$container = require __DIR__ . '/../config/bootstrap.php';
 $em = $container->get(EntityManagerInterface::class);
 $conn = $em->getConnection();
 

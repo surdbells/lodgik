@@ -14,7 +14,7 @@ use Lodgik\Entity\TaxBracket;
 use Lodgik\Entity\LeaveType;
 use Lodgik\Entity\Department;
 
-$container = (require __DIR__ . '/../config/app.php')();
+$container = require __DIR__ . '/../config/bootstrap.php';
 $em = $container->get(EntityManagerInterface::class);
 $conn = $em->getConnection();
 

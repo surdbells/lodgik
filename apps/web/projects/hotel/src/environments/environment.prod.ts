@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: '/api',
+  apiUrl: 'https://api.lodgik.co/api',
   appName: 'Lodgik',
 };

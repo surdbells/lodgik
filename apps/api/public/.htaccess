@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Pass Authorization header to PHP (Apache + PHP-FPM strips it by default)
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Rewrite all requests to index.php (Slim framework routing)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
