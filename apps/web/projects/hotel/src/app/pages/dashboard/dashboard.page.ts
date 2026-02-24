@@ -10,108 +10,178 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [RouterLink, DatePipe, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, LineChartComponent, BarChartComponent, DonutChartComponent, GaugeChartComponent, SparklineChartComponent],
   template: `
-    <ui-page-header title="Dashboard" [subtitle]="'Welcome back, ' + (user()?.first_name || '')">
-      <div class="flex gap-2">
-        <a routerLink="/bookings" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">+ New Booking</a>
-      </div>
-    </ui-page-header>
+    <div class="fade-in">
+      <ui-page-header title="Dashboard" [subtitle]="greeting()">
+        <div class="flex gap-2">
+          <a routerLink="/bookings/new"
+             class="px-4 py-2.5 bg-sage-600 text-white text-sm font-semibold rounded-lg hover:bg-sage-700 transition-colors shadow-sm">
+            + New Booking
+          </a>
+        </div>
+      </ui-page-header>
 
-    <ui-loading [loading]="loading()"></ui-loading>
+      <ui-loading [loading]="loading()"></ui-loading>
 
-    @if (!loading()) {
-      <!-- Top Stats Row -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <ui-stats-card label="Occupancy" [value]="overview().occupancy_rate + '%'" icon="📊">
-          <chart-sparkline [data]="occupancySpark()" color="#3b82f6" [width]="100" [height]="28"></chart-sparkline>
-        </ui-stats-card>
-        <ui-stats-card label="Available" [value]="overview().rooms?.available || 0" icon="✅"></ui-stats-card>
-        <ui-stats-card label="Occupied" [value]="overview().rooms?.occupied || 0" icon="🔵"></ui-stats-card>
-        <ui-stats-card label="Today Revenue" [value]="'₦' + (+overview().today_revenue || 0).toLocaleString()" icon="💰"></ui-stats-card>
-        <ui-stats-card label="Check-ins" [value]="overview().today_check_ins + ' / ' + overview().pending_check_ins" [subtitle]="'done / pending'" icon="📥"></ui-stats-card>
-        <ui-stats-card label="Check-outs" [value]="overview().today_check_outs" icon="📤"></ui-stats-card>
-      </div>
+      @if (!loading()) {
+        <!-- ═══ KPI Cards (Gradient) ═══ -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 stagger-children">
+          <ui-stats-card
+            label="Total Bookings"
+            [value]="overview().total_bookings || '0'"
+            icon="🏨"
+            variant="gradient"
+            gradient="linear-gradient(135deg, #293929 0%, #3a543a 50%, #5a825a 100%)"
+            [trend]="10">
+          </ui-stats-card>
 
-      <!-- Charts Row -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <!-- Occupancy Trend (line) -->
-        <div class="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold text-gray-700">Occupancy & Revenue (30 days)</h3>
-          </div>
-          @if (trendSeries().length > 0) {
-            <chart-line [series]="trendSeries()" [labels]="trendLabels()" [width]="700" [height]="260" [showArea]="true"></chart-line>
-          } @else {
-            <p class="text-gray-400 text-sm py-12 text-center">No trend data yet</p>
-          }
+          <ui-stats-card
+            label="Check In"
+            [value]="(overview().today_check_ins || 0) + ''"
+            icon="📥"
+            variant="gradient"
+            gradient="linear-gradient(135deg, #3a543a 0%, #5a825a 50%, #7a9e7a 100%)"
+            [trend]="16">
+            <p class="text-xs text-white/50 mt-1">+ {{ overview().pending_check_ins || 0 }} pending</p>
+          </ui-stats-card>
+
+          <ui-stats-card
+            label="Check Out"
+            [value]="(overview().today_check_outs || 0) + ''"
+            icon="📤"
+            variant="gradient"
+            gradient="linear-gradient(135deg, #5a825a 0%, #7a9e7a 50%, #a3bfa3 100%)">
+          </ui-stats-card>
+
+          <ui-stats-card
+            label="Today Revenue"
+            [value]="'₦' + (+overview().today_revenue || 0).toLocaleString()"
+            icon="💰"
+            variant="gradient"
+            gradient="linear-gradient(135deg, #466846 0%, #5a825a 100%)">
+          </ui-stats-card>
         </div>
 
-        <!-- Room Status Donut -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">Room Status</h3>
-          <chart-donut [data]="roomStatusData()" [height]="220" [centerValue]="String(overview().rooms?.total || 0)" centerLabel="Total"></chart-donut>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <!-- Revenue by Type (bar) -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">Revenue by Type</h3>
-          @if (revenueBreakdown().length > 0) {
-            <chart-bar [data]="revenueBreakdown()" [width]="320" [height]="220" [showValues]="true"></chart-bar>
-          } @else {
-            <p class="text-gray-400 text-sm py-8 text-center">No revenue data yet</p>
-          }
-        </div>
-
-        <!-- Occupancy Gauge -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5 flex flex-col items-center">
-          <h3 class="text-sm font-semibold text-gray-700 mb-3 self-start">Current Occupancy</h3>
-          <chart-gauge [value]="overview().occupancy_rate || 0" [max]="100" label="Occupancy" suffix="%" [width]="220" [height]="140"></chart-gauge>
-          <div class="grid grid-cols-2 gap-4 mt-4 w-full text-center text-sm">
-            <div><span class="text-gray-400 text-xs">ADR</span><p class="font-bold">₦{{ (+overview().adr || 0).toLocaleString() }}</p></div>
-            <div><span class="text-gray-400 text-xs">RevPAR</span><p class="font-bold">₦{{ (+overview().revpar || 0).toLocaleString() }}</p></div>
-          </div>
-        </div>
-
-        <!-- Activity Feed -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">Recent Activity</h3>
-          <div class="space-y-2 max-h-[300px] overflow-y-auto">
-            @for (a of activity(); track $index) {
-              <div class="flex items-start gap-2 py-2 border-b border-gray-50 last:border-0">
-                <span class="text-base mt-0.5">{{ activityIcon(a.new_status) }}</span>
-                <div class="min-w-0">
-                  <div class="text-sm"><span class="font-medium">{{ a.booking_ref }}</span> <span class="text-gray-500">{{ a.action_label }}</span></div>
-                  <div class="text-xs text-gray-400">{{ a.timestamp | date:'short' }}</div>
-                </div>
+        <!-- ═══ Row 2: Occupancy Chart + Room Status ═══ -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+          <!-- Occupancy Trend -->
+          <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5 shadow-card">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-gray-900 font-heading">Occupancy</h3>
+              <div class="flex items-center gap-4 text-xs text-gray-500">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sage-500"></span> Available</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sage-800"></span> Occupied</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-gray-300"></span> Not Ready</span>
+              </div>
+            </div>
+            @if (trendSeries().length > 0) {
+              <chart-line [series]="trendSeries()" [labels]="trendLabels()" [width]="700" [height]="260" [showArea]="true"></chart-line>
+            } @else {
+              <div class="flex flex-col items-center justify-center py-16 text-gray-400">
+                <span class="text-3xl mb-2">📈</span>
+                <p class="text-sm">No trend data yet</p>
               </div>
             }
-            @if (activity().length === 0) {
-              <p class="text-gray-400 text-sm py-4 text-center">No recent activity</p>
+          </div>
+
+          <!-- Room Status Donut -->
+          <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-card">
+            <h3 class="text-base font-bold text-gray-900 font-heading mb-3">Room Status</h3>
+            <chart-donut [data]="roomStatusData()" [height]="200" [centerValue]="String(overview().rooms?.total || 0)" centerLabel="Total"></chart-donut>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              @for (s of roomStatusData(); track s.label) {
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="w-2 h-2 rounded-full shrink-0" [style.background]="s.color"></span>
+                  <span class="text-gray-500">{{ s.label }}</span>
+                  <span class="ml-auto font-semibold text-gray-700">{{ s.value }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Row 3: Revenue + Recent Arrivals ═══ -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+          <!-- Revenue Overview -->
+          <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-card">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-base font-bold text-gray-900 font-heading">Revenue Overview</h3>
+                <p class="text-sm text-gray-400 mt-0.5">Total Revenue</p>
+                <p class="text-2xl font-bold text-gray-900 font-heading mt-1">₦{{ totalRevenue().toLocaleString() }}</p>
+              </div>
+            </div>
+            @if (revenueBreakdown().length > 0) {
+              <chart-bar [data]="revenueBreakdown()" [width]="400" [height]="180" [showValues]="true"></chart-bar>
+            }
+
+            <!-- ADR / RevPAR -->
+            <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
+              <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-lg bg-sage-50 flex items-center justify-center text-sm">🏷️</span>
+                <div>
+                  <p class="text-xs text-gray-400">ADR</p>
+                  <p class="text-sm font-bold text-gray-900">₦{{ (+overview().adr || 0).toLocaleString() }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-lg bg-sage-50 flex items-center justify-center text-sm">📊</span>
+                <div>
+                  <p class="text-xs text-gray-400">RevPAR</p>
+                  <p class="text-sm font-bold text-gray-900">₦{{ (+overview().revpar || 0).toLocaleString() }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Arrivals -->
+          <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-card">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-gray-900 font-heading">Recent Activity</h3>
+              <a routerLink="/bookings" class="text-sm font-medium text-sage-600 hover:text-sage-700">View All</a>
+            </div>
+            <div class="space-y-1">
+              @for (a of activity(); track $index) {
+                <div class="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-gray-50 transition-colors">
+                  <span class="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
+                        [class]="activityBg(a.new_status)">
+                    {{ activityIcon(a.new_status) }}
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-gray-800">{{ a.booking_ref }}</p>
+                    <p class="text-xs text-gray-400">{{ a.action_label }}</p>
+                  </div>
+                  <span class="text-xs text-gray-400 shrink-0">{{ a.timestamp | date:'shortTime' }}</span>
+                </div>
+              }
+              @if (activity().length === 0) {
+                <div class="flex flex-col items-center py-8 text-gray-400">
+                  <span class="text-2xl mb-2">📭</span>
+                  <p class="text-sm">No recent activity</p>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Quick Actions ═══ -->
+        <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-card">
+          <h3 class="text-base font-bold text-gray-900 font-heading mb-4">Quick Actions</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            @for (qa of quickActions; track qa.route) {
+              <a [routerLink]="qa.route"
+                 class="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-sage-200 hover:bg-sage-50 transition-all group">
+                <span class="w-10 h-10 rounded-lg flex items-center justify-center text-xl group-hover:scale-110 transition-transform"
+                      [class]="qa.bgClass">{{ qa.icon }}</span>
+                <div>
+                  <p class="text-sm font-semibold text-gray-800">{{ qa.label }}</p>
+                  <p class="text-xs text-gray-400">{{ qa.sub }}</p>
+                </div>
+              </a>
             }
           </div>
         </div>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="bg-white rounded-lg border border-gray-200 p-5">
-        <h3 class="text-sm font-semibold text-gray-700 mb-3">Quick Actions</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <a routerLink="/bookings" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-200 transition-colors">
-            <span class="text-2xl">📋</span><div><span class="text-sm font-medium">New Booking</span><p class="text-xs text-gray-400">Create reservation</p></div>
-          </a>
-          <a routerLink="/rooms" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-200 transition-colors">
-            <span class="text-2xl">🚪</span><div><span class="text-sm font-medium">Room Status</span><p class="text-xs text-gray-400">View room grid</p></div>
-          </a>
-          <a routerLink="/guests" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-200 transition-colors">
-            <span class="text-2xl">🧑</span><div><span class="text-sm font-medium">Add Guest</span><p class="text-xs text-gray-400">Register new guest</p></div>
-          </a>
-          <a routerLink="/staff" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-200 transition-colors">
-            <span class="text-2xl">👥</span><div><span class="text-sm font-medium">Staff</span><p class="text-xs text-gray-400">Manage team</p></div>
-          </a>
-        </div>
-      </div>
-    }
+      }
+    </div>
   `,
 })
 export class DashboardPage implements OnInit {
@@ -127,30 +197,45 @@ export class DashboardPage implements OnInit {
   activity = signal<any[]>([]);
   propertyId = '';
 
-  // Computed chart data
-  trendLabels = computed(() => this.trends().map((t: any) => t.date.slice(5))); // MM-DD
+  greeting = computed(() => {
+    const name = this.user()?.first_name || '';
+    const hour = new Date().getHours();
+    const period = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    return `${period}, ${name}`;
+  });
+
+  totalRevenue = computed(() => {
+    return this.revenueBreakdown().reduce((sum, d) => sum + d.value, 0);
+  });
+
+  trendLabels = computed(() => this.trends().map((t: any) => t.date.slice(5)));
   trendSeries = computed((): ChartSeries[] => {
     const data = this.trends();
     if (data.length === 0) return [];
     return [
-      { name: 'Occupancy %', data: data.map((t: any) => t.occupancy_rate), color: '#3b82f6' },
-      { name: 'Rooms Sold', data: data.map((t: any) => t.rooms_sold), color: '#22c55e' },
+      { name: 'Occupancy %', data: data.map((t: any) => t.occupancy_rate), color: '#3a543a' },
+      { name: 'Rooms Sold', data: data.map((t: any) => t.rooms_sold), color: '#7a9e7a' },
     ];
   });
-
-  occupancySpark = computed(() => this.trends().slice(-7).map((t: any) => t.occupancy_rate));
 
   roomStatusData = computed((): ChartDataPoint[] => {
     const r = this.overview().rooms;
     if (!r) return [];
     return [
-      { label: 'Occupied', value: r.occupied || 0, color: '#3b82f6' },
-      { label: 'Available', value: r.available || 0, color: '#22c55e' },
-      { label: 'Dirty', value: r.dirty || 0, color: '#f59e0b' },
-      { label: 'Reserved', value: r.reserved || 0, color: '#8b5cf6' },
+      { label: 'Occupied', value: r.occupied || 0, color: '#3a543a' },
+      { label: 'Available', value: r.available || 0, color: '#7a9e7a' },
+      { label: 'Dirty', value: r.dirty || 0, color: '#d97706' },
+      { label: 'Reserved', value: r.reserved || 0, color: '#6366f1' },
       { label: 'OOO', value: (r.out_of_order || 0) + (r.maintenance || 0), color: '#ef4444' },
     ].filter(d => d.value > 0);
   });
+
+  quickActions = [
+    { label: 'New Booking', sub: 'Create reservation', icon: '📋', route: '/bookings/new', bgClass: 'bg-sage-50' },
+    { label: 'Room Status', sub: 'View room grid', icon: '🏨', route: '/rooms', bgClass: 'bg-emerald-50' },
+    { label: 'Add Guest', sub: 'Register new guest', icon: '👤', route: '/guests', bgClass: 'bg-blue-50' },
+    { label: 'Housekeeping', sub: 'Manage tasks', icon: '🧹', route: '/housekeeping', bgClass: 'bg-amber-50' },
+  ];
 
   ngOnInit(): void {
     const user = this.auth.currentUser;
@@ -171,7 +256,7 @@ export class DashboardPage implements OnInit {
     this.api.get('/dashboard/revenue-breakdown', { property_id: this.propertyId, days: 30 }).subscribe({
       next: r => {
         if (r.success) {
-          const colors: Record<string, string> = { overnight: '#3b82f6', short_rest_3hr: '#f59e0b', short_rest_6hr: '#f97316', walk_in: '#22c55e', corporate: '#8b5cf6', half_day: '#06b6d4' };
+          const colors: Record<string, string> = { overnight: '#3a543a', short_rest_3hr: '#d97706', short_rest_6hr: '#b45309', walk_in: '#7a9e7a', corporate: '#6366f1', half_day: '#0891b2' };
           this.revenueBreakdown.set((r.data ?? []).map((d: any) => ({
             label: d.booking_type, value: +d.revenue, color: colors[d.booking_type] || '#6b7280',
           })));
@@ -180,10 +265,22 @@ export class DashboardPage implements OnInit {
       }, error: done
     });
 
-    this.api.get('/dashboard/activity-feed', { property_id: this.propertyId, limit: 15 }).subscribe({ next: r => { if (r.success) this.activity.set(r.data ?? []); done(); }, error: done });
+    this.api.get('/dashboard/activity-feed', { property_id: this.propertyId, limit: 10 }).subscribe({ next: r => { if (r.success) this.activity.set(r.data ?? []); done(); }, error: done });
   }
 
   activityIcon(status: string): string {
     return { confirmed: '✅', checked_in: '📥', checked_out: '📤', cancelled: '❌', no_show: '🚫', pending: '⏳' }[status] ?? '📋';
+  }
+
+  activityBg(status: string): string {
+    const map: Record<string, string> = {
+      confirmed: 'bg-emerald-50',
+      checked_in: 'bg-blue-50',
+      checked_out: 'bg-orange-50',
+      cancelled: 'bg-red-50',
+      no_show: 'bg-gray-100',
+      pending: 'bg-amber-50',
+    };
+    return map[status] ?? 'bg-gray-50';
   }
 }
