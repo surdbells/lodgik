@@ -8,7 +8,7 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Payroll" icon="💵" [breadcrumbs]="['Human Resources', 'Payroll']" subtitle="Monthly payroll processing & payslips">
+    <ui-page-header title="Payroll" icon="hand-coins" [breadcrumbs]="['Human Resources', 'Payroll']" subtitle="Monthly payroll processing & payslips">
       <button (click)="showCreate = true" class="bg-sage-600 text-white px-4 py-2 text-sm rounded-xl hover:bg-sage-700 transition-colors">+ New Payroll</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
@@ -63,11 +63,11 @@ import { AuthService } from '@lodgik/shared';
       </div>
 
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
-        <ui-stats-card label="Period" [value]="selectedPeriod()!.period_label" icon="📅"></ui-stats-card>
-        <ui-stats-card label="Employees" [value]="selectedPeriod()!.employee_count" icon="👥"></ui-stats-card>
-        <ui-stats-card label="Total Gross" [value]="'₦' + fmt(selectedPeriod()!.total_gross)" icon="💰"></ui-stats-card>
-        <ui-stats-card label="Total Tax" [value]="'₦' + fmt(selectedPeriod()!.total_tax)" icon="🏛️"></ui-stats-card>
-        <ui-stats-card label="Total Net" [value]="'₦' + fmt(selectedPeriod()!.total_net)" icon="✅"></ui-stats-card>
+        <ui-stats-card label="Period" [value]="selectedPeriod()!.period_label" icon="calendar-days"></ui-stats-card>
+        <ui-stats-card label="Employees" [value]="selectedPeriod()!.employee_count" icon="users"></ui-stats-card>
+        <ui-stats-card label="Total Gross" [value]="'₦' + fmt(selectedPeriod()!.total_gross)" icon="hand-coins"></ui-stats-card>
+        <ui-stats-card label="Total Tax" [value]="'₦' + fmt(selectedPeriod()!.total_tax)" icon="building"></ui-stats-card>
+        <ui-stats-card label="Total Net" [value]="'₦' + fmt(selectedPeriod()!.total_net)" icon="circle-check"></ui-stats-card>
       </div>
 
       <div class="grid grid-cols-3 gap-3 mb-5">

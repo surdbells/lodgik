@@ -8,7 +8,7 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Room Types" icon="🏷️" [breadcrumbs]="['Room Operation', 'Room Types']" subtitle="Manage room categories and pricing">
+    <ui-page-header title="Room Types" icon="tag" [breadcrumbs]="['Room Operation', 'Room Types']" subtitle="Manage room categories and pricing">
       <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showForm = !showForm; resetForm()">
         {{ showForm ? 'Cancel' : '+ Add Room Type' }}
       </button>

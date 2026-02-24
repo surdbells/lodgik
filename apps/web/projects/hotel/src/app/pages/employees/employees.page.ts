@@ -9,17 +9,17 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, RouterLink, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Employees" icon="🧑‍💼" [breadcrumbs]="['Human Resources', 'Employees']" subtitle="Employee directory and management">
+    <ui-page-header title="Employees" icon="user-round-cog" [breadcrumbs]="['Human Resources', 'Employees']" subtitle="Employee directory and management">
       <button (click)="showAdd = true" class="bg-sage-600 text-white px-4 py-2 text-sm rounded-xl hover:bg-sage-700 transition-colors">+ Add Employee</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <ui-stats-card label="Total Employees" [value]="stats().total" icon="👥"></ui-stats-card>
-        <ui-stats-card label="Active" [value]="stats().active" icon="✅"></ui-stats-card>
-        <ui-stats-card label="On Probation" [value]="stats().probation" icon="⏳"></ui-stats-card>
-        <ui-stats-card label="Departments" [value]="departments().length" icon="🏢"></ui-stats-card>
+        <ui-stats-card label="Total Employees" [value]="stats().total" icon="users"></ui-stats-card>
+        <ui-stats-card label="Active" [value]="stats().active" icon="circle-check"></ui-stats-card>
+        <ui-stats-card label="On Probation" [value]="stats().probation" icon="clock"></ui-stats-card>
+        <ui-stats-card label="Departments" [value]="departments().length" icon="building"></ui-stats-card>
       </div>
 
       <div class="flex flex-wrap gap-2 mb-4">

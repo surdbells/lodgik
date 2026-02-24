@@ -9,15 +9,15 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Invoices" icon="📄" [breadcrumbs]="['Finance', 'Invoices']" subtitle="Tax invoices and billing"></ui-page-header>
+    <ui-page-header title="Invoices" icon="file-text" [breadcrumbs]="['Finance', 'Invoices']" subtitle="Tax invoices and billing"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <ui-stats-card label="Total Invoices" [value]="invoices().length" icon="📄"></ui-stats-card>
-        <ui-stats-card label="Issued" [value]="countByStatus('issued')" icon="📬"></ui-stats-card>
-        <ui-stats-card label="Paid" [value]="countByStatus('paid')" icon="✅"></ui-stats-card>
-        <ui-stats-card label="Total Revenue" [value]="'₦' + totalRevenue().toLocaleString()" icon="💰"></ui-stats-card>
+        <ui-stats-card label="Total Invoices" [value]="invoices().length" icon="file-text"></ui-stats-card>
+        <ui-stats-card label="Issued" [value]="countByStatus('issued')" icon="file-text"></ui-stats-card>
+        <ui-stats-card label="Paid" [value]="countByStatus('paid')" icon="circle-check"></ui-stats-card>
+        <ui-stats-card label="Total Revenue" [value]="'₦' + totalRevenue().toLocaleString()" icon="hand-coins"></ui-stats-card>
       </div>
 
       <div class="flex gap-2 mb-4">

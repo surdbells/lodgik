@@ -7,7 +7,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
   standalone: true,
   imports: [PageHeaderComponent, LoadingSpinnerComponent, FormsModule, BadgeComponent],
   template: `
-    <ui-page-header title="Settings" icon="⚙️" [breadcrumbs]="['System', 'Settings']" subtitle="Manage your hotel, staff, and integrations"></ui-page-header>
+    <ui-page-header title="Settings" icon="settings" [breadcrumbs]="['System', 'Settings']" subtitle="Manage your hotel, staff, and integrations"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {

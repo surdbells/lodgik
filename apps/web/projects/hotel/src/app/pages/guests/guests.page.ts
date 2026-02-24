@@ -9,7 +9,7 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
   standalone: true,
   imports: [FormsModule, DecimalPipe, UpperCasePipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Guests" subtitle="Manage guest profiles and history" icon="👤" [breadcrumbs]="['Manage Guests', 'Guest List']">
+    <ui-page-header title="Guests" subtitle="Manage guest profiles and history" icon="user-round" [breadcrumbs]="['Manage Guests', 'Guest List']">
       <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showForm = !showForm; resetForm()">
         {{ showForm ? 'Cancel' : '+ Add Guest' }}
       </button>

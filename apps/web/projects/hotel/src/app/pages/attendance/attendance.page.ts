@@ -9,16 +9,16 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, SlicePipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Attendance" icon="🕐" [breadcrumbs]="['Human Resources', 'Attendance']" subtitle="Daily attendance & clock in/out"></ui-page-header>
+    <ui-page-header title="Attendance" icon="clock" [breadcrumbs]="['Human Resources', 'Attendance']" subtitle="Daily attendance & clock in/out"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
-        <ui-stats-card label="Present" [value]="summary().present" icon="✅"></ui-stats-card>
-        <ui-stats-card label="Late" [value]="summary().late" icon="⏰"></ui-stats-card>
-        <ui-stats-card label="Absent" [value]="summary().absent" icon="❌"></ui-stats-card>
-        <ui-stats-card label="Half Day" [value]="summary().half_day" icon="🌗"></ui-stats-card>
-        <ui-stats-card label="On Leave" [value]="summary().on_leave" icon="🏖️"></ui-stats-card>
+        <ui-stats-card label="Present" [value]="summary().present" icon="circle-check"></ui-stats-card>
+        <ui-stats-card label="Late" [value]="summary().late" icon="clock"></ui-stats-card>
+        <ui-stats-card label="Absent" [value]="summary().absent" icon="circle-x"></ui-stats-card>
+        <ui-stats-card label="Half Day" [value]="summary().half_day" icon="moon"></ui-stats-card>
+        <ui-stats-card label="On Leave" [value]="summary().on_leave" icon="tree-palm"></ui-stats-card>
       </div>
 
       <div class="flex flex-wrap gap-2 mb-4 items-center">

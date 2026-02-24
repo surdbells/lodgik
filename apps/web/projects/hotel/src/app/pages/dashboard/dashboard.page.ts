@@ -1,14 +1,16 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, TokenService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, TokenService, LODGIK_ICONS } from '@lodgik/shared';
+import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
 import { LineChartComponent, BarChartComponent, DonutChartComponent, GaugeChartComponent, SparklineChartComponent, ChartDataPoint, ChartSeries } from '@lodgik/charts';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, DatePipe, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, LineChartComponent, BarChartComponent, DonutChartComponent, GaugeChartComponent, SparklineChartComponent],
+  imports: [RouterLink, DatePipe, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, LineChartComponent, BarChartComponent, DonutChartComponent, GaugeChartComponent, SparklineChartComponent, LucideAngularModule],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(LODGIK_ICONS) }],
   template: `
     <div class="fade-in">
       <ui-page-header title="Dashboard" [subtitle]="greeting()">
@@ -28,7 +30,7 @@ import { AuthService } from '@lodgik/shared';
           <ui-stats-card
             label="Total Bookings"
             [value]="overview().total_bookings || '0'"
-            icon="🏨"
+            icon="hotel"
             variant="gradient"
             gradient="linear-gradient(135deg, #293929 0%, #3a543a 50%, #5a825a 100%)"
             [trend]="10">
@@ -37,7 +39,7 @@ import { AuthService } from '@lodgik/shared';
           <ui-stats-card
             label="Check In"
             [value]="(overview().today_check_ins || 0) + ''"
-            icon="📥"
+            icon="door-open"
             variant="gradient"
             gradient="linear-gradient(135deg, #3a543a 0%, #5a825a 50%, #7a9e7a 100%)"
             [trend]="16">
@@ -47,7 +49,7 @@ import { AuthService } from '@lodgik/shared';
           <ui-stats-card
             label="Check Out"
             [value]="(overview().today_check_outs || 0) + ''"
-            icon="📤"
+            icon="log-out"
             variant="gradient"
             gradient="linear-gradient(135deg, #5a825a 0%, #7a9e7a 50%, #a3bfa3 100%)">
           </ui-stats-card>
@@ -55,7 +57,7 @@ import { AuthService } from '@lodgik/shared';
           <ui-stats-card
             label="Today Revenue"
             [value]="'₦' + (+overview().today_revenue || 0).toLocaleString()"
-            icon="💰"
+            icon="hand-coins"
             variant="gradient"
             gradient="linear-gradient(135deg, #466846 0%, #5a825a 100%)">
           </ui-stats-card>
@@ -142,9 +144,9 @@ import { AuthService } from '@lodgik/shared';
             <div class="space-y-1">
               @for (a of activity(); track $index) {
                 <div class="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <span class="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
+                  <span class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
                         [class]="activityBg(a.new_status)">
-                    {{ activityIcon(a.new_status) }}
+                    <lucide-icon [name]="activityIcon(a.new_status)" [size]="15" [strokeWidth]="2"></lucide-icon>
                   </span>
                   <div class="min-w-0 flex-1">
                     <p class="text-sm font-medium text-gray-800">{{ a.booking_ref }}</p>
@@ -155,7 +157,7 @@ import { AuthService } from '@lodgik/shared';
               }
               @if (activity().length === 0) {
                 <div class="flex flex-col items-center py-8 text-gray-400">
-                  <span class="text-2xl mb-2">📭</span>
+                  <lucide-icon name="clipboard-list" [size]="32" [strokeWidth]="1.5" class="text-gray-300 mb-2"></lucide-icon>
                   <p class="text-sm">No recent activity</p>
                 </div>
               }
@@ -171,7 +173,7 @@ import { AuthService } from '@lodgik/shared';
               <a [routerLink]="qa.route"
                  class="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-sage-200 hover:bg-sage-50 transition-all group">
                 <span class="w-10 h-10 rounded-lg flex items-center justify-center text-xl group-hover:scale-110 transition-transform"
-                      [class]="qa.bgClass">{{ qa.icon }}</span>
+                      [class]="qa.bgClass"><lucide-icon [name]="qa.icon" [size]="20" [strokeWidth]="1.75"></lucide-icon></span>
                 <div>
                   <p class="text-sm font-semibold text-gray-800">{{ qa.label }}</p>
                   <p class="text-xs text-gray-400">{{ qa.sub }}</p>
@@ -231,10 +233,10 @@ export class DashboardPage implements OnInit {
   });
 
   quickActions = [
-    { label: 'New Booking', sub: 'Create reservation', icon: '📋', route: '/bookings/new', bgClass: 'bg-sage-50' },
-    { label: 'Room Status', sub: 'View room grid', icon: '🏨', route: '/rooms', bgClass: 'bg-emerald-50' },
-    { label: 'Add Guest', sub: 'Register new guest', icon: '👤', route: '/guests', bgClass: 'bg-blue-50' },
-    { label: 'Housekeeping', sub: 'Manage tasks', icon: '🧹', route: '/housekeeping', bgClass: 'bg-amber-50' },
+    { label: 'New Booking', sub: 'Create reservation', icon: 'clipboard-list', route: '/bookings/new', bgClass: 'bg-sage-50' },
+    { label: 'Room Status', sub: 'View room grid', icon: 'hotel', route: '/rooms', bgClass: 'bg-emerald-50' },
+    { label: 'Add Guest', sub: 'Register new guest', icon: 'user-round', route: '/guests', bgClass: 'bg-blue-50' },
+    { label: 'Housekeeping', sub: 'Manage tasks', icon: 'spray-can', route: '/housekeeping', bgClass: 'bg-amber-50' },
   ];
 
   ngOnInit(): void {
@@ -269,7 +271,7 @@ export class DashboardPage implements OnInit {
   }
 
   activityIcon(status: string): string {
-    return { confirmed: '✅', checked_in: '📥', checked_out: '📤', cancelled: '❌', no_show: '🚫', pending: '⏳' }[status] ?? '📋';
+    return { confirmed: 'circle-check', checked_in: 'door-open', checked_out: 'log-out', cancelled: 'circle-x', no_show: 'circle-x', pending: 'clock' }[status] ?? 'clipboard-list';
   }
 
   activityBg(status: string): string {

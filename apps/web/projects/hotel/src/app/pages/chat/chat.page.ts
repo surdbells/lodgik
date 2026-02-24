@@ -7,7 +7,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Guest Chat" icon="💬" [breadcrumbs]="['Guest Experience', 'Chat']" subtitle="Respond to guest messages across departments"></ui-page-header>
+    <ui-page-header title="Guest Chat" icon="message-circle" [breadcrumbs]="['Guest Experience', 'Chat']" subtitle="Respond to guest messages across departments"></ui-page-header>
 
     <div class="flex gap-4" style="height: calc(100vh - 160px)">
       <!-- Left: Conversation List -->

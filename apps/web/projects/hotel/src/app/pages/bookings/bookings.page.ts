@@ -16,10 +16,10 @@ import { AuthService } from '@lodgik/shared';
 
     <!-- Quick Stats -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-      <ui-stats-card label="Today's Check-ins" [value]="todayStats().check_ins" icon="📥"></ui-stats-card>
-      <ui-stats-card label="Today's Check-outs" [value]="todayStats().check_outs" icon="📤"></ui-stats-card>
-      <ui-stats-card label="In-House" [value]="todayStats().in_house" icon="🏨"></ui-stats-card>
-      <ui-stats-card label="Upcoming" [value]="todayStats().upcoming" icon="📅"></ui-stats-card>
+      <ui-stats-card label="Today's Check-ins" [value]="todayStats().check_ins" icon="door-open"></ui-stats-card>
+      <ui-stats-card label="Today's Check-outs" [value]="todayStats().check_outs" icon="log-out"></ui-stats-card>
+      <ui-stats-card label="In-House" [value]="todayStats().in_house" icon="hotel"></ui-stats-card>
+      <ui-stats-card label="Upcoming" [value]="todayStats().upcoming" icon="calendar-days"></ui-stats-card>
     </div>
 
     <!-- New Booking Form -->

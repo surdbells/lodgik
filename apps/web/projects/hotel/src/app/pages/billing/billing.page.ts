@@ -19,10 +19,10 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
     @if (!loading() && tab === 'plan') {
       <!-- Current subscription summary -->
       <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <ui-stats-card label="Current Plan" [value]="sub().plan_name || 'Free Trial'" icon="💎"></ui-stats-card>
-        <ui-stats-card label="Status" [value]="sub().status || tenant().subscription_status || '—'" icon="📋"></ui-stats-card>
-        <ui-stats-card label="Billing Cycle" [value]="sub().billing_cycle || '—'" icon="🔄"></ui-stats-card>
-        <ui-stats-card label="Next Payment" [value]="sub().next_payment_date || '—'" icon="📅"></ui-stats-card>
+        <ui-stats-card label="Current Plan" [value]="sub().plan_name || 'Free Trial'" icon="star"></ui-stats-card>
+        <ui-stats-card label="Status" [value]="sub().status || tenant().subscription_status || '—'" icon="clipboard-list"></ui-stats-card>
+        <ui-stats-card label="Billing Cycle" [value]="sub().billing_cycle || '—'" icon="trending-up"></ui-stats-card>
+        <ui-stats-card label="Next Payment" [value]="sub().next_payment_date || '—'" icon="calendar-days"></ui-stats-card>
       </div>
 
       <!-- Usage meters -->

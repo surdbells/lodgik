@@ -7,7 +7,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Housekeeping" icon="🧹" [breadcrumbs]="['Daily Operation', 'Housekeeping']" subtitle="Task management, cleaning schedules, and inspections">
+    <ui-page-header title="Housekeeping" icon="spray-can" [breadcrumbs]="['Daily Operation', 'Housekeeping']" subtitle="Task management, cleaning schedules, and inspections">
       <button (click)="showCreateTask = true" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ Create Task</button>
     </ui-page-header>
 
@@ -15,10 +15,10 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
 
     @if (!loading()) {
       <div class="grid grid-cols-4 gap-3 mb-6">
-        <ui-stats-card label="Total Tasks" [value]="stats().total" icon="📋"></ui-stats-card>
-        <ui-stats-card label="Pending" [value]="stats().pending" icon="⏳"></ui-stats-card>
-        <ui-stats-card label="In Progress" [value]="stats().in_progress" icon="🔄"></ui-stats-card>
-        <ui-stats-card label="Completed" [value]="stats().completed" icon="✅"></ui-stats-card>
+        <ui-stats-card label="Total Tasks" [value]="stats().total" icon="clipboard-list"></ui-stats-card>
+        <ui-stats-card label="Pending" [value]="stats().pending" icon="clock"></ui-stats-card>
+        <ui-stats-card label="In Progress" [value]="stats().in_progress" icon="trending-up"></ui-stats-card>
+        <ui-stats-card label="Completed" [value]="stats().completed" icon="circle-check"></ui-stats-card>
       </div>
 
       <!-- Filter Tabs -->

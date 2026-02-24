@@ -34,12 +34,12 @@ interface RoomFilters {
 
     <!-- Stats -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-      <ui-stats-card label="Total" [value]="statusCounts().total" icon="🏨"></ui-stats-card>
-      <ui-stats-card label="Available" [value]="statusCounts().vacant_clean" icon="✅"></ui-stats-card>
-      <ui-stats-card label="Occupied" [value]="statusCounts().occupied" icon="🔵"></ui-stats-card>
-      <ui-stats-card label="Dirty" [value]="statusCounts().vacant_dirty" icon="🟡"></ui-stats-card>
-      <ui-stats-card label="Reserved" [value]="statusCounts().reserved" icon="🟣"></ui-stats-card>
-      <ui-stats-card label="OOO/Maint." [value]="(statusCounts().out_of_order || 0) + (statusCounts().maintenance || 0)" icon="🔴"></ui-stats-card>
+      <ui-stats-card label="Total" [value]="statusCounts().total" icon="hotel"></ui-stats-card>
+      <ui-stats-card label="Available" [value]="statusCounts().vacant_clean" icon="circle-check"></ui-stats-card>
+      <ui-stats-card label="Occupied" [value]="statusCounts().occupied" icon="bed-double"></ui-stats-card>
+      <ui-stats-card label="Dirty" [value]="statusCounts().vacant_dirty" icon="spray-can"></ui-stats-card>
+      <ui-stats-card label="Reserved" [value]="statusCounts().reserved" icon="calendar-days"></ui-stats-card>
+      <ui-stats-card label="OOO/Maint." [value]="(statusCounts().out_of_order || 0) + (statusCounts().maintenance || 0)" icon="wrench"></ui-stats-card>
     </div>
 
     <!-- Add Room Form -->

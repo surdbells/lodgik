@@ -17,10 +17,10 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComp
     @if (!loading() && guest()) {
       <!-- Stats Row -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <ui-stats-card label="Total Stays" [value]="guest()!.total_stays" icon="🏨"></ui-stats-card>
-        <ui-stats-card label="Total Spent" [value]="'₦' + (+guest()!.total_spent).toLocaleString()" icon="💰"></ui-stats-card>
+        <ui-stats-card label="Total Stays" [value]="guest()!.total_stays" icon="hotel"></ui-stats-card>
+        <ui-stats-card label="Total Spent" [value]="'₦' + (+guest()!.total_spent).toLocaleString()" icon="hand-coins"></ui-stats-card>
         <ui-stats-card label="VIP Status" [value]="guest()!.vip_status.toUpperCase()" [icon]="vipIcon(guest()!.vip_status)"></ui-stats-card>
-        <ui-stats-card label="Last Visit" [value]="lastVisitLabel()" icon="📅"></ui-stats-card>
+        <ui-stats-card label="Last Visit" [value]="lastVisitLabel()" icon="calendar-days"></ui-stats-card>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

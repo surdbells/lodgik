@@ -6,7 +6,7 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Loadi
   standalone: true,
   imports: [PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Properties" icon="🏨" [breadcrumbs]="['System', 'Properties']" subtitle="Manage your hotel properties"></ui-page-header>
+    <ui-page-header title="Properties" icon="hotel" [breadcrumbs]="['System', 'Properties']" subtitle="Manage your hotel properties"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
       <ui-data-table [columns]="columns" [data]="properties()" [totalItems]="properties().length" [searchable]="true"></ui-data-table>

@@ -32,7 +32,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, EmptyStateCom
           }
         </div>
       } @else {
-        <ui-empty-state title="No apps available" message="App releases will appear here when published" icon="📱"></ui-empty-state>
+        <ui-empty-state title="No apps available" message="App releases will appear here when published" icon="smartphone"></ui-empty-state>
       }
     }
   `,

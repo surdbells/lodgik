@@ -8,7 +8,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
   standalone: true,
   imports: [FormsModule, DatePipe, CurrencyPipe, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Expenses" icon="💸" [breadcrumbs]="['Finance', 'Expenses']" subtitle="Track and approve operational expenses">
+    <ui-page-header title="Expenses" icon="receipt" [breadcrumbs]="['Finance', 'Expenses']" subtitle="Track and approve operational expenses">
       <button (click)="showForm = !showForm" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">+ New Expense</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>

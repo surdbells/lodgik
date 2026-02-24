@@ -9,17 +9,17 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, SlicePipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Leave Management" icon="🏖️" [breadcrumbs]="['Human Resources', 'Leave']" subtitle="Leave requests and approval queue">
+    <ui-page-header title="Leave Management" icon="tree-palm" [breadcrumbs]="['Human Resources', 'Leave']" subtitle="Leave requests and approval queue">
       <button (click)="showRequest = true" class="bg-sage-600 text-white px-4 py-2 text-sm rounded-xl hover:bg-sage-700 transition-colors">+ Request Leave</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <ui-stats-card label="Pending" [value]="pending().length" icon="⏳"></ui-stats-card>
-        <ui-stats-card label="Approved" [value]="stats().approved" icon="✅"></ui-stats-card>
-        <ui-stats-card label="Rejected" [value]="stats().rejected" icon="❌"></ui-stats-card>
-        <ui-stats-card label="Leave Types" [value]="leaveTypes().length" icon="📋"></ui-stats-card>
+        <ui-stats-card label="Pending" [value]="pending().length" icon="clock"></ui-stats-card>
+        <ui-stats-card label="Approved" [value]="stats().approved" icon="circle-check"></ui-stats-card>
+        <ui-stats-card label="Rejected" [value]="stats().rejected" icon="circle-x"></ui-stats-card>
+        <ui-stats-card label="Leave Types" [value]="leaveTypes().length" icon="clipboard-list"></ui-stats-card>
       </div>
 
       <!-- Tabs -->

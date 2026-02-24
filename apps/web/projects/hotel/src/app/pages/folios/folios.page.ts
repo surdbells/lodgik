@@ -10,16 +10,16 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, DatePipe, RouterLink, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Folios" icon="📂" [breadcrumbs]="['Finance', 'Folios']" subtitle="Guest accounts and charges"></ui-page-header>
+    <ui-page-header title="Folios" icon="folder-open" [breadcrumbs]="['Finance', 'Folios']" subtitle="Guest accounts and charges"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
       <!-- Stats -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <ui-stats-card label="Open Folios" [value]="stats().open" icon="📂"></ui-stats-card>
-        <ui-stats-card label="Pending Payments" [value]="stats().pending" icon="⏳"></ui-stats-card>
-        <ui-stats-card label="Total Outstanding" [value]="'₦' + stats().outstanding.toLocaleString()" icon="💰"></ui-stats-card>
-        <ui-stats-card label="Closed Today" [value]="stats().closedToday" icon="✅"></ui-stats-card>
+        <ui-stats-card label="Open Folios" [value]="stats().open" icon="folder-open"></ui-stats-card>
+        <ui-stats-card label="Pending Payments" [value]="stats().pending" icon="clock"></ui-stats-card>
+        <ui-stats-card label="Total Outstanding" [value]="'₦' + stats().outstanding.toLocaleString()" icon="hand-coins"></ui-stats-card>
+        <ui-stats-card label="Closed Today" [value]="stats().closedToday" icon="circle-check"></ui-stats-card>
       </div>
 
       <!-- Filter -->

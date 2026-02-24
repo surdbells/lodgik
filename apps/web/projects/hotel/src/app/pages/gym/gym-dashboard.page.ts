@@ -20,11 +20,11 @@ import { BarChartComponent, GaugeChartComponent, LineChartComponent, ChartDataPo
 
     @if (!loading()) {
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-        <ui-stats-card label="Active Members" [value]="dashboard().active_members" icon="🏋️"></ui-stats-card>
-        <ui-stats-card label="Active Memberships" [value]="dashboard().active_memberships" icon="📋"></ui-stats-card>
-        <ui-stats-card label="Visits Today" [value]="dashboard().visits_today" icon="✅"></ui-stats-card>
-        <ui-stats-card label="Expiring Soon" [value]="dashboard().expiring_soon" icon="⚠️"></ui-stats-card>
-        <ui-stats-card label="Revenue (Month)" [value]="'₦' + formatAmount(dashboard().month_revenue)" icon="💰"></ui-stats-card>
+        <ui-stats-card label="Active Members" [value]="dashboard().active_members" icon="dumbbell"></ui-stats-card>
+        <ui-stats-card label="Active Memberships" [value]="dashboard().active_memberships" icon="clipboard-list"></ui-stats-card>
+        <ui-stats-card label="Visits Today" [value]="dashboard().visits_today" icon="circle-check"></ui-stats-card>
+        <ui-stats-card label="Expiring Soon" [value]="dashboard().expiring_soon" icon="triangle-alert"></ui-stats-card>
+        <ui-stats-card label="Revenue (Month)" [value]="'₦' + formatAmount(dashboard().month_revenue)" icon="hand-coins"></ui-stats-card>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
