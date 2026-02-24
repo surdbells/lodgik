@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Lodgik Hotel Management System API
   description: 'Comprehensive REST API for the Lodgik multi-tenant SaaS hotel management platform. Covers property management,
-    guest services, finance, HR, F&B, merchant ecosystem, IoT, and more.
+    guest services, finance, HR, F&B, merchant ecosystem, IoT, and lots more.
 
 
     **Authentication:** Bearer JWT token required for all endpoints except those marked with `security: []`.
