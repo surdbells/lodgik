@@ -44,8 +44,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
             <div class="p-3 rounded-lg" [class]="cfg.is_configured ? 'bg-emerald-50' : 'bg-red-50'">
               <p class="text-xs text-gray-500">Connection</p>
               <p class="text-lg font-bold" [class]="cfg.is_configured ? 'text-emerald-700' : 'text-red-700'">{{ cfg.is_configured ? 'Active' : 'Inactive' }}</p></div>
-            <div class="p-3 bg-blue-50 rounded-lg"><p class="text-xs text-gray-500">Messages Sent (30d)</p>
-              <p class="text-lg font-bold text-blue-700">{{ stats().messages_30d || 0 }}</p></div>
+            <div class="p-3 bg-sage-50 rounded-lg"><p class="text-xs text-gray-500">Messages Sent (30d)</p>
+              <p class="text-lg font-bold text-sage-700">{{ stats().messages_30d || 0 }}</p></div>
             <div class="p-3 bg-green-50 rounded-lg"><p class="text-xs text-gray-500">Delivered</p>
               <p class="text-lg font-bold text-green-700">{{ stats().delivered || 0 }}</p></div>
             <div class="p-3 bg-red-50 rounded-lg"><p class="text-xs text-gray-500">Failed</p>
@@ -78,7 +78,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
         </div>
         <div><label class="block text-xs font-medium text-gray-600 mb-1">Body (use :param_name for variables)</label>
           <textarea [(ngModel)]="newTemplate.body" rows="3" class="w-full px-3 py-2 border rounded-lg text-sm font-mono" placeholder="Hello :guest_name, your booking #:booking_ref is confirmed."></textarea></div>
-        <button (click)="createTemplate()" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Create Template</button>
+        <button (click)="createTemplate()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Create Template</button>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

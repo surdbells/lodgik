@@ -8,7 +8,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
   standalone: true,
   imports: [DatePipe, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
   template: `
-    <ui-page-header title="KYC Review" subtitle="Review and approve merchant KYC submissions"></ui-page-header>
+    <ui-page-header title="KYC Review" icon="shield" [breadcrumbs]="['Marketplace', 'KYC Review']" subtitle="Review and approve merchant KYC submissions"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
       <div class="space-y-4">
@@ -25,10 +25,10 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
               <div><span class="text-gray-500">ID Type:</span> {{ k.government_id_type || '—' }}</div>
               <div><span class="text-gray-500">ID Number:</span> {{ k.government_id_number || '—' }}</div>
               <div><span class="text-gray-500">Liveness:</span> {{ k.liveness_verified ? '✅' : '❌' }}</div>
-              @if (k.government_id_url) { <div><a [href]="k.government_id_url" target="_blank" class="text-blue-600 underline text-xs">View ID Document</a></div> }
-              @if (k.selfie_url) { <div><a [href]="k.selfie_url" target="_blank" class="text-blue-600 underline text-xs">View Selfie</a></div> }
-              @if (k.proof_of_address_url) { <div><a [href]="k.proof_of_address_url" target="_blank" class="text-blue-600 underline text-xs">View Proof of Address</a></div> }
-              @if (k.cac_certificate_url) { <div><a [href]="k.cac_certificate_url" target="_blank" class="text-blue-600 underline text-xs">View CAC Certificate</a></div> }
+              @if (k.government_id_url) { <div><a [href]="k.government_id_url" target="_blank" class="text-sage-600 underline text-xs">View ID Document</a></div> }
+              @if (k.selfie_url) { <div><a [href]="k.selfie_url" target="_blank" class="text-sage-600 underline text-xs">View Selfie</a></div> }
+              @if (k.proof_of_address_url) { <div><a [href]="k.proof_of_address_url" target="_blank" class="text-sage-600 underline text-xs">View Proof of Address</a></div> }
+              @if (k.cac_certificate_url) { <div><a [href]="k.cac_certificate_url" target="_blank" class="text-sage-600 underline text-xs">View CAC Certificate</a></div> }
             </div>
             @if (k.status === 'under_review') {
               <div class="flex items-center gap-3 pt-3 border-t border-gray-100">

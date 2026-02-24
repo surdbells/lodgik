@@ -8,8 +8,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
   standalone: true,
   imports: [FormsModule, JsonPipe, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
   template: `
-    <ui-page-header title="Commission Configuration" subtitle="Manage commission tiers and rates">
-      <button (click)="showForm.set(true)" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ New Tier</button>
+    <ui-page-header title="Commission Configuration" icon="hand-coins" [breadcrumbs]="['Marketplace', 'Commission']" subtitle="Manage commission tiers and rates">
+      <button (click)="showForm.set(true)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">+ New Tier</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
@@ -30,7 +30,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
           <div class="md:col-span-3"><label class="block text-xs font-medium mb-1">Description</label><textarea [(ngModel)]="form.description" rows="2" class="w-full px-3 py-2 border rounded-lg text-sm"></textarea></div>
         </div>
         <div class="flex gap-2 mt-4">
-          <button (click)="save()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">{{ editId() ? 'Update' : 'Create' }}</button>
+          <button (click)="save()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg">{{ editId() ? 'Update' : 'Create' }}</button>
           <button (click)="cancel()" class="px-4 py-2 bg-gray-100 text-sm rounded-lg">Cancel</button>
         </div>
       </div>
@@ -54,7 +54,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
               <div class="flex justify-between"><span class="text-gray-500">Upgrade:</span><span class="font-medium">{{ t.upgrade_rate }}{{ t.type === 'percentage' ? '%' : ' ₦' }}</span></div>
             </div>
             @if (t.plan_overrides) { <div class="mt-2 pt-2 border-t text-xs text-gray-500">Plan overrides: {{ t.plan_overrides | json }}</div> }
-            <button (click)="edit(t)" class="mt-3 text-blue-600 hover:underline text-xs">Edit Tier</button>
+            <button (click)="edit(t)" class="mt-3 text-sage-600 hover:underline text-xs">Edit Tier</button>
           </div>
         } @empty { <div class="col-span-3 text-center py-12 text-gray-400 bg-white rounded-lg border">No tiers configured</div> }
       </div>

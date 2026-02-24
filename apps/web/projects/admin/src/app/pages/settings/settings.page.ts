@@ -13,7 +13,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
     @if (!loading()) {
       <div class="space-y-6">
         <!-- ZeptoMail -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <div class="flex items-center justify-between mb-3">
             <h3 class="text-sm font-semibold text-gray-700">📧 ZeptoMail Configuration</h3>
             <span class="text-xs px-2 py-0.5 rounded-full" [class]="config().zeptomail_configured ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
@@ -29,13 +29,13 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
               <input [(ngModel)]="zeptomail.from_name" placeholder="Lodgik" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
           </div>
           <div class="flex gap-2 mt-3">
-            <button (click)="saveSection('zeptomail', zeptomail)" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Save</button>
+            <button (click)="saveSection('zeptomail', zeptomail)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Save</button>
             <button (click)="testEmail()" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300">📬 Send Test Email</button>
           </div>
         </div>
 
         <!-- Termii SMS / WhatsApp -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <div class="flex items-center justify-between mb-3">
             <h3 class="text-sm font-semibold text-gray-700">📱 Termii (SMS + WhatsApp)</h3>
             <span class="text-xs px-2 py-0.5 rounded-full" [class]="config().termii_configured ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
@@ -54,13 +54,13 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
           </div>
           <p class="text-xs text-gray-400 mt-2">WhatsApp webhook: <code class="bg-gray-100 px-1 rounded">{{ config().base_url || '' }}/api/webhooks/whatsapp</code></p>
           <div class="flex gap-2 mt-3">
-            <button (click)="saveSection('termii', termii)" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Save</button>
+            <button (click)="saveSection('termii', termii)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Save</button>
             <button (click)="testSms()" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300">📱 Send Test SMS</button>
           </div>
         </div>
 
         <!-- Paystack -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <div class="flex items-center justify-between mb-3">
             <h3 class="text-sm font-semibold text-gray-700">💳 Paystack (Subscription Billing)</h3>
             <span class="text-xs px-2 py-0.5 rounded-full" [class]="config().paystack_configured ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
@@ -76,11 +76,11 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
               <input [(ngModel)]="paystack.webhook_secret" type="password" placeholder="whsec_****" class="w-full px-3 py-2 border rounded-lg text-sm font-mono"></div>
           </div>
           <p class="text-xs text-gray-400 mt-2">Webhook URL: <code class="bg-gray-100 px-1 rounded">{{ config().base_url || '' }}/api/subscriptions/webhook</code></p>
-          <button (click)="saveSection('paystack', paystack)" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Save</button>
+          <button (click)="saveSection('paystack', paystack)" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Save</button>
         </div>
 
         <!-- Trial & Defaults -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">⏱️ Trial & Default Settings</h3>
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div><label class="block text-xs font-medium text-gray-600 mb-1">Default Trial (days)</label>
@@ -94,11 +94,11 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
                 <option value="NGN">NGN (₦)</option><option value="USD">USD ($)</option><option value="GBP">GBP (£)</option>
               </select></div>
           </div>
-          <button (click)="saveSection('defaults', defaults)" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Save</button>
+          <button (click)="saveSection('defaults', defaults)" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Save</button>
         </div>
 
         <!-- Feature Flags -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">🚩 Global Feature Flags</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             @for (flag of flags; track flag.key) {
@@ -109,7 +109,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
               </label>
             }
           </div>
-          <button (click)="saveSection('feature_flags', flagValues)" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Save Flags</button>
+          <button (click)="saveSection('feature_flags', flagValues)" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Save Flags</button>
         </div>
       </div>
     }

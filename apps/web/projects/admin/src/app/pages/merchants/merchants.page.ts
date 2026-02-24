@@ -14,7 +14,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
       <div class="flex gap-2 mb-4">
         <input [(ngModel)]="search" (keyup.enter)="load()" placeholder="Search merchants..." class="px-3 py-2 border rounded-lg text-sm w-64">
         @for (f of filters; track f.value) {
-          <button (click)="filterStatus.set(f.value); load()" [class.bg-blue-100]="filterStatus() === f.value" [class.text-blue-700]="filterStatus() === f.value" class="px-3 py-1 text-xs rounded-full border hover:bg-gray-50">{{ f.label }}</button>
+          <button (click)="filterStatus.set(f.value); load()" [class.bg-sage-100]="filterStatus() === f.value" [class.text-sage-700]="filterStatus() === f.value" class="px-3 py-1 text-xs rounded-full border hover:bg-gray-50">{{ f.label }}</button>
         }
       </div>
       <div class="bg-white rounded-lg border overflow-hidden">
@@ -35,7 +35,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
                     @if (m.status === 'pending_approval' || m.status === 'kyc_in_progress') { <button (click)="approve(m.id)" class="text-green-600 hover:underline text-xs">Approve</button> }
                     @if (m.status === 'active') { <button (click)="suspend(m.id)" class="text-amber-600 hover:underline text-xs">Suspend</button> }
                     @if (m.status === 'suspended') { <button (click)="approve(m.id)" class="text-green-600 hover:underline text-xs">Reactivate</button> }
-                    <button (click)="viewDetail(m)" class="text-blue-600 hover:underline text-xs">Details</button>
+                    <button (click)="viewDetail(m)" class="text-sage-600 hover:underline text-xs">Details</button>
                   </div>
                 </td>
               </tr>

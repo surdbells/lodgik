@@ -9,7 +9,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
   imports: [DatePipe, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
   template: `
     <ui-page-header title="Resource Management" subtitle="Upload and manage merchant resources">
-      <button (click)="showForm.set(true)" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ Upload Resource</button>
+      <button (click)="showForm.set(true)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">+ Upload Resource</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
@@ -36,7 +36,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
           <div class="md:col-span-2"><label class="block text-xs font-medium mb-1">Description</label><textarea [(ngModel)]="form.description" rows="2" class="w-full px-3 py-2 border rounded-lg text-sm"></textarea></div>
         </div>
         <div class="flex gap-2 mt-4">
-          <button (click)="upload()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">Upload</button>
+          <button (click)="upload()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg">Upload</button>
           <button (click)="showForm.set(false)" class="px-4 py-2 bg-gray-100 text-sm rounded-lg">Cancel</button>
         </div>
       </div>
@@ -58,7 +58,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
                 <td class="px-4 py-2 text-center"><ui-badge [variant]="r.status === 'active' ? 'success' : 'neutral'">{{ r.status }}</ui-badge></td>
                 <td class="px-4 py-2">
                   <div class="flex gap-1">
-                    <button (click)="loadAnalytics(r)" class="text-blue-600 text-xs hover:underline">Stats</button>
+                    <button (click)="loadAnalytics(r)" class="text-sage-600 text-xs hover:underline">Stats</button>
                     @if (r.status === 'active') { <button (click)="archive(r.id)" class="text-red-600 text-xs hover:underline">Archive</button> }
                   </div>
                 </td>

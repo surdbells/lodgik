@@ -7,15 +7,15 @@ import { BarChartComponent, ChartDataPoint } from '@lodgik/charts';
   standalone: true,
   imports: [PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, BarChartComponent],
   template: `
-    <ui-page-header title="Usage Analytics" subtitle="Platform-wide usage overview"></ui-page-header>
+    <ui-page-header title="Usage Analytics" icon="trending-up" [breadcrumbs]="['Overview', 'Usage']" subtitle="Platform-wide usage overview"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <ui-stats-card label="Total Downloads" [value]="analytics().total_downloads" icon="📥"></ui-stats-card>
-        <ui-stats-card label="Active Installations" [value]="analytics().active_installations" icon="📱"></ui-stats-card>
-        <ui-stats-card label="App Types" [value]="analytics().latest_versions?.length || 0" icon="🖥️"></ui-stats-card>
+        <ui-stats-card label="Total Downloads" [value]="analytics().total_downloads" icon="door-open"></ui-stats-card>
+        <ui-stats-card label="Active Installations" [value]="analytics().active_installations" icon="smartphone"></ui-stats-card>
+        <ui-stats-card label="App Types" [value]="analytics().latest_versions?.length || 0" icon="smartphone"></ui-stats-card>
       </div>
-      <div class="bg-white rounded-lg border border-gray-200 p-5">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
         <h3 class="text-sm font-semibold text-gray-700 mb-4">Downloads by Platform</h3>
         <chart-bar [data]="downloadsByType()" [height]="250" [showValues]="true"></chart-bar>
       </div>

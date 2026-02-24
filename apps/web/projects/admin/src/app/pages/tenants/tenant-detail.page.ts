@@ -26,17 +26,17 @@ import { DonutChartComponent, BarChartComponent, ChartDataPoint } from '@lodgik/
     @if (!loading()) {
       <!-- Stats Row -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <ui-stats-card label="Status" [value]="t.subscription_status" icon="📋"></ui-stats-card>
-        <ui-stats-card label="Plan" [value]="t.plan_name || 'None'" icon="💎"></ui-stats-card>
-        <ui-stats-card label="Rooms" [value]="(usage()?.rooms?.used || 0) + '/' + t.max_rooms" icon="🛏️"></ui-stats-card>
-        <ui-stats-card label="Staff" [value]="(usage()?.staff?.used || 0) + '/' + t.max_staff" icon="👥"></ui-stats-card>
-        <ui-stats-card label="Properties" [value]="(usage()?.properties?.used || 0) + '/' + t.max_properties" icon="🏨"></ui-stats-card>
+        <ui-stats-card label="Status" [value]="t.subscription_status" icon="clipboard-list"></ui-stats-card>
+        <ui-stats-card label="Plan" [value]="t.plan_name || 'None'" icon="star"></ui-stats-card>
+        <ui-stats-card label="Rooms" [value]="(usage()?.rooms?.used || 0) + '/' + t.max_rooms" icon="bed-double"></ui-stats-card>
+        <ui-stats-card label="Staff" [value]="(usage()?.staff?.used || 0) + '/' + t.max_staff" icon="users"></ui-stats-card>
+        <ui-stats-card label="Properties" [value]="(usage()?.properties?.used || 0) + '/' + t.max_properties" icon="hotel"></ui-stats-card>
         <ui-stats-card label="Active" [value]="t.is_active ? 'Yes' : 'Suspended'" [icon]="t.is_active ? '✅' : '🚫'"></ui-stats-card>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <!-- Tenant Info -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Tenant Info</h3>
           <div class="space-y-2 text-sm">
             <div class="flex justify-between"><span class="text-gray-500">Email</span><span>{{ t.email || '—' }}</span></div>
@@ -67,7 +67,7 @@ import { DonutChartComponent, BarChartComponent, ChartDataPoint } from '@lodgik/
         </div>
 
         <!-- Usage Chart -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Resource Usage</h3>
           @if (usageData().length) {
             <chart-donut [data]="usageData()" centerValue="" centerLabel="usage" [height]="200"></chart-donut>
@@ -78,7 +78,7 @@ import { DonutChartComponent, BarChartComponent, ChartDataPoint } from '@lodgik/
               @for (r of ['rooms', 'staff', 'properties']; track r) {
                 <div>
                   <div class="flex justify-between text-xs text-gray-600 mb-1"><span class="capitalize">{{ r }}</span><span>{{ usage()[r]?.used || 0 }}/{{ usage()[r]?.limit || 0 }} ({{ usage()[r]?.percent || 0 }}%)</span></div>
-                  <div class="w-full h-2 bg-gray-200 rounded-full"><div class="h-2 rounded-full transition-all" [style.width.%]="usage()[r]?.percent || 0" [class]="(usage()[r]?.percent || 0) > 80 ? 'bg-red-500' : 'bg-blue-500'"></div></div>
+                  <div class="w-full h-2 bg-gray-200 rounded-full"><div class="h-2 rounded-full transition-all" [style.width.%]="usage()[r]?.percent || 0" [class]="(usage()[r]?.percent || 0) > 80 ? 'bg-red-500' : 'bg-sage-500'"></div></div>
                 </div>
               }
             }
@@ -86,7 +86,7 @@ import { DonutChartComponent, BarChartComponent, ChartDataPoint } from '@lodgik/
         </div>
 
         <!-- Assign Plan -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Subscription</h3>
           <div class="mb-3">
             <label class="block text-xs text-gray-500 mb-1">Assign Plan</label>
@@ -94,7 +94,7 @@ import { DonutChartComponent, BarChartComponent, ChartDataPoint } from '@lodgik/
               <option value="">— Select —</option>
               @for (p of availPlans(); track p.id) { <option [value]="p.id">{{ p.name }} ({{ p.tier }})</option> }
             </select>
-            <button (click)="assignPlan()" [disabled]="!selectedPlanId" class="mt-2 w-full px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">Assign Plan</button>
+            <button (click)="assignPlan()" [disabled]="!selectedPlanId" class="mt-2 w-full px-3 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700 disabled:opacity-50">Assign Plan</button>
           </div>
           <div class="text-xs text-gray-400 space-y-1 mt-4">
             <p>Paystack Customer: {{ t.paystack_customer_code || '—' }}</p>
@@ -104,7 +104,7 @@ import { DonutChartComponent, BarChartComponent, ChartDataPoint } from '@lodgik/
       </div>
 
       <!-- Feature Toggles -->
-      <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-sm font-semibold text-gray-700">Feature Modules ({{ enabledModules().length }} enabled)</h3>
         </div>

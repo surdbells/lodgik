@@ -6,7 +6,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
   standalone: true,
   imports: [PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
   template: `
-    <ui-page-header title="Feature Modules" subtitle="45 modules across all categories"></ui-page-header>
+    <ui-page-header title="Feature Modules" icon="puzzle" [breadcrumbs]="['Overview', 'Features']" subtitle="45 modules across all categories"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
       @for (cat of categories(); track cat.name) {
@@ -14,7 +14,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
           <h3 class="text-sm font-semibold text-gray-700 mb-2">{{ cat.name }} <span class="text-gray-400">({{ cat.modules.length }})</span></h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             @for (m of cat.modules; track m.module_key) {
-              <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-start gap-3">
+              <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4 flex items-start gap-3">
                 <span class="text-xl">{{ m.icon || '📦' }}</span>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">

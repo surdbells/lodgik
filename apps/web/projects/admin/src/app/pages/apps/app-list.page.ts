@@ -7,14 +7,14 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
   standalone: true,
   imports: [PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, FormsModule],
   template: `
-    <ui-page-header title="App Releases" subtitle="Manage platform app distribution">
-      <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700" (click)="showUpload = !showUpload">
+    <ui-page-header title="App Releases" icon="smartphone" [breadcrumbs]="['Overview', 'Apps']" subtitle="Manage platform app distribution">
+      <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showUpload = !showUpload">
         {{ showUpload ? 'Cancel' : '+ Upload Release' }}
       </button>
     </ui-page-header>
 
     @if (showUpload) {
-      <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
         <h3 class="text-sm font-semibold text-gray-700 mb-4">Upload New Release</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div><label class="block text-xs font-medium text-gray-600 mb-1">App Type</label>
@@ -38,7 +38,7 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
             <input [(ngModel)]="uploadForm.download_url" placeholder="https://storage.example.com/app-v1.2.0.apk" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
         </div>
         <div class="flex gap-2">
-          <button (click)="createRelease()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Create Release</button>
+          <button (click)="createRelease()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Create Release</button>
           <button (click)="showUpload = false" class="px-4 py-2 bg-gray-200 text-sm rounded-lg">Cancel</button>
         </div>
       </div>
@@ -49,7 +49,7 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
       @for (at of appTypes; track at.key) {
         <button (click)="filterType = filterType === at.key ? null : at.key; load()"
                 class="bg-white rounded-lg border p-4 text-center hover:shadow-sm transition-shadow"
-                [class.border-blue-500]="filterType === at.key" [class.ring-1]="filterType === at.key" [class.ring-blue-500]="filterType === at.key">
+                [class.border-sage-500]="filterType === at.key" [class.ring-1]="filterType === at.key" [class.ring-sage-200]="filterType === at.key">
           <span class="text-2xl block mb-1">{{ at.icon }}</span>
           <span class="text-xs font-medium text-gray-700">{{ at.label }}</span>
           <span class="block text-lg font-bold text-gray-800">{{ countByType(at.key) }}</span>

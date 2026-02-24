@@ -7,8 +7,8 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
   standalone: true,
   imports: [PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Tenants" subtitle="Manage hotel tenants on the platform">
-      <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700" (click)="inviteTenant()">
+    <ui-page-header title="Tenants" icon="hotel" [breadcrumbs]="['Overview', 'Tenants']" subtitle="Manage hotel tenants on the platform">
+      <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="inviteTenant()">
         + Invite Tenant
       </button>
     </ui-page-header>
@@ -80,7 +80,7 @@ export class TenantListPage implements OnInit {
 
   private statusClass(s: string): string {
     const map: Record<string, string> = {
-      active: 'bg-emerald-50 text-emerald-700', trial: 'bg-blue-50 text-blue-700',
+      active: 'bg-emerald-50 text-emerald-700', trial: 'bg-sage-50 text-sage-700',
       suspended: 'bg-red-50 text-red-700', cancelled: 'bg-gray-100 text-gray-600',
       past_due: 'bg-amber-50 text-amber-700', expired: 'bg-gray-100 text-gray-500',
     };

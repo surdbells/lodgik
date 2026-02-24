@@ -8,9 +8,9 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
   standalone: true,
   imports: [DatePipe, SlicePipe, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
   template: `
-    <ui-page-header title="Payout Processing" subtitle="Generate and process merchant commission payouts">
+    <ui-page-header title="Payout Processing" icon="credit-card" [breadcrumbs]="['Marketplace', 'Payouts']" subtitle="Generate and process merchant commission payouts">
       <div class="flex gap-2">
-        <button (click)="showGenerate.set(true)" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Generate Payout</button>
+        <button (click)="showGenerate.set(true)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Generate Payout</button>
       </div>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
@@ -24,7 +24,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
           <div><label class="block text-xs font-medium mb-1">Period End *</label><input [(ngModel)]="genForm.period_end" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
         </div>
         <div class="flex gap-2 mt-4">
-          <button (click)="generate()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">Generate</button>
+          <button (click)="generate()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg">Generate</button>
           <button (click)="showGenerate.set(false)" class="px-4 py-2 bg-gray-100 text-sm rounded-lg">Cancel</button>
         </div>
       </div>
@@ -33,7 +33,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
     @if (!loading()) {
       <div class="flex gap-2 mb-4">
         @for (f of filters; track f.value) {
-          <button (click)="filterStatus.set(f.value); load()" [class.bg-blue-100]="filterStatus() === f.value" class="px-3 py-1 text-xs rounded-full border hover:bg-gray-50">{{ f.label }}</button>
+          <button (click)="filterStatus.set(f.value); load()" [class.bg-sage-100]="filterStatus() === f.value" class="px-3 py-1 text-xs rounded-full border hover:bg-gray-50">{{ f.label }}</button>
         }
       </div>
       <div class="bg-white rounded-lg border overflow-hidden">

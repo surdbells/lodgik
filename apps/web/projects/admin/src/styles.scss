@@ -2,16 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════
+   LODGIK ADMIN — Design System (Sage & Earth tones)
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-  --lodgik-primary-50: #eff6ff;
-  --lodgik-primary-100: #dbeafe;
-  --lodgik-primary-500: #1e3a5f;
-  --lodgik-primary-600: #1a3354;
-  --lodgik-primary-700: #152b47;
-  --lodgik-primary-900: #0f1f33;
-  --lodgik-accent-500: #f59e0b;
-  --lodgik-accent-600: #d97706;
+  --sage-50:  #f4f7f4;
+  --sage-100: #e4ede4;
+  --sage-200: #c9dac9;
+  --sage-300: #a3bfa3;
+  --sage-400: #7a9e7a;
+  --sage-500: #5a825a;
+  --sage-600: #466846;
+  --sage-700: #3a543a;
+  --sage-800: #314431;
+  --sage-900: #293929;
+
+  --grad-sage:      linear-gradient(135deg, #3a543a 0%, #5a825a 50%, #7a9e7a 100%);
+  --grad-sage-dark: linear-gradient(135deg, #293929 0%, #3a543a 50%, #466846 100%);
+
+  --shadow-card:       0px 1px 3px rgba(16, 24, 40, 0.06), 0px 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-card-hover: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
 }
 
 html, body { height: 100%; margin: 0; }
-body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+body {
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-heading { font-family: 'Plus Jakarta Sans', 'DM Sans', system-ui, sans-serif; }
+.page-bg { background: #f9fafb; }
+
+/* Gradient stat cards */
+.stat-card-gradient {
+  position: relative; padding: 1.25rem; border-radius: 0.75rem; overflow: hidden; min-height: 140px;
+}
+.stat-card-gradient::before {
+  content: ''; position: absolute; width: 130px; height: 130px; border-radius: 50%;
+  top: -40px; right: -20px; background: rgba(255,255,255,0.06);
+}
+.stat-card-gradient::after {
+  content: ''; position: absolute; width: 80px; height: 80px; border-radius: 50%;
+  bottom: -20px; left: 20px; background: rgba(255,255,255,0.04);
+}
+
+.shadow-card       { box-shadow: var(--shadow-card); }
+.shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--sage-200); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--sage-300); }
+
+.fade-in { animation: fadeIn 0.4s ease-out both; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

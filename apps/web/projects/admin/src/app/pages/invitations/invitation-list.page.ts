@@ -8,21 +8,21 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
   imports: [PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, FormsModule],
   template: `
     <ui-page-header title="Tenant Invitations" subtitle="Invite hotels to join the platform">
-      <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700" (click)="showCreate = !showCreate">
+      <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showCreate = !showCreate">
         {{ showCreate ? 'Cancel' : '+ Invite' }}
       </button>
     </ui-page-header>
 
     @if (showCreate) {
-      <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">New Invitation</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <input [(ngModel)]="form.hotel_name" placeholder="Hotel name" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.email" placeholder="Email" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.contact_name" placeholder="Contact name" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-          <input [(ngModel)]="form.phone" placeholder="Phone" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <input [(ngModel)]="form.hotel_name" placeholder="Hotel name" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.email" placeholder="Email" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.contact_name" placeholder="Contact name" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="form.phone" placeholder="Phone" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
         </div>
-        <button (click)="create()" class="mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Send Invitation</button>
+        <button (click)="create()" class="mt-4 px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Send Invitation</button>
       </div>
     }
 

@@ -7,36 +7,36 @@ import { LineChartComponent, DonutChartComponent, BarChartComponent, SparklineCh
   standalone: true,
   imports: [StatsCardComponent, PageHeaderComponent, LoadingSpinnerComponent, LineChartComponent, DonutChartComponent, BarChartComponent, SparklineChartComponent],
   template: `
-    <ui-page-header title="Platform Dashboard" subtitle="Overview of your SaaS platform"></ui-page-header>
+    <ui-page-header title="Platform Dashboard" subtitle="Overview of your SaaS platform" icon="layout-dashboard"></ui-page-header>
     <ui-loading [loading]="loading()" message="Loading dashboard..."></ui-loading>
 
     @if (!loading()) {
       <!-- Stats row -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <ui-stats-card label="Total Tenants" [value]="stats().total_tenants" icon="🏨" [trend]="stats().tenant_growth_pct">
-          <chart-sparkline [data]="tenantSpark()" color="#3b82f6" [width]="120" [height]="32"></chart-sparkline>
+        <ui-stats-card label="Total Tenants" [value]="stats().total_tenants" icon="hotel" [trend]="stats().tenant_growth_pct">
+          <chart-sparkline [data]="tenantSpark()" color="#466846" [width]="120" [height]="32"></chart-sparkline>
         </ui-stats-card>
-        <ui-stats-card label="Active Subscriptions" [value]="stats().active_subscriptions || stats().active_tenants" icon="✅">
+        <ui-stats-card label="Active Subscriptions" [value]="stats().active_subscriptions || stats().active_tenants" icon="circle-check">
           <chart-sparkline [data]="subSpark()" color="#10b981" [width]="120" [height]="32"></chart-sparkline>
         </ui-stats-card>
-        <ui-stats-card label="MRR" [value]="'₦' + ((stats().mrr || 0)).toLocaleString()" icon="💰" [trend]="stats().mrr_growth_pct">
+        <ui-stats-card label="MRR" [value]="'₦' + ((stats().mrr || 0)).toLocaleString()" icon="hand-coins" [trend]="stats().mrr_growth_pct">
           <chart-sparkline [data]="mrrSpark()" color="#f59e0b" [width]="120" [height]="32"></chart-sparkline>
         </ui-stats-card>
-        <ui-stats-card label="Churn Rate" [value]="(stats().churn_rate || 0) + '%'" icon="📉" [trend]="stats().churn_trend">
+        <ui-stats-card label="Churn Rate" [value]="(stats().churn_rate || 0) + '%'" icon="trending-up" [trend]="stats().churn_trend">
         </ui-stats-card>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <ui-stats-card label="Trial Tenants" [value]="stats().trial_tenants" icon="⏱️"></ui-stats-card>
-        <ui-stats-card label="Total Users" [value]="stats().total_users" icon="👤"></ui-stats-card>
-        <ui-stats-card label="Total Properties" [value]="stats().total_properties" icon="🏢"></ui-stats-card>
-        <ui-stats-card label="Total Plans" [value]="stats().total_plans" icon="💎"></ui-stats-card>
+        <ui-stats-card label="Trial Tenants" [value]="stats().trial_tenants" icon="clock"></ui-stats-card>
+        <ui-stats-card label="Total Users" [value]="stats().total_users" icon="user-round"></ui-stats-card>
+        <ui-stats-card label="Total Properties" [value]="stats().total_properties" icon="building"></ui-stats-card>
+        <ui-stats-card label="Total Plans" [value]="stats().total_plans" icon="star"></ui-stats-card>
       </div>
 
       <!-- Charts -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <!-- Signup & Revenue Trend -->
-        <div class="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-5">
+        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Monthly Signups & Revenue</h3>
           @if (trendSeries().length) {
             <chart-line [series]="trendSeries()" [labels]="trendLabels()" [width]="650" [height]="260" [showArea]="true"></chart-line>
@@ -46,7 +46,7 @@ import { LineChartComponent, DonutChartComponent, BarChartComponent, SparklineCh
         </div>
 
         <!-- Tenants by Status (donut) -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Tenants by Status</h3>
           <chart-donut [data]="statusData()" centerValue="" centerLabel="tenants" [height]="200"></chart-donut>
         </div>
@@ -54,7 +54,7 @@ import { LineChartComponent, DonutChartComponent, BarChartComponent, SparklineCh
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Revenue by Plan -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Revenue by Plan</h3>
           @if (planData().length) {
             <chart-bar [data]="planData()" [height]="220" [showValues]="true"></chart-bar>
@@ -62,13 +62,13 @@ import { LineChartComponent, DonutChartComponent, BarChartComponent, SparklineCh
         </div>
 
         <!-- Recent Signups -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Recent Signups</h3>
           <div class="space-y-2">
             @for (t of recentTenants(); track t.id) {
               <div class="flex items-center justify-between py-1.5 border-b border-gray-100">
                 <div><p class="text-sm font-medium">{{ t.name }}</p><p class="text-xs text-gray-500">{{ t.email }}</p></div>
-                <div class="text-right"><span class="text-xs px-2 py-0.5 rounded-full" [class]="t.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700' : t.subscription_status === 'trial' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'">{{ t.subscription_status }}</span>
+                <div class="text-right"><span class="text-xs px-2 py-0.5 rounded-full" [class]="t.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700' : t.subscription_status === 'trial' ? 'bg-sage-100 text-sage-700' : 'bg-gray-100 text-gray-600'">{{ t.subscription_status }}</span>
                   <p class="text-xs text-gray-400 mt-0.5">{{ t.created_at }}</p>
                 </div>
               </div>
@@ -101,7 +101,7 @@ export class DashboardPage implements OnInit {
 
           // Tenants by status donut
           const statusMap = d.tenants_by_status || {};
-          const colors: Record<string, string> = { trial: '#3b82f6', active: '#10b981', past_due: '#f59e0b', cancelled: '#ef4444', expired: '#6b7280', suspended: '#dc2626' };
+          const colors: Record<string, string> = { trial: '#466846', active: '#10b981', past_due: '#f59e0b', cancelled: '#ef4444', expired: '#6b7280', suspended: '#dc2626' };
           this.statusData.set(Object.entries(statusMap).map(([k, v]) => ({ label: k, value: v as number, color: colors[k] || '#9ca3af' })));
 
           // Revenue by plan
@@ -116,7 +116,7 @@ export class DashboardPage implements OnInit {
           if (d.monthly_trend?.length) {
             this.trendLabels.set(d.monthly_trend.map((m: any) => m.month));
             this.trendSeries.set([
-              { name: 'Signups', data: d.monthly_trend.map((m: any) => m.signups || 0), color: '#3b82f6' },
+              { name: 'Signups', data: d.monthly_trend.map((m: any) => m.signups || 0), color: '#466846' },
               { name: 'Revenue (₦k)', data: d.monthly_trend.map((m: any) => (m.revenue || 0) / 1000), color: '#10b981' },
             ]);
           }

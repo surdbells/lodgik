@@ -8,7 +8,7 @@ import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartSeries
   standalone: true,
   imports: [PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, FormsModule, LineChartComponent, BarChartComponent, DonutChartComponent],
   template: `
-    <ui-page-header title="Platform Analytics" subtitle="Global usage metrics, growth, and adoption across all tenants">
+    <ui-page-header title="Platform Analytics" icon="chart-bar" [breadcrumbs]="['Overview', 'Analytics']" subtitle="Global usage metrics, growth, and adoption across all tenants">
       <select [(ngModel)]="period" (ngModelChange)="load()" class="px-3 py-2 border rounded-lg text-sm">
         <option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last year</option>
       </select>
@@ -18,12 +18,12 @@ import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartSeries
     @if (!loading()) {
       <!-- Top stats -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <ui-stats-card label="Total Tenants" [value]="stats().total_tenants" icon="🏨"></ui-stats-card>
-        <ui-stats-card label="Active Users" [value]="stats().active_users" icon="👤"></ui-stats-card>
-        <ui-stats-card label="Total Bookings" [value]="stats().total_bookings" icon="📅"></ui-stats-card>
-        <ui-stats-card label="Total Rooms" [value]="stats().total_rooms" icon="🛏️"></ui-stats-card>
-        <ui-stats-card label="Total Properties" [value]="stats().total_properties" icon="🏢"></ui-stats-card>
-        <ui-stats-card label="MRR" [value]="'₦' + ((stats().mrr || 0)).toLocaleString()" icon="💰"></ui-stats-card>
+        <ui-stats-card label="Total Tenants" [value]="stats().total_tenants" icon="hotel"></ui-stats-card>
+        <ui-stats-card label="Active Users" [value]="stats().active_users" icon="user-round"></ui-stats-card>
+        <ui-stats-card label="Total Bookings" [value]="stats().total_bookings" icon="calendar-days"></ui-stats-card>
+        <ui-stats-card label="Total Rooms" [value]="stats().total_rooms" icon="bed-double"></ui-stats-card>
+        <ui-stats-card label="Total Properties" [value]="stats().total_properties" icon="building"></ui-stats-card>
+        <ui-stats-card label="MRR" [value]="'₦' + ((stats().mrr || 0)).toLocaleString()" icon="hand-coins"></ui-stats-card>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -86,7 +86,7 @@ import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartSeries
             @for (t of topTenants(); track t.id) {
               <tr class="border-t hover:bg-gray-50">
                 <td class="px-4 py-2 font-medium">{{ t.name }}</td>
-                <td class="px-4 py-2 text-center"><span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">{{ t.plan_name || 'Free' }}</span></td>
+                <td class="px-4 py-2 text-center"><span class="px-2 py-0.5 rounded-full text-xs bg-sage-100 text-sage-700">{{ t.plan_name || 'Free' }}</span></td>
                 <td class="px-4 py-2 text-right">{{ t.rooms_used }}</td>
                 <td class="px-4 py-2 text-right">{{ t.staff_used }}</td>
                 <td class="px-4 py-2 text-right">{{ t.bookings_count }}</td>
