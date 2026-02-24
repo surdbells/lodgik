@@ -26,10 +26,10 @@ class User implements TenantAware
     use HasTimestamps;
     use SoftDeletable;
 
-    #[ORM\Column(name: 'first_name', type: Types::STRING, length: 100)]
+    #[ORM\Column(name: 'firstName', type: Types::STRING, length: 100)]
     private string $firstName;
 
-    #[ORM\Column(name: 'last_name', type: Types::STRING, length: 100)]
+    #[ORM\Column(name: 'lastName', type: Types::STRING, length: 100)]
     private string $lastName;
 
     #[ORM\Column(type: Types::STRING, length: 320)]
