@@ -15,7 +15,10 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             @for (m of cat.modules; track m.module_key) {
               <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4 flex items-start gap-3">
-                <span class="text-xl">{{ m.icon || '📦' }}</span>
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold"
+                     [class]="m.is_core ? 'bg-sage-100 text-sage-700' : 'bg-gray-100 text-gray-500'">
+                  {{ m.name.charAt(0) }}
+                </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
                     <span class="text-sm font-medium text-gray-800">{{ m.name }}</span>
