@@ -8,14 +8,14 @@ import { MerchantApiService } from '../../services/merchant-api.service';
   standalone: true,
   imports: [DatePipe, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Notifications" subtitle="Stay updated on your merchant activity">
+    <ui-page-header title="Notifications" icon="bell" [breadcrumbs]="['Notifications']" subtitle="Stay updated on your merchant activity">
       <button (click)="markAll()" class="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">Mark all read</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
       <div class="space-y-2">
         @for (n of notifications(); track n.id) {
-          <div [class.bg-emerald-50]="!n.is_read" [class.border-emerald-200]="!n.is_read" class="bg-white rounded-lg border border-gray-200 p-4 flex items-start gap-3 cursor-pointer hover:shadow-sm transition-shadow" (click)="markRead(n)">
+          <div [class.bg-emerald-50]="!n.is_read" [class.border-emerald-200]="!n.is_read" class="bg-white rounded-xl border border-gray-100 shadow-card p-4 flex items-start gap-3 cursor-pointer hover:shadow-sm transition-shadow" (click)="markRead(n)">
             <span class="text-xl shrink-0">{{ typeIcon(n.type) }}</span>
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between">

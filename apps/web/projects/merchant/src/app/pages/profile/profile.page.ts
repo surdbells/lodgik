@@ -8,12 +8,12 @@ import { MerchantApiService } from '../../services/merchant-api.service';
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
   template: `
-    <ui-page-header title="Profile" subtitle="Manage your business info, KYC and bank details"></ui-page-header>
+    <ui-page-header title="Profile" icon="user-round" [breadcrumbs]="['Account', 'Profile']" subtitle="Manage your business info, KYC and bank details"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Business Info -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <h3 class="text-sm font-semibold mb-4">Business Information</h3>
           <div class="space-y-2 text-sm">
             <div class="flex justify-between"><span class="text-gray-500">Merchant ID</span><span class="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{{ profile().merchant_id }}</span></div>
@@ -27,7 +27,7 @@ import { MerchantApiService } from '../../services/merchant-api.service';
         </div>
 
         <!-- KYC Status -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold">KYC Verification</h3>
             <ui-badge [variant]="kyc().status === 'approved' ? 'success' : kyc().status === 'rejected' ? 'danger' : 'warning'">{{ kyc().status || 'not_submitted' }}</ui-badge>
@@ -43,7 +43,7 @@ import { MerchantApiService } from '../../services/merchant-api.service';
               <div><label class="block text-xs font-medium text-gray-600 mb-1">ID Number</label><input [(ngModel)]="kycForm.government_id_number" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
               <div><label class="block text-xs font-medium text-gray-600 mb-1">Government ID URL</label><input [(ngModel)]="kycForm.government_id_url" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="https://..."></div>
               <div><label class="block text-xs font-medium text-gray-600 mb-1">Selfie URL</label><input [(ngModel)]="kycForm.selfie_url" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="https://..."></div>
-              <button (click)="submitKyc()" class="w-full py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">Submit KYC</button>
+              <button (click)="submitKyc()" class="w-full py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Submit KYC</button>
             </div>
           } @else {
             <div class="text-center py-4"><span class="text-3xl">✅</span><p class="text-sm text-gray-600 mt-2">KYC Verified</p></div>
@@ -51,7 +51,7 @@ import { MerchantApiService } from '../../services/merchant-api.service';
         </div>
 
         <!-- Bank Account -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5 lg:col-span-2">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 lg:col-span-2">
           <h3 class="text-sm font-semibold mb-4">Bank Account</h3>
           @if (profile().bank_account) {
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
@@ -66,17 +66,17 @@ import { MerchantApiService } from '../../services/merchant-api.service';
               <div><label class="block text-xs font-medium text-gray-600 mb-1">Account Name</label><input [(ngModel)]="bankForm.account_name" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
               <div><label class="block text-xs font-medium text-gray-600 mb-1">Account Number</label><input [(ngModel)]="bankForm.account_number" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
             </div>
-            <button (click)="addBank()" class="mt-3 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">Add Bank Account</button>
+            <button (click)="addBank()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Add Bank Account</button>
           }
         </div>
 
         <!-- Commission Tier -->
         @if (profile().commission_tier) {
-          <div class="bg-white rounded-lg border border-gray-200 p-5 lg:col-span-2">
+          <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 lg:col-span-2">
             <h3 class="text-sm font-semibold mb-3">Commission Tier: {{ profile().commission_tier.name }}</h3>
             <div class="grid grid-cols-3 gap-4">
               <div class="text-center p-3 bg-emerald-50 rounded-lg"><div class="text-xl font-bold text-emerald-700">{{ profile().commission_tier.new_subscription_rate }}%</div><div class="text-xs text-gray-500">New Subscription</div></div>
-              <div class="text-center p-3 bg-blue-50 rounded-lg"><div class="text-xl font-bold text-blue-700">{{ profile().commission_tier.renewal_rate }}%</div><div class="text-xs text-gray-500">Renewal</div></div>
+              <div class="text-center p-3 bg-sage-50 rounded-lg"><div class="text-xl font-bold text-sage-700">{{ profile().commission_tier.renewal_rate }}%</div><div class="text-xs text-gray-500">Renewal</div></div>
               <div class="text-center p-3 bg-amber-50 rounded-lg"><div class="text-xl font-bold text-amber-700">{{ profile().commission_tier.upgrade_rate }}%</div><div class="text-xs text-gray-500">Upgrade</div></div>
             </div>
           </div>

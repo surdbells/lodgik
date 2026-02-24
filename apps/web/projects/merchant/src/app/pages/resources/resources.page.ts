@@ -7,7 +7,7 @@ import { MerchantApiService } from '../../services/merchant-api.service';
   standalone: true,
   imports: [PageHeaderComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Resources" subtitle="Download sales materials, guides, and documentation"></ui-page-header>
+    <ui-page-header title="Resources" icon="folder-open" [breadcrumbs]="['Resources']" subtitle="Download sales materials, guides, and documentation"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
       <div class="flex gap-2 mb-4">
@@ -17,7 +17,7 @@ import { MerchantApiService } from '../../services/merchant-api.service';
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (r of resources(); track r.id) {
-          <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
+          <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4 hover:shadow-sm transition-shadow">
             <div class="flex items-start justify-between mb-2">
               <div class="text-2xl">{{ fileIcon(r.file_type) }}</div>
               <span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{{ r.version }}</span>
@@ -26,7 +26,7 @@ import { MerchantApiService } from '../../services/merchant-api.service';
             <p class="text-xs text-gray-500 mb-3 line-clamp-2">{{ r.description || 'No description' }}</p>
             <div class="flex items-center justify-between">
               <span class="text-[10px] text-gray-400 capitalize">{{ r.category.replace('_', ' ') }}</span>
-              <button (click)="download(r)" class="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs rounded hover:bg-emerald-100">Download</button>
+              <button (click)="download(r)" class="px-3 py-1 bg-sage-50 text-sage-700 text-xs rounded hover:bg-emerald-100">Download</button>
             </div>
           </div>
         } @empty { <div class="col-span-3 text-center py-12 text-gray-400">No resources available</div> }

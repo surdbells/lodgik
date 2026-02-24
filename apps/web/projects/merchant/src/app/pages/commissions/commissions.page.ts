@@ -8,16 +8,16 @@ import { MerchantApiService } from '../../services/merchant-api.service';
   standalone: true,
   imports: [DatePipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, BadgeComponent],
   template: `
-    <ui-page-header title="Commissions" subtitle="Track your earnings"></ui-page-header>
+    <ui-page-header title="Commissions" icon="hand-coins" [breadcrumbs]="['Finance', 'Commissions']" subtitle="Track your earnings"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <ui-stats-card label="Total Earned" [value]="'₦' + (+earnings().total_earned || 0).toLocaleString()" icon="💰"></ui-stats-card>
-        <ui-stats-card label="Pending" [value]="'₦' + (+earnings().pending || 0).toLocaleString()" icon="⏳"></ui-stats-card>
-        <ui-stats-card label="Paid" [value]="'₦' + (+earnings().paid || 0).toLocaleString()" icon="✅"></ui-stats-card>
-        <ui-stats-card label="Commissions" [value]="earnings().commission_count || 0" icon="📊"></ui-stats-card>
+        <ui-stats-card label="Total Earned" [value]="'₦' + (+earnings().total_earned || 0).toLocaleString()" icon="hand-coins"></ui-stats-card>
+        <ui-stats-card label="Pending" [value]="'₦' + (+earnings().pending || 0).toLocaleString()" icon="clock"></ui-stats-card>
+        <ui-stats-card label="Paid" [value]="'₦' + (+earnings().paid || 0).toLocaleString()" icon="circle-check"></ui-stats-card>
+        <ui-stats-card label="Commissions" [value]="earnings().commission_count || 0" icon="chart-bar"></ui-stats-card>
       </div>
-      <div class="bg-white rounded-lg border border-gray-200 mb-4">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card mb-4">
         <div class="flex gap-2 p-3 border-b border-gray-100">
           @for (f of filters; track f) {
             <button (click)="filterStatus.set(f.value); loadCommissions()" [class.bg-emerald-100]="filterStatus() === f.value" [class.text-emerald-700]="filterStatus() === f.value" class="px-3 py-1 text-xs rounded-full border hover:bg-gray-50">{{ f.label }}</button>

@@ -15,12 +15,12 @@ import { MerchantApiService } from '../../services/merchant-api.service';
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <ui-stats-card label="Status" [value]="hotel().onboarding_status" icon="📋"></ui-stats-card>
-        <ui-stats-card label="Rooms" [value]="hotel().rooms_count" icon="🛏️"></ui-stats-card>
-        <ui-stats-card label="Category" [value]="hotel().hotel_category" icon="⭐"></ui-stats-card>
-        <ui-stats-card label="Contact" [value]="hotel().contact_person || '—'" icon="👤"></ui-stats-card>
+        <ui-stats-card label="Status" [value]="hotel().onboarding_status" icon="clipboard-list"></ui-stats-card>
+        <ui-stats-card label="Rooms" [value]="hotel().rooms_count" icon="bed-double"></ui-stats-card>
+        <ui-stats-card label="Category" [value]="hotel().hotel_category" icon="star"></ui-stats-card>
+        <ui-stats-card label="Contact" [value]="hotel().contact_person || '—'" icon="user-round"></ui-stats-card>
       </div>
-      <div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
         <h3 class="text-sm font-semibold mb-3">Details</h3>
         <div class="grid grid-cols-2 gap-3 text-sm">
           <div><span class="text-gray-500">Location:</span> {{ hotel().location || '—' }}</div>
@@ -29,7 +29,7 @@ import { MerchantApiService } from '../../services/merchant-api.service';
           <div><span class="text-gray-500">Bound:</span> {{ hotel().bound_at | date:'mediumDate' }}</div>
         </div>
       </div>
-      <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100"><h3 class="text-sm font-semibold">Commission History</h3></div>
         <table class="w-full text-sm">
           <thead class="bg-gray-50 text-xs text-gray-500 uppercase"><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Scope</th><th class="px-4 py-2 text-right">Amount</th><th class="px-4 py-2 text-left">Status</th></tr></thead>

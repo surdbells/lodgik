@@ -8,10 +8,10 @@ import { MerchantApiService } from '../../services/merchant-api.service';
   standalone: true,
   imports: [DatePipe, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
   template: `
-    <ui-page-header title="Payouts" subtitle="Your payout history and statements"></ui-page-header>
+    <ui-page-header title="Payouts" icon="credit-card" [breadcrumbs]="['Finance', 'Payouts']" subtitle="Your payout history and statements"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
-      <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden mb-6">
         <div class="px-5 py-3 border-b border-gray-100 flex justify-between items-center"><h3 class="text-sm font-semibold">Payout History</h3></div>
         <table class="w-full text-sm">
           <thead class="bg-gray-50 text-xs text-gray-500 uppercase"><tr><th class="px-4 py-2 text-left">Period</th><th class="px-4 py-2 text-right">Amount</th><th class="px-4 py-2 text-left">Reference</th><th class="px-4 py-2 text-left">Status</th><th class="px-4 py-2 text-left">Paid At</th></tr></thead>
@@ -22,7 +22,7 @@ import { MerchantApiService } from '../../services/merchant-api.service';
           </tbody>
         </table>
       </div>
-      <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100"><h3 class="text-sm font-semibold">Statements</h3></div>
         <table class="w-full text-sm">
           <thead class="bg-gray-50 text-xs text-gray-500 uppercase"><tr><th class="px-4 py-2 text-left">Period</th><th class="px-4 py-2 text-right">Earned</th><th class="px-4 py-2 text-right">Paid</th><th class="px-4 py-2 text-right">Balance</th></tr></thead>
