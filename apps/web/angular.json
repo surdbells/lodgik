@@ -58,7 +58,11 @@
             ],
             "styles": [
               "projects/admin/src/styles.scss"
-            ]
+            ],
+            "outputPath": {
+              "base": "dist/admin",
+              "browser": ""
+            }
           },
           "configurations": {
             "production": {
@@ -158,7 +162,11 @@
             ],
             "styles": [
               "projects/hotel/src/styles.scss"
-            ]
+            ],
+            "outputPath": {
+              "base": "dist/hotel",
+              "browser": ""
+            }
           },
           "configurations": {
             "production": {
@@ -310,7 +318,11 @@
             ],
             "styles": [
               "projects/merchant/src/styles.scss"
-            ]
+            ],
+            "outputPath": {
+              "base": "dist/merchant",
+              "browser": ""
+            }
           },
           "configurations": {
             "production": {
