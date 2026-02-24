@@ -17,33 +17,33 @@ class MerchantHotel
 {
     use HasUuid; use HasTimestamps;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'tenant_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $tenantId = null;
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'property_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $propertyId = null;
-    #[ORM\Column(type: Types::STRING, length: 255)]
+    #[ORM\Column(name: 'hotel_name', type: Types::STRING, length: 255)]
     private string $hotelName;
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $location = null;
-    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    #[ORM\Column(name: 'contact_person', type: Types::STRING, length: 100, nullable: true)]
     private ?string $contactPerson = null;
-    #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
+    #[ORM\Column(name: 'contact_phone', type: Types::STRING, length: 20, nullable: true)]
     private ?string $contactPhone = null;
-    #[ORM\Column(type: Types::STRING, length: 320, nullable: true)]
+    #[ORM\Column(name: 'contact_email', type: Types::STRING, length: 320, nullable: true)]
     private ?string $contactEmail = null;
-    #[ORM\Column(type: Types::INTEGER)]
+    #[ORM\Column(name: 'rooms_count', type: Types::INTEGER)]
     private int $roomsCount = 0;
-    #[ORM\Column(type: Types::STRING, length: 20)]
+    #[ORM\Column(name: 'hotel_category', type: Types::STRING, length: 20)]
     private string $hotelCategory = 'budget';
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'subscription_plan', type: Types::STRING, length: 36, nullable: true)]
     private ?string $subscriptionPlan = null;
-    #[ORM\Column(type: Types::STRING, length: 20)]
+    #[ORM\Column(name: 'onboarding_status', type: Types::STRING, length: 20)]
     private string $onboardingStatus = 'pending';
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'bound_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $boundAt = null;
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(name: 'is_permanent_bind', type: Types::BOOLEAN)]
     private bool $isPermanentBind = true;
 
     public function __construct() { $this->generateId(); }

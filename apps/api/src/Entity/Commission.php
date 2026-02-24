@@ -19,41 +19,41 @@ class Commission
 {
     use HasUuid; use HasTimestamps;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'hotel_id', type: Types::STRING, length: 36)]
     private string $hotelId;
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'tenant_id', type: Types::STRING, length: 36)]
     private string $tenantId;
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'subscription_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $subscriptionId = null;
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'commission_tier_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $commissionTierId = null;
     #[ORM\Column(type: Types::STRING, length: 20, enumType: CommissionScope::class)]
     private CommissionScope $scope;
-    #[ORM\Column(type: Types::STRING, length: 50, nullable: true)]
+    #[ORM\Column(name: 'plan_name', type: Types::STRING, length: 50, nullable: true)]
     private ?string $planName = null;
-    #[ORM\Column(type: Types::STRING, length: 10, nullable: true)]
+    #[ORM\Column(name: 'billing_cycle', type: Types::STRING, length: 10, nullable: true)]
     private ?string $billingCycle = null;
-    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
+    #[ORM\Column(name: 'subscription_amount', type: Types::DECIMAL, precision: 12, scale: 2)]
     private string $subscriptionAmount;
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[ORM\Column(name: 'commission_rate', type: Types::DECIMAL, precision: 10, scale: 2)]
     private string $commissionRate;
-    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
+    #[ORM\Column(name: 'commission_amount', type: Types::DECIMAL, precision: 12, scale: 2)]
     private string $commissionAmount;
     #[ORM\Column(type: Types::STRING, length: 20, enumType: CommissionStatus::class)]
     private CommissionStatus $status;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'cooling_period_ends', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $coolingPeriodEnds = null;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'approved_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $approvedAt = null;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'paid_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $paidAt = null;
-    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    #[ORM\Column(name: 'payment_reference', type: Types::STRING, length: 100, nullable: true)]
     private ?string $paymentReference = null;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'reversed_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $reversedAt = null;
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(name: 'reversal_reason', type: Types::TEXT, nullable: true)]
     private ?string $reversalReason = null;
 
     public function __construct()

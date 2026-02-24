@@ -14,25 +14,25 @@ class MerchantAuditLog
 {
     use HasUuid;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'actor_id', type: Types::STRING, length: 36)]
     private string $actorId;
-    #[ORM\Column(type: Types::STRING, length: 10)]
+    #[ORM\Column(name: 'actor_type', type: Types::STRING, length: 10)]
     private string $actorType = 'merchant';
     #[ORM\Column(type: Types::STRING, length: 50)]
     private string $action;
-    #[ORM\Column(type: Types::STRING, length: 50, nullable: true)]
+    #[ORM\Column(name: 'entity_type', type: Types::STRING, length: 50, nullable: true)]
     private ?string $entityType = null;
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'entity_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $entityId = null;
-    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[ORM\Column(name: 'old_value', type: Types::JSON, nullable: true)]
     private ?array $oldValue = null;
-    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[ORM\Column(name: 'new_value', type: Types::JSON, nullable: true)]
     private ?array $newValue = null;
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true)]
+    #[ORM\Column(name: 'ip_address', type: Types::STRING, length: 45, nullable: true)]
     private ?string $ipAddress = null;
-    #[ORM\Column(type: Types::STRING, length: 500, nullable: true)]
+    #[ORM\Column(name: 'user_agent', type: Types::STRING, length: 500, nullable: true)]
     private ?string $userAgent = null;
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $timestamp;

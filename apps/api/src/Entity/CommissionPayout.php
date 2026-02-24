@@ -16,25 +16,25 @@ class CommissionPayout
 {
     use HasUuid; use HasTimestamps;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
-    #[ORM\Column(type: Types::STRING, length: 20)]
+    #[ORM\Column(name: 'payout_period', type: Types::STRING, length: 20)]
     private string $payoutPeriod;
-    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
+    #[ORM\Column(name: 'total_amount', type: Types::DECIMAL, precision: 12, scale: 2)]
     private string $totalAmount;
-    #[ORM\Column(type: Types::JSON)]
+    #[ORM\Column(name: 'commission_ids', type: Types::JSON)]
     private array $commissionIds = [];
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'bank_account_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $bankAccountId = null;
     #[ORM\Column(type: Types::STRING, length: 20)]
     private string $status = 'pending';
-    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    #[ORM\Column(name: 'payment_reference', type: Types::STRING, length: 100, nullable: true)]
     private ?string $paymentReference = null;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'processing_started_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $processingStartedAt = null;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'paid_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $paidAt = null;
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(name: 'failure_reason', type: Types::TEXT, nullable: true)]
     private ?string $failureReason = null;
 
     public function __construct() { $this->generateId(); }

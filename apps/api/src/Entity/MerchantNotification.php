@@ -13,7 +13,7 @@ class MerchantNotification
 {
     use HasUuid;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
     #[ORM\Column(type: Types::STRING, length: 30)]
     private string $type;
@@ -25,9 +25,9 @@ class MerchantNotification
     private ?array $data = null;
     #[ORM\Column(type: Types::STRING, length: 10)]
     private string $channel = 'in_app';
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(name: 'is_read', type: Types::BOOLEAN)]
     private bool $isRead = false;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[ORM\Column(name: 'sent_at', type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $sentAt;
 
     public function __construct() { $this->generateId(); $this->sentAt = new \DateTimeImmutable(); }

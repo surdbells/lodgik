@@ -12,7 +12,7 @@ class PoolAccessLog implements TenantAware
     #[ORM\Column(name: 'property_id', type: Types::STRING, length: 36)] private string $propertyId;
     #[ORM\Column(name: 'guest_id', type: Types::STRING, length: 36)] private string $guestId;
     #[ORM\Column(name: 'guest_name', type: Types::STRING, length: 200)] private string $guestName;
-    #[ORM\Column(type: Types::STRING, length: 50, options: ['default' => 'main_pool'])] private string $area = 'main_pool';
+    #[ORM\Column(name: 'access_date', type: Types::STRING, length: 50, options: ['default' => 'main_pool'])] private string $area = 'main_pool';
     #[ORM\Column(name: 'access_date', type: Types::DATE_IMMUTABLE)] private \DateTimeImmutable $accessDate;
     #[ORM\Column(name: 'check_in_time', type: Types::STRING, length: 5)] private string $checkInTime;
     #[ORM\Column(name: 'check_out_time', type: Types::STRING, length: 5, nullable: true)] private ?string $checkOutTime = null;

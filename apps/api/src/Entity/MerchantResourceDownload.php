@@ -14,15 +14,15 @@ class MerchantResourceDownload
 {
     use HasUuid;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'resource_id', type: Types::STRING, length: 36)]
     private string $resourceId;
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[ORM\Column(name: 'downloaded_at', type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $downloadedAt;
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true)]
+    #[ORM\Column(name: 'ip_address', type: Types::STRING, length: 45, nullable: true)]
     private ?string $ipAddress = null;
-    #[ORM\Column(type: Types::STRING, length: 500, nullable: true)]
+    #[ORM\Column(name: 'user_agent', type: Types::STRING, length: 500, nullable: true)]
     private ?string $userAgent = null;
 
     public function __construct() { $this->generateId(); $this->downloadedAt = new \DateTimeImmutable(); }

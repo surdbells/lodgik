@@ -16,37 +16,37 @@ class MerchantKyc
 {
     use HasUuid; use HasTimestamps;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
-    #[ORM\Column(type: Types::STRING, length: 20)]
+    #[ORM\Column(name: 'kyc_type', type: Types::STRING, length: 20)]
     private string $kycType = 'individual';
-    #[ORM\Column(type: Types::STRING, length: 30, nullable: true)]
+    #[ORM\Column(name: 'government_id_type', type: Types::STRING, length: 30, nullable: true)]
     private ?string $governmentIdType = null;
-    #[ORM\Column(type: Types::STRING, length: 50, nullable: true)]
+    #[ORM\Column(name: 'government_id_number', type: Types::STRING, length: 50, nullable: true)]
     private ?string $governmentIdNumber = null;
-    #[ORM\Column(type: Types::STRING, length: 500, nullable: true)]
+    #[ORM\Column(name: 'government_id_url', type: Types::STRING, length: 500, nullable: true)]
     private ?string $governmentIdUrl = null;
-    #[ORM\Column(type: Types::STRING, length: 500, nullable: true)]
+    #[ORM\Column(name: 'selfie_url', type: Types::STRING, length: 500, nullable: true)]
     private ?string $selfieUrl = null;
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(name: 'liveness_verified', type: Types::BOOLEAN)]
     private bool $livenessVerified = false;
-    #[ORM\Column(type: Types::STRING, length: 500, nullable: true)]
+    #[ORM\Column(name: 'proof_of_address_url', type: Types::STRING, length: 500, nullable: true)]
     private ?string $proofOfAddressUrl = null;
-    #[ORM\Column(type: Types::STRING, length: 500, nullable: true)]
+    #[ORM\Column(name: 'cac_certificate_url', type: Types::STRING, length: 500, nullable: true)]
     private ?string $cacCertificateUrl = null;
-    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[ORM\Column(name: 'director_ids', type: Types::JSON, nullable: true)]
     private ?array $directorIds = null;
-    #[ORM\Column(type: Types::STRING, length: 500, nullable: true)]
+    #[ORM\Column(name: 'business_address_verification_url', type: Types::STRING, length: 500, nullable: true)]
     private ?string $businessAddressVerificationUrl = null;
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(name: 'company_bank_verified', type: Types::BOOLEAN)]
     private bool $companyBankVerified = false;
     #[ORM\Column(type: Types::STRING, length: 20)]
     private string $status = 'not_submitted';
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(name: 'rejection_reason', type: Types::TEXT, nullable: true)]
     private ?string $rejectionReason = null;
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'reviewed_by', type: Types::STRING, length: 36, nullable: true)]
     private ?string $reviewedBy = null;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'reviewed_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $reviewedAt = null;
 
     public function __construct() { $this->generateId(); }

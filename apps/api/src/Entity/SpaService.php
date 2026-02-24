@@ -12,9 +12,9 @@ class SpaService implements TenantAware
     #[ORM\Column(name: 'property_id', type: Types::STRING, length: 36)] private string $propertyId;
     #[ORM\Column(type: Types::STRING, length: 100)] private string $name;
     #[ORM\Column(type: Types::TEXT, nullable: true)] private ?string $description = null;
-    #[ORM\Column(type: Types::STRING, length: 50)] private string $category;
+    #[ORM\Column(name: 'duration_minutes', type: Types::STRING, length: 50)] private string $category;
     #[ORM\Column(name: 'duration_minutes', type: Types::INTEGER)] private int $durationMinutes;
-    #[ORM\Column(type: Types::BIGINT)] private string $price;
+    #[ORM\Column(name: 'is_active', type: Types::BIGINT)] private string $price;
     #[ORM\Column(name: 'is_active', type: Types::BOOLEAN, options: ['default' => true])] private bool $isActive = true;
 
     public function __construct(string $propertyId, string $name, string $category, int $durationMinutes, string $price, string $tenantId)

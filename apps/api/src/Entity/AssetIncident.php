@@ -18,7 +18,7 @@ class AssetIncident implements TenantAware
     #[ORM\Column(name: 'incident_type', type: Types::STRING, length: 20)] private string $incidentType;
     /** auto from asset criticality: low|medium|high|critical */
     #[ORM\Column(type: Types::STRING, length: 10)] private string $priority;
-    #[ORM\Column(type: Types::TEXT)] private string $description;
+    #[ORM\Column(name: 'photo_urls', type: Types::TEXT)] private string $description;
     #[ORM\Column(name: 'photo_urls', type: Types::JSON, nullable: true)] private ?array $photoUrls = null;
     #[ORM\Column(name: 'reporter_id', type: Types::STRING, length: 36)] private string $reporterId;
     #[ORM\Column(name: 'reporter_name', type: Types::STRING, length: 100)] private string $reporterName;
@@ -26,7 +26,7 @@ class AssetIncident implements TenantAware
     #[ORM\Column(name: 'assigned_engineer_name', type: Types::STRING, length: 100, nullable: true)] private ?string $assignedEngineerName = null;
     #[ORM\Column(name: 'backup_engineer_id', type: Types::STRING, length: 36, nullable: true)] private ?string $backupEngineerId = null;
     /** new|assigned|in_progress|resolved|closed */
-    #[ORM\Column(type: Types::STRING, length: 15, options: ['default' => 'new'])] private string $status = 'new';
+    #[ORM\Column(name: 'escalation_level', type: Types::STRING, length: 15, options: ['default' => 'new'])] private string $status = 'new';
     #[ORM\Column(name: 'escalation_level', type: Types::INTEGER, options: ['default' => 0])] private int $escalationLevel = 0;
     #[ORM\Column(name: 'resolution_notes', type: Types::TEXT, nullable: true)] private ?string $resolutionNotes = null;
     #[ORM\Column(name: 'downtime_minutes', type: Types::INTEGER, nullable: true)] private ?int $downtimeMinutes = null;

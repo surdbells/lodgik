@@ -15,7 +15,7 @@ class Asset implements TenantAware
     #[ORM\Column(name: 'category_name', type: Types::STRING, length: 100)] private string $categoryName;
     #[ORM\Column(type: Types::STRING, length: 200)] private string $name;
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true)] private ?string $brand = null;
-    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)] private ?string $model = null;
+    #[ORM\Column(name: 'serial_number', type: Types::STRING, length: 100, nullable: true)] private ?string $model = null;
     #[ORM\Column(name: 'serial_number', type: Types::STRING, length: 100, nullable: true)] private ?string $serialNumber = null;
     #[ORM\Column(name: 'purchase_date', type: Types::DATE_IMMUTABLE, nullable: true)] private ?\DateTimeImmutable $purchaseDate = null;
     #[ORM\Column(name: 'warranty_expiry', type: Types::DATE_IMMUTABLE, nullable: true)] private ?\DateTimeImmutable $warrantyExpiry = null;
@@ -24,7 +24,7 @@ class Asset implements TenantAware
     /** active|under_repair|retired|disposed */
     #[ORM\Column(type: Types::STRING, length: 15, options: ['default' => 'active'])] private string $status = 'active';
     /** low|medium|high|critical */
-    #[ORM\Column(type: Types::STRING, length: 10, options: ['default' => 'medium'])] private string $criticality = 'medium';
+    #[ORM\Column(name: 'location_block', type: Types::STRING, length: 10, options: ['default' => 'medium'])] private string $criticality = 'medium';
     #[ORM\Column(name: 'location_block', type: Types::STRING, length: 50, nullable: true)] private ?string $locationBlock = null;
     #[ORM\Column(name: 'location_floor', type: Types::STRING, length: 20, nullable: true)] private ?string $locationFloor = null;
     #[ORM\Column(name: 'location_room', type: Types::STRING, length: 50, nullable: true)] private ?string $locationRoom = null;
@@ -33,7 +33,7 @@ class Asset implements TenantAware
     #[ORM\Column(name: 'custodian_staff_name', type: Types::STRING, length: 100, nullable: true)] private ?string $custodianStaffName = null;
     #[ORM\Column(name: 'primary_engineer_id', type: Types::STRING, length: 36, nullable: true)] private ?string $primaryEngineerId = null;
     #[ORM\Column(name: 'backup_engineer_id', type: Types::STRING, length: 36, nullable: true)] private ?string $backupEngineerId = null;
-    #[ORM\Column(type: Types::TEXT, nullable: true)] private ?string $notes = null;
+    #[ORM\Column(name: 'photo_url', type: Types::TEXT, nullable: true)] private ?string $notes = null;
     #[ORM\Column(name: 'photo_url', type: Types::STRING, length: 500, nullable: true)] private ?string $photoUrl = null;
 
     public function __construct(string $propertyId, string $categoryId, string $categoryName, string $name, string $tenantId)

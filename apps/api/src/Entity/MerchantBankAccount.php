@@ -15,27 +15,27 @@ class MerchantBankAccount
 {
     use HasUuid; use HasTimestamps;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
-    #[ORM\Column(type: Types::STRING, length: 100)]
+    #[ORM\Column(name: 'bank_name', type: Types::STRING, length: 100)]
     private string $bankName;
-    #[ORM\Column(type: Types::STRING, length: 100)]
+    #[ORM\Column(name: 'account_name', type: Types::STRING, length: 100)]
     private string $accountName;
-    #[ORM\Column(type: Types::STRING, length: 20)]
+    #[ORM\Column(name: 'account_number', type: Types::STRING, length: 20)]
     private string $accountNumber;
-    #[ORM\Column(type: Types::STRING, length: 3)]
+    #[ORM\Column(name: 'settlement_currency', type: Types::STRING, length: 3)]
     private string $settlementCurrency = 'NGN';
-    #[ORM\Column(type: Types::STRING, length: 20)]
+    #[ORM\Column(name: 'payment_method', type: Types::STRING, length: 20)]
     private string $paymentMethod = 'bank_transfer';
     #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
     private ?string $tin = null;
     #[ORM\Column(type: Types::STRING, length: 20)]
     private string $status = 'pending_approval';
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(name: 'change_requires_approval', type: Types::BOOLEAN)]
     private bool $changeRequiresApproval = true;
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'approved_by', type: Types::STRING, length: 36, nullable: true)]
     private ?string $approvedBy = null;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'approved_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $approvedAt = null;
 
     public function __construct() { $this->generateId(); }

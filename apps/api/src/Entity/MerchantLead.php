@@ -16,27 +16,27 @@ class MerchantLead
 {
     use HasUuid; use HasTimestamps;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
-    #[ORM\Column(type: Types::STRING, length: 255)]
+    #[ORM\Column(name: 'hotel_name', type: Types::STRING, length: 255)]
     private string $hotelName;
-    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    #[ORM\Column(name: 'contact_name', type: Types::STRING, length: 100, nullable: true)]
     private ?string $contactName = null;
-    #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
+    #[ORM\Column(name: 'contact_phone', type: Types::STRING, length: 20, nullable: true)]
     private ?string $contactPhone = null;
-    #[ORM\Column(type: Types::STRING, length: 320, nullable: true)]
+    #[ORM\Column(name: 'contact_email', type: Types::STRING, length: 320, nullable: true)]
     private ?string $contactEmail = null;
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $location = null;
-    #[ORM\Column(type: Types::INTEGER)]
+    #[ORM\Column(name: 'rooms_estimate', type: Types::INTEGER)]
     private int $roomsEstimate = 0;
     #[ORM\Column(type: Types::STRING, length: 20)]
     private string $status = 'lead';
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'converted_hotel_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $convertedHotelId = null;
-    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'follow_up_date', type: Types::DATE_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $followUpDate = null;
 
     public function __construct() { $this->generateId(); }

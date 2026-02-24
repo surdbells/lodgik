@@ -20,17 +20,17 @@ class CommissionTier
     private ?string $description = null;
     #[ORM\Column(type: Types::STRING, length: 20)]
     private string $type = 'percentage';
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[ORM\Column(name: 'new_subscription_rate', type: Types::DECIMAL, precision: 10, scale: 2)]
     private string $newSubscriptionRate = '10.00';
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[ORM\Column(name: 'renewal_rate', type: Types::DECIMAL, precision: 10, scale: 2)]
     private string $renewalRate = '5.00';
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[ORM\Column(name: 'upgrade_rate', type: Types::DECIMAL, precision: 10, scale: 2)]
     private string $upgradeRate = '8.00';
-    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[ORM\Column(name: 'plan_overrides', type: Types::JSON, nullable: true)]
     private ?array $planOverrides = null;
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(name: 'is_default', type: Types::BOOLEAN)]
     private bool $isDefault = false;
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(name: 'is_active', type: Types::BOOLEAN)]
     private bool $isActive = true;
 
     public function __construct() { $this->generateId(); }

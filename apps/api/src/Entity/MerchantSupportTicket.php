@@ -16,25 +16,25 @@ class MerchantSupportTicket
 {
     use HasUuid; use HasTimestamps;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'hotel_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $hotelId = null;
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $subject;
     #[ORM\Column(type: Types::TEXT)]
     private string $description;
-    #[ORM\Column(type: Types::STRING, length: 20)]
+    #[ORM\Column(name: 'priority_tag', type: Types::STRING, length: 20)]
     private string $priorityTag = 'sales';
     #[ORM\Column(type: Types::STRING, length: 20)]
     private string $status = 'open';
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'assigned_to', type: Types::STRING, length: 36, nullable: true)]
     private ?string $assignedTo = null;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'sla_due_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $slaDueAt = null;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'resolved_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $resolvedAt = null;
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(name: 'resolution_notes', type: Types::TEXT, nullable: true)]
     private ?string $resolutionNotes = null;
 
     public function __construct() { $this->generateId(); }

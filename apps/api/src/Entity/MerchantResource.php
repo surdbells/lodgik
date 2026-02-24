@@ -22,13 +22,13 @@ class MerchantResource
     private ?string $description = null;
     #[ORM\Column(type: Types::STRING, length: 30)]
     private string $category = 'user_manual';
-    #[ORM\Column(type: Types::STRING, length: 50, nullable: true)]
+    #[ORM\Column(name: 'sub_category', type: Types::STRING, length: 50, nullable: true)]
     private ?string $subCategory = null;
-    #[ORM\Column(type: Types::STRING, length: 10)]
+    #[ORM\Column(name: 'file_type', type: Types::STRING, length: 10)]
     private string $fileType = 'pdf';
-    #[ORM\Column(type: Types::STRING, length: 500)]
+    #[ORM\Column(name: 'file_url', type: Types::STRING, length: 500)]
     private string $fileUrl;
-    #[ORM\Column(type: Types::INTEGER)]
+    #[ORM\Column(name: 'file_size', type: Types::INTEGER)]
     private int $fileSize = 0;
     #[ORM\Column(type: Types::STRING, length: 10)]
     private string $version = 'v1.0';
@@ -36,7 +36,7 @@ class MerchantResource
     private string $visibility = 'merchant';
     #[ORM\Column(type: Types::STRING, length: 10)]
     private string $status = 'active';
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'uploaded_by', type: Types::STRING, length: 36, nullable: true)]
     private ?string $uploadedBy = null;
 
     public function __construct() { $this->generateId(); }

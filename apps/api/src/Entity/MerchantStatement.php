@@ -13,23 +13,23 @@ class MerchantStatement
 {
     use HasUuid;
 
-    #[ORM\Column(type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 36)]
     private string $merchantId;
-    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    #[ORM\Column(name: 'period_start', type: Types::DATE_IMMUTABLE)]
     private \DateTimeImmutable $periodStart;
-    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    #[ORM\Column(name: 'period_end', type: Types::DATE_IMMUTABLE)]
     private \DateTimeImmutable $periodEnd;
-    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
+    #[ORM\Column(name: 'opening_balance', type: Types::DECIMAL, precision: 12, scale: 2)]
     private string $openingBalance = '0.00';
-    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
+    #[ORM\Column(name: 'total_earned', type: Types::DECIMAL, precision: 12, scale: 2)]
     private string $totalEarned = '0.00';
-    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
+    #[ORM\Column(name: 'total_paid', type: Types::DECIMAL, precision: 12, scale: 2)]
     private string $totalPaid = '0.00';
-    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
+    #[ORM\Column(name: 'closing_balance', type: Types::DECIMAL, precision: 12, scale: 2)]
     private string $closingBalance = '0.00';
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[ORM\Column(name: 'generated_at', type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $generatedAt;
-    #[ORM\Column(type: Types::STRING, length: 500, nullable: true)]
+    #[ORM\Column(name: 'file_url', type: Types::STRING, length: 500, nullable: true)]
     private ?string $fileUrl = null;
 
     public function __construct() { $this->generateId(); $this->generatedAt = new \DateTimeImmutable(); }

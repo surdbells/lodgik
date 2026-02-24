@@ -20,13 +20,13 @@ class Merchant
     use HasUuid;
     use HasTimestamps;
 
-    #[ORM\Column(type: Types::STRING, length: 20, unique: true)]
+    #[ORM\Column(name: 'merchant_id', type: Types::STRING, length: 20, unique: true)]
     private string $merchantId;
 
-    #[ORM\Column(type: Types::STRING, length: 255)]
+    #[ORM\Column(name: 'legal_name', type: Types::STRING, length: 255)]
     private string $legalName;
 
-    #[ORM\Column(type: Types::STRING, length: 255)]
+    #[ORM\Column(name: 'business_name', type: Types::STRING, length: 255)]
     private string $businessName;
 
     #[ORM\Column(type: Types::STRING, length: 320)]
@@ -38,7 +38,7 @@ class Merchant
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $address = null;
 
-    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    #[ORM\Column(name: 'operating_region', type: Types::STRING, length: 100, nullable: true)]
     private ?string $operatingRegion = null;
 
     #[ORM\Column(type: Types::STRING, length: 20, enumType: MerchantCategory::class)]
@@ -47,31 +47,31 @@ class Merchant
     #[ORM\Column(type: Types::STRING, length: 20)]
     private string $type = 'individual';
 
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'commission_tier_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $commissionTierId = null;
 
-    #[ORM\Column(type: Types::STRING, length: 3)]
+    #[ORM\Column(name: 'settlement_currency', type: Types::STRING, length: 3)]
     private string $settlementCurrency = 'NGN';
 
     #[ORM\Column(type: Types::STRING, length: 30, enumType: MerchantStatus::class)]
     private MerchantStatus $status;
 
-    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    #[ORM\Column(name: 'user_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $userId = null;
 
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    #[ORM\Column(name: 'logo_url', type: Types::STRING, length: 255, nullable: true)]
     private ?string $logoUrl = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(name: 'suspension_reason', type: Types::TEXT, nullable: true)]
     private ?string $suspensionReason = null;
 
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'approved_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $approvedAt = null;
 
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'suspended_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $suspendedAt = null;
 
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[ORM\Column(name: 'terminated_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $terminatedAt = null;
 
     public function __construct()

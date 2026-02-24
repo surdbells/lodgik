@@ -9,12 +9,12 @@ use Lodgik\Entity\Contract\TenantAware; use Lodgik\Entity\Traits\{HasUuid, HasTe
 class LoyaltyTier implements TenantAware
 {
     use HasUuid, HasTenant, HasTimestamps;
-    #[ORM\Column(type: Types::STRING, length: 50)] private string $name;
+    #[ORM\Column(name: 'min_points', type: Types::STRING, length: 50)] private string $name;
     #[ORM\Column(name: 'min_points', type: Types::INTEGER)] private int $minPoints;
     #[ORM\Column(name: 'discount_percentage', type: Types::DECIMAL, precision: 5, scale: 2, options: ['default' => '0.00'])] private string $discountPercentage = '0.00';
     #[ORM\Column(type: Types::JSON, nullable: true)] private ?array $benefits = null;
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])] private int $priority = 0;
-    #[ORM\Column(type: Types::STRING, length: 20, nullable: true)] private ?string $color = null;
+    #[ORM\Column(name: 'is_active', type: Types::STRING, length: 20, nullable: true)] private ?string $color = null;
     #[ORM\Column(name: 'is_active', type: Types::BOOLEAN, options: ['default' => true])] private bool $isActive = true;
 
     public function __construct(string $name, int $minPoints, string $discountPercentage, string $tenantId)
