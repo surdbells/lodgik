@@ -80,10 +80,10 @@ export default class ExpensesPage implements OnInit {
 
   ngOnInit() { this.load(); }
   async load() { this.loading.set(true);
-    this.api.get('/finance/expenses').subscribe((r: any) => { this.expenses.set(r?.data || []); this.loading.set(false); });
-    this.api.get('/finance/expense-categories').subscribe((r: any) => this.categories.set(r?.data || []));
+    this.api.get('/expenses').subscribe((r: any) => { this.expenses.set(r?.data || []); this.loading.set(false); });
+    this.api.get('/expenses/categories').subscribe((r: any) => this.categories.set(r?.data || []));
   }
-  submitExpense() { this.api.post('/finance/expenses', { ...this.form, amount: Math.round(+this.form.amount * 100) }).subscribe(() => { this.showForm = false; this.load(); }); }
+  submitExpense() { this.api.post('/expenses', { ...this.form, amount: Math.round(+this.form.amount * 100) }).subscribe(() => { this.showForm = false; this.load(); }); }
   approve(id: string) { this.api.post(`/finance/expenses/${id}/approve`, {}).subscribe(() => this.load()); }
   reject(id: string) { this.api.post(`/finance/expenses/${id}/reject`, {}).subscribe(() => this.load()); }
   statusClass(s: string): string { return { pending: 'bg-yellow-100 text-yellow-800', approved: 'bg-green-100 text-green-800', rejected: 'bg-red-100 text-red-800', paid: 'bg-sage-100 text-sage-800' }[s] || 'bg-gray-100 text-gray-800'; }

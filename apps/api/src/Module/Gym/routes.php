@@ -8,7 +8,7 @@ use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
-    $app->group('/gym', function (RouteCollectorProxy $g) {
+    $app->group('/api/gym', function (RouteCollectorProxy $g) {
         $g->get('/dashboard', [GymController::class, 'dashboard']);
         $g->get('/plans', [GymController::class, 'listPlans']);
         $g->post('/plans', [GymController::class, 'createPlan']);
@@ -28,6 +28,7 @@ return function (App $app): void {
         $g->post('/classes', [GymController::class, 'createClass']);
         $g->put('/classes/{id}', [GymController::class, 'updateClass']);
         $g->post('/classes/{id}/enroll', [GymController::class, 'enroll']);
+        $g->post('/classes/book', [GymController::class, 'enroll']);
         $g->get('/payments', [GymController::class, 'listPayments']);
         $g->post('/payments', [GymController::class, 'recordPayment']);
     })

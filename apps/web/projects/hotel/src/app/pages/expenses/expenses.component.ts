@@ -44,8 +44,8 @@ export class ExpensesComponent implements OnInit {
   filter = { status: '' };
   constructor(private http: HttpClient) {}
   ngOnInit() { this.loadExpenses(); this.loadCategories(); }
-  loadExpenses() { this.http.get<any>(`${environment.apiUrl}/finance/expenses?status=${this.filter.status}`).subscribe(r => { this.expenses = r.data || []; this.pendingCount = this.expenses.filter((e: any) => e.status === 'pending').length; this.totalExpenses = this.expenses.reduce((s: number, e: any) => s + (e.amount || 0), 0) / 100; }); }
+  loadExpenses() { this.http.get<any>(`${environment.apiUrl}/expenses?status=${this.filter.status}`).subscribe(r => { this.expenses = r.data || []; this.pendingCount = this.expenses.filter((e: any) => e.status === 'pending').length; this.totalExpenses = this.expenses.reduce((s: number, e: any) => s + (e.amount || 0), 0) / 100; }); }
   loadCategories() { this.http.get<any>(`${environment.apiUrl}/finance/expense-categories`).subscribe(r => this.categories = r.data || []); }
-  submitExpense() { const body = { ...this.form, amount: Math.round(this.form.amount_display * 100) }; this.http.post(`${environment.apiUrl}/finance/expenses`, body).subscribe(() => { this.showForm = false; this.loadExpenses(); }); }
-  approve(id: string) { this.http.post(`${environment.apiUrl}/finance/expenses/${id}/approve`, {}).subscribe(() => this.loadExpenses()); }
+  submitExpense() { const body = { ...this.form, amount: Math.round(this.form.amount_display * 100) }; this.http.post(`${environment.apiUrl}/expenses`, body).subscribe(() => { this.showForm = false; this.loadExpenses(); }); }
+  approve(id: string) { this.http.post(`${environment.apiUrl}/expenses/${id}/approve`, {}).subscribe(() => this.loadExpenses()); }
 }

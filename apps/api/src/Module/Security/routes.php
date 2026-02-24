@@ -8,7 +8,7 @@ use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
-    $app->group('/security', function (RouteCollectorProxy $g) {
+    $app->group('/api/security', function (RouteCollectorProxy $g) {
         $g->get('/visitor-codes', [SecurityController::class, 'listVisitorCodes']);
         $g->post('/visitor-codes', [SecurityController::class, 'createVisitorCode']);
         $g->post('/visitor-codes/{id}/revoke', [SecurityController::class, 'revokeVisitorCode']);

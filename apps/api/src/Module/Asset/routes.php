@@ -7,7 +7,7 @@ use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
     // Asset categories + registry
-    $app->group('/assets', function (RouteCollectorProxy $g) {
+    $app->group('/api/assets', function (RouteCollectorProxy $g) {
         $g->get('/categories', [AssetController::class, 'listCategories']);
         $g->post('/categories', [AssetController::class, 'createCategory']);
         $g->get('', [AssetController::class, 'listAssets']);
@@ -20,7 +20,7 @@ return function (App $app): void {
       ->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Engineers directory
-    $app->group('/engineers', function (RouteCollectorProxy $g) {
+    $app->group('/api/engineers', function (RouteCollectorProxy $g) {
         $g->get('', [AssetController::class, 'listEngineers']);
         $g->post('', [AssetController::class, 'createEngineer']);
         $g->put('/{id}', [AssetController::class, 'updateEngineer']);
@@ -28,7 +28,7 @@ return function (App $app): void {
       ->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Asset incidents
-    $app->group('/asset-incidents', function (RouteCollectorProxy $g) {
+    $app->group('/api/asset-incidents', function (RouteCollectorProxy $g) {
         $g->get('', [AssetController::class, 'listIncidents']);
         $g->get('/stats', [AssetController::class, 'incidentStats']);
         $g->post('', [AssetController::class, 'reportIncident']);
@@ -41,7 +41,7 @@ return function (App $app): void {
       ->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Preventive maintenance
-    $app->group('/preventive-maintenance', function (RouteCollectorProxy $g) {
+    $app->group('/api/preventive-maintenance', function (RouteCollectorProxy $g) {
         $g->get('', [AssetController::class, 'listPM']);
         $g->get('/overdue', [AssetController::class, 'overduePM']);
         $g->post('', [AssetController::class, 'createPM']);
@@ -50,7 +50,7 @@ return function (App $app): void {
       ->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Maintenance logs + reports
-    $app->group('/maintenance-logs', function (RouteCollectorProxy $g) {
+    $app->group('/api/maintenance-logs', function (RouteCollectorProxy $g) {
         $g->get('', [AssetController::class, 'listLogs']);
         $g->post('', [AssetController::class, 'createLog']);
         $g->get('/cost-report', [AssetController::class, 'costReport']);

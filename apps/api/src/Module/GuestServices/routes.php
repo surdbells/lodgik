@@ -8,7 +8,7 @@ use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
-    $app->group('/guest-services', function (RouteCollectorProxy $g) {
+    $app->group('/api/guest-services', function (RouteCollectorProxy $g) {
         $g->get('/vouchers', [GuestServicesController::class, 'listVouchers']);
         $g->post('/vouchers', [GuestServicesController::class, 'createVoucher']);
         $g->post('/vouchers/redeem', [GuestServicesController::class, 'redeemVoucher']);

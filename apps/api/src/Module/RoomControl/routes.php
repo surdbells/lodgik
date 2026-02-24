@@ -8,7 +8,7 @@ use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
-    $app->group('/room-controls', function (RouteCollectorProxy $g) {
+    $app->group('/api/room-controls', function (RouteCollectorProxy $g) {
         $g->post('/dnd', [RoomControlController::class, 'toggleDnd']);
         $g->post('/make-up', [RoomControlController::class, 'toggleMakeUp']);
         $g->post('/maintenance', [RoomControlController::class, 'reportMaintenance']);

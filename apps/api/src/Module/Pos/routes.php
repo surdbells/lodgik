@@ -8,7 +8,7 @@ use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
-    $app->group('/pos', function (RouteCollectorProxy $g) {
+    $app->group('/api/pos', function (RouteCollectorProxy $g) {
         $g->get('/tables', [PosController::class, 'listTables']);
         $g->post('/tables', [PosController::class, 'createTable']);
         $g->get('/categories', [PosController::class, 'listCategories']);

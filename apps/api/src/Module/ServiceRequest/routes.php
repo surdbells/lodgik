@@ -12,7 +12,7 @@ use Slim\Routing\RouteCollectorProxy;
 return function (App $app): void {
     $c = $app->getContainer();
     $featureGate = new FeatureMiddleware('service_requests', 'professional', $c->get(RedisClient::class));
-    $app->group('/service-requests', function (RouteCollectorProxy $g) {
+    $app->group('/api/service-requests', function (RouteCollectorProxy $g) {
         $g->get('', [ServiceRequestController::class, 'list']);
         $g->get('/active', [ServiceRequestController::class, 'listActive']);
         $g->get('/summary', [ServiceRequestController::class, 'summary']);

@@ -47,7 +47,7 @@ export default class PoliceReportsPage implements OnInit {
   pendingCount() { return this.reports().filter(r => r.status === 'pending').length; }
   submittedCount() { return this.reports().filter(r => r.status === 'submitted').length; }
   nigerianCount() { return this.reports().filter(r => r.nationality === 'Nigerian').length; }
-  ngOnInit() { this.api.get('/finance/police-reports').subscribe((r: any) => { this.reports.set(r?.data || []); this.loading.set(false); }); }
-  submit(id: string) { this.api.post(`/finance/police-reports/${id}/submit`, {}).subscribe(() => this.ngOnInit()); }
+  ngOnInit() { this.api.get('/police-reports').subscribe((r: any) => { this.reports.set(r?.data || []); this.loading.set(false); }); }
+  submit(id: string) { this.api.post(`/police-reports/${id}/submit`, {}).subscribe(() => this.ngOnInit()); }
   exportAll() { /* trigger CSV/PDF export */ }
 }

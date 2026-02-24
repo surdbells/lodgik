@@ -213,6 +213,18 @@ final class TenantService
         $this->em->flush();
     }
 
+    public function setPrimaryBankAccount(string $propertyId, string $accountId): void
+    {
+        $account = $this->em->find(PropertyBankAccount::class, $accountId);
+        if ($account === null || $account->getPropertyId() !== $propertyId) {
+            throw new \RuntimeException('Bank account not found');
+        }
+
+        $this->clearPrimaryFlags($propertyId);
+        $account->setIsPrimary(true);
+        $this->em->flush();
+    }
+
     private function clearPrimaryFlags(string $propertyId): void
     {
         $this->em->createQueryBuilder()

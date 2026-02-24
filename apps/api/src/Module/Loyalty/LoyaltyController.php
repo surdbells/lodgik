@@ -26,4 +26,5 @@ final class LoyaltyController
 
     public function getPreferences(Request $req, Response $res, array $args): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->getPreferences($args['guestId'], $req->getAttribute('auth.tenant_id'))]); }
     public function setPreferences(Request $req, Response $res, array $args): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->setPreferences($args['guestId'], $req->getAttribute('auth.tenant_id'), $this->body($req))->toArray()]); }
+    public function listAllPreferences(Request $req, Response $res): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->listAllPreferences($req->getAttribute('auth.tenant_id'))]); }
 }

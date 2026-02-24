@@ -12,7 +12,7 @@ use Slim\Routing\RouteCollectorProxy;
 return function (App $app): void {
     $c = $app->getContainer();
     $featureGate = new FeatureMiddleware('employee_management', 'professional', $c->get(RedisClient::class));
-    $app->group('/departments', function (RouteCollectorProxy $g) {
+    $app->group('/api/departments', function (RouteCollectorProxy $g) {
         $g->get('', [EmployeeController::class, 'listDepartments']);
         $g->post('', [EmployeeController::class, 'createDepartment']);
         $g->put('/{id}', [EmployeeController::class, 'updateDepartment']);
@@ -20,7 +20,7 @@ return function (App $app): void {
         ->add(new RoleMiddleware(['property_admin', 'manager', 'hr']))
         ->add($featureGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
-    $app->group('/employees', function (RouteCollectorProxy $g) {
+    $app->group('/api/employees', function (RouteCollectorProxy $g) {
         $g->get('', [EmployeeController::class, 'listEmployees']);
         $g->get('/directory', [EmployeeController::class, 'activeDirectory']);
         $g->get('/{id}', [EmployeeController::class, 'getEmployee']);

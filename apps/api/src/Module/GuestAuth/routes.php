@@ -12,7 +12,7 @@ return function (App $app): void {
     $c = $app->getContainer();
 
     // Guest auth endpoints — public (no staff JWT required)
-    $app->group('/guest-auth', function (RouteCollectorProxy $g) {
+    $app->group('/api/guest-auth', function (RouteCollectorProxy $g) {
         $g->post('/otp/send', [GuestAuthController::class, 'sendOtp']);
         $g->post('/otp/verify', [GuestAuthController::class, 'verifyOtp']);
         $g->post('/access-code', [GuestAuthController::class, 'loginAccessCode']);
@@ -23,7 +23,7 @@ return function (App $app): void {
 
     // Tablet management — staff auth required, feature gated
     $featureGate = new FeatureMiddleware('concierge_tablet', 'enterprise', $c->get(RedisClient::class));
-    $app->group('/tablets', function (RouteCollectorProxy $g) {
+    $app->group('/api/tablets', function (RouteCollectorProxy $g) {
         $g->get('', [GuestAuthController::class, 'listTablets']);
         $g->post('', [GuestAuthController::class, 'registerTablet']);
     })->add($featureGate);

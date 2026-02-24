@@ -9,7 +9,7 @@ use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
     // Expenses: accountant, manager, admin
-    $app->group('/expenses', function (RouteCollectorProxy $g) {
+    $app->group('/api/expenses', function (RouteCollectorProxy $g) {
         $g->get('/categories', [FinanceController::class, 'listCategories']);
         $g->post('/categories', [FinanceController::class, 'createCategory']);
         $g->get('', [FinanceController::class, 'listExpenses']);
@@ -20,20 +20,20 @@ return function (App $app): void {
     })->add(new RoleMiddleware(['property_admin', 'manager', 'accountant']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Night Audit: manager, admin
-    $app->group('/night-audit', function (RouteCollectorProxy $g) {
+    $app->group('/api/night-audit', function (RouteCollectorProxy $g) {
         $g->get('', [FinanceController::class, 'listAudits']);
         $g->post('/generate', [FinanceController::class, 'generateAudit']);
         $g->post('/{id}/close', [FinanceController::class, 'closeAudit']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'accountant', 'front_desk']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Police Reports: front desk, manager, admin, security
-    $app->group('/police-reports', function (RouteCollectorProxy $g) {
+    $app->group('/api/police-reports', function (RouteCollectorProxy $g) {
         $g->get('', [FinanceController::class, 'listReports']);
         $g->post('', [FinanceController::class, 'createReport']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'front_desk', 'security']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Performance Reviews: manager, hr, admin
-    $app->group('/performance-reviews', function (RouteCollectorProxy $g) {
+    $app->group('/api/performance-reviews', function (RouteCollectorProxy $g) {
         $g->get('', [FinanceController::class, 'listReviews']);
         $g->post('', [FinanceController::class, 'createReview']);
         $g->post('/{id}/submit', [FinanceController::class, 'submitReview']);
@@ -41,7 +41,7 @@ return function (App $app): void {
     })->add(new RoleMiddleware(['property_admin', 'manager', 'hr']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Pricing Rules: manager, admin
-    $app->group('/pricing-rules', function (RouteCollectorProxy $g) {
+    $app->group('/api/pricing-rules', function (RouteCollectorProxy $g) {
         $g->get('', [FinanceController::class, 'listPricingRules']);
         $g->post('', [FinanceController::class, 'createPricingRule']);
         $g->put('/{id}', [FinanceController::class, 'updatePricingRule']);
@@ -49,7 +49,7 @@ return function (App $app): void {
     })->add(new RoleMiddleware(['property_admin', 'manager']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Group Bookings: front desk, manager, admin
-    $app->group('/group-bookings', function (RouteCollectorProxy $g) {
+    $app->group('/api/group-bookings', function (RouteCollectorProxy $g) {
         $g->get('', [FinanceController::class, 'listGroups']);
         $g->post('', [FinanceController::class, 'createGroup']);
         $g->post('/{id}/confirm', [FinanceController::class, 'confirmGroup']);

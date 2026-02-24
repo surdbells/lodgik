@@ -8,7 +8,7 @@ use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
-    $app->group('/housekeeping', function (RouteCollectorProxy $g) {
+    $app->group('/api/housekeeping', function (RouteCollectorProxy $g) {
         $g->get('/tasks', [HousekeepingController::class, 'listTasks']);
         $g->post('/tasks', [HousekeepingController::class, 'createTask']);
         $g->post('/tasks/{id}/assign', [HousekeepingController::class, 'assignTask']);

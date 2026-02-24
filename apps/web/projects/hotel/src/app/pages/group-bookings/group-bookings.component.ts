@@ -35,7 +35,7 @@ export class GroupBookingsComponent implements OnInit {
   form: any = { group_name: '', contact_person: '', contact_phone: '', contact_email: '', rooms_blocked: 5, check_in: '', check_out: '', discount_percentage: 0 };
   constructor(private http: HttpClient) {}
   ngOnInit() { this.load(); }
-  load() { this.http.get<any>(`${environment.apiUrl}/finance/group-bookings`).subscribe(r => this.groups = r.data || []); }
-  submitGroup() { this.http.post(`${environment.apiUrl}/finance/group-bookings`, this.form).subscribe(() => { this.showForm = false; this.load(); }); }
-  confirm(id: string) { this.http.post(`${environment.apiUrl}/finance/group-bookings/${id}/confirm`, {}).subscribe(() => this.load()); }
+  load() { this.http.get<any>(`${environment.apiUrl}/group-bookings`).subscribe(r => this.groups = r.data || []); }
+  submitGroup() { this.http.post(`${environment.apiUrl}/group-bookings`, this.form).subscribe(() => { this.showForm = false; this.load(); }); }
+  confirm(id: string) { this.http.post(`${environment.apiUrl}/group-bookings/${id}/confirm`, {}).subscribe(() => this.load()); }
 }

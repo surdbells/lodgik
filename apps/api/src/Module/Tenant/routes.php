@@ -14,6 +14,9 @@ return function (App $app): void {
     $app->group('/api/tenant', function (RouteCollectorProxy $group) {
         $group->get('', [TenantController::class, 'show']);
         $group->patch('', [TenantController::class, 'update']);
+        // Convenience: bank accounts for current user's property
+        $group->get('/bank-accounts', [TenantController::class, 'listBankAccountsForCurrentProperty']);
+        $group->patch('/bank-accounts/{id}/primary', [TenantController::class, 'setPrimaryBankAccount']);
     })
         ->add(new RoleMiddleware(['property_admin']))
         ->add(TenantMiddleware::class)

@@ -21,6 +21,6 @@ export class PoliceReportsComponent implements OnInit {
   reports: any[] = [];
   constructor(private http: HttpClient) {}
   ngOnInit() { this.load(); }
-  load() { this.http.get<any>(`${environment.apiUrl}/finance/police-reports`).subscribe(r => this.reports = r.data || []); }
-  submit(id: string) { this.http.post(`${environment.apiUrl}/finance/police-reports/${id}/submit`, {}).subscribe(() => this.load()); }
+  load() { this.http.get<any>(`${environment.apiUrl}/police-reports`).subscribe(r => this.reports = r.data || []); }
+  submit(id: string) { this.http.post(`${environment.apiUrl}/police-reports/${id}/submit`, {}).subscribe(() => this.load()); }
 }

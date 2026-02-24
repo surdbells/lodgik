@@ -32,6 +32,6 @@ export class PricingRulesComponent implements OnInit {
   form: any = { name: '', rule_type: 'occupancy', modifier_percentage: 0, priority: 0, start_date: '', end_date: '' };
   constructor(private http: HttpClient) {}
   ngOnInit() { this.load(); }
-  load() { this.http.get<any>(`${environment.apiUrl}/finance/pricing-rules`).subscribe(r => this.rules = r.data || []); }
-  submitRule() { this.http.post(`${environment.apiUrl}/finance/pricing-rules`, this.form).subscribe(() => { this.showForm = false; this.load(); }); }
+  load() { this.http.get<any>(`${environment.apiUrl}/pricing-rules`).subscribe(r => this.rules = r.data || []); }
+  submitRule() { this.http.post(`${environment.apiUrl}/pricing-rules`, this.form).subscribe(() => { this.showForm = false; this.load(); }); }
 }

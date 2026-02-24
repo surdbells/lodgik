@@ -54,6 +54,6 @@ export default class NightAuditPage implements OnInit {
   private api = inject(ApiService);
   loading = signal(true); running = signal(false); audits = signal<any[]>([]); lastAudit = signal<any>(null);
   ngOnInit() { this.load(); }
-  load() { this.api.get('/finance/night-audits').subscribe((r: any) => { const d = r?.data || []; this.audits.set(d); if (d.length) this.lastAudit.set(d[0]); this.loading.set(false); }); }
-  runAudit() { this.running.set(true); this.api.post('/finance/night-audit/run', {}).subscribe({ next: () => { this.running.set(false); this.load(); }, error: () => this.running.set(false) }); }
+  load() { this.api.get('/night-audit').subscribe((r: any) => { const d = r?.data || []; this.audits.set(d); if (d.length) this.lastAudit.set(d[0]); this.loading.set(false); }); }
+  runAudit() { this.running.set(true); this.api.post('/night-audit/generate', {}).subscribe({ next: () => { this.running.set(false); this.load(); }, error: () => this.running.set(false) }); }
 }

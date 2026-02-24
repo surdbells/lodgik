@@ -18,7 +18,8 @@ return function (App $app): void {
         $group->post('/accept-invite', [AuthController::class, 'acceptInvite']);
 
         // Authenticated routes
-        $group->post('/logout', [AuthController::class, 'logout']);
+        $group->post('/logout', [AuthController::class, 'logout'])
+            ->add(AuthMiddleware::class);
         $group->post('/logout-all', [AuthController::class, 'logoutAll'])
             ->add(AuthMiddleware::class);
         $group->get('/me', [AuthController::class, 'me'])

@@ -28,6 +28,6 @@ export class PropertyListPage implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.api.get('/tenant/properties').subscribe({ next: r => { if (r.success) this.properties.set(r.data); this.loading.set(false); }, error: () => this.loading.set(false) });
+    this.api.get('/properties').subscribe({ next: r => { if (r.success) this.properties.set(r.data); this.loading.set(false); }, error: () => this.loading.set(false) });
   }
 }

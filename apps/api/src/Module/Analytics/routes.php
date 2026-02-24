@@ -4,7 +4,7 @@ use Lodgik\Module\Analytics\AnalyticsController; use Lodgik\Middleware\{RoleMidd
 use Slim\App; use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
-    $app->group('/analytics', function (RouteCollectorProxy $g) {
+    $app->group('/api/analytics', function (RouteCollectorProxy $g) {
         $g->get('/revpar', [AnalyticsController::class, 'revparTrend']); $g->get('/adr-by-day', [AnalyticsController::class, 'adrByDay']);
         $g->get('/occupancy', [AnalyticsController::class, 'occupancyTrend']); $g->get('/revenue', [AnalyticsController::class, 'revenueBreakdown']);
         $g->get('/booking-sources', [AnalyticsController::class, 'bookingSources']); $g->get('/top-rooms', [AnalyticsController::class, 'topRooms']);

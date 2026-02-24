@@ -123,7 +123,7 @@ export class SettingsPage implements OnInit {
   logoFile: File | null = null;
 
   ngOnInit(): void {
-    this.api.get('/tenant/current').subscribe(r => { if (r.success) { this.tenant.set(r.data); this.branding = { name: r.data.name, primary_color: r.data.primary_color || '#1e3a5f', secondary_color: r.data.secondary_color || '#f59e0b', logo_url: r.data.logo_url }; } this.loading.set(false); });
+    this.api.get('/tenant').subscribe(r => { if (r.success) { this.tenant.set(r.data); this.branding = { name: r.data.name, primary_color: r.data.primary_color || '#1e3a5f', secondary_color: r.data.secondary_color || '#f59e0b', logo_url: r.data.logo_url }; } this.loading.set(false); });
     this.api.get('/tenant/bank-accounts').subscribe(r => { if (r.success) this.banks.set(r.data || []); });
     this.api.get('/staff').subscribe(r => { if (r.success) this.staffList.set(r.data || []); });
   }
@@ -156,6 +156,6 @@ export class SettingsPage implements OnInit {
 
   saveLocale(): void {
     const t = this.tenant();
-    this.api.patch('/tenant/current', { locale: t.locale, timezone: t.timezone, currency: t.currency }).subscribe(r => { if (r.success) this.toast.success('Saved'); });
+    this.api.patch('/tenant', { locale: t.locale, timezone: t.timezone, currency: t.currency }).subscribe(r => { if (r.success) this.toast.success('Saved'); });
   }
 }

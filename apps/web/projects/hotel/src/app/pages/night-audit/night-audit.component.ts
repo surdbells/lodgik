@@ -34,7 +34,7 @@ export class NightAuditComponent implements OnInit {
   audits: any[] = []; currentAudit: any = null; running = false;
   constructor(private http: HttpClient) {}
   ngOnInit() { this.loadAudits(); }
-  loadAudits() { this.http.get<any>(`${environment.apiUrl}/finance/night-audits`).subscribe(r => { this.audits = r.data || []; if (this.audits.length) this.currentAudit = this.audits[0]; }); }
-  runAudit() { this.running = true; this.http.post<any>(`${environment.apiUrl}/finance/night-audits/run`, {}).subscribe(r => { this.currentAudit = r.data; this.running = false; this.loadAudits(); }, () => this.running = false); }
-  closeAudit(id: string) { this.http.post(`${environment.apiUrl}/finance/night-audits/${id}/close`, {}).subscribe(() => this.loadAudits()); }
+  loadAudits() { this.http.get<any>(`${environment.apiUrl}/night-audit`).subscribe(r => { this.audits = r.data || []; if (this.audits.length) this.currentAudit = this.audits[0]; }); }
+  runAudit() { this.running = true; this.http.post<any>(`${environment.apiUrl}/night-audit/generate`, {}).subscribe(r => { this.currentAudit = r.data; this.running = false; this.loadAudits(); }, () => this.running = false); }
+  closeAudit(id: string) { this.http.post(`${environment.apiUrl}/night-audit/${id}/close`, {}).subscribe(() => this.loadAudits()); }
 }

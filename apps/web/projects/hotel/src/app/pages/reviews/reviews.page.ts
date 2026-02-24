@@ -32,5 +32,5 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
 export default class ReviewsPage implements OnInit {
   private api = inject(ApiService);
   loading = signal(true); reviews = signal<any[]>([]);
-  ngOnInit() { this.api.get('/finance/performance-reviews').subscribe((r: any) => { this.reviews.set(r?.data || []); this.loading.set(false); }); }
+  ngOnInit() { this.api.get('/performance-reviews').subscribe((r: any) => { this.reviews.set(r?.data || []); this.loading.set(false); }); }
 }

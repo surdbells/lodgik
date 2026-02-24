@@ -264,4 +264,31 @@ final class TenantController
             'is_primary' => $a->isPrimary(),
         ];
     }
+
+    /** GET /api/tenant/bank-accounts — list bank accounts for current user's property */
+    public function listBankAccountsForCurrentProperty(Request $request, Response $response): Response
+    {
+        $propertyId = $request->getAttribute('auth.property_id');
+        if (!$propertyId) {
+            return $this->response->error($response, 'No property context', 400);
+        }
+        $accounts = $this->tenantService->listBankAccounts($propertyId);
+        $items = array_map(fn($a) => $this->serializeBankAccount($a), $accounts);
+        return $this->response->success($response, $items);
+    }
+
+    /** PATCH /api/tenant/bank-accounts/{id}/primary */
+    public function setPrimaryBankAccount(Request $request, Response $response, array $args): Response
+    {
+        $propertyId = $request->getAttribute('auth.property_id');
+        if (!$propertyId) {
+            return $this->response->error($response, 'No property context', 400);
+        }
+        try {
+            $this->tenantService->setPrimaryBankAccount($propertyId, $args['id']);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 400);
+        }
+        return $this->response->success($response, null, 'Primary bank account set');
+    }
 }

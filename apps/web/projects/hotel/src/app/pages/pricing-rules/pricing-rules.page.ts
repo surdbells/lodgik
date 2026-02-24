@@ -59,7 +59,7 @@ export default class PricingRulesPage implements OnInit {
   private api = inject(ApiService);
   loading = signal(true); rules = signal<any[]>([]);
   showForm = false; form: any = { name: '', rule_type: 'occupancy', adjustment_percentage: '', priority: 1, start_date: '', end_date: '' };
-  ngOnInit() { this.api.get('/finance/pricing-rules').subscribe((r: any) => { this.rules.set(r?.data || []); this.loading.set(false); }); }
-  createRule() { this.api.post('/finance/pricing-rules', this.form).subscribe(() => { this.showForm = false; this.ngOnInit(); }); }
+  ngOnInit() { this.api.get('/pricing-rules').subscribe((r: any) => { this.rules.set(r?.data || []); this.loading.set(false); }); }
+  createRule() { this.api.post('/pricing-rules', this.form).subscribe(() => { this.showForm = false; this.ngOnInit(); }); }
   toggle(r: any) { this.api.put(`/finance/pricing-rules/${r.id}`, { is_active: !r.is_active }).subscribe(() => this.ngOnInit()); }
 }

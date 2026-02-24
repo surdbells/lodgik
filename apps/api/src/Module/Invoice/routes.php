@@ -8,7 +8,7 @@ use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
-    $app->group('/invoices', function (RouteCollectorProxy $g) {
+    $app->group('/api/invoices', function (RouteCollectorProxy $g) {
         $g->get('', [InvoiceController::class, 'list']);
         $g->get('/tax-config', [InvoiceController::class, 'taxConfig']);
         $g->get('/by-booking/{bookingId}', [InvoiceController::class, 'byBooking']);

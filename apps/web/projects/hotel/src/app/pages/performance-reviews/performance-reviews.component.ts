@@ -33,6 +33,6 @@ export class PerformanceReviewsComponent implements OnInit {
   form: any = { employee_name: '', reviewer_name: '', review_period: '', rating: 3, strengths: '', improvements: '', goals: '' };
   constructor(private http: HttpClient) {}
   ngOnInit() { this.load(); }
-  load() { this.http.get<any>(`${environment.apiUrl}/finance/performance-reviews`).subscribe(r => this.reviews = r.data || []); }
-  submitReview() { this.http.post(`${environment.apiUrl}/finance/performance-reviews`, this.form).subscribe(() => { this.showForm = false; this.load(); }); }
+  load() { this.http.get<any>(`${environment.apiUrl}/performance-reviews`).subscribe(r => this.reviews = r.data || []); }
+  submitReview() { this.http.post(`${environment.apiUrl}/performance-reviews`, this.form).subscribe(() => { this.showForm = false; this.load(); }); }
 }

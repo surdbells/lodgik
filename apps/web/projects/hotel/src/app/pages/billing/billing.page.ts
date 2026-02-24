@@ -151,7 +151,7 @@ export class BillingPage implements OnInit {
     const ref = this.route.snapshot.queryParamMap.get('reference') || this.route.snapshot.queryParamMap.get('trxref');
     if (ref) { this.verifyPayment(ref); return; }
 
-    this.api.get('/tenant/current').subscribe(r => { if (r.success) this.tenant.set(r.data); });
+    this.api.get('/tenant').subscribe(r => { if (r.success) this.tenant.set(r.data); });
     this.api.get('/subscriptions/current').subscribe(r => {
       if (r.success) { this.sub.set(r.data); this.currentPlanId.set(r.data.plan_id || ''); }
     });

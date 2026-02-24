@@ -66,4 +66,10 @@ final class LoyaltyService
       if (!empty($data['notes'])) $p->setNotes($data['notes']); if (isset($data['vip_status'])) $p->setVipStatus((bool)$data['vip_status']);
       if (!empty($data['preferred_language'])) $p->setPreferredLanguage($data['preferred_language']);
       if (!$p->getId()) $this->em->persist($p); $this->em->flush(); return $p; }
+
+    public function listAllPreferences(string $tenantId): array
+    {
+        $prefs = $this->em->getRepository(GuestPreference::class)->findBy(['tenantId' => $tenantId]);
+        return array_map(fn($p) => $p->toArray(), $prefs);
+    }
 }

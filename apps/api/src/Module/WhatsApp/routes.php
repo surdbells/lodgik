@@ -7,7 +7,7 @@ use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
     // WhatsApp templates + sending (manager, admin, front desk, concierge)
-    $app->group('/whatsapp', function (RouteCollectorProxy $g) {
+    $app->group('/api/whatsapp', function (RouteCollectorProxy $g) {
         $g->get('/templates', [WhatsAppController::class, 'listTemplates']);
         $g->post('/templates', [WhatsAppController::class, 'createTemplate']);
         $g->put('/templates/{id}', [WhatsAppController::class, 'updateTemplate']);

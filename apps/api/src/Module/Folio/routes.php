@@ -8,7 +8,7 @@ use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
-    $app->group('/folios', function (RouteCollectorProxy $g) {
+    $app->group('/api/folios', function (RouteCollectorProxy $g) {
         $g->get('', [FolioController::class, 'list']);
         $g->get('/pending-payments', [FolioController::class, 'pendingPayments']);
         $g->get('/by-booking/{bookingId}', [FolioController::class, 'byBooking']);

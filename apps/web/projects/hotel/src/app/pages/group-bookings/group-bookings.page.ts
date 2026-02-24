@@ -55,7 +55,7 @@ export default class GroupBookingsPage implements OnInit {
   private api = inject(ApiService);
   loading = signal(true); groups = signal<any[]>([]);
   showForm = false; form: any = { group_name: '', organizer_name: '', rooms_blocked: '', check_in: '', check_out: '', negotiated_rate: '' };
-  ngOnInit() { this.api.get('/finance/group-bookings').subscribe((r: any) => { this.groups.set(r?.data || []); this.loading.set(false); }); }
-  create() { this.api.post('/finance/group-bookings', { ...this.form, negotiated_rate: Math.round(+this.form.negotiated_rate * 100) }).subscribe(() => { this.showForm = false; this.ngOnInit(); }); }
+  ngOnInit() { this.api.get('/group-bookings').subscribe((r: any) => { this.groups.set(r?.data || []); this.loading.set(false); }); }
+  create() { this.api.post('/group-bookings', { ...this.form, negotiated_rate: Math.round(+this.form.negotiated_rate * 100) }).subscribe(() => { this.showForm = false; this.ngOnInit(); }); }
   groupStatusClass(s: string): string { return { provisional: 'bg-yellow-100 text-yellow-800', confirmed: 'bg-green-100 text-green-800', cancelled: 'bg-red-100 text-red-800', completed: 'bg-sage-100 text-sage-800' }[s] || 'bg-gray-100'; }
 }
