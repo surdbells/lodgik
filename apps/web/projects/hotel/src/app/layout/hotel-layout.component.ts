@@ -1,6 +1,7 @@
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { AuthService, TokenService, FeatureService, BrandingService } from '@lodgik/shared';
+import { AuthService, TokenService, FeatureService, BrandingService, LODGIK_ICONS } from '@lodgik/shared';
+import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
 
 interface NavItem {
   label: string;
@@ -18,7 +19,8 @@ interface NavGroup {
 @Component({
   selector: 'app-hotel-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(LODGIK_ICONS) }],
   template: `
     <div class="flex h-screen overflow-hidden bg-[#f9fafb]">
 
@@ -40,9 +42,7 @@ interface NavGroup {
           <button (click)="collapsed.set(!collapsed())"
                   class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors text-gray-400 shrink-0"
                   [title]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'">
-            <svg class="w-4 h-4 transition-transform duration-300" [class.rotate-180]="collapsed()" viewBox="0 0 16 16" fill="none">
-              <path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <lucide-icon [name]="collapsed() ? 'chevron-right' : 'chevron-left'" [size]="16" [strokeWidth]="2"></lucide-icon>
           </button>
         </div>
 
@@ -57,9 +57,7 @@ interface NavGroup {
                 <p class="text-[13px] font-semibold text-gray-800 truncate">{{ propertyName() }}</p>
                 <p class="text-[11px] text-gray-400 capitalize">{{ staffRole() }}</p>
               </div>
-              <svg class="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 16 16" fill="none">
-                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
+              <lucide-icon name="chevron-down" [size]="14" class="text-gray-400 shrink-0"></lucide-icon>
             </div>
           </div>
         }
@@ -75,14 +73,12 @@ interface NavGroup {
                 <span class="text-[11px] font-bold tracking-[0.06em] uppercase text-gray-400 font-heading">
                   {{ group.label }}
                 </span>
-                <svg class="w-3 h-3 text-gray-300 group-hover/hdr:text-gray-400 transition-all duration-200"
-                     [class.-rotate-90]="isGroupCollapsed(gi)"
-                     viewBox="0 0 12 12" fill="none">
-                  <path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
+                <lucide-icon name="chevron-down" [size]="12"
+                  class="text-gray-300 group-hover/hdr:text-gray-400 transition-all duration-200"
+                  [class.-rotate-90]="isGroupCollapsed(gi)">
+                </lucide-icon>
               </div>
             } @else {
-              <!-- Collapsed: thin separator line -->
               @if (gi > 0) {
                 <div class="mx-4 my-2 border-t border-gray-100"></div>
               }
@@ -98,8 +94,7 @@ interface NavGroup {
                    [class.justify-center]="collapsed()"
                    [class.px-0]="collapsed()"
                    [title]="collapsed() ? item.label : ''">
-                  <span class="w-5 h-5 flex items-center justify-center text-[15px] opacity-60 shrink-0"
-                        [class.opacity-100]="false">{{ item.icon }}</span>
+                  <lucide-icon [name]="item.icon" [size]="18" [strokeWidth]="1.75" class="shrink-0 opacity-70"></lucide-icon>
                   @if (!collapsed()) {
                     <span class="flex-1 truncate">{{ item.label }}</span>
                     @if (item.badge) {
@@ -117,7 +112,7 @@ interface NavGroup {
           <a routerLink="/chat" routerLinkActive="sidebar-active"
              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors"
              [class.justify-center]="collapsed()" [title]="collapsed() ? 'Notifications' : ''">
-            <span class="text-[15px] opacity-60 shrink-0">🔔</span>
+            <lucide-icon name="bell" [size]="18" [strokeWidth]="1.75" class="shrink-0 opacity-70"></lucide-icon>
             @if (!collapsed()) {
               <span>Notifications</span>
               @if (notificationCount() > 0) {
@@ -128,7 +123,7 @@ interface NavGroup {
           <a routerLink="/settings" routerLinkActive="sidebar-active"
              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors"
              [class.justify-center]="collapsed()" [title]="collapsed() ? 'Settings' : ''">
-            <span class="text-[15px] opacity-60 shrink-0">⚙️</span>
+            <lucide-icon name="settings" [size]="18" [strokeWidth]="1.75" class="shrink-0 opacity-70"></lucide-icon>
             @if (!collapsed()) { <span>Settings</span> }
           </a>
         </div>
@@ -145,10 +140,8 @@ interface NavGroup {
                 <p class="text-sm font-semibold text-gray-800 truncate">{{ user()?.full_name || 'User' }}</p>
                 <p class="text-[11px] text-gray-400 capitalize">{{ user()?.role?.replace('_', ' ') || '' }}</p>
               </div>
-              <button (click)="logout()" class="p-1.5 rounded-md hover:bg-gray-100 transition-colors" title="Sign out">
-                <svg class="w-4 h-4 text-gray-400" viewBox="0 0 16 16" fill="none">
-                  <path d="M6 14H3.33A1.33 1.33 0 012 12.67V3.33A1.33 1.33 0 013.33 2H6M10.67 11.33L14 8l-3.33-3.33M14 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+              <button (click)="logout()" class="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-400" title="Sign out">
+                <lucide-icon name="log-out" [size]="16" [strokeWidth]="1.75"></lucide-icon>
               </button>
             }
           </div>
@@ -169,7 +162,7 @@ interface NavGroup {
       color: #3a543a;
       font-weight: 600;
     }
-    :host ::ng-deep a.sidebar-active span:first-child {
+    :host ::ng-deep a.sidebar-active lucide-icon {
       opacity: 1;
     }
   `],
@@ -185,7 +178,6 @@ export class HotelLayoutComponent implements OnInit {
   collapsed = signal(false);
   notificationCount = signal(0);
 
-  // Signal-based collapsed state per group index
   private collapsedGroups = signal<Set<number>>(new Set([2, 3, 4, 5, 6, 7]));
 
   propertyName = computed(() => this.branding().appName || 'My Hotel');
@@ -201,85 +193,86 @@ export class HotelLayoutComponent implements OnInit {
     return ((u.first_name?.charAt(0) || '') + (u.last_name?.charAt(0) || '')).toUpperCase() || '?';
   });
 
+  // Lucide icon names (kebab-case)
   private allNavGroups: NavGroup[] = [
     {
       label: 'Daily Operation',
       items: [
-        { label: 'Dashboard', icon: '📊', route: '/dashboard' },
-        { label: 'Bookings', icon: '📋', route: '/bookings' },
-        { label: 'Rooms', icon: '🏨', route: '/rooms' },
-        { label: 'Room Types', icon: '🏷️', route: '/room-types' },
-        { label: 'Guests', icon: '👤', route: '/guests' },
-        { label: 'Housekeeping', icon: '🧹', route: '/housekeeping', requiredModule: 'housekeeping' },
-        { label: 'Room Controls', icon: '🎛️', route: '/room-controls' },
+        { label: 'Dashboard', icon: 'layout-dashboard', route: '/dashboard' },
+        { label: 'Bookings', icon: 'clipboard-list', route: '/bookings' },
+        { label: 'Rooms', icon: 'bed-double', route: '/rooms' },
+        { label: 'Room Types', icon: 'tag', route: '/room-types' },
+        { label: 'Guests', icon: 'user-round', route: '/guests' },
+        { label: 'Housekeeping', icon: 'spray-can', route: '/housekeeping', requiredModule: 'housekeeping' },
+        { label: 'Room Controls', icon: 'sliders-horizontal', route: '/room-controls' },
       ],
     },
     {
       label: 'Guest Experience',
       items: [
-        { label: 'Service Requests', icon: '🛎️', route: '/guest-services' },
-        { label: 'Chat', icon: '💬', route: '/chat' },
-        { label: 'Loyalty', icon: '🎁', route: '/loyalty' },
-        { label: 'Guest Preferences', icon: '❤️', route: '/guest-preferences' },
-        { label: 'Security', icon: '🛡️', route: '/security' },
+        { label: 'Service Requests', icon: 'concierge-bell', route: '/guest-services' },
+        { label: 'Chat', icon: 'message-circle', route: '/chat' },
+        { label: 'Loyalty', icon: 'gift', route: '/loyalty' },
+        { label: 'Guest Preferences', icon: 'heart', route: '/guest-preferences' },
+        { label: 'Security', icon: 'shield', route: '/security' },
       ],
     },
     {
       label: 'F&B & Facilities',
       items: [
-        { label: 'POS / Restaurant', icon: '🍽️', route: '/pos', requiredModule: 'pos' },
-        { label: 'Gym & Fitness', icon: '🏋️', route: '/gym', requiredModule: 'gym' },
-        { label: 'Spa & Pool', icon: '💆', route: '/spa', requiredModule: 'spa' },
+        { label: 'POS / Restaurant', icon: 'utensils', route: '/pos', requiredModule: 'pos' },
+        { label: 'Gym & Fitness', icon: 'dumbbell', route: '/gym', requiredModule: 'gym' },
+        { label: 'Spa & Pool', icon: 'bath', route: '/spa', requiredModule: 'spa' },
       ],
     },
     {
       label: 'Finance & Reports',
       items: [
-        { label: 'Folios', icon: '📂', route: '/folios' },
-        { label: 'Invoices', icon: '📄', route: '/invoices' },
-        { label: 'Expenses', icon: '💸', route: '/expenses' },
-        { label: 'Night Audit', icon: '🌙', route: '/night-audit' },
-        { label: 'Pricing Rules', icon: '📈', route: '/pricing-rules' },
-        { label: 'Group Bookings', icon: '👥', route: '/group-bookings' },
-        { label: 'Analytics', icon: '📊', route: '/analytics' },
-        { label: 'Police Reports', icon: '🚔', route: '/police-reports' },
+        { label: 'Folios', icon: 'folder-open', route: '/folios' },
+        { label: 'Invoices', icon: 'file-text', route: '/invoices' },
+        { label: 'Expenses', icon: 'receipt', route: '/expenses' },
+        { label: 'Night Audit', icon: 'moon', route: '/night-audit' },
+        { label: 'Pricing Rules', icon: 'trending-up', route: '/pricing-rules' },
+        { label: 'Group Bookings', icon: 'users', route: '/group-bookings' },
+        { label: 'Analytics', icon: 'chart-bar', route: '/analytics' },
+        { label: 'Police Reports', icon: 'shield-alert', route: '/police-reports' },
       ],
     },
     {
       label: 'Human Resources',
       items: [
-        { label: 'Staff', icon: '👤', route: '/staff' },
-        { label: 'Employees', icon: '🧑‍💼', route: '/employees' },
-        { label: 'Attendance', icon: '🕐', route: '/attendance' },
-        { label: 'Leave', icon: '🏖️', route: '/leave' },
-        { label: 'Payroll', icon: '💵', route: '/payroll' },
-        { label: 'Reviews', icon: '⭐', route: '/performance-reviews' },
+        { label: 'Staff', icon: 'user-round', route: '/staff' },
+        { label: 'Employees', icon: 'user-round-cog', route: '/employees' },
+        { label: 'Attendance', icon: 'clock', route: '/attendance' },
+        { label: 'Leave', icon: 'tree-palm', route: '/leave' },
+        { label: 'Payroll', icon: 'hand-coins', route: '/payroll' },
+        { label: 'Reviews', icon: 'star', route: '/performance-reviews' },
       ],
     },
     {
       label: 'Maintenance & Assets',
       items: [
-        { label: 'Assets', icon: '📦', route: '/assets' },
-        { label: 'Incidents', icon: '🚨', route: '/incidents' },
-        { label: 'Maintenance', icon: '🔧', route: '/maintenance' },
-        { label: 'Engineers', icon: '👷', route: '/engineers' },
+        { label: 'Assets', icon: 'package', route: '/assets' },
+        { label: 'Incidents', icon: 'triangle-alert', route: '/incidents' },
+        { label: 'Maintenance', icon: 'wrench', route: '/maintenance' },
+        { label: 'Engineers', icon: 'hard-hat', route: '/engineers' },
       ],
     },
     {
       label: 'Integrations',
       items: [
-        { label: 'OTA Channels', icon: '🌐', route: '/ota' },
-        { label: 'WhatsApp', icon: '📱', route: '/whatsapp' },
-        { label: 'IoT Devices', icon: '📡', route: '/iot' },
+        { label: 'OTA Channels', icon: 'globe', route: '/ota' },
+        { label: 'WhatsApp', icon: 'smartphone', route: '/whatsapp' },
+        { label: 'IoT Devices', icon: 'wifi', route: '/iot' },
       ],
     },
     {
       label: 'System',
       items: [
-        { label: 'Properties', icon: '🏨', route: '/properties' },
-        { label: 'Features', icon: '🧩', route: '/features' },
-        { label: 'Apps', icon: '📲', route: '/apps' },
-        { label: 'Billing', icon: '💳', route: '/billing' },
+        { label: 'Properties', icon: 'building', route: '/properties' },
+        { label: 'Features', icon: 'puzzle', route: '/features' },
+        { label: 'Apps', icon: 'zap', route: '/apps' },
+        { label: 'Billing', icon: 'credit-card', route: '/billing' },
       ],
     },
   ];
@@ -312,7 +305,6 @@ export class HotelLayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.featureService.load();
-    // Auto-expand the group matching current route
     const path = this.router.url;
     const visible = this.visibleNavGroups();
     visible.forEach((g, i) => {

@@ -1,3 +1,6 @@
+// Icons
+export { LucideModule, LODGIK_ICONS } from './lib/icons';
+
 // Models
 export * from './lib/models';
 
