@@ -49,6 +49,11 @@
               {
                 "glob": "**/*",
                 "input": "projects/admin/public"
+              },
+              {
+                "glob": "_redirects",
+                "input": "projects/admin/src",
+                "output": "/"
               }
             ],
             "styles": [
@@ -144,6 +149,11 @@
               {
                 "glob": "**/*",
                 "input": "projects/hotel/public"
+              },
+              {
+                "glob": "_redirects",
+                "input": "projects/hotel/src",
+                "output": "/"
               }
             ],
             "styles": [
@@ -291,6 +301,11 @@
               {
                 "glob": "**/*",
                 "input": "projects/merchant/public"
+              },
+              {
+                "glob": "_redirects",
+                "input": "projects/merchant/src",
+                "output": "/"
               }
             ],
             "styles": [

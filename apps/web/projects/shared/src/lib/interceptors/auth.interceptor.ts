@@ -10,11 +10,24 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const tokenService = inject(TokenService);
   const authService = inject(AuthService);
 
-  // Skip auth for public endpoints
-  if (req.url.includes('/auth/login') || req.url.includes('/auth/register') ||
-      req.url.includes('/auth/refresh') || req.url.includes('/plans') ||
-      req.url.includes('/apps/latest') || req.url.includes('/apps/version-check') ||
-      req.url.includes('/onboarding/register') || req.url.includes('/onboarding/verify-invite')) {
+  // Skip auth for public endpoints (exact path matching)
+  const publicPaths = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/refresh',
+    '/onboarding/register',
+    '/onboarding/verify-invite',
+  ];
+
+  const url = new URL(req.url, 'http://localhost');
+  const path = url.pathname;
+
+  const isPublic = publicPaths.some(p => path.endsWith(p)) ||
+    path.match(/\/plans$/) !== null && !path.includes('/admin/') && !path.includes('/gym/') ||
+    path.endsWith('/apps/latest') ||
+    path.endsWith('/apps/version-check');
+
+  if (isPublic) {
     return next(req);
   }
 

@@ -34,5 +34,8 @@ $app = AppFactory::createFromContainer($container);
 // ─── Register Routes ─────────────────────────────────────
 (require __DIR__ . '/../config/routes.php')($app);
 
+// ─── Slim Routing Middleware (resolves routes & parses params) ─
+$app->addRoutingMiddleware();
+
 // ─── Run ──────────────────────────────────────────────────
 $app->run();
