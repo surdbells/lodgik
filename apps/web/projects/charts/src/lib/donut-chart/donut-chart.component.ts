@@ -1,6 +1,15 @@
-import { Component, Input, computed, signal } from '@angular/core';
+import { Component, Input, OnChanges, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ChartDataPoint, getColor } from '../chart-utils';
+
+interface Segment {
+  label: string;
+  value: number;
+  percent: number;
+  color: string;
+  dashArray: string;
+  dashOffset: string;
+}
 
 @Component({
   selector: 'chart-donut',
@@ -52,7 +61,7 @@ import { ChartDataPoint, getColor } from '../chart-utils';
             <div class="flex items-center gap-2 cursor-pointer"
                  (mouseenter)="hovered.set(i)" (mouseleave)="hovered.set(-1)">
               <span class="w-2.5 h-2.5 rounded-full shrink-0" [style.background]="seg.color"></span>
-              <span class="text-gray-700">{{ seg.label }}</span>
+              <span class="text-gray-700 capitalize">{{ seg.label }}</span>
               <span class="text-gray-400 ml-auto pl-3">{{ seg.value | number }}</span>
             </div>
           }
@@ -61,7 +70,7 @@ import { ChartDataPoint, getColor } from '../chart-utils';
     </div>
   `,
 })
-export class DonutChartComponent {
+export class DonutChartComponent implements OnChanges {
   @Input() data: ChartDataPoint[] = [];
   @Input() height = 200;
   @Input() centerValue = '';
@@ -71,19 +80,24 @@ export class DonutChartComponent {
   radius = 0.85;
   thickness = 0.25;
   hovered = signal(-1);
+  segments = signal<Segment[]>([]);
 
-  segments = computed(() => {
+  ngOnChanges(): void {
+    this.buildSegments();
+  }
+
+  private buildSegments(): void {
     const total = this.data.reduce((sum, d) => sum + d.value, 0);
-    if (total === 0) return [];
+    if (total === 0) { this.segments.set([]); return; }
 
     const circumference = 2 * Math.PI * this.radius;
     let offset = 0;
 
-    return this.data.map((d, i) => {
+    const segs = this.data.map((d, i) => {
       const percent = (d.value / total) * 100;
       const length = (d.value / total) * circumference;
       const gap = 0.02 * circumference;
-      const seg = {
+      const seg: Segment = {
         label: d.label,
         value: d.value,
         percent,
@@ -94,5 +108,7 @@ export class DonutChartComponent {
       offset += length;
       return seg;
     });
-  });
+
+    this.segments.set(segs);
+  }
 }

@@ -1,4 +1,4 @@
-import { Component, Input, computed, signal } from '@angular/core';
+import { Component, Input, OnChanges, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ChartSeries, getColor, scale, smoothPath, shortNumber } from '../chart-utils';
 
@@ -9,30 +9,24 @@ import { ChartSeries, getColor, scale, smoothPath, shortNumber } from '../chart-
   template: `
     <div class="relative" [style.height.px]="height">
       <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" class="w-full h-full" preserveAspectRatio="xMidYMid meet">
-        <!-- Grid lines -->
-        @for (tick of yTicks(); track tick) {
+        @for (tick of yTicks(); track tick.label) {
           <line [attr.x1]="pad.left" [attr.y1]="tick.y" [attr.x2]="width - pad.right" [attr.y2]="tick.y"
                 stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4,4" />
           <text [attr.x]="pad.left - 8" [attr.y]="tick.y + 4" text-anchor="end"
                 fill="#9ca3af" font-size="11">{{ tick.label }}</text>
         }
 
-        <!-- X axis labels -->
         @for (tick of xTicks(); track tick.label) {
           <text [attr.x]="tick.x" [attr.y]="height - pad.bottom + 18" text-anchor="middle"
                 fill="#9ca3af" font-size="11">{{ tick.label }}</text>
         }
 
-        <!-- Series -->
-        @for (s of computed_series(); track s.name; let i = $index) {
-          <!-- Area fill -->
+        @for (s of computedSeries(); track s.name; let i = $index) {
           @if (showArea) {
             <path [attr.d]="s.areaPath" [attr.fill]="s.color" opacity="0.08" />
           }
-          <!-- Line -->
           <path [attr.d]="s.linePath" [attr.stroke]="s.color" stroke-width="2.5" fill="none"
                 stroke-linecap="round" stroke-linejoin="round" />
-          <!-- Dots -->
           @for (pt of s.points; track pt.x) {
             <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="3.5" [attr.fill]="s.color"
                     stroke="white" stroke-width="2" class="cursor-pointer"
@@ -41,7 +35,6 @@ import { ChartSeries, getColor, scale, smoothPath, shortNumber } from '../chart-
           }
         }
 
-        <!-- Tooltip -->
         @if (tooltip(); as tip) {
           <g>
             <rect [attr.x]="tip.x - 45" [attr.y]="tip.y - 40" width="90" height="30"
@@ -52,7 +45,6 @@ import { ChartSeries, getColor, scale, smoothPath, shortNumber } from '../chart-
         }
       </svg>
 
-      <!-- Legend -->
       @if (series.length > 1) {
         <div class="flex gap-4 justify-center mt-2">
           @for (s of series; track s.name; let i = $index) {
@@ -66,7 +58,7 @@ import { ChartSeries, getColor, scale, smoothPath, shortNumber } from '../chart-
     </div>
   `,
 })
-export class LineChartComponent {
+export class LineChartComponent implements OnChanges {
   @Input() series: ChartSeries[] = [];
   @Input() labels: string[] = [];
   @Input() width = 600;
@@ -77,13 +69,20 @@ export class LineChartComponent {
   pad = { top: 20, right: 20, bottom: 35, left: 50 };
   tooltip = signal<any>(null);
   getColor = getColor;
+  computedSeries = signal<any[]>([]);
+  yTicks = signal<any[]>([]);
+  xTicks = signal<any[]>([]);
 
-  computed_series = computed(() => {
+  ngOnChanges(): void {
+    this.build();
+  }
+
+  private build(): void {
     const { min, max } = this.dataRange();
     const chartW = this.width - this.pad.left - this.pad.right;
     const chartH = this.height - this.pad.top - this.pad.bottom;
 
-    return this.series.map((s, si) => {
+    this.computedSeries.set(this.series.map((s, si) => {
       const color = getColor(si, s.color);
       const points = s.data.map((v, i) => {
         const x = this.pad.left + (s.data.length > 1 ? (i / (s.data.length - 1)) * chartW : chartW / 2);
@@ -100,12 +99,9 @@ export class LineChartComponent {
         + ` L ${points[0]?.x ?? 0},${bottom} Z`;
 
       return { name: s.name, color, points, linePath, areaPath };
-    });
-  });
+    }));
 
-  yTicks = computed(() => {
-    const { min, max } = this.dataRange();
-    const chartH = this.height - this.pad.top - this.pad.bottom;
+    // Y ticks
     const count = 5;
     const ticks = [];
     for (let i = 0; i <= count; i++) {
@@ -113,18 +109,16 @@ export class LineChartComponent {
       const y = this.pad.top + chartH - (i / count) * chartH;
       ticks.push({ y, label: shortNumber(value) });
     }
-    return ticks;
-  });
+    this.yTicks.set(ticks);
 
-  xTicks = computed(() => {
-    const chartW = this.width - this.pad.left - this.pad.right;
+    // X ticks
     const maxTicks = Math.min(this.labels.length, 8);
     const step = Math.max(1, Math.floor(this.labels.length / maxTicks));
-    return this.labels.filter((_, i) => i % step === 0).map((label, i) => ({
+    this.xTicks.set(this.labels.filter((_, i) => i % step === 0).map((label, i) => ({
       label,
       x: this.pad.left + (i * step / Math.max(1, this.labels.length - 1)) * chartW,
-    }));
-  });
+    })));
+  }
 
   private dataRange(): { min: number; max: number } {
     const allValues = this.series.flatMap(s => s.data);

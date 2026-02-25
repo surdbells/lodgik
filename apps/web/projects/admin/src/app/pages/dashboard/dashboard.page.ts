@@ -1,16 +1,19 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ApiService, StatsCardComponent, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgik/shared';
+import { ApiService, StatsCardComponent, PageHeaderComponent } from '@lodgik/shared';
 import { LineChartComponent, DonutChartComponent, BarChartComponent, SparklineChartComponent, ChartSeries, ChartDataPoint } from '@lodgik/charts';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [StatsCardComponent, PageHeaderComponent, LoadingSpinnerComponent, LineChartComponent, DonutChartComponent, BarChartComponent, SparklineChartComponent],
+  imports: [StatsCardComponent, PageHeaderComponent, LineChartComponent, DonutChartComponent, BarChartComponent, SparklineChartComponent],
   template: `
     <ui-page-header title="Platform Dashboard" subtitle="Overview of your SaaS platform" icon="layout-dashboard"></ui-page-header>
-    <ui-loading [loading]="loading()"></ui-loading>
 
-    @if (!loading()) {
+    @if (loading()) {
+      <div class="flex items-center justify-center py-12">
+        <div class="animate-spin rounded-full border-2 border-gray-300 border-t-sage-600 w-7 h-7"></div>
+      </div>
+    } @else {
       <!-- Stats row -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <ui-stats-card label="Total Tenants" [value]="stats().total_tenants" icon="hotel" [trend]="stats().tenant_growth_pct">

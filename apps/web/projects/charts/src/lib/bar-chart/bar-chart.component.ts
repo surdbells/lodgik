@@ -1,4 +1,4 @@
-import { Component, Input, computed, signal } from '@angular/core';
+import { Component, Input, OnChanges, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ChartDataPoint, getColor, shortNumber } from '../chart-utils';
 
@@ -46,7 +46,7 @@ import { ChartDataPoint, getColor, shortNumber } from '../chart-utils';
     </div>
   `,
 })
-export class BarChartComponent {
+export class BarChartComponent implements OnChanges {
   @Input() data: ChartDataPoint[] = [];
   @Input() width = 600;
   @Input() height = 300;
@@ -55,39 +55,35 @@ export class BarChartComponent {
 
   pad = { top: 25, right: 20, bottom: 35, left: 50 };
   tooltip = signal<any>(null);
+  bars = signal<any[]>([]);
+  yTicks = signal<any[]>([]);
 
-  bars = computed(() => {
-    if (!this.data.length) return [];
+  ngOnChanges(): void {
+    this.buildBars();
+  }
+
+  private buildBars(): void {
+    if (!this.data.length) { this.bars.set([]); this.yTicks.set([]); return; }
     const chartW = this.width - this.pad.left - this.pad.right;
     const chartH = this.height - this.pad.top - this.pad.bottom;
     const max = Math.max(...this.data.map(d => d.value), 1) * 1.1;
-
     const gap = 8;
     const barW = Math.max(12, (chartW - gap * (this.data.length - 1)) / this.data.length);
 
-    return this.data.map((d, i) => {
+    this.bars.set(this.data.map((d, i) => {
       const h = (d.value / max) * chartH;
       return {
-        x: this.pad.left + i * (barW + gap),
-        y: this.pad.top + chartH - h,
-        w: barW,
-        h: Math.max(1, h),
-        value: d.value,
-        label: d.label,
-        shortValue: shortNumber(d.value),
-        color: d.color || this.barColor || getColor(i),
+        x: this.pad.left + i * (barW + gap), y: this.pad.top + chartH - h,
+        w: barW, h: Math.max(1, h), value: d.value, label: d.label,
+        shortValue: shortNumber(d.value), color: d.color || this.barColor || getColor(i),
       };
-    });
-  });
+    }));
 
-  yTicks = computed(() => {
-    const chartH = this.height - this.pad.top - this.pad.bottom;
-    const max = Math.max(...this.data.map(d => d.value), 1) * 1.1;
     const count = 4;
-    return Array.from({ length: count + 1 }, (_, i) => {
+    this.yTicks.set(Array.from({ length: count + 1 }, (_, i) => {
       const value = (max / count) * i;
       const y = this.pad.top + chartH - (i / count) * chartH;
       return { y, label: shortNumber(value) };
-    });
-  });
+    }));
+  }
 }
