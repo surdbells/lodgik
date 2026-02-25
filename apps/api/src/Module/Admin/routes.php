@@ -39,11 +39,7 @@ return function (App $app): void {
         $group->post('/tenants/{id}/features/disable/{moduleKey}', [AdminController::class, 'disableTenantFeature']);
         $group->post('/tenants/{id}/impersonate', [AdminController::class, 'impersonateTenant']);
 
-        // Platform settings
-        $group->get('/settings', [AdminController::class, 'getSettings']);
-        $group->patch('/settings', [AdminController::class, 'updateSettings']);
-        $group->post('/settings/test-email', [AdminController::class, 'testEmail']);
-        $group->post('/settings/test-sms', [AdminController::class, 'testSms']);
+        // Platform settings — handled by Settings module (src/Module/Settings/routes.php)
 
         // Platform analytics
         $group->get('/analytics', [AdminController::class, 'analytics']);
