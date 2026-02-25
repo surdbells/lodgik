@@ -209,7 +209,7 @@ final class AdminController
 
     public function impersonateTenant(Request $request, Response $response, array $args): Response
     {
-        $result = $this->adminService->impersonateTenant($args['id'], $request->getAttribute('user_id'));
+        $result = $this->adminService->impersonateTenant($args['id'], $request->getAttribute('auth.user_id'));
         return $this->response->success($response, $result);
     }
 
@@ -332,6 +332,12 @@ final class AdminController
 
     private function serializeTenantAdmin(object $t): array
     {
+        $planName = null;
+        if ($t->getSubscriptionPlanId()) {
+            $plan = $this->adminService->getPlan($t->getSubscriptionPlanId());
+            $planName = $plan?->getName();
+        }
+
         return [
             'id' => $t->getId(),
             'name' => $t->getName(),
@@ -340,6 +346,7 @@ final class AdminController
             'phone' => $t->getPhone(),
             'subscription_status' => $t->getSubscriptionStatus()->value,
             'subscription_plan_id' => $t->getSubscriptionPlanId(),
+            'plan_name' => $planName,
             'trial_ends_at' => $t->getTrialEndsAt()?->format(\DateTimeInterface::ATOM),
             'subscription_ends_at' => $t->getSubscriptionEndsAt()?->format(\DateTimeInterface::ATOM),
             'max_rooms' => $t->getMaxRooms(),

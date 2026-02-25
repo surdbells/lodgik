@@ -367,6 +367,7 @@ return function (ContainerBuilder $builder): void {
                 em: $c->get(EntityManagerInterface::class),
                 tenantRepo: $c->get(TenantRepository::class),
                 planRepo: $c->get(SubscriptionPlanRepository::class),
+                jwt: $c->get(JwtService::class),
             );
         },
 

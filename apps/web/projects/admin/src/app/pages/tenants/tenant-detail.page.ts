@@ -191,15 +191,10 @@ export class TenantDetailPage implements OnInit {
 
   impersonate(): void {
     this.api.post(`/admin/tenants/${this.t.id}/impersonate`, {}).subscribe(r => {
-      if (r.success) {
-        // Store admin token for later restore, set impersonated token
-        localStorage.setItem('lodgik_admin_backup_token', localStorage.getItem('lodgik_access_token') || '');
-        localStorage.setItem('lodgik_access_token', r.data.access_token);
-        localStorage.setItem('lodgik_refresh_token', r.data.refresh_token);
-        localStorage.setItem('lodgik_user', JSON.stringify(r.data.user));
-        this.toast.success(`Impersonating ${this.t.name}`);
-        window.open('/dashboard', '_blank');
-      } else this.toast.error('Impersonation not available');
+      if (r.success && r.data?.redirect_url) {
+        this.toast.success(`Opening ${this.t.name} hotel dashboard...`);
+        window.open(r.data.redirect_url, '_blank');
+      } else this.toast.error(r.data?.message || 'Impersonation not available');
     });
   }
 

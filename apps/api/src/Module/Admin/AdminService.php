@@ -23,6 +23,7 @@ final class AdminService
         private readonly EntityManagerInterface $em,
         private readonly TenantRepository $tenantRepo,
         private readonly SubscriptionPlanRepository $planRepo,
+        private readonly \Lodgik\Service\JwtService $jwt,
     ) {}
 
     // ─── Tenants ───────────────────────────────────────────────
@@ -283,11 +284,43 @@ final class AdminService
     {
         $tenant = $this->em->find(Tenant::class, $tenantId);
         if (!$tenant) throw new \RuntimeException('Tenant not found');
+
         // Find property admin user for this tenant
-        $user = $this->em->getRepository(User::class)->findOneBy(['tenantId' => $tenantId, 'role' => \Lodgik\Enum\UserRole::PROPERTY_ADMIN]);
+        $filters = $this->em->getFilters();
+        $wasEnabled = $filters->isEnabled('tenant_filter');
+        if ($wasEnabled) $filters->disable('tenant_filter');
+
+        $user = $this->em->getRepository(User::class)->findOneBy([
+            'tenantId' => $tenantId,
+            'role' => \Lodgik\Enum\UserRole::PROPERTY_ADMIN,
+        ]);
+
+        if ($wasEnabled) $filters->enable('tenant_filter');
+
         if (!$user) throw new \RuntimeException('No admin user found for this tenant');
-        // Generate tokens (delegate to auth service if available, otherwise return user info)
-        return ['user' => $user->toArray(), 'tenant' => ['id' => $tenant->getId(), 'name' => $tenant->getName()], 'access_token' => 'impersonation-token-' . bin2hex(random_bytes(16)), 'refresh_token' => 'impersonation-refresh-' . bin2hex(random_bytes(16)), 'impersonated_by' => $adminUserId];
+
+        // Generate real JWT for the hotel app
+        $accessToken = $this->jwt->createAccessToken($user->getJwtClaims());
+        $rawRefresh = bin2hex(random_bytes(32));
+        $refreshEntity = new \Lodgik\Entity\RefreshToken(
+            userId: $user->getId(),
+            tokenHash: \Lodgik\Entity\RefreshToken::hashToken($rawRefresh),
+            expiresAt: new \DateTimeImmutable('+2 hours'),
+            deviceInfo: 'admin-impersonation',
+        );
+        $this->em->persist($refreshEntity);
+        $this->em->flush();
+
+        $hotelAppUrl = $_ENV['HOTEL_APP_URL'] ?? 'https://app.lodgik.co';
+
+        return [
+            'user' => $user->toArray(),
+            'tenant' => ['id' => $tenant->getId(), 'name' => $tenant->getName()],
+            'access_token' => $accessToken,
+            'refresh_token' => $rawRefresh,
+            'impersonated_by' => $adminUserId,
+            'redirect_url' => rtrim($hotelAppUrl, '/') . '/auth/impersonate?token=' . urlencode($accessToken) . '&refresh=' . urlencode($rawRefresh),
+        ];
     }
 
     // ─── Platform settings ─────────────────────────────────────
