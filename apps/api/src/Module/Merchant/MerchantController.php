@@ -99,6 +99,20 @@ final class MerchantController
         return JsonResponse::ok($res, $m->toArray());
     }
 
+    /** Force-activate a merchant (skips KYC requirement) */
+    public function activate(Request $req, Response $res, array $args): Response
+    {
+        $m = $this->service->forceActivateMerchant($args['id'], $req->getAttribute('auth.user_id'));
+        return JsonResponse::ok($res, $m->toArray());
+    }
+
+    /** Reactivate a suspended merchant */
+    public function reactivate(Request $req, Response $res, array $args): Response
+    {
+        $m = $this->service->reactivateMerchant($args['id'], $req->getAttribute('auth.user_id'));
+        return JsonResponse::ok($res, $m->toArray());
+    }
+
     public function suspend(Request $req, Response $res, array $args): Response
     {
         $body = (array) ($req->getParsedBody() ?? []);

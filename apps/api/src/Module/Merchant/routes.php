@@ -57,6 +57,8 @@ return function (App $app): void {
         // Merchant detail (parameterized — must come after all static paths)
         $g->get('/{id}', [MerchantController::class, 'show']);
         $g->post('/{id}/approve', [MerchantController::class, 'approve']);
+        $g->post('/{id}/activate', [MerchantController::class, 'activate']);
+        $g->post('/{id}/reactivate', [MerchantController::class, 'reactivate']);
         $g->post('/{id}/suspend', [MerchantController::class, 'suspend']);
         $g->post('/{id}/terminate', [MerchantController::class, 'terminate']);
         $g->get('/{id}/audit-log', [MerchantController::class, 'auditLog']);

@@ -239,6 +239,40 @@ final class MerchantService
         return $m;
     }
 
+    /** Force-activate a merchant regardless of KYC status */
+    public function forceActivateMerchant(string $id, string $adminId): Merchant
+    {
+        $m = $this->getMerchant($id);
+        $m->setStatus(MerchantStatus::ACTIVE);
+        $m->setApprovedAt(new \DateTimeImmutable());
+
+        if (!$m->getCommissionTierId()) {
+            $default = $this->em->getRepository(CommissionTier::class)->findOneBy(['isDefault' => true, 'isActive' => true]);
+            if ($default) $m->setCommissionTierId($default->getId());
+        }
+
+        $this->em->flush();
+        $this->audit($m->getId(), $adminId, 'admin', 'merchant_force_activated', 'Merchant', $m->getId());
+        $this->notify($m->getId(), 'kyc_update', 'Account Activated', 'Your merchant account has been activated by an admin.');
+        return $m;
+    }
+
+    /** Reactivate a suspended merchant */
+    public function reactivateMerchant(string $id, string $adminId): Merchant
+    {
+        $m = $this->getMerchant($id);
+        if ($m->getStatus() !== MerchantStatus::SUSPENDED) {
+            throw new \RuntimeException('Only suspended merchants can be reactivated');
+        }
+        $m->setStatus(MerchantStatus::ACTIVE);
+        $m->setSuspensionReason(null);
+        $m->setSuspendedAt(null);
+        $this->em->flush();
+        $this->audit($m->getId(), $adminId, 'admin', 'merchant_reactivated', 'Merchant', $m->getId());
+        $this->notify($m->getId(), 'policy_change', 'Account Reactivated', 'Your merchant account has been reactivated.');
+        return $m;
+    }
+
     public function suspendMerchant(string $id, string $reason): Merchant
     {
         $m = $this->getMerchant($id);

@@ -214,35 +214,108 @@ final class AdminService
 
     public function getDashboardStats(): array
     {
-        $tenantCount = (int) $this->em->createQueryBuilder()
-            ->select('COUNT(t.id)')
-            ->from(Tenant::class, 't')
-            ->getQuery()->getSingleScalarResult();
+        $conn = $this->em->getConnection();
 
-        $activeTenants = (int) $this->em->createQueryBuilder()
-            ->select('COUNT(t.id)')
-            ->from(Tenant::class, 't')
-            ->where('t.isActive = true')
-            ->getQuery()->getSingleScalarResult();
+        // ─── Tenant counts ────────────────────────────────────
+        $tenantCount = (int) $conn->fetchOne('SELECT COUNT(*) FROM tenants');
+        $activeTenants = (int) $conn->fetchOne("SELECT COUNT(*) FROM tenants WHERE is_active = true");
+        $trialTenants = (int) $conn->fetchOne("SELECT COUNT(*) FROM tenants WHERE subscription_status = 'trial'");
 
-        $trialTenants = (int) $this->em->createQueryBuilder()
-            ->select('COUNT(t.id)')
-            ->from(Tenant::class, 't')
-            ->where('t.subscriptionStatus = :status')
-            ->setParameter('status', 'trial')
-            ->getQuery()->getSingleScalarResult();
+        // Tenants by status
+        $statusRows = $conn->fetchAllAssociative("SELECT subscription_status, COUNT(*) as cnt FROM tenants GROUP BY subscription_status");
+        $tenantsByStatus = [];
+        foreach ($statusRows as $r) $tenantsByStatus[$r['subscription_status']] = (int) $r['cnt'];
 
-        $planCount = (int) $this->em->createQueryBuilder()
-            ->select('COUNT(p.id)')
-            ->from(SubscriptionPlan::class, 'p')
-            ->where('p.isActive = true')
-            ->getQuery()->getSingleScalarResult();
+        // ─── User & property counts ──────────────────────────
+        $totalUsers = (int) $conn->fetchOne('SELECT COUNT(*) FROM users');
+        $totalProperties = (int) $conn->fetchOne('SELECT COUNT(*) FROM properties');
+        $planCount = (int) $conn->fetchOne("SELECT COUNT(*) FROM subscription_plans WHERE is_active = true");
+
+        // ─── Merchant counts ─────────────────────────────────
+        $totalMerchants = (int) $conn->fetchOne('SELECT COUNT(*) FROM merchants');
+        $activeMerchants = (int) $conn->fetchOne("SELECT COUNT(*) FROM merchants WHERE status = 'active'");
+        $pendingMerchants = (int) $conn->fetchOne("SELECT COUNT(*) FROM merchants WHERE status IN ('pending_approval', 'kyc_in_progress')");
+
+        // ─── MRR (monthly recurring revenue) ─────────────────
+        // Count active tenants per plan and multiply by plan price
+        $mrrRows = $conn->fetchAllAssociative("
+            SELECT sp.name, sp.monthly_price, COUNT(t.id) as tenant_count
+            FROM tenants t
+            JOIN subscription_plans sp ON t.subscription_plan_id = sp.id
+            WHERE t.subscription_status = 'active' AND sp.is_active = true
+            GROUP BY sp.id, sp.name, sp.monthly_price
+        ");
+        $mrr = 0;
+        $revenueByPlan = [];
+        foreach ($mrrRows as $r) {
+            $planRevenue = (int) $r['monthly_price'] * (int) $r['tenant_count'];
+            $mrr += $planRevenue;
+            $revenueByPlan[] = ['name' => $r['name'], 'revenue' => $planRevenue, 'tenants' => (int) $r['tenant_count']];
+        }
+
+        // ─── Monthly trend (last 6 months) ───────────────────
+        $monthlyTrend = $conn->fetchAllAssociative("
+            SELECT TO_CHAR(created_at, 'YYYY-MM') as month,
+                   COUNT(*) as signups
+            FROM tenants
+            WHERE created_at >= NOW() - INTERVAL '6 months'
+            GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+            ORDER BY month
+        ");
+        // Add revenue estimate per month
+        foreach ($monthlyTrend as &$m) {
+            $m['signups'] = (int) $m['signups'];
+            $m['revenue'] = $m['signups'] * ($mrr > 0 && $activeTenants > 0 ? (int) ($mrr / $activeTenants) : 0);
+        }
+
+        // ─── Recent tenants (last 10) ────────────────────────
+        $recentRows = $conn->fetchAllAssociative("
+            SELECT t.id, t.name, t.email, t.subscription_status,
+                   t.created_at, sp.name as plan_name
+            FROM tenants t
+            LEFT JOIN subscription_plans sp ON t.subscription_plan_id = sp.id
+            ORDER BY t.created_at DESC LIMIT 10
+        ");
+        $recentTenants = [];
+        foreach ($recentRows as $r) {
+            $recentTenants[] = [
+                'id' => $r['id'],
+                'name' => $r['name'],
+                'email' => $r['email'],
+                'subscription_status' => $r['subscription_status'],
+                'plan_name' => $r['plan_name'] ?? 'None',
+                'created_at' => $r['created_at'],
+            ];
+        }
+
+        // ─── Sparkline data (weekly signups last 7 weeks) ────
+        $tenantSpark = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $count = (int) $conn->fetchOne("
+                SELECT COUNT(*) FROM tenants
+                WHERE created_at >= NOW() - INTERVAL '{$i} weeks' - INTERVAL '1 week'
+                  AND created_at < NOW() - INTERVAL '{$i} weeks'
+            ");
+            $tenantSpark[] = $count;
+        }
 
         return [
             'total_tenants' => $tenantCount,
             'active_tenants' => $activeTenants,
             'trial_tenants' => $trialTenants,
             'active_plans' => $planCount,
+            'total_users' => $totalUsers,
+            'total_properties' => $totalProperties,
+            'total_plans' => $planCount,
+            'total_merchants' => $totalMerchants,
+            'active_merchants' => $activeMerchants,
+            'pending_merchants' => $pendingMerchants,
+            'mrr' => $mrr,
+            'tenants_by_status' => $tenantsByStatus,
+            'revenue_by_plan' => $revenueByPlan,
+            'monthly_trend' => $monthlyTrend,
+            'recent_tenants' => $recentTenants,
+            'tenant_trend' => array_map('intval', $tenantSpark ?: []),
         ];
     }
 

@@ -22,15 +22,22 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
             <p class="text-sm text-gray-500 mt-1">{{ merchant().legal_name }} · <span class="font-mono">{{ merchant().merchant_id }}</span></p>
           </div>
           <div class="flex gap-2">
-            @if (merchant().status === 'pending_approval' || merchant().status === 'kyc_in_progress') {
+            @if (merchant().status === 'pending_approval') {
               <button (click)="approve()" class="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700">Approve</button>
+            }
+            @if (merchant().status === 'kyc_in_progress') {
+              <span class="px-3 py-2 text-sm text-amber-700 bg-amber-50 rounded-lg">Awaiting KYC completion</span>
+              <button (click)="forceActivate()" class="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700">Force Activate</button>
             }
             @if (merchant().status === 'active') {
               <button (click)="suspend()" class="px-4 py-2 text-sm rounded-lg bg-amber-500 text-white hover:bg-amber-600">Suspend</button>
             }
             @if (merchant().status === 'suspended') {
-              <button (click)="approve()" class="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700">Reactivate</button>
+              <button (click)="reactivate()" class="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700">Reactivate</button>
               <button (click)="terminate()" class="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700">Terminate</button>
+            }
+            @if (merchant().status === 'terminated') {
+              <span class="px-3 py-2 text-sm text-red-700 bg-red-50 rounded-lg">Terminated</span>
             }
           </div>
         </div>
@@ -391,6 +398,21 @@ export class MerchantDetailPage implements OnInit {
   approve(): void {
     this.api.post(`/admin/merchants/${this.merchantId}/approve`, {}).subscribe({
       next: () => { this.toast.success('Merchant approved'); this.loadMerchant(); },
+      error: (e: any) => this.toast.error(e.error?.message || 'Failed'),
+    });
+  }
+
+  forceActivate(): void {
+    if (!confirm('Activate this merchant without completed KYC?')) return;
+    this.api.post(`/admin/merchants/${this.merchantId}/activate`, {}).subscribe({
+      next: () => { this.toast.success('Merchant activated'); this.loadMerchant(); },
+      error: (e: any) => this.toast.error(e.error?.message || 'Failed'),
+    });
+  }
+
+  reactivate(): void {
+    this.api.post(`/admin/merchants/${this.merchantId}/reactivate`, {}).subscribe({
+      next: () => { this.toast.success('Merchant reactivated'); this.loadMerchant(); },
       error: (e: any) => this.toast.error(e.error?.message || 'Failed'),
     });
   }

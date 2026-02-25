@@ -30,7 +30,8 @@ import { LineChartComponent, DonutChartComponent, BarChartComponent, SparklineCh
         <ui-stats-card label="Trial Tenants" [value]="stats().trial_tenants" icon="clock"></ui-stats-card>
         <ui-stats-card label="Total Users" [value]="stats().total_users" icon="user-round"></ui-stats-card>
         <ui-stats-card label="Total Properties" [value]="stats().total_properties" icon="building"></ui-stats-card>
-        <ui-stats-card label="Total Plans" [value]="stats().total_plans" icon="star"></ui-stats-card>
+        <ui-stats-card label="Merchants" [value]="(stats().active_merchants || 0) + ' / ' + (stats().total_merchants || 0)" icon="handshake">
+        </ui-stats-card>
       </div>
 
       <!-- Charts -->
