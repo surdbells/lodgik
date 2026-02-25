@@ -34,7 +34,7 @@ class MerchantAuditLog
     private ?string $ipAddress = null;
     #[ORM\Column(name: 'user_agent', type: Types::STRING, length: 500, nullable: true)]
     private ?string $userAgent = null;
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[ORM\Column(name: 'logged_at', type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $timestamp;
 
     public function __construct() { $this->generateId(); $this->timestamp = new \DateTimeImmutable(); }
@@ -67,7 +67,7 @@ class MerchantAuditLog
             'id' => $this->getId(), 'merchant_id' => $this->merchantId, 'actor_id' => $this->actorId,
             'actor_type' => $this->actorType, 'action' => $this->action, 'entity_type' => $this->entityType,
             'entity_id' => $this->entityId, 'old_value' => $this->oldValue, 'new_value' => $this->newValue,
-            'ip_address' => $this->ipAddress, 'timestamp' => $this->timestamp->format(\DateTimeInterface::ATOM),
+            'ip_address' => $this->ipAddress, 'logged_at' => $this->timestamp->format(\DateTimeInterface::ATOM),
         ];
     }
 }
