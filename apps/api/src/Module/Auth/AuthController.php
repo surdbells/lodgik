@@ -115,7 +115,7 @@ final class AuthController
 
         return $this->response->success($response, [
             'user' => $this->serializeUser($result['user']),
-            'tenant' => $this->serializeTenant($result['tenant']),
+            'tenant' => $result['tenant'] ? $this->serializeTenant($result['tenant']) : null,
             'access_token' => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
             'token_type' => 'Bearer',

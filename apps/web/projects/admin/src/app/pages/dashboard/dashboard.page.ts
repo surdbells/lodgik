@@ -8,7 +8,7 @@ import { LineChartComponent, DonutChartComponent, BarChartComponent, SparklineCh
   imports: [StatsCardComponent, PageHeaderComponent, LoadingSpinnerComponent, LineChartComponent, DonutChartComponent, BarChartComponent, SparklineChartComponent],
   template: `
     <ui-page-header title="Platform Dashboard" subtitle="Overview of your SaaS platform" icon="layout-dashboard"></ui-page-header>
-    <ui-loading [loading]="loading()" message="Loading dashboard..."></ui-loading>
+    <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
       <!-- Stats row -->

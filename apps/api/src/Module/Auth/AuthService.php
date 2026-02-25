@@ -168,12 +168,17 @@ final class AuthService
             throw new \RuntimeException('Invalid email or password');
         }
 
-        // Load tenant
-        $tenant = $this->tenantRepo->find($user->getTenantId());
+        // Load tenant (skip for merchant roles — they're platform-level users)
+        $isMerchant = in_array($user->getRole(), \Lodgik\Enum\UserRole::merchantRoles(), true);
+        $tenant = null;
 
-        if ($tenant === null || !$tenant->isActive()) {
-            $this->restoreTenantFilter();
-            throw new \RuntimeException('Your organization is no longer active. Please contact support.');
+        if (!$isMerchant) {
+            $tenant = $this->tenantRepo->find($user->getTenantId());
+
+            if ($tenant === null || !$tenant->isActive()) {
+                $this->restoreTenantFilter();
+                throw new \RuntimeException('Your organization is no longer active. Please contact support.');
+            }
         }
 
         $this->restoreTenantFilter();
