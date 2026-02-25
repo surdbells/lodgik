@@ -33,6 +33,32 @@ final class MerchantController
         return JsonResponse::created($res, $merchant->toArray());
     }
 
+    /** Public self-registration — creates User + Merchant + returns JWT */
+    public function selfRegister(Request $req, Response $res): Response
+    {
+        $body = (array) ($req->getParsedBody() ?? []);
+        $required = ['first_name', 'last_name', 'email', 'password', 'business_name'];
+        $errors = [];
+        foreach ($required as $f) {
+            if (empty(trim($body[$f] ?? ''))) $errors[$f] = str_replace('_', ' ', $f) . ' is required';
+        }
+        if (!empty($body['email']) && !filter_var($body['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = 'Invalid email address';
+        }
+        if (!empty($body['password']) && mb_strlen($body['password']) < 8) {
+            $errors['password'] = 'Password must be at least 8 characters';
+        }
+        if (!empty($errors)) {
+            return JsonResponse::validationError($res, $errors);
+        }
+        try {
+            $result = $this->service->selfRegisterMerchant($body);
+            return JsonResponse::created($res, $result);
+        } catch (\RuntimeException $e) {
+            return JsonResponse::error($res, $e->getMessage(), 409);
+        }
+    }
+
     /** Admin-initiated merchant onboarding — creates User + Merchant + sends invitation */
     public function adminRegister(Request $req, Response $res): Response
     {

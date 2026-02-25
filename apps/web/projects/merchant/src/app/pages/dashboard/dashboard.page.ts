@@ -11,6 +11,31 @@ import { MerchantApiService } from '../../services/merchant-api.service';
     <ui-page-header title="Dashboard" icon="layout-dashboard" subtitle="Welcome to your Merchant Portal"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
+      <!-- Onboarding Prompts -->
+      @if (onboardingSteps().length > 0) {
+        <div class="mb-6 bg-gradient-to-r from-sage-50 to-emerald-50 border border-sage-200 rounded-xl p-5">
+          <h3 class="text-sm font-semibold text-sage-800 mb-1">Complete Your Setup</h3>
+          <p class="text-xs text-sage-600 mb-4">Finish these steps to start earning commissions</p>
+          <div class="space-y-2">
+            @for (s of onboardingSteps(); track s.key) {
+              <a [routerLink]="s.route" class="flex items-center gap-3 bg-white rounded-lg p-3 border border-sage-100 hover:border-sage-300 transition-colors">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                     [class]="s.done ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'">
+                  {{ s.done ? '✓' : s.num }}
+                </div>
+                <div class="flex-1">
+                  <div class="text-sm font-medium" [class]="s.done ? 'text-green-700 line-through' : 'text-gray-900'">{{ s.label }}</div>
+                  <div class="text-xs text-gray-500">{{ s.desc }}</div>
+                </div>
+                @if (!s.done) {
+                  <span class="text-xs text-sage-600 font-medium">Complete →</span>
+                }
+              </a>
+            }
+          </div>
+        </div>
+      }
+
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <ui-stats-card label="Active Hotels" [value]="dash().hotels?.total || 0" icon="hotel"></ui-stats-card>
         <ui-stats-card label="Total Earned" [value]="'₦' + (+dash().earnings?.total_earned || 0).toLocaleString()" icon="hand-coins"></ui-stats-card>
@@ -52,6 +77,7 @@ export class DashboardPage implements OnInit {
   dash = signal<any>({});
   hotelStatusEntries = signal<[string, number][]>([]);
   leadStatusEntries = signal<[string, number][]>([]);
+  onboardingSteps = signal<any[]>([]);
 
   ngOnInit(): void {
     this.api.dashboard().subscribe({ next: (d: any) => {
@@ -59,5 +85,20 @@ export class DashboardPage implements OnInit {
       this.hotelStatusEntries.set(Object.entries(d.hotels?.by_status || {}) as [string, number][]);
       this.leadStatusEntries.set(Object.entries(d.leads?.by_status || {}) as [string, number][]);
     }, error: () => this.loading.set(false) });
+
+    // Load profile to check onboarding status
+    this.api.profile().subscribe({ next: (p: any) => {
+      const kycDone = p.kyc?.status && p.kyc.status !== 'not_submitted';
+      const kycApproved = p.kyc?.status === 'approved';
+      const bankDone = !!p.bank_account;
+      const steps: any[] = [];
+      if (!kycApproved) {
+        steps.push({ key: 'kyc', num: 1, label: 'Submit KYC Documents', desc: kycDone ? 'KYC submitted — awaiting review' : 'Required for account approval', route: '/profile', done: kycDone });
+      }
+      if (!bankDone) {
+        steps.push({ key: 'bank', num: 2, label: 'Add Bank Account', desc: 'Required for receiving payouts', route: '/profile', done: false });
+      }
+      this.onboardingSteps.set(steps);
+    }, error: () => {} });
   }
 }

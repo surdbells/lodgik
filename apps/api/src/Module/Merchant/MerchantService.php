@@ -6,12 +6,15 @@ use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Entity\{Merchant, MerchantKyc, MerchantBankAccount, MerchantHotel, CommissionTier, Commission, CommissionPayout, MerchantResource, MerchantResourceDownload, MerchantSupportTicket, MerchantAuditLog, MerchantNotification, MerchantLead, MerchantStatement, User};
 use Lodgik\Enum\{MerchantStatus, MerchantCategory, CommissionScope, CommissionStatus, UserRole};
 use Lodgik\Service\ZeptoMailService;
+use Lodgik\Service\JwtService;
+use Lodgik\Entity\RefreshToken;
 
 final class MerchantService
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly ZeptoMailService $mailer,
+        private readonly JwtService $jwt,
     ) {}
 
     // ─── Registration & Lifecycle ──────────────────────────────
@@ -104,6 +107,84 @@ final class MerchantService
     {
         $parts = explode(' ', trim($fullName), 2);
         return ['first' => $parts[0] ?: 'Merchant', 'last' => $parts[1] ?? 'User'];
+    }
+
+    /**
+     * Public self-registration. Creates User + Merchant + returns JWT tokens.
+     */
+    public function selfRegisterMerchant(array $data): array
+    {
+        // Check email uniqueness
+        $filters = $this->em->getFilters();
+        $tenantWasEnabled = $filters->isEnabled('tenant_filter');
+        if ($tenantWasEnabled) $filters->disable('tenant_filter');
+
+        $existingUser = $this->em->getRepository(User::class)->findOneBy(['email' => strtolower(trim($data['email']))]);
+
+        if ($tenantWasEnabled) $filters->enable('tenant_filter');
+
+        if ($existingUser) {
+            throw new \RuntimeException('An account with this email already exists. Please login instead.');
+        }
+
+        // 1. Create user
+        $passwordHash = password_hash($data['password'], PASSWORD_ARGON2ID);
+        $user = new User(
+            $data['first_name'],
+            $data['last_name'],
+            $data['email'],
+            $passwordHash,
+            UserRole::MERCHANT_ADMIN,
+            'platform', // merchant users are platform-level
+        );
+        $user->markEmailVerified();
+        $user->setIsActive(true);
+        $this->em->persist($user);
+
+        // 2. Create merchant
+        $m = new Merchant();
+        $m->setLegalName($data['legal_name'] ?? $data['business_name']);
+        $m->setBusinessName($data['business_name']);
+        $m->setEmail($data['email']);
+        if (isset($data['phone'])) $m->setPhone($data['phone']);
+        if (isset($data['address'])) $m->setAddress($data['address']);
+        if (isset($data['operating_region'])) $m->setOperatingRegion($data['operating_region']);
+        if (isset($data['type'])) $m->setType($data['type']);
+        if (isset($data['category'])) $m->setCategory(MerchantCategory::from($data['category'] ?? 'sales_agent'));
+        if (isset($data['settlement_currency'])) $m->setSettlementCurrency($data['settlement_currency']);
+        $m->setUserId($user->getId());
+        $this->em->persist($m);
+
+        // 3. KYC placeholder
+        $kyc = new MerchantKyc();
+        $kyc->setMerchantId($m->getId());
+        $kyc->setKycType(($data['type'] ?? 'individual') === 'company' ? 'business' : 'individual');
+        $this->em->persist($kyc);
+
+        // 4. Generate JWT token pair for auto-login
+        $accessToken = $this->jwt->createAccessToken($user->getJwtClaims());
+        $rawRefresh = bin2hex(random_bytes(32));
+        $refreshEntity = new RefreshToken(
+            userId: $user->getId(),
+            tokenHash: RefreshToken::hashToken($rawRefresh),
+            expiresAt: new \DateTimeImmutable('+30 days'),
+        );
+        $this->em->persist($refreshEntity);
+
+        $this->em->flush();
+        $this->audit($m->getId(), $user->getId(), 'merchant', 'merchant_self_registered', 'Merchant', $m->getId());
+
+        return [
+            'merchant' => $m->toArray(),
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'name' => $user->getFirstName() . ' ' . $user->getLastName(),
+                'role' => $user->getRole()->value,
+            ],
+            'access_token' => $accessToken,
+            'refresh_token' => $rawRefresh,
+        ];
     }
 
     public function registerMerchant(array $data): Merchant

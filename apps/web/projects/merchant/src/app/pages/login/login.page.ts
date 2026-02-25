@@ -1,12 +1,12 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService, ApiService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <div class="min-h-screen flex">
       <!-- Brand panel -->
@@ -100,6 +100,9 @@ import { AuthService, ApiService } from '@lodgik/shared';
                   {{ loading() ? 'Signing in...' : 'Sign In' }}
                 </button>
               </div>
+              <p class="text-center text-sm text-gray-500 mt-6">
+                Don't have an account? <a routerLink="/register" class="text-sage-600 hover:underline font-medium">Register as a merchant</a>
+              </p>
             </div>
           }
         </div>

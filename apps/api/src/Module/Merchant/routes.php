@@ -65,6 +65,9 @@ return function (App $app): void {
         ->add(new RoleMiddleware(['super_admin']))
         ->add(AuthMiddleware::class);
 
+    // ─── Merchant Portal: Public self-registration (no auth) ────
+    $app->post('/api/merchants/self-register', [MerchantController::class, 'selfRegister']);
+
     // ─── Merchant Portal: Registration (public with auth) ──────
     $app->post('/api/merchants/register', [MerchantController::class, 'register'])
         ->add(AuthMiddleware::class);
