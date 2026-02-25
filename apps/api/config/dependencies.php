@@ -286,12 +286,21 @@ return function (ContainerBuilder $builder): void {
         ZeptoMailService::class => function (ContainerInterface $c): ZeptoMailService {
             $settings = $c->get('settings')['zeptomail'];
 
-            return new ZeptoMailService(
+            $mailer = new ZeptoMailService(
                 apiKey: $settings['api_key'],
                 fromEmail: $settings['from_email'],
                 fromName: $settings['from_name'],
                 logger: $c->get(LoggerInterface::class),
             );
+
+            // Inject SettingsService for DB-based config override
+            try {
+                $mailer->setSettingsService($c->get(\Lodgik\Module\Settings\SettingsService::class));
+            } catch (\Throwable $e) {
+                // SettingsService might not be available during initial setup
+            }
+
+            return $mailer;
         },
 
         // ─── Auth Module ───────────────────────────────────────────
@@ -906,6 +915,15 @@ return function (ContainerBuilder $builder): void {
         ),
         \Lodgik\Module\Merchant\MerchantController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Merchant\MerchantController(
             service: $c->get(\Lodgik\Module\Merchant\MerchantService::class),
+        ),
+
+        // ─── Settings ─────────────────────────────────────────
+        \Lodgik\Module\Settings\SettingsService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Settings\SettingsService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Settings\SettingsController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Settings\SettingsController(
+            settings: $c->get(\Lodgik\Module\Settings\SettingsService::class),
+            mailer: $c->get(\Lodgik\Service\ZeptoMailService::class),
         ),
     ]);
 };

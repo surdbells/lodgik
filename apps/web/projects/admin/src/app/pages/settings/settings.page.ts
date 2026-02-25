@@ -157,22 +157,42 @@ export class SettingsPage implements OnInit {
 
   saveSection(section: string, data: any): void {
     this.api.patch('/admin/settings', { [section]: data }).subscribe({
-      next: r => { if (r.success) this.toast.success(`${section} settings saved`); else this.toast.error(r.message || 'Failed'); },
-      error: () => this.toast.error('Failed to save'),
+      next: (r: any) => {
+        if (r.success) {
+          this.toast.success(`${section} settings saved`);
+          // Update local state from response
+          if (r.data?.settings) {
+            const d = r.data.settings;
+            this.config.set(d);
+            if (d.zeptomail) this.zeptomail = { ...this.zeptomail, ...d.zeptomail };
+            if (d.termii) this.termii = { ...this.termii, ...d.termii };
+            if (d.paystack) this.paystack = { ...this.paystack, ...d.paystack };
+            if (d.defaults) this.defaults = { ...this.defaults, ...d.defaults };
+            if (d.feature_flags) this.flagValues = { ...this.flagValues, ...d.feature_flags };
+          }
+        } else {
+          this.toast.error(r.message || 'Failed');
+        }
+      },
+      error: (e: any) => this.toast.error(e?.error?.message || 'Failed to save'),
     });
   }
 
   testEmail(): void {
-    this.api.post('/admin/settings/test-email', {}).subscribe({
-      next: r => { r.success ? this.toast.success('Test email sent') : this.toast.error(r.message || 'Failed'); },
-      error: () => this.toast.error('Failed'),
+    const email = prompt('Send test email to:', 'admin@lodgik.co');
+    if (!email) return;
+    this.api.post('/admin/settings/test-email', { email }).subscribe({
+      next: (r: any) => { r.success ? this.toast.success(r.message || 'Test email sent') : this.toast.error(r.message || 'Failed'); },
+      error: (e: any) => this.toast.error(e?.error?.message || 'Failed'),
     });
   }
 
   testSms(): void {
-    this.api.post('/admin/settings/test-sms', {}).subscribe({
-      next: r => { r.success ? this.toast.success('Test SMS sent') : this.toast.error(r.message || 'Failed'); },
-      error: () => this.toast.error('Failed'),
+    const phone = prompt('Send test SMS to (with country code):', '+234');
+    if (!phone) return;
+    this.api.post('/admin/settings/test-sms', { phone }).subscribe({
+      next: (r: any) => { r.success ? this.toast.success(r.message || 'Test SMS sent') : this.toast.error(r.message || 'Failed'); },
+      error: (e: any) => this.toast.error(e?.error?.message || 'Failed'),
     });
   }
 }

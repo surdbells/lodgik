@@ -10,12 +10,47 @@ final class ZeptoMailService
 {
     private const API_URL = 'https://api.zeptomail.com/v1.1/email';
 
+    private ?object $settingsService = null;
+
     public function __construct(
         private readonly string $apiKey,
         private readonly string $fromEmail,
         private readonly string $fromName,
         private readonly LoggerInterface $logger,
     ) {}
+
+    /** Allows SettingsService to be injected after construction (avoids circular DI) */
+    public function setSettingsService(object $service): void
+    {
+        $this->settingsService = $service;
+    }
+
+    private function resolveApiKey(): string
+    {
+        if ($this->settingsService) {
+            $val = $this->settingsService->getRaw('zeptomail.api_key');
+            if ($val) return $val;
+        }
+        return $this->apiKey;
+    }
+
+    private function resolveFromEmail(): string
+    {
+        if ($this->settingsService) {
+            $val = $this->settingsService->getRaw('zeptomail.from_email');
+            if ($val) return $val;
+        }
+        return $this->fromEmail;
+    }
+
+    private function resolveFromName(): string
+    {
+        if ($this->settingsService) {
+            $val = $this->settingsService->getRaw('zeptomail.from_name');
+            if ($val) return $val;
+        }
+        return $this->fromName;
+    }
 
     /**
      * Send a transactional email.
@@ -32,7 +67,11 @@ final class ZeptoMailService
         string $subject,
         string $htmlBody,
     ): bool {
-        if ($this->apiKey === '') {
+        $apiKey = $this->resolveApiKey();
+        $fromEmail = $this->resolveFromEmail();
+        $fromName = $this->resolveFromName();
+
+        if ($apiKey === '') {
             $this->logger->warning('ZeptoMail API key not configured, skipping email', [
                 'to' => $toEmail,
                 'subject' => $subject,
@@ -42,8 +81,8 @@ final class ZeptoMailService
 
         $payload = [
             'from' => [
-                'address' => $this->fromEmail,
-                'name' => $this->fromName,
+                'address' => $fromEmail,
+                'name' => $fromName,
             ],
             'to' => [
                 [
@@ -66,7 +105,7 @@ final class ZeptoMailService
                 CURLOPT_TIMEOUT => 15,
                 CURLOPT_HTTPHEADER => [
                     'Content-Type: application/json',
-                    'Authorization: Zoho-enczapikey ' . $this->apiKey,
+                    'Authorization: ' . $apiKey,
                 ],
             ]);
 

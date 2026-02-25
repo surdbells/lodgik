@@ -76,4 +76,7 @@ return function (App $app): void {
 
     // ─── Phase 9: Merchant Module ─────────────────────────────
     (require __DIR__ . '/../src/Module/Merchant/routes.php')($app);
+
+    // ─── Platform Settings ────────────────────────────────────
+    (require __DIR__ . '/../src/Module/Settings/routes.php')($app);
 };

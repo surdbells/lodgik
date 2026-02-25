@@ -181,9 +181,10 @@ export class RegisterPage {
     this.api.post('/merchants/self-register', this.form).subscribe({
       next: (r: any) => {
         const data = r.data;
-        // Auto-login: store tokens
+        // Auto-login: store tokens + user
         if (data?.access_token) {
           this.token.setTokens(data.access_token, data.refresh_token);
+          if (data.user) this.token.setUser(data.user);
         }
         this.toast.success('Welcome! Your merchant account has been created.');
         this.loading.set(false);
