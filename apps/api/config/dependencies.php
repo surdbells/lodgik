@@ -901,6 +901,7 @@ return function (ContainerBuilder $builder): void {
         // Phase 9: Merchant
         \Lodgik\Module\Merchant\MerchantService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Merchant\MerchantService(
             em: $c->get(EntityManagerInterface::class),
+            mailer: $c->get(\Lodgik\Service\ZeptoMailService::class),
         ),
         \Lodgik\Module\Merchant\MerchantController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Merchant\MerchantController(
             service: $c->get(\Lodgik\Module\Merchant\MerchantService::class),
