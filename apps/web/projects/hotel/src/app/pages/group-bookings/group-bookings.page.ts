@@ -18,7 +18,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div><label class="block text-sm font-medium mb-1">Group Name</label><input type="text" [(ngModel)]="form.group_name" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Company ABC Conference"></div>
           <div><label class="block text-sm font-medium mb-1">Organizer</label><input type="text" [(ngModel)]="form.organizer_name" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-          <div><label class="block text-sm font-medium mb-1">Rooms Blocked</label><input type="number" [(ngModel)]="form.rooms_blocked" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+          <div><label class="block text-sm font-medium mb-1">Rooms Blocked <span class="text-xs text-gray-400 font-normal">(rooms reserved for this group)</span></label><input type="number" [(ngModel)]="form.rooms_blocked" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
           <div><label class="block text-sm font-medium mb-1">Check-in</label><input type="date" [(ngModel)]="form.check_in" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
           <div><label class="block text-sm font-medium mb-1">Check-out</label><input type="date" [(ngModel)]="form.check_out" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
           <div><label class="block text-sm font-medium mb-1">Negotiated Rate (₦)</label><input type="number" [(ngModel)]="form.negotiated_rate" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
