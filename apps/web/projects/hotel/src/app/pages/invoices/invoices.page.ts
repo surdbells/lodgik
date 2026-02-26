@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ToastService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ToastService, ActivePropertyService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -53,6 +53,7 @@ export class InvoicesPage implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
   private toast = inject(ToastService);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
   invoices = signal<any[]>([]);
@@ -86,7 +87,7 @@ export class InvoicesPage implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.propertyId = this.auth.currentUser?.property_id ?? '';
+    this.propertyId = this.activeProperty.propertyId();
     this.loadInvoices();
   }
 

@@ -213,6 +213,49 @@ final class StaffController
         }
     }
 
+    /** GET /api/staff/{id}/property-access */
+    public function getPropertyAccess(Request $request, Response $response, array $args): Response
+    {
+        $tenantId = $request->getAttribute('auth.tenant_id');
+        try {
+            $rows = $this->staffService->getPropertyAccess($args['id'], $tenantId);
+            return $this->response->success($response, $rows);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 400);
+        }
+    }
+
+    /** POST /api/staff/{id}/property-access */
+    public function grantPropertyAccess(Request $request, Response $response, array $args): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $propertyId = $body['property_id'] ?? null;
+        $role = $body['role'] ?? null;
+        if (empty($propertyId)) {
+            return $this->response->validationError($response, ['property_id' => 'Required']);
+        }
+        $tenantId = $request->getAttribute('auth.tenant_id');
+        $grantedBy = $request->getAttribute('auth.user_id');
+        try {
+            $this->staffService->grantPropertyAccess($args['id'], $propertyId, $tenantId, $role, $grantedBy);
+            return $this->response->success($response, null, 'Access granted');
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 400);
+        }
+    }
+
+    /** DELETE /api/staff/{id}/property-access/{propertyId} */
+    public function revokePropertyAccess(Request $request, Response $response, array $args): Response
+    {
+        $tenantId = $request->getAttribute('auth.tenant_id');
+        try {
+            $this->staffService->revokePropertyAccess($args['id'], $args['propertyId'], $tenantId);
+            return $this->response->success($response, null, 'Access revoked');
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 400);
+        }
+    }
+
     private function serializeUser(object $user): array
     {
         return [

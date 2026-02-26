@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SlicePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -118,6 +118,7 @@ import { AuthService } from '@lodgik/shared';
 export class AttendancePage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
   records = signal<any[]>([]);
@@ -132,14 +133,14 @@ export class AttendancePage implements OnInit {
   ngOnInit() { this.loadEmployees(); this.load(); }
 
   loadEmployees() {
-    this.api.get('/employees/directory', { property_id: this.auth.currentUser?.property_id ?? '' }).subscribe({
+    this.api.get('/employees/directory', { property_id: this.activeProperty.propertyId() }).subscribe({
       next: (r: any) => this.employees.set(r.data || []),
     });
   }
 
   load() {
     this.loading.set(true);
-    this.api.get('/attendance', { date: this.selectedDate, property_id: this.auth.currentUser?.property_id ?? '' }).subscribe({
+    this.api.get('/attendance', { date: this.selectedDate, property_id: this.activeProperty.propertyId() }).subscribe({
       next: (r: any) => {
         this.records.set(r.data?.records || []);
         this.summary.set(r.data?.summary || { present: 0, absent: 0, late: 0, half_day: 0, on_leave: 0 });
@@ -151,7 +152,7 @@ export class AttendancePage implements OnInit {
 
   clockIn() {
     if (!this.clockEmpId) return;
-    this.api.post('/attendance/clock-in', { employee_id: this.clockEmpId, property_id: this.auth.currentUser?.property_id ?? '' }).subscribe({
+    this.api.post('/attendance/clock-in', { employee_id: this.clockEmpId, property_id: this.activeProperty.propertyId() }).subscribe({
       next: () => { this.showClockIn = false; this.clockEmpId = ''; this.load(); },
     });
   }
@@ -165,7 +166,7 @@ export class AttendancePage implements OnInit {
 
   recordAttendance() {
     if (!this.clockEmpId) return;
-    this.api.post('/attendance/record', { employee_id: this.clockEmpId, property_id: this.auth.currentUser?.property_id ?? '', date: this.selectedDate, status: this.recordStatus, notes: this.recordNotes }).subscribe({
+    this.api.post('/attendance/record', { employee_id: this.clockEmpId, property_id: this.activeProperty.propertyId(), date: this.selectedDate, status: this.recordStatus, notes: this.recordNotes }).subscribe({
       next: () => { this.showRecord = false; this.clockEmpId = ''; this.load(); },
     });
   }

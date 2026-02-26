@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-gym-checkin',
@@ -82,6 +82,7 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
 export class GymCheckinPage {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   mode: 'qr' | 'search' = 'qr';
   qrCode = '';
   search = '';
@@ -125,7 +126,7 @@ export class GymCheckinPage {
 
   searchMembers() {
     if (this.search.length < 2) { this.searchResults.set([]); return; }
-    this.api.get(`/gym/members?property_id=${this.auth.currentUser?.property_id || ''}&search=${this.search}`).subscribe({
+    this.api.get(`/gym/members?property_id=${this.activeProperty.propertyId()}&search=${this.search}`).subscribe({
       next: (r: any) => this.searchResults.set(r.data || []),
     });
   }
@@ -135,7 +136,7 @@ export class GymCheckinPage {
   }
 
   loadVisits() {
-    this.api.get(`/gym/visits/today?property_id=${this.auth.currentUser?.property_id || ''}`).subscribe({
+    this.api.get(`/gym/visits/today?property_id=${this.activeProperty.propertyId()}`).subscribe({
       next: (r: any) => this.visits.set(r.data || []),
     });
   }

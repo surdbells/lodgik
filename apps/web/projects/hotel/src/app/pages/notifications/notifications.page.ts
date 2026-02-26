@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-notifications',
@@ -60,6 +60,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
 export class NotificationsPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   loading = signal(true);
   notifications = signal<any[]>([]);
   unreadCount = signal(0);
@@ -74,7 +75,7 @@ export class NotificationsPage implements OnInit {
   ngOnInit(): void { this.load(); }
 
   load(): void {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.api.get('/notifications', { property_id: pid }).subscribe({
       next: (r: any) => {
         const raw = r?.data || [];

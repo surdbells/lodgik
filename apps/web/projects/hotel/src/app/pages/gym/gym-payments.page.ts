@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 import { LineChartComponent, ChartDataPoint, ChartSeries } from '@lodgik/charts';
 
 @Component({
@@ -67,6 +67,7 @@ import { LineChartComponent, ChartDataPoint, ChartSeries } from '@lodgik/charts'
 export class GymPaymentsPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   loading = signal(true);
   payments = signal<any[]>([]);
   revenueData = signal<ChartDataPoint[]>([]);
@@ -80,7 +81,7 @@ export class GymPaymentsPage implements OnInit {
   ngOnInit() { this.load(); this.loadRevenue(); }
 
   load() {
-    let url = `/gym/payments?property_id=${this.auth.currentUser?.property_id || ''}&limit=100`;
+    let url = `/gym/payments?property_id=${this.activeProperty.propertyId()}&limit=100`;
     if (this.memberFilter) url += `&member_id=${this.memberFilter}`;
     this.api.get(url).subscribe({
       next: (r: any) => { this.payments.set(r.data || []); this.loading.set(false); },
@@ -88,7 +89,7 @@ export class GymPaymentsPage implements OnInit {
   }
 
   loadRevenue() {
-    this.api.get(`/gym/payments/monthly-revenue?property_id=${this.auth.currentUser?.property_id || ''}&months=12`).subscribe({
+    this.api.get(`/gym/payments/monthly-revenue?property_id=${this.activeProperty.propertyId()}&months=12`).subscribe({
       next: (r: any) => {
         this.revenueData.set((r.data || []).map((d: any) => ({ label: d.month || '', value: +(d.total || 0) / 100 })));
       },

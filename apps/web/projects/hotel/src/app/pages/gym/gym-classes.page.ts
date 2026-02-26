@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-gym-classes',
@@ -113,6 +113,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
 export class GymClassesPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   loading = signal(true);
   classes = signal<any[]>([]);
   selectedClass = signal<any>(null);
@@ -145,7 +146,7 @@ export class GymClassesPage implements OnInit {
   nextWeek() { this.weekOffset++; this.buildWeek(); this.load(); }
 
   load() {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.api.get(`/gym/classes?property_id=${pid}&from=${this.weekDays[0].date}&to=${this.weekDays[6].date}T23:59:59`).subscribe({
       next: (r: any) => { this.classes.set(r.data || []); this.loading.set(false); },
     });
@@ -161,7 +162,7 @@ export class GymClassesPage implements OnInit {
 
   searchForBooking() {
     if (this.bookMemberSearch.length < 2) { this.bookSearchResults.set([]); return; }
-    this.api.get(`/gym/members?property_id=${this.auth.currentUser?.property_id || ''}&search=${this.bookMemberSearch}`).subscribe({
+    this.api.get(`/gym/members?property_id=${this.activeProperty.propertyId()}&search=${this.bookMemberSearch}`).subscribe({
       next: (r: any) => this.bookSearchResults.set(r.data || []),
     });
   }
@@ -177,7 +178,7 @@ export class GymClassesPage implements OnInit {
   resetForm() { this.form = { name: '', scheduled_at: '', duration_minutes: 60, max_capacity: 20, instructor_name: '', category: 'other', location: '' }; }
 
   saveClass() {
-    this.api.post('/gym/classes', { ...this.form, property_id: this.auth.currentUser?.property_id || '' }).subscribe({
+    this.api.post('/gym/classes', { ...this.form, property_id: this.activeProperty.propertyId() }).subscribe({
       next: () => { this.showForm = false; this.load(); },
     });
   }

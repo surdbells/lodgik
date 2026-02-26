@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SlicePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -98,6 +98,7 @@ import { AuthService } from '@lodgik/shared';
 export class LeavePage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
   pending = signal<any[]>([]);
@@ -111,7 +112,7 @@ export class LeavePage implements OnInit {
 
   ngOnInit() {
     this.api.get('/leave-types').subscribe({ next: (r: any) => this.leaveTypes.set(r.data || []) });
-    this.api.get('/employees/directory', { property_id: this.auth.currentUser?.property_id ?? '' }).subscribe({ next: (r: any) => this.employees.set(r.data || []) });
+    this.api.get('/employees/directory', { property_id: this.activeProperty.propertyId() }).subscribe({ next: (r: any) => this.employees.set(r.data || []) });
     this.load();
   }
 

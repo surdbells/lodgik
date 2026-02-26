@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-pos',
@@ -113,6 +113,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
 export class PosPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   loading = signal(true);
   tables = signal<any[]>([]);
   orders = signal<any[]>([]);
@@ -125,7 +126,7 @@ export class PosPage implements OnInit {
   ngOnInit() { this.load(); }
 
   load() {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.api.get(`/pos/tables?property_id=${pid}`).subscribe({ next: (r: any) => this.tables.set(r.data || []) });
     this.api.get(`/pos/orders?property_id=${pid}&limit=20`).subscribe({ next: (r: any) => this.orders.set((r.data || []).filter((o: any) => o.status !== 'paid' && o.status !== 'cancelled')) });
     this.api.get(`/pos/kitchen/queue?property_id=${pid}`).subscribe({
@@ -135,14 +136,14 @@ export class PosPage implements OnInit {
   }
 
   createTable(): void {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.api.post('/pos/tables', { ...this.tableForm, property_id: pid }).subscribe((r: any) => {
       if (r.success) { this.showTableForm = false; this.tableForm = { number: '', seats: 4, section: '' }; this.load(); }
     });
   }
 
   createOrder(): void {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.api.post('/pos/orders', { ...this.orderForm, property_id: pid }).subscribe((r: any) => {
       if (r.success) { this.showOrderForm = false; this.orderForm = { table_id: '', order_type: 'dine_in', guest_name: '' }; this.load(); }
     });

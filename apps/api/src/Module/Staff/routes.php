@@ -19,6 +19,9 @@ return function (App $app): void {
         $group->delete('/{id}', [StaffController::class, 'delete']);
         $group->post('/{id}/resend-invite', [StaffController::class, 'resendInvite']);
         $group->post('/{id}/avatar', [StaffController::class, 'uploadAvatar']);
+        $group->get('/{id}/property-access', [StaffController::class, 'getPropertyAccess']);
+        $group->post('/{id}/property-access', [StaffController::class, 'grantPropertyAccess']);
+        $group->delete('/{id}/property-access/{propertyId}', [StaffController::class, 'revokePropertyAccess']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager']))
         ->add(TenantMiddleware::class)

@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -214,6 +214,7 @@ export class FolioDetailPage implements OnInit {
   private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
   folio = signal<any>(null);
@@ -251,7 +252,7 @@ export class FolioDetailPage implements OnInit {
   }
 
   loadBankAccount(): void {
-    const propId = this.auth.currentUser?.property_id;
+    const propId = this.activeProperty.propertyId();
     if (propId) {
       this.api.get(`/properties/${propId}/bank-accounts`).subscribe(r => {
         if (r.success) {

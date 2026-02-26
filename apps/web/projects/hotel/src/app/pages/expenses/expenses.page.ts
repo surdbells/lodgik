@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, AuthService, StatsCardComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, AuthService, StatsCardComponent, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-expenses',
@@ -139,6 +139,7 @@ export default class ExpensesPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true); expenses = signal<any[]>([]); categories = signal<any[]>([]); vendors = signal<string[]>([]);
   totalAmt = signal(0); monthAmt = signal(0); pendingCt = signal(0); approvedCt = signal(0);
@@ -146,7 +147,7 @@ export default class ExpensesPage implements OnInit {
   newCatName = ''; newVendor = '';
   form: any = { category_id: '', category_name: '', amount: '', expense_date: new Date().toISOString().split('T')[0], vendor: '', vendorOther: '', description: '', payment_method: 'cash', reference: '' };
   statusFilters = [{ label: 'All', value: '' }, { label: 'Pending', value: 'pending' }, { label: 'Approved', value: 'approved' }, { label: 'Paid', value: 'paid' }];
-  get pid(): string { return this.auth.currentUser?.property_id || ''; }
+  get pid(): string { return this.activeProperty.propertyId(); }
 
   ngOnInit(): void { this.loadCategories(); this.loadVendors(); this.loadExpenses(); }
 

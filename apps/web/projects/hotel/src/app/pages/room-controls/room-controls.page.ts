@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-room-controls', standalone: true, imports: [PageHeaderComponent, FormsModule],
@@ -40,6 +40,7 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
 })
 export class RoomControlsPage implements OnInit {
   private api = inject(ApiService); private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   requests = signal<any[]>([]);
   activeTab = 'maintenance';
   tabs = [{ key: 'maintenance', label: '🔧 Maintenance' }, { key: 'dnd', label: '🔕 DND' }, { key: 'make_up_room', label: '🧹 Make Up' }];
@@ -47,7 +48,7 @@ export class RoomControlsPage implements OnInit {
   ngOnInit() { this.load(); }
 
   load() {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.api.get(`/room-controls/requests?property_id=${pid}&type=${this.activeTab}`).subscribe({ next: (r: any) => this.requests.set(r.data || []) });
   }
 

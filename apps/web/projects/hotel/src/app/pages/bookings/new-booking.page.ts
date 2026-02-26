@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ActivePropertyService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -206,6 +206,7 @@ export class NewBookingPage implements OnInit {
   private auth = inject(AuthService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private activeProperty = inject(ActivePropertyService);
 
   step = signal(1);
   submitting = signal(false);

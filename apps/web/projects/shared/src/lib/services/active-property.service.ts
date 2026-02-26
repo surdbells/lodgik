@@ -99,6 +99,9 @@ export class ActivePropertyService {
 
           // Notify all listening components to reload their data
           this.propertySwitched$.next(propertyId);
+
+          // Reload page to ensure all components fetch fresh data for new property
+          setTimeout(() => window.location.href = '/dashboard', 300);
         }
       },
       error: () => {

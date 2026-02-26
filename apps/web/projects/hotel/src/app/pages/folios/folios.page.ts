@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -40,6 +40,7 @@ export class FoliosPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
   folios = signal<any[]>([]);
@@ -65,7 +66,7 @@ export class FoliosPage implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.propertyId = this.auth.currentUser?.property_id ?? '';
+    this.propertyId = this.activeProperty.propertyId();
     this.loadFolios();
   }
 

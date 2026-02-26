@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService, ToastService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService, ToastService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-night-audit',
@@ -54,8 +54,9 @@ export default class NightAuditPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
+  private activeProperty = inject(ActivePropertyService);
   loading = signal(true); running = signal(false); audits = signal<any[]>([]); lastAudit = signal<any>(null);
-  get pid(): string { return this.auth.currentUser?.property_id || ''; }
+  get pid(): string { return this.activeProperty.propertyId(); }
   ngOnInit() { this.load(); }
   load() { this.api.get('/night-audit', { property_id: this.pid }).subscribe((r: any) => { const d = r?.data || []; this.audits.set(d); if (d.length) this.lastAudit.set(d[0]); this.loading.set(false); }); }
   runAudit() {

@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService, StatsCardComponent, BadgeComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService, StatsCardComponent, BadgeComponent, ActivePropertyService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 interface RoomFilters {
@@ -204,6 +204,7 @@ export class RoomsPage implements OnInit {
   private toast = inject(ToastService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
   rooms = signal<any[]>([]);

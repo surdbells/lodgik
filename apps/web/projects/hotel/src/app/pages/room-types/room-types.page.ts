@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -47,6 +47,7 @@ export class RoomTypesPage implements OnInit {
   private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
   items = signal<any[]>([]);

@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, TokenService, LODGIK_ICONS } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, TokenService, LODGIK_ICONS, ActivePropertyService} from '@lodgik/shared';
 import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
 import { LineChartComponent, BarChartComponent, DonutChartComponent, GaugeChartComponent, SparklineChartComponent, ChartDataPoint, ChartSeries } from '@lodgik/charts';
 import { AuthService } from '@lodgik/shared';
@@ -189,6 +189,7 @@ import { AuthService } from '@lodgik/shared';
 export class DashboardPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   protected user = inject(TokenService).user;
   protected String = String;
 

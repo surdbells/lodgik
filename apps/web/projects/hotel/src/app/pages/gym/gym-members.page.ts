@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-gym-members',
@@ -154,6 +154,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
 export class GymMembersPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   loading = signal(true);
   members = signal<any[]>([]);
   search = '';
@@ -167,7 +168,7 @@ export class GymMembersPage implements OnInit {
   ngOnInit() { this.load(); }
 
   load() {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     let url = `/gym/members?property_id=${pid}`;
     if (this.search) url += `&search=${this.search}`;
     this.api.get(url).subscribe({
@@ -200,7 +201,7 @@ export class GymMembersPage implements OnInit {
   viewProfile(m: any) { this.selectedMember = m; }
 
   saveMember() {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.saving = true;
     if (this.editMember) {
       this.api.put(`/gym/members/${this.editMember.id}`, this.form).subscribe({

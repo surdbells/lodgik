@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-housekeeping',
@@ -126,6 +126,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
 export class HousekeepingPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   loading = signal(true);
   tasks = signal<any[]>([]);
   stats = signal<any>({});
@@ -140,14 +141,14 @@ export class HousekeepingPage implements OnInit {
   ngOnInit() { this.load(); this.loadStats(); this.loadLostItems(); }
 
   load() {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     let url = `/housekeeping/tasks?property_id=${pid}`;
     if (this.filterStatus) url += `&status=${this.filterStatus}`;
     this.api.get(url).subscribe({ next: (r: any) => { this.tasks.set(r.data || []); this.loading.set(false); } });
   }
 
   createTask(): void {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     const body = { ...this.taskForm, property_id: pid };
     this.api.post('/housekeeping/tasks', body).subscribe((r: any) => {
       if (r.success) { this.showCreateTask = false; this.taskForm = { room_number: '', room_id: '', task_type: 'checkout_clean', priority: 3 }; this.load(); this.loadStats(); }
@@ -155,20 +156,20 @@ export class HousekeepingPage implements OnInit {
   }
 
   reportLostItem(): void {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.api.post('/housekeeping/lost-and-found', { ...this.lostForm, property_id: pid }).subscribe((r: any) => {
       if (r.success) { this.showLostForm = false; this.lostForm = { description: '', found_location: '', found_by: '' }; this.loadLostItems(); }
     });
   }
 
   loadStats() {
-    this.api.get(`/housekeeping/stats/today?property_id=${this.auth.currentUser?.property_id || ''}`).subscribe({
+    this.api.get(`/housekeeping/stats/today?property_id=${this.activeProperty.propertyId()}`).subscribe({
       next: (r: any) => this.stats.set(r.data || {}),
     });
   }
 
   loadLostItems() {
-    this.api.get(`/housekeeping/lost-and-found?property_id=${this.auth.currentUser?.property_id || ''}`).subscribe({
+    this.api.get(`/housekeeping/lost-and-found?property_id=${this.activeProperty.propertyId()}`).subscribe({
       next: (r: any) => this.lostItems.set(r.data || []),
     });
   }

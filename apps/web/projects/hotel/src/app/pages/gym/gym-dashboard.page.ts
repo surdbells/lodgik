@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 import { BarChartComponent, GaugeChartComponent, LineChartComponent, ChartDataPoint } from '@lodgik/charts';
 
 @Component({
@@ -77,6 +77,7 @@ import { BarChartComponent, GaugeChartComponent, LineChartComponent, ChartDataPo
 export class GymDashboardPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   loading = signal(true);
   dashboard = signal<any>({});
   visitsData = signal<ChartDataPoint[]>([]);
@@ -93,7 +94,7 @@ export class GymDashboardPage implements OnInit {
   });
 
   ngOnInit() {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.api.get(`/gym/dashboard?property_id=${pid}`).subscribe({
       next: (r: any) => { this.dashboard.set(r.data || {}); },
     });

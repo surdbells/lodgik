@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-guest-services', standalone: true, imports: [PageHeaderComponent],
@@ -74,6 +74,7 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
 })
 export class GuestServicesPage implements OnInit {
   private api = inject(ApiService); private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   waitlist = signal<any[]>([]); transfers = signal<any[]>([]); vouchers = signal<any[]>([]);
   activeTab = 'waitlist';
   tabs = [{ key: 'waitlist', label: '📋 Waitlist' }, { key: 'transfers', label: '💸 Transfers' }, { key: 'vouchers', label: '🎟️ Vouchers' }];
@@ -81,7 +82,7 @@ export class GuestServicesPage implements OnInit {
   ngOnInit() { this.load(); }
 
   load() {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     if (this.activeTab === 'waitlist') this.api.get(`/guest-services/waitlist?property_id=${pid}`).subscribe({ next: (r: any) => this.waitlist.set(r.data || []) });
     if (this.activeTab === 'transfers') this.api.get(`/guest-services/transfers?property_id=${pid}`).subscribe({ next: (r: any) => this.transfers.set(r.data || []) });
     if (this.activeTab === 'vouchers') this.api.get(`/guest-services/vouchers?property_id=${pid}`).subscribe({ next: (r: any) => this.vouchers.set(r.data || []) });

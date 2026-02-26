@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -70,6 +70,7 @@ export class EmployeesPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
   employees = signal<any[]>([]);
@@ -90,7 +91,7 @@ export class EmployeesPage implements OnInit {
   ];
   actions: TableAction[] = [{ label: 'View', handler: (r: any) => this.router.navigate(['/employees', r.id]) }];
 
-  get propertyId() { return this.auth.currentUser?.property_id ?? ''; }
+  get propertyId() { return this.activeProperty.propertyId(); }
 
   ngOnInit() { this.loadDepartments(); this.load(); }
 

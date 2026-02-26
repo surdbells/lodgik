@@ -99,6 +99,52 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
         </div>
       </div>
     }
+
+    <!-- Property Access Modal -->
+    @if (showAccess && accessStaff) {
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showAccess = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5" (click)="$event.stopPropagation()">
+          <h3 class="text-lg font-semibold mb-1">Property Access</h3>
+          <p class="text-sm text-gray-500 mb-4">{{ accessStaff.first_name }} {{ accessStaff.last_name }}</p>
+
+          <!-- Current access -->
+          <div class="space-y-2 mb-4">
+            @for (a of accessList(); track a.property_id) {
+              <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                <div>
+                  <span class="text-sm font-medium">{{ a.property_name }}</span>
+                  @if (a.is_default) { <span class="text-[10px] bg-sage-100 text-sage-700 px-1.5 py-0.5 rounded-full ml-1">Primary</span> }
+                  @if (a.city) { <span class="text-xs text-gray-400 ml-1">{{ a.city }}</span> }
+                </div>
+                @if (!a.is_default) {
+                  <button (click)="revokeAccess(a.property_id)" class="text-xs text-red-500 hover:underline">Revoke</button>
+                }
+              </div>
+            } @empty {
+              <p class="text-sm text-gray-400 text-center py-3">No property access records</p>
+            }
+          </div>
+
+          <!-- Grant new access -->
+          @if (availableProperties().length) {
+            <div class="border-t pt-3">
+              <label class="text-xs text-gray-500 mb-1 block">Grant access to another property</label>
+              <div class="flex gap-2">
+                <select [(ngModel)]="grantPropertyId" class="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+                  <option value="">Select property...</option>
+                  @for (p of availableProperties(); track p.id) {
+                    <option [value]="p.id">{{ p.name }}</option>
+                  }
+                </select>
+                <button (click)="grantAccess()" [disabled]="!grantPropertyId" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 disabled:opacity-50">Grant</button>
+              </div>
+            </div>
+          }
+
+          <button (click)="showAccess = false" class="mt-4 w-full px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-xl">Close</button>
+        </div>
+      </div>
+    }
   `,
 })
 export class StaffListPage implements OnInit {
@@ -124,6 +170,7 @@ export class StaffListPage implements OnInit {
   ];
   actions: TableAction[] = [
     { label: 'Edit', handler: (r) => this.openEdit(r) },
+    { label: 'Properties', handler: (r) => this.openPropertyAccess(r) },
     { label: 'Reset Password', handler: (r) => this.resetPassword(r) },
     { label: 'Deactivate', color: 'danger', handler: (r) => this.deactivate(r), hidden: (r) => !r.is_active },
     { label: 'Reactivate', handler: (r) => this.reactivate(r), hidden: (r) => r.is_active },
@@ -131,6 +178,11 @@ export class StaffListPage implements OnInit {
 
   showEdit = false;
   editForm: any = null;
+  showAccess = false;
+  accessStaff: any = null;
+  accessList = signal<any[]>([]);
+  allProperties = signal<any[]>([]);
+  grantPropertyId = '';
 
   ngOnInit(): void { this.load(); }
   load(): void {
@@ -198,5 +250,41 @@ export class StaffListPage implements OnInit {
     this.api.patch(`/staff/${row.id}`, { is_active: true }).subscribe(r => {
       if (r.success) { this.toast.success('Reactivated'); this.load(); }
     });
+  }
+
+  // Multi-property access management
+  openPropertyAccess(row: any): void {
+    this.accessStaff = row;
+    this.showAccess = true;
+    this.grantPropertyId = '';
+    this.api.get(`/staff/${row.id}/property-access`).subscribe((r: any) => {
+      if (r?.success) this.accessList.set(r.data || []);
+    });
+    if (!this.allProperties().length) {
+      this.api.get('/properties').subscribe((r: any) => {
+        if (r?.success) this.allProperties.set(r.data || []);
+      });
+    }
+  }
+  grantAccess(): void {
+    if (!this.grantPropertyId || !this.accessStaff) return;
+    this.api.post(`/staff/${this.accessStaff.id}/property-access`, { property_id: this.grantPropertyId }).subscribe((r: any) => {
+      if (r?.success) { this.toast.success('Access granted'); this.openPropertyAccess(this.accessStaff); }
+      else this.toast.error(r?.message || 'Failed');
+    });
+  }
+  revokeAccess(propertyId: string): void {
+    if (!this.accessStaff) return;
+    this.api.delete(`/staff/${this.accessStaff.id}/property-access/${propertyId}`).subscribe({
+      next: (r: any) => {
+        if (r?.success) { this.toast.success('Access revoked'); this.openPropertyAccess(this.accessStaff); }
+        else this.toast.error(r?.message || 'Failed');
+      },
+      error: (err: any) => this.toast.error(err?.error?.message || 'Cannot revoke primary property'),
+    });
+  }
+  availableProperties(): any[] {
+    const granted = new Set(this.accessList().map((a: any) => a.property_id));
+    return this.allProperties().filter((p: any) => !granted.has(p.id));
   }
 }

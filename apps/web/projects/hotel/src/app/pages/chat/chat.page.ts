@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-chat',
@@ -93,6 +93,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
 export class ChatPage implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
 
   chats = signal<any[]>([]);
   messages = signal<any[]>([]);
@@ -127,7 +128,7 @@ export class ChatPage implements OnInit, OnDestroy {
   }
 
   loadChats() {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.api.get(`/chat/active?property_id=${pid}`).subscribe({
       next: (r: any) => this.chats.set(r.data || []),
     });

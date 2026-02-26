@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -186,6 +186,7 @@ import { AuthService } from '@lodgik/shared';
 export class PayrollPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
   periods = signal<any[]>([]);
@@ -201,7 +202,7 @@ export class PayrollPage implements OnInit {
 
   load() {
     this.loading.set(true);
-    this.api.get('/payroll', { property_id: this.auth.currentUser?.property_id ?? '' }).subscribe({
+    this.api.get('/payroll', { property_id: this.activeProperty.propertyId() }).subscribe({
       next: (r: any) => { this.periods.set(r.data || []); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
@@ -214,7 +215,7 @@ export class PayrollPage implements OnInit {
   }
 
   createPeriod() {
-    this.api.post('/payroll', { property_id: this.auth.currentUser?.property_id ?? '', year: this.createYear, month: this.createMonth }).subscribe({
+    this.api.post('/payroll', { property_id: this.activeProperty.propertyId(), year: this.createYear, month: this.createMonth }).subscribe({
       next: (r: any) => {
         this.showCreate = false;
         // Auto-calculate after create

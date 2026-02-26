@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
-import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-security', standalone: true, imports: [PageHeaderComponent],
@@ -59,6 +59,7 @@ import { ApiService, PageHeaderComponent, AuthService } from '@lodgik/shared';
 })
 export class SecurityPage implements OnInit, OnDestroy {
   private api = inject(ApiService); private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   passes = signal<any[]>([]); movements = signal<any[]>([]); onPremise = signal<any[]>([]);
   stats = signal({ onPremise: 0, pendingPasses: 0, todayVisitors: 0 });
   activeTab = 'passes';
@@ -69,7 +70,7 @@ export class SecurityPage implements OnInit, OnDestroy {
   ngOnDestroy() { clearInterval(this.timer); }
 
   load() {
-    const pid = this.auth.currentUser?.property_id || '';
+    const pid = this.activeProperty.propertyId();
     this.api.get(`/security/gate-passes?property_id=${pid}`).subscribe({ next: (r: any) => { const d = r.data || []; this.passes.set(d); this.stats.update(s => ({ ...s, pendingPasses: d.filter((p: any) => p.status === 'pending').length, todayVisitors: d.filter((p: any) => p.status === 'checked_in' || p.status === 'checked_out').length })); } });
     this.api.get(`/security/movements?property_id=${pid}`).subscribe({ next: (r: any) => this.movements.set(r.data || []) });
     this.api.get(`/security/on-premise?property_id=${pid}`).subscribe({ next: (r: any) => { const d = r.data || []; this.onPremise.set(d); this.stats.update(s => ({ ...s, onPremise: d.length })); } });

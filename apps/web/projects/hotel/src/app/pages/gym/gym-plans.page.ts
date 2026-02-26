@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-gym-plans',
@@ -66,6 +66,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService }
 export class GymPlansPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private activeProperty = inject(ActivePropertyService);
   loading = signal(true);
   plans = signal<any[]>([]);
   showForm = false;
@@ -76,7 +77,7 @@ export class GymPlansPage implements OnInit {
   ngOnInit() { this.load(); }
 
   load() {
-    this.api.get(`/gym/plans?property_id=${this.auth.currentUser?.property_id || ''}&active=0`).subscribe({
+    this.api.get(`/gym/plans?property_id=${this.activeProperty.propertyId()}&active=0`).subscribe({
       next: (r: any) => { this.plans.set(r.data || []); this.loading.set(false); },
     });
   }
@@ -91,7 +92,7 @@ export class GymPlansPage implements OnInit {
 
   save() {
     this.saving = true;
-    const payload = { ...this.form, price: String(Math.round(this.form.price_display * 100)), property_id: this.auth.currentUser?.property_id || '' };
+    const payload = { ...this.form, price: String(Math.round(this.form.price_display * 100)), property_id: this.activeProperty.propertyId() };
     delete payload.price_display;
     const req$ = this.editPlan ? this.api.put(`/gym/plans/${this.editPlan.id}`, payload) : this.api.post('/gym/plans', payload);
     req$.subscribe({ next: () => { this.saving = false; this.showForm = false; this.load(); }, error: () => this.saving = false });

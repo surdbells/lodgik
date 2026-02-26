@@ -142,6 +142,14 @@ final class StaffService
         $this->em->persist($user);
         $this->em->flush();
 
+        // Grant property access record for multi-property support
+        try {
+            $this->em->getConnection()->executeStatement(
+                'INSERT INTO user_property_access (user_id, property_id, tenant_id, is_default) VALUES (?, ?, ?, true) ON CONFLICT (user_id, property_id) DO NOTHING',
+                [$user->getId(), $dto->propertyId, $tenantId]
+            );
+        } catch (\Throwable) {}
+
         // Audit
         $this->audit->logDeferred(
             action: 'invite_staff',
@@ -347,6 +355,14 @@ final class StaffService
         $this->em->persist($user);
         $this->em->flush();
 
+        // Grant property access record for multi-property support
+        try {
+            $this->em->getConnection()->executeStatement(
+                'INSERT INTO user_property_access (user_id, property_id, tenant_id, is_default) VALUES (?, ?, ?, true) ON CONFLICT (user_id, property_id) DO NOTHING',
+                [$user->getId(), $propertyId, $tenantId]
+            );
+        } catch (\Throwable) {} // table may not exist yet
+
         $this->audit->logDeferred(
             action: 'create_staff',
             entityType: 'User',
@@ -358,5 +374,52 @@ final class StaffService
         $this->em->flush();
 
         return $user;
+    }
+
+    // ═══ Multi-Property Access ════════════════════════════════
+
+    public function getPropertyAccess(string $userId, string $tenantId): array
+    {
+        $conn = $this->em->getConnection();
+        $rows = $conn->fetchAllAssociative(
+            'SELECT upa.property_id, upa.role, upa.is_default, upa.created_at, p.name as property_name, p.city, p.is_active
+             FROM user_property_access upa
+             JOIN properties p ON p.id = upa.property_id
+             WHERE upa.user_id = ? AND upa.tenant_id = ?
+             ORDER BY upa.is_default DESC, p.name ASC',
+            [$userId, $tenantId]
+        );
+        return $rows;
+    }
+
+    public function grantPropertyAccess(string $userId, string $propertyId, string $tenantId, ?string $role = null, ?string $grantedBy = null): void
+    {
+        $user = $this->userRepo->find($userId);
+        if ($user === null) throw new \RuntimeException('Staff not found');
+
+        $conn = $this->em->getConnection();
+        $conn->executeStatement(
+            'INSERT INTO user_property_access (user_id, property_id, tenant_id, role, granted_by, is_default)
+             VALUES (?, ?, ?, ?, ?, false)
+             ON CONFLICT (user_id, property_id) DO UPDATE SET role = EXCLUDED.role',
+            [$userId, $propertyId, $tenantId, $role, $grantedBy]
+        );
+    }
+
+    public function revokePropertyAccess(string $userId, string $propertyId, string $tenantId): void
+    {
+        $user = $this->userRepo->find($userId);
+        if ($user === null) throw new \RuntimeException('Staff not found');
+
+        // Cannot revoke access to user's current/default property
+        if ($user->getPropertyId() === $propertyId) {
+            throw new \RuntimeException('Cannot revoke access to staff member\'s primary property');
+        }
+
+        $conn = $this->em->getConnection();
+        $conn->executeStatement(
+            'DELETE FROM user_property_access WHERE user_id = ? AND property_id = ? AND tenant_id = ?',
+            [$userId, $propertyId, $tenantId]
+        );
     }
 }
