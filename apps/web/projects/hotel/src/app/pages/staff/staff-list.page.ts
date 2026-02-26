@@ -44,6 +44,26 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold mb-4">Edit {{ editForm.first_name }} {{ editForm.last_name }}</h3>
           <div class="space-y-3">
+            <!-- Avatar Upload -->
+            <div class="flex items-center gap-4 pb-3 border-b">
+              <div class="w-16 h-16 rounded-full bg-sage-100 flex items-center justify-center text-sage-700 text-xl font-bold overflow-hidden shrink-0">
+                @if (editForm.avatar_url) {
+                  <img [src]="editForm.avatar_url" class="w-full h-full object-cover" alt="Avatar">
+                } @else {
+                  {{ editForm.first_name?.charAt(0) }}{{ editForm.last_name?.charAt(0) }}
+                }
+              </div>
+              <div>
+                <label class="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-lg cursor-pointer hover:bg-gray-200 inline-block">
+                  Upload Photo
+                  <input type="file" accept="image/*" (change)="onAvatarSelect($event)" class="hidden">
+                </label>
+                @if (editForm.avatar_url) {
+                  <button (click)="editForm.avatar_url = ''" class="ml-2 text-xs text-red-500 hover:underline">Remove</button>
+                }
+                <p class="text-[11px] text-gray-400 mt-1">JPG, PNG up to 2MB</p>
+              </div>
+            </div>
             <div class="grid grid-cols-2 gap-3">
               <div><label class="text-xs text-gray-500">First Name</label>
                 <input [(ngModel)]="editForm.first_name" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></div>
@@ -90,6 +110,12 @@ export class StaffListPage implements OnInit {
   form: any = { first_name: '', last_name: '', email: '', password: '', role: 'front_desk' };
 
   columns: TableColumn[] = [
+    { key: 'avatar_url', label: '', render: (_v: string, row: any) => {
+      const initials = (row.first_name?.charAt(0) || '') + (row.last_name?.charAt(0) || '');
+      return row.avatar_url
+        ? `<img src="${row.avatar_url}" class="w-8 h-8 rounded-full object-cover">`
+        : `<div class="w-8 h-8 rounded-full bg-sage-100 flex items-center justify-center text-sage-700 text-xs font-bold">${initials}</div>`;
+    }},
     { key: 'first_name', label: 'First Name', sortable: true },
     { key: 'last_name', label: 'Last Name', sortable: true },
     { key: 'email', label: 'Email' },
@@ -118,15 +144,40 @@ export class StaffListPage implements OnInit {
     });
   }
   openEdit(row: any): void {
-    this.editForm = { id: row.id, first_name: row.first_name, last_name: row.last_name, email: row.email, phone: row.phone || '', role: row.role, is_active: row.is_active, new_password: '' };
+    this.editForm = { id: row.id, first_name: row.first_name, last_name: row.last_name, email: row.email, phone: row.phone || '', role: row.role, is_active: row.is_active, new_password: '', avatar_url: row.avatar_url || '' };
     this.showEdit = true;
+  }
+  onAvatarSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { this.toast.error('Image must be under 2MB'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      this.editForm.avatar_url = base64; // preview
+      this.editForm._avatarBase64 = base64; // store for upload
+    };
+    reader.readAsDataURL(file);
   }
   saveEdit(): void {
     if (!this.editForm) return;
-    const { id, new_password, ...body } = this.editForm;
+    const { id, new_password, _avatarBase64, avatar_url, ...body } = this.editForm;
     if (new_password) body.password = new_password;
+    
+    const afterSave = () => {
+      // Upload avatar if a new one was selected
+      if (_avatarBase64) {
+        this.api.post(`/staff/${id}/avatar`, { image: _avatarBase64 }).subscribe({
+          next: (r: any) => { if (r.success) this.toast.success('Avatar updated'); },
+          error: () => this.toast.error('Avatar upload failed'),
+        });
+      }
+      this.toast.success('Staff updated'); this.showEdit = false; this.load();
+    };
+
     this.api.patch(`/staff/${id}`, body).subscribe(r => {
-      if (r.success) { this.toast.success('Staff updated'); this.showEdit = false; this.load(); }
+      if (r.success) afterSave();
       else this.toast.error(r.message || 'Failed');
     });
   }

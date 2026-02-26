@@ -17,6 +17,7 @@ final class UpdateStaffRequest
         public readonly ?bool $isActive = null,
         public readonly ?string $password = null,
         public readonly ?string $email = null,
+        public readonly ?string $avatarUrl = null,
     ) {}
 
     public function validate(): array
@@ -53,6 +54,7 @@ final class UpdateStaffRequest
             isActive: isset($data['is_active']) ? (bool) $data['is_active'] : null,
             password: $data['password'] ?? null,
             email: $data['email'] ?? null,
+            avatarUrl: $data['avatar_url'] ?? null,
         );
     }
 }

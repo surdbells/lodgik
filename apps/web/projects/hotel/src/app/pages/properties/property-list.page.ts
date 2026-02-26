@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, AuthService, ActivePropertyService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-property-list',
@@ -109,10 +109,11 @@ export class PropertyListPage implements OnInit {
   private auth = inject(AuthService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
   properties = signal<any[]>([]);
-  currentPid = signal('');
+  currentPid = this.activeProperty.propertyId;
   showAdd = false;
   showEdit = false;
   editForm: any = null;
@@ -135,7 +136,6 @@ export class PropertyListPage implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.currentPid.set(this.auth.currentUser?.property_id || '');
     this.load();
   }
 
@@ -168,17 +168,9 @@ export class PropertyListPage implements OnInit {
     });
   }
 
+
   switchProperty(row: any): void {
-    // Update property_id in localStorage user data and reload
-    const userData = localStorage.getItem('lodgik_user');
-    if (userData) {
-      const user = JSON.parse(userData);
-      user.property_id = row.id;
-      localStorage.setItem('lodgik_user', JSON.stringify(user));
-    }
-    this.currentPid.set(row.id);
-    this.toast.success(`Switched to ${row.name}`);
-    // Reload the app to refresh all data
-    window.location.href = '/dashboard';
+    this.activeProperty.switchTo(row.id);
+    this.toast.success(`Switching to ${row.name}...`);
   }
 }

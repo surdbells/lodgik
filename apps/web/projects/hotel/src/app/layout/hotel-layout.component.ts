@@ -1,6 +1,6 @@
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { AuthService, TokenService, FeatureService, BrandingService, LODGIK_ICONS, ApiService } from '@lodgik/shared';
+import { AuthService, TokenService, FeatureService, BrandingService, LODGIK_ICONS, ApiService, ActivePropertyService, ToastService } from '@lodgik/shared';
 import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
 
 interface NavItem {
@@ -183,6 +183,8 @@ interface NavGroup {
 export class HotelLayoutComponent implements OnInit {
   private auth = inject(AuthService);
   private api = inject(ApiService);
+  private activeProperty = inject(ActivePropertyService);
+  private toast = inject(ToastService);
   private router = inject(Router);
   private featureService = inject(FeatureService);
   private brandingService = inject(BrandingService);
@@ -194,36 +196,22 @@ export class HotelLayoutComponent implements OnInit {
 
   private collapsedGroups = signal<Set<number>>(new Set([2, 3, 4, 5, 6, 7]));
 
-  propertyName = computed(() => {
-    const pid = this.currentPropertyId();
-    const props = this.allProperties();
-    if (pid && props.length) {
-      const match = props.find((p: any) => p.id === pid);
-      if (match) return match.name;
-    }
-    return this.branding().appName || 'My Hotel';
-  });
+  propertyName = computed(() => this.activeProperty.propertyName());
   propertyInitial = computed(() => this.propertyName().charAt(0).toUpperCase());
   staffRole = computed(() => {
     const role = this.user()?.role;
     return role ? role.replace('_', ' ') : '';
   });
 
-  // Property switcher
+  // Property switcher (via ActivePropertyService)
   showPropertySwitcher = false;
-  allProperties = signal<any[]>([]);
-  currentPropertyId = signal('');
+  allProperties = this.activeProperty.properties;
+  currentPropertyId = this.activeProperty.propertyId;
 
   switchToProperty(property: any): void {
     this.showPropertySwitcher = false;
-    const userData = localStorage.getItem('lodgik_user');
-    if (userData) {
-      const user = JSON.parse(userData);
-      user.property_id = property.id;
-      localStorage.setItem('lodgik_user', JSON.stringify(user));
-    }
-    this.currentPropertyId.set(property.id);
-    window.location.href = '/dashboard';
+    this.activeProperty.switchTo(property.id);
+    this.toast.success('Switching to ' + property.name + '...');
   }
 
   userInitials = computed(() => {
@@ -344,11 +332,7 @@ export class HotelLayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.featureService.load();
-    this.currentPropertyId.set(this.auth.currentUser?.property_id || '');
-    // Load all properties for switcher
-    this.api.get('/properties').subscribe((r: any) => {
-      if (r?.success) this.allProperties.set(r.data || []);
-    });
+    this.activeProperty.load();
     const path = this.router.url;
     const visible = this.visibleNavGroups();
     visible.forEach((g, i) => {

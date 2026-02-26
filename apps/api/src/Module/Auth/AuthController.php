@@ -326,4 +326,48 @@ final class AuthController
             'timezone' => $tenant->getTimezone(),
         ];
     }
+
+    // ═══ Multi-Property ══════════════════════════════════════════
+
+    /** POST /api/auth/switch-property */
+    public function switchProperty(Request $request, Response $response): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $targetPropertyId = $body['property_id'] ?? null;
+
+        if (empty($targetPropertyId)) {
+            return $this->response->validationError($response, ['property_id' => 'Required']);
+        }
+
+        $userId = $request->getAttribute('auth.user_id');
+        $tenantId = $request->getAttribute('auth.tenant_id');
+        $deviceInfo = $request->getHeaderLine('User-Agent') ?: null;
+        $ip = $request->getServerParams()['REMOTE_ADDR'] ?? null;
+
+        try {
+            $result = $this->authService->switchProperty($userId, $tenantId, $targetPropertyId, $deviceInfo, $ip);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 403);
+        }
+
+        return $this->response->success($response, [
+            'user' => $this->serializeUser($result['user']),
+            'access_token' => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+            'property' => $result['property'],
+            'token_type' => 'Bearer',
+            'expires_in' => 900,
+        ], 'Property switched successfully');
+    }
+
+    /** GET /api/auth/accessible-properties */
+    public function accessibleProperties(Request $request, Response $response): Response
+    {
+        $userId = $request->getAttribute('auth.user_id');
+        $tenantId = $request->getAttribute('auth.tenant_id');
+
+        $properties = $this->authService->getAccessibleProperties($userId, $tenantId);
+
+        return $this->response->success($response, $properties);
+    }
 }

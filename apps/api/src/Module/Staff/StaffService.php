@@ -227,6 +227,9 @@ final class StaffService
             }
             $user->setEmail($dto->email);
         }
+        if ($dto->avatarUrl !== null) {
+            $user->setAvatarUrl($dto->avatarUrl);
+        }
 
         $this->em->flush();
 

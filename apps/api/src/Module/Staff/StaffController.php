@@ -16,6 +16,7 @@ final class StaffController
     public function __construct(
         private readonly StaffService $staffService,
         private readonly ResponseHelper $response,
+        private readonly ?\Lodgik\Service\FileStorageService $fileStorage = null,
     ) {}
 
     /**
@@ -176,6 +177,40 @@ final class StaffController
         }
 
         return $this->response->success($response, null, 'Invitation resent successfully');
+    }
+
+    /** POST /api/staff/{id}/avatar */
+    public function uploadAvatar(Request $request, Response $response, array $args): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $base64 = $body['image'] ?? null;
+
+        if (empty($base64)) {
+            return $this->response->validationError($response, ['image' => 'Base64 image data is required']);
+        }
+
+        if ($this->fileStorage === null) {
+            return $this->response->error($response, 'File storage not configured', 500);
+        }
+
+        try {
+            $ext = 'jpg';
+            if (str_contains($base64, 'image/png')) $ext = 'png';
+            elseif (str_contains($base64, 'image/webp')) $ext = 'webp';
+
+            $filename = $args['id'] . '_' . time() . '.' . $ext;
+            $result = $this->fileStorage->storeBase64($base64, 'avatars', $filename);
+
+            // Update user avatar_url
+            $dto = \Lodgik\Module\Staff\DTO\UpdateStaffRequest::fromArray(['avatar_url' => $result['url'] ?? '/uploads/avatars/' . $filename]);
+            $user = $this->staffService->update($args['id'], $dto, $request->getAttribute('auth.user_id'));
+
+            return $this->response->success($response, [
+                'avatar_url' => $user->getAvatarUrl(),
+            ], 'Avatar uploaded');
+        } catch (\Throwable $e) {
+            return $this->response->error($response, 'Upload failed: ' . $e->getMessage(), 500);
+        }
     }
 
     private function serializeUser(object $user): array

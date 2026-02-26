@@ -18,6 +18,7 @@ return function (App $app): void {
         $group->patch('/{id}', [StaffController::class, 'update']);
         $group->delete('/{id}', [StaffController::class, 'delete']);
         $group->post('/{id}/resend-invite', [StaffController::class, 'resendInvite']);
+        $group->post('/{id}/avatar', [StaffController::class, 'uploadAvatar']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager']))
         ->add(TenantMiddleware::class)

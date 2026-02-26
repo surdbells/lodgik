@@ -315,6 +315,7 @@ return function (ContainerBuilder $builder): void {
                 audit: $c->get(AuditService::class),
                 logger: $c->get(LoggerInterface::class),
                 appUrl: $c->get('settings')['app']['url'],
+                propertyRepo: $c->get(PropertyRepository::class),
             );
         },
 
@@ -342,6 +343,7 @@ return function (ContainerBuilder $builder): void {
             return new StaffController(
                 staffService: $c->get(StaffService::class),
                 response: $c->get(ResponseHelper::class),
+                fileStorage: $c->get(\Lodgik\Service\FileStorageService::class),
             );
         },
 

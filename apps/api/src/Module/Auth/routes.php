@@ -24,5 +24,9 @@ return function (App $app): void {
             ->add(AuthMiddleware::class);
         $group->get('/me', [AuthController::class, 'me'])
             ->add(AuthMiddleware::class);
+        $group->post('/switch-property', [AuthController::class, 'switchProperty'])
+            ->add(AuthMiddleware::class);
+        $group->get('/accessible-properties', [AuthController::class, 'accessibleProperties'])
+            ->add(AuthMiddleware::class);
     });
 };

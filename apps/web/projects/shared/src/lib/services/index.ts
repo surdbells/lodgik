@@ -4,3 +4,4 @@ export { TokenService } from './token.service';
 export { ToastService, type Toast } from './toast.service';
 export { FeatureService } from './feature.service';
 export { BrandingService, type BrandingConfig } from './branding.service';
+export { ActivePropertyService, type AccessibleProperty } from './active-property.service';

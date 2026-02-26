@@ -32,6 +32,7 @@ final class AuthService
         private readonly AuditService $audit,
         private readonly LoggerInterface $logger,
         private readonly string $appUrl,
+        private readonly ?\Lodgik\Repository\PropertyRepository $propertyRepo = null,
     ) {}
 
     /**
@@ -419,6 +420,130 @@ final class AuthService
     {
         if ($this->wasTenantFilterEnabled) {
             $this->em->getFilters()->enable('tenant');
+        }
+    }
+
+    // ═══ Multi-Property: Switch Property ══════════════════════════
+
+    /**
+     * Switch the user's active property and issue new JWT.
+     * Validates user has access to the requested property.
+     *
+     * @return array{user: User, access_token: string, refresh_token: string, property: array}
+     */
+    public function switchProperty(string $userId, string $tenantId, string $targetPropertyId, ?string $deviceInfo = null, ?string $ipAddress = null): array
+    {
+        $user = $this->userRepo->find($userId);
+        if ($user === null) {
+            throw new \RuntimeException('User not found');
+        }
+
+        // Validate property exists and belongs to the same tenant
+        $property = $this->propertyRepo?->find($targetPropertyId);
+        if ($property === null) {
+            throw new \RuntimeException('Property not found');
+        }
+
+        if ($property->getTenantId() !== $tenantId) {
+            throw new \RuntimeException('Property does not belong to your organization');
+        }
+
+        if (!$property->isActive()) {
+            throw new \RuntimeException('Property is inactive');
+        }
+
+        // Check if user has access (property_admin can access all; others need matching property_id or access record)
+        $hasAccess = $this->userHasPropertyAccess($user, $targetPropertyId, $tenantId);
+        if (!$hasAccess) {
+            throw new \RuntimeException('You do not have access to this property');
+        }
+
+        // Update user's active property
+        $user->setPropertyId($targetPropertyId);
+        $this->em->flush();
+
+        // Generate new tokens with updated property_id
+        $tokens = $this->generateTokenPair($user, $deviceInfo, $ipAddress);
+
+        return [
+            'user' => $user,
+            'access_token' => $tokens['access_token'],
+            'refresh_token' => $tokens['refresh_token'],
+            'property' => [
+                'id' => $property->getId(),
+                'name' => $property->getName(),
+            ],
+        ];
+    }
+
+    /**
+     * Get all properties the user can access within their tenant.
+     *
+     * @return array<array{id: string, name: string, is_current: bool}>
+     */
+    public function getAccessibleProperties(string $userId, string $tenantId): array
+    {
+        $user = $this->userRepo->find($userId);
+        if ($user === null) {
+            return [];
+        }
+
+        // Get all tenant properties
+        $allProperties = $this->em->getRepository(\Lodgik\Entity\Property::class)
+            ->findBy(['tenantId' => $tenantId, 'isActive' => true], ['name' => 'ASC']);
+
+        $currentPropertyId = $user->getPropertyId();
+        $role = $user->getRole();
+
+        $result = [];
+        foreach ($allProperties as $prop) {
+            $hasAccess = $this->userHasPropertyAccess($user, $prop->getId(), $tenantId);
+            if ($hasAccess) {
+                $result[] = [
+                    'id' => $prop->getId(),
+                    'name' => $prop->getName(),
+                    'city' => method_exists($prop, 'getCity') ? $prop->getCity() : null,
+                    'is_current' => $prop->getId() === $currentPropertyId,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Check if a user has access to a given property.
+     *
+     * Access rules:
+     * - property_admin: can access ALL properties in their tenant
+     * - manager: can access ALL properties in their tenant
+     * - Other roles: can only access their assigned property OR properties in user_property_access table
+     */
+    private function userHasPropertyAccess(User $user, string $propertyId, string $tenantId): bool
+    {
+        $role = $user->getRole();
+
+        // Admins and managers can access all properties
+        if (in_array($role->value, ['super_admin', 'property_admin', 'manager'], true)) {
+            return true;
+        }
+
+        // Check if it's their assigned property
+        if ($user->getPropertyId() === $propertyId) {
+            return true;
+        }
+
+        // Check user_property_access table (if it exists)
+        try {
+            $conn = $this->em->getConnection();
+            $count = (int) $conn->fetchOne(
+                'SELECT COUNT(*) FROM user_property_access WHERE user_id = ? AND property_id = ?',
+                [$user->getId(), $propertyId]
+            );
+            return $count > 0;
+        } catch (\Throwable) {
+            // Table might not exist yet — fall back to property_id check only
+            return false;
         }
     }
 }
