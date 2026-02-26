@@ -77,7 +77,15 @@ export class NotificationsPage implements OnInit {
     const pid = this.auth.currentUser?.property_id || '';
     this.api.get('/notifications', { property_id: pid }).subscribe({
       next: (r: any) => {
-        const data = r?.data || [];
+        const raw = r?.data || [];
+        // Map API fields to frontend fields
+        const data = raw.map((n: any) => ({
+          ...n,
+          type: n.type || n.channel || 'system',
+          message: n.message || n.body || '',
+          read: n.read ?? n.is_read ?? false,
+          action_url: n.action_url || n.data?.action_url || null,
+        }));
         this.notifications.set(data);
         this.unreadCount.set(data.filter((n: any) => !n.read).length);
         this.loading.set(false);

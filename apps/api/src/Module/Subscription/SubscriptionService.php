@@ -90,6 +90,7 @@ final class SubscriptionService
         string $billingCycle,
         string $email,
         ?string $callbackUrl = null,
+        ?int $amountOverride = null,
     ): array {
         $plan = $this->em->find(SubscriptionPlan::class, $planId);
         if ($plan === null) {
@@ -100,7 +101,7 @@ final class SubscriptionService
             throw new \RuntimeException('Plan is not available');
         }
 
-        $amount = $billingCycle === 'annual' ? $plan->getAnnualPrice() : $plan->getMonthlyPrice();
+        $amount = $amountOverride ?? ($billingCycle === 'annual' ? $plan->getAnnualPrice() : $plan->getMonthlyPrice());
         $paystackPlanCode = $billingCycle === 'annual'
             ? $plan->getPaystackPlanCodeAnnual()
             : $plan->getPaystackPlanCodeMonthly();
@@ -282,15 +283,35 @@ final class SubscriptionService
             throw new \RuntimeException('Plan not available');
         }
 
-        $amount = $billingCycle === 'annual' ? $newPlan->getAnnualPrice() : $newPlan->getMonthlyPrice();
+        $newAmount = $billingCycle === 'annual' ? $newPlan->getAnnualPrice() : $newPlan->getMonthlyPrice();
 
-        // If Paystack not configured, do immediate upgrade (super admin flow)
-        if (!$this->paystack->isConfigured()) {
-            return $this->activateSubscription($tenantId, $newPlanId, $billingCycle, $amount);
+        // Calculate pro-rata credit from current subscription
+        $currentSub = $this->getCurrentSubscription($tenantId);
+        $credit = 0;
+        if ($currentSub !== null && $currentSub->getStatus() === 'active') {
+            $now = new \DateTimeImmutable();
+            $periodEnd = $currentSub->getCurrentPeriodEnd();
+            $periodStart = $currentSub->getCurrentPeriodStart();
+            if ($periodEnd && $periodStart && $periodEnd > $now) {
+                $totalDays = max(1, $periodStart->diff($periodEnd)->days);
+                $remainingDays = max(0, $now->diff($periodEnd)->days);
+                $currentAmount = (int) $currentSub->getAmount();
+                $credit = (int) round($currentAmount * ($remainingDays / $totalDays));
+            }
         }
 
-        // Initialize new payment for the upgraded plan
-        return $this->initializeCheckout($tenantId, $newPlanId, $billingCycle, $email);
+        $chargeAmount = max(0, $newAmount - $credit);
+
+        // If Paystack not configured or no charge needed, do immediate upgrade
+        if (!$this->paystack->isConfigured() || $chargeAmount <= 0) {
+            $result = $this->activateSubscription($tenantId, $newPlanId, $billingCycle, (string) $newAmount);
+            $result['credit'] = $credit;
+            $result['charge_amount'] = $chargeAmount;
+            return $result;
+        }
+
+        // Initialize Paystack payment for the pro-rated amount
+        return $this->initializeCheckout($tenantId, $newPlanId, $billingCycle, $email, null, $chargeAmount);
     }
 
     // ─── Cancel ────────────────────────────────────────────────

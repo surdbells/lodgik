@@ -20,6 +20,7 @@ final class FinanceController
     public function submitExpense(Request $req, Response $res, array $args): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->submitExpense($args['id'])->toArray()]); }
     public function approveExpense(Request $req, Response $res, array $args): Response { $d = $this->body($req); return $this->json($res, ['success' => true, 'data' => $this->svc->approveExpense($args['id'], $req->getAttribute('auth.user_id'), $d['approver_name'] ?? 'Manager')->toArray()]); }
     public function rejectExpense(Request $req, Response $res, array $args): Response { $d = $this->body($req); return $this->json($res, ['success' => true, 'data' => $this->svc->rejectExpense($args['id'], $req->getAttribute('auth.user_id'), $d['approver_name'] ?? '', $d['reason'] ?? null)->toArray()]); }
+    public function markExpensePaid(Request $req, Response $res, array $args): Response { $d = $this->body($req); return $this->json($res, ['success' => true, 'data' => $this->svc->markExpensePaid($args['id'], $d['payment_method'] ?? 'cash', $d['reference'] ?? null)->toArray()]); }
 
     // Night Audit
     public function listAudits(Request $req, Response $res): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->listNightAudits($req->getQueryParams()['property_id'] ?? '')]); }

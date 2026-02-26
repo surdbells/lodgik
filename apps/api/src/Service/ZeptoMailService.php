@@ -353,4 +353,126 @@ final class ZeptoMailService
         <p>Click the link above to set your password and get started.</p>
         HTML;
     }
+
+    // ─── Production Email Templates ─────────────────────────────
+
+    public function sendBookingConfirmation(string $toEmail, string $toName, array $booking): bool
+    {
+        $html = $this->renderTemplate($this->bookingConfirmationTemplate(), [
+            'guest_name' => $toName,
+            'booking_ref' => $booking['booking_ref'] ?? '',
+            'hotel_name' => $booking['hotel_name'] ?? 'Hotel',
+            'room_type' => $booking['room_type'] ?? '',
+            'check_in' => $booking['check_in'] ?? '',
+            'check_out' => $booking['check_out'] ?? '',
+            'total' => $booking['total'] ?? '0',
+            'guests' => $booking['guests'] ?? '1',
+        ]);
+        return $this->send($toEmail, $toName, 'Booking Confirmation — ' . ($booking['booking_ref'] ?? ''), $this->wrapInLayout($html));
+    }
+
+    private function bookingConfirmationTemplate(): string
+    {
+        return <<<HTML
+        <h2>Booking Confirmed ✓</h2>
+        <p>Dear {{guest_name}},</p>
+        <p>Your reservation has been confirmed. Here are your booking details:</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Booking Ref</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600">{{booking_ref}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Hotel</td><td style="padding:8px;border-bottom:1px solid #eee">{{hotel_name}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Room Type</td><td style="padding:8px;border-bottom:1px solid #eee">{{room_type}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Check-in</td><td style="padding:8px;border-bottom:1px solid #eee">{{check_in}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Check-out</td><td style="padding:8px;border-bottom:1px solid #eee">{{check_out}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Guests</td><td style="padding:8px;border-bottom:1px solid #eee">{{guests}}</td></tr>
+            <tr><td style="padding:8px;color:#666">Total</td><td style="padding:8px;font-weight:700;font-size:18px;color:#16a34a">₦{{total}}</td></tr>
+        </table>
+        <p>We look forward to welcoming you!</p>
+        HTML;
+    }
+
+    public function sendPaymentReceipt(string $toEmail, string $toName, array $payment): bool
+    {
+        $html = $this->renderTemplate($this->paymentReceiptTemplate(), [
+            'guest_name' => $toName,
+            'amount' => $payment['amount'] ?? '0',
+            'reference' => $payment['reference'] ?? '',
+            'method' => $payment['method'] ?? 'Card',
+            'date' => $payment['date'] ?? date('Y-m-d'),
+            'hotel_name' => $payment['hotel_name'] ?? 'Hotel',
+            'invoice_number' => $payment['invoice_number'] ?? '',
+        ]);
+        return $this->send($toEmail, $toName, 'Payment Receipt — ₦' . ($payment['amount'] ?? '0'), $this->wrapInLayout($html));
+    }
+
+    private function paymentReceiptTemplate(): string
+    {
+        return <<<HTML
+        <h2>Payment Receipt</h2>
+        <p>Dear {{guest_name}},</p>
+        <p>We have received your payment. Thank you!</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Amount</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:700;color:#16a34a">₦{{amount}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Reference</td><td style="padding:8px;border-bottom:1px solid #eee">{{reference}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Method</td><td style="padding:8px;border-bottom:1px solid #eee">{{method}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Date</td><td style="padding:8px;border-bottom:1px solid #eee">{{date}}</td></tr>
+            <tr><td style="padding:8px;color:#666">Hotel</td><td style="padding:8px">{{hotel_name}}</td></tr>
+        </table>
+        HTML;
+    }
+
+    public function sendSubscriptionConfirmation(string $toEmail, string $toName, array $sub): bool
+    {
+        $html = $this->renderTemplate($this->subscriptionConfirmationTemplate(), [
+            'name' => $toName,
+            'plan_name' => $sub['plan_name'] ?? '',
+            'billing_cycle' => $sub['billing_cycle'] ?? 'monthly',
+            'amount' => $sub['amount'] ?? '0',
+            'next_billing' => $sub['next_billing'] ?? '',
+        ]);
+        return $this->send($toEmail, $toName, 'Subscription Activated — ' . ($sub['plan_name'] ?? ''), $this->wrapInLayout($html));
+    }
+
+    private function subscriptionConfirmationTemplate(): string
+    {
+        return <<<HTML
+        <h2>Subscription Active ✓</h2>
+        <p>Hi {{name}},</p>
+        <p>Your Lodgik subscription has been activated.</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Plan</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600">{{plan_name}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Billing</td><td style="padding:8px;border-bottom:1px solid #eee">{{billing_cycle}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Amount</td><td style="padding:8px;border-bottom:1px solid #eee">₦{{amount}}</td></tr>
+            <tr><td style="padding:8px;color:#666">Next Billing</td><td style="padding:8px">{{next_billing}}</td></tr>
+        </table>
+        <p>Your card will be automatically charged on the next billing date.</p>
+        HTML;
+    }
+
+    public function sendExpenseApproval(string $toEmail, string $toName, array $expense): bool
+    {
+        $status = $expense['status'] ?? 'approved';
+        $html = $this->renderTemplate($this->expenseApprovalTemplate(), [
+            'name' => $toName,
+            'status' => ucfirst($status),
+            'description' => $expense['description'] ?? '',
+            'amount' => $expense['amount'] ?? '0',
+            'category' => $expense['category'] ?? '',
+            'reason' => $expense['reason'] ?? '',
+        ]);
+        return $this->send($toEmail, $toName, 'Expense ' . ucfirst($status) . ' — ₦' . ($expense['amount'] ?? '0'), $this->wrapInLayout($html));
+    }
+
+    private function expenseApprovalTemplate(): string
+    {
+        return <<<HTML
+        <h2>Expense {{status}}</h2>
+        <p>Hi {{name}},</p>
+        <p>Your expense request has been <strong>{{status}}</strong>.</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Description</td><td style="padding:8px;border-bottom:1px solid #eee">{{description}}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Category</td><td style="padding:8px;border-bottom:1px solid #eee">{{category}}</td></tr>
+            <tr><td style="padding:8px;color:#666">Amount</td><td style="padding:8px;font-weight:600">₦{{amount}}</td></tr>
+        </table>
+        HTML;
+    }
 }

@@ -17,6 +17,7 @@ return function (App $app): void {
         $g->post('/{id}/submit', [FinanceController::class, 'submitExpense']);
         $g->post('/{id}/approve', [FinanceController::class, 'approveExpense']);
         $g->post('/{id}/reject', [FinanceController::class, 'rejectExpense']);
+        $g->post('/{id}/paid', [FinanceController::class, 'markExpensePaid']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'accountant']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Night Audit: manager, admin

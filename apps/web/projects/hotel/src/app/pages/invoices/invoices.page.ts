@@ -9,7 +9,22 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Invoices" icon="file-text" [breadcrumbs]="['Finance', 'Invoices']" subtitle="Tax invoices and billing"></ui-page-header>
+    <ui-page-header title="Invoices" icon="file-text" [breadcrumbs]="['Finance', 'Invoices']" subtitle="Tax invoices and billing">
+      <button (click)="showCreate = !showCreate" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700">{{ showCreate ? 'Cancel' : '+ Create Invoice' }}</button>
+    </ui-page-header>
+
+    @if (showCreate) {
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">Create Invoice from Booking</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input [(ngModel)]="createForm.booking_id" placeholder="Booking ID" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="createForm.guest_name" placeholder="Guest name" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="createForm.guest_email" placeholder="Guest email (optional)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+        </div>
+        <button (click)="createInvoice()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700">Generate Invoice</button>
+      </div>
+    }
+
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
@@ -43,6 +58,8 @@ export class InvoicesPage implements OnInit {
   invoices = signal<any[]>([]);
   filterStatus = '';
   propertyId = '';
+  showCreate = false;
+  createForm: any = { booking_id: '', guest_name: '', guest_email: '' };
 
   statusTabs = [
     { label: 'All', value: '' }, { label: 'Issued', value: 'issued' }, { label: 'Paid', value: 'paid' }, { label: 'Void', value: 'void' },
@@ -63,8 +80,9 @@ export class InvoicesPage implements OnInit {
   actions: TableAction[] = [
     { label: 'View', handler: (r) => this.router.navigate(['/invoices', r.id]) },
     { label: 'Mark Paid', handler: (r) => this.markPaid(r), hidden: (r) => r.status !== 'issued' },
-    { label: 'Void', handler: (r) => this.voidInvoice(r), hidden: (r) => r.status === 'void' || r.status === 'paid' },
+    { label: 'Email', handler: (r) => this.emailInvoice(r) },
     { label: 'PDF', handler: (r) => this.downloadPdf(r.id) },
+    { label: 'Void', handler: (r) => this.voidInvoice(r), hidden: (r) => r.status === 'void' || r.status === 'paid' },
   ];
 
   ngOnInit(): void {
@@ -105,6 +123,21 @@ export class InvoicesPage implements OnInit {
     if (!confirm(`Void invoice ${row.invoice_number}?`)) return;
     this.api.post(`/invoices/${row.id}/void`, {}).subscribe((r: any) => {
       if (r.success) { this.toast.success('Invoice voided'); this.loadInvoices(); }
+      else this.toast.error(r.message || 'Failed');
+    });
+  }
+
+  emailInvoice(row: any): void {
+    this.api.post(`/invoices/${row.id}/email`, {}).subscribe((r: any) => {
+      if (r.success) this.toast.success('Invoice emailed');
+      else this.toast.error(r.message || 'Failed');
+    });
+  }
+
+  createInvoice(): void {
+    if (!this.createForm.booking_id) { this.toast.error('Booking ID is required'); return; }
+    this.api.post('/invoices', { ...this.createForm, property_id: this.propertyId }).subscribe((r: any) => {
+      if (r.success) { this.toast.success('Invoice created'); this.showCreate = false; this.createForm = { booking_id: '', guest_name: '', guest_email: '' }; this.loadInvoices(); }
       else this.toast.error(r.message || 'Failed');
     });
   }

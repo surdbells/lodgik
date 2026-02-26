@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, ToastService, BadgeComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, ToastService, BadgeComponent, AuthService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-billing',
@@ -133,6 +133,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
 })
 export class BillingPage implements OnInit {
   private api = inject(ApiService);
+  private auth = inject(AuthService);
   private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
   loading = signal(true);
@@ -162,7 +163,7 @@ export class BillingPage implements OnInit {
   subscribeToPlan(plan: any): void {
     this.processing.set(true);
     const endpoint = this.currentPlanId() ? '/subscriptions/upgrade' : '/subscriptions/initialize';
-    const payload = { plan_id: plan.id, billing_cycle: this.billingCycle };
+    const payload = { plan_id: plan.id, billing_cycle: this.billingCycle, email: this.auth.currentUser?.email || '' };
 
     this.api.post(endpoint, payload).subscribe({
       next: r => {
