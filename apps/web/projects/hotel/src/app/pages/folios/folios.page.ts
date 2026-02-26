@@ -53,11 +53,11 @@ export class FoliosPage implements OnInit {
 
   columns: TableColumn[] = [
     { key: 'folio_number', label: 'Folio #' },
-    { key: 'status_label', label: 'Status', render: (r) => `<span style="color:${r.status_color};font-weight:600">${r.status_label}</span>` },
-    { key: 'total_charges', label: 'Charges', render: (r) => `₦${(+r.total_charges).toLocaleString()}` },
-    { key: 'total_payments', label: 'Paid', render: (r) => `₦${(+r.total_payments).toLocaleString()}` },
-    { key: 'balance', label: 'Balance', render: (r) => `<span style="color:${+r.balance > 0 ? '#ef4444' : '#22c55e'};font-weight:600">₦${(+r.balance).toLocaleString()}</span>` },
-    { key: 'created_at', label: 'Date', render: (r) => new Date(r.created_at).toLocaleDateString() },
+    { key: 'status_label', label: 'Status', render: (_v, row) => `<span style="color:${row.status_color};font-weight:600">${row.status_label}</span>` },
+    { key: 'total_charges', label: 'Charges', render: (v) => `₦${(+v).toLocaleString()}` },
+    { key: 'total_payments', label: 'Paid', render: (v) => `₦${(+v).toLocaleString()}` },
+    { key: 'balance', label: 'Balance', render: (v) => `<span style="color:${+v > 0 ? '#ef4444' : '#22c55e'};font-weight:600">₦${(+v).toLocaleString()}</span>` },
+    { key: 'created_at', label: 'Date', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
   ];
 
   actions: TableAction[] = [

@@ -13,6 +13,35 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
 
     <ui-loading [loading]="loading()"></ui-loading>
 
+    <!-- Create Task Form -->
+    @if (showCreateTask) {
+      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">Create Housekeeping Task</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <input [(ngModel)]="taskForm.room_number" placeholder="Room number (e.g. 101)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="taskForm.room_id" placeholder="Room ID" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <select [(ngModel)]="taskForm.task_type" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+            <option value="checkout_clean">Checkout Clean</option>
+            <option value="stayover_clean">Stayover Clean</option>
+            <option value="deep_clean">Deep Clean</option>
+            <option value="turndown">Turndown</option>
+            <option value="inspection">Inspection</option>
+            <option value="touch_up">Touch Up</option>
+          </select>
+          <select [(ngModel)]="taskForm.priority" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+            <option [value]="1">🔴 Urgent</option>
+            <option [value]="2">🟠 High</option>
+            <option [value]="3">🟡 Normal</option>
+            <option [value]="4">🟢 Low</option>
+          </select>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <button (click)="createTask()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700">Create</button>
+          <button (click)="showCreateTask = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-xl">Cancel</button>
+        </div>
+      </div>
+    }
+
     @if (!loading()) {
       <div class="grid grid-cols-4 gap-3 mb-6">
         <ui-stats-card label="Total Tasks" [value]="stats().total" icon="clipboard-list"></ui-stats-card>
@@ -67,8 +96,18 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
       <div class="mt-8">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-lg font-semibold">Lost & Found</h3>
-          <button (click)="showLostForm = true" class="text-sm text-sage-600 hover:underline">+ Report Item</button>
+          <button (click)="showLostForm = !showLostForm" class="text-sm text-sage-600 hover:underline">{{ showLostForm ? 'Cancel' : '+ Report Item' }}</button>
         </div>
+        @if (showLostForm) {
+          <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4 mb-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <input [(ngModel)]="lostForm.description" placeholder="Item description" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              <input [(ngModel)]="lostForm.found_location" placeholder="Found location (e.g. Room 205)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              <input [(ngModel)]="lostForm.found_by" placeholder="Found by" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+            </div>
+            <button (click)="reportLostItem()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700">Report</button>
+          </div>
+        }
         <div class="space-y-2">
           @for (item of lostItems(); track item.id) {
             <div class="bg-white border rounded-lg p-3 flex justify-between items-center">
@@ -94,6 +133,8 @@ export class HousekeepingPage implements OnInit {
   filterStatus = '';
   showCreateTask = false;
   showLostForm = false;
+  taskForm: any = { room_number: '', room_id: '', task_type: 'checkout_clean', priority: 3 };
+  lostForm: any = { description: '', found_location: '', found_by: '' };
   filters = [{ label: 'All', value: '' }, { label: 'Pending', value: 'pending' }, { label: 'Active', value: 'in_progress' }, { label: 'Completed', value: 'completed' }, { label: 'Inspected', value: 'inspected' }];
 
   ngOnInit() { this.load(); this.loadStats(); this.loadLostItems(); }
@@ -103,6 +144,21 @@ export class HousekeepingPage implements OnInit {
     let url = `/housekeeping/tasks?property_id=${pid}`;
     if (this.filterStatus) url += `&status=${this.filterStatus}`;
     this.api.get(url).subscribe({ next: (r: any) => { this.tasks.set(r.data || []); this.loading.set(false); } });
+  }
+
+  createTask(): void {
+    const pid = this.auth.currentUser?.property_id || '';
+    const body = { ...this.taskForm, property_id: pid };
+    this.api.post('/housekeeping/tasks', body).subscribe((r: any) => {
+      if (r.success) { this.showCreateTask = false; this.taskForm = { room_number: '', room_id: '', task_type: 'checkout_clean', priority: 3 }; this.load(); this.loadStats(); }
+    });
+  }
+
+  reportLostItem(): void {
+    const pid = this.auth.currentUser?.property_id || '';
+    this.api.post('/housekeeping/lost-and-found', { ...this.lostForm, property_id: pid }).subscribe((r: any) => {
+      if (r.success) { this.showLostForm = false; this.lostForm = { description: '', found_location: '', found_by: '' }; this.loadLostItems(); }
+    });
   }
 
   loadStats() {

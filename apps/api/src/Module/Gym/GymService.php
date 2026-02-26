@@ -318,7 +318,7 @@ final class GymService
     {
         $since = (new \DateTimeImmutable())->modify("-{$months} months");
         $rows = $this->em->getConnection()->fetchAllAssociative(
-            "SELECT DATE_FORMAT(payment_date, '%Y-%m') as month, SUM(amount) as total FROM gym_membership_payments WHERE property_id = ? AND payment_date >= ? AND status = 'confirmed' GROUP BY month ORDER BY month",
+            "SELECT TO_CHAR(payment_date, 'YYYY-MM') as month, SUM(amount) as total FROM gym_membership_payments WHERE property_id = ? AND payment_date >= ? AND status = 'confirmed' GROUP BY TO_CHAR(payment_date, 'YYYY-MM') ORDER BY month",
             [$propertyId, $since->format('Y-m-d')]
         );
         return $rows;

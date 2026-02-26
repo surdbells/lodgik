@@ -55,7 +55,73 @@ interface RoomFilters {
           </select>
           <input [(ngModel)]="addForm.room_number" placeholder="Room number (e.g. 101)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
           <input [(ngModel)]="addForm.floor" type="number" placeholder="Floor" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
-          <button (click)="createRoom()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Create</button>
+          <input [(ngModel)]="addForm.notes" placeholder="Notes (optional)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+        </div>
+        <div class="mt-3">
+          <p class="text-xs text-gray-500 mb-2">Amenities</p>
+          <div class="flex flex-wrap gap-2">
+            @for (a of amenityOptions; track a) {
+              <label class="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs cursor-pointer transition-colors"
+                     [class]="addForm.amenities.includes(a) ? 'bg-sage-50 border-sage-400 text-sage-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'">
+                <input type="checkbox" class="hidden" [checked]="addForm.amenities.includes(a)" (change)="toggleAmenity(addForm, a)">
+                {{ a }}
+              </label>
+            }
+          </div>
+        </div>
+        <button (click)="createRoom()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Create</button>
+      </div>
+    }
+
+    <!-- Edit Room Modal -->
+    @if (showEdit && editForm) {
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showEdit = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5" (click)="$event.stopPropagation()">
+          <h3 class="text-lg font-semibold mb-4">Edit Room {{ editForm.room_number }}</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-gray-500">Room Type</label>
+              <select [(ngModel)]="editForm.room_type_id" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+                @for (rt of roomTypes(); track rt.id) {
+                  <option [value]="rt.id">{{ rt.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500">Room Number</label>
+                <input [(ngModel)]="editForm.room_number" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">Floor</label>
+                <input [(ngModel)]="editForm.floor" type="number" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              </div>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500">Notes</label>
+              <textarea [(ngModel)]="editForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></textarea>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">Amenities</label>
+              <div class="flex flex-wrap gap-2">
+                @for (a of amenityOptions; track a) {
+                  <label class="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs cursor-pointer transition-colors"
+                         [class]="editForm.amenities?.includes(a) ? 'bg-sage-50 border-sage-400 text-sage-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'">
+                    <input type="checkbox" class="hidden" [checked]="editForm.amenities?.includes(a)" (change)="toggleAmenity(editForm, a)">
+                    {{ a }}
+                  </label>
+                }
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="checkbox" [(ngModel)]="editForm.is_active" id="editActive" class="rounded">
+              <label for="editActive" class="text-sm text-gray-700">Active</label>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-5">
+            <button (click)="saveEdit()" class="flex-1 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700">Save</button>
+            <button (click)="showEdit = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-xl hover:bg-gray-50">Cancel</button>
+          </div>
         </div>
       </div>
     }
@@ -152,7 +218,11 @@ export class RoomsPage implements OnInit {
   selectedRoom: any = null;
 
   filters: RoomFilters = { property_id: '', room_type_id: '', status: '', floor: '', search: '' };
-  addForm: any = { room_type_id: '', room_number: '', floor: null };
+  addForm: any = { room_type_id: '', room_number: '', floor: null, notes: '', amenities: [] as string[] };
+  showEdit = false;
+  editForm: any = null;
+
+  amenityOptions = ['Wi-Fi', 'TV', 'AC', 'Mini Bar', 'Safe', 'Balcony', 'Bath Tub', 'Shower', 'Hair Dryer', 'Iron', 'Coffee Maker', 'Desk', 'Room Service', 'Sea View', 'City View', 'Pool Access', 'Parking'];
 
   statusLabels: Record<string, string> = {
     vacant_clean: 'Vacant Clean', vacant_dirty: 'Vacant Dirty', occupied: 'Occupied',
@@ -178,6 +248,7 @@ export class RoomsPage implements OnInit {
   ];
 
   actions: TableAction[] = [
+    { label: 'Edit', handler: (r) => this.openEdit(r) },
     { label: 'Details', handler: (r) => this.router.navigate(['/rooms', r.id]) },
     { label: 'Change Status', handler: (r) => { this.selectedRoom = r; this.showStatusDialog = true; } },
   ];
@@ -229,7 +300,36 @@ export class RoomsPage implements OnInit {
     }
     const body = { ...this.addForm, property_id: this.filters.property_id };
     this.api.post('/rooms', body).subscribe(r => {
-      if (r.success) { this.toast.success('Room created'); this.showAdd = false; this.addForm = { room_type_id: '', room_number: '', floor: null }; this.load(); this.loadRoomTypes(); }
+      if (r.success) { this.toast.success('Room created'); this.showAdd = false; this.addForm = { room_type_id: '', room_number: '', floor: null, notes: '', amenities: [] }; this.load(); this.loadRoomTypes(); }
+      else this.toast.error(r.message || 'Failed');
+    });
+  }
+
+  toggleAmenity(form: any, amenity: string): void {
+    if (!form.amenities) form.amenities = [];
+    const idx = form.amenities.indexOf(amenity);
+    if (idx >= 0) form.amenities.splice(idx, 1);
+    else form.amenities.push(amenity);
+  }
+
+  openEdit(room: any): void {
+    this.editForm = {
+      id: room.id,
+      room_type_id: room.room_type_id,
+      room_number: room.room_number,
+      floor: room.floor,
+      notes: room.notes || '',
+      amenities: [...(room.amenities || [])],
+      is_active: room.is_active ?? true,
+    };
+    this.showEdit = true;
+  }
+
+  saveEdit(): void {
+    if (!this.editForm) return;
+    const { id, ...body } = this.editForm;
+    this.api.put(`/rooms/${id}`, body).subscribe(r => {
+      if (r.success) { this.toast.success('Room updated'); this.showEdit = false; this.editForm = null; this.load(); }
       else this.toast.error(r.message || 'Failed');
     });
   }

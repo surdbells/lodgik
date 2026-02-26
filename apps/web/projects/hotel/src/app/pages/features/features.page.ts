@@ -17,7 +17,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
           <div class="bg-white rounded-lg border p-4 flex items-center gap-3"
                [class.border-emerald-200]="m.is_enabled" [class.border-gray-200]="!m.is_enabled"
                [class.opacity-50]="!m.is_enabled">
-            <span class="text-xl">{{ m.icon || '📦' }}</span>
+            <span class="text-xl">{{ iconEmoji(m.icon) }}</span>
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-gray-800">{{ m.name }}</div>
               <div class="text-xs text-gray-500">{{ m.category }}</div>
@@ -33,6 +33,21 @@ export class FeaturesPage implements OnInit {
   private api = inject(ApiService);
   loading = signal(true); modules = signal<any[]>([]);
   enabledCount = signal(0); totalCount = signal(0);
+
+  private iconMap: Record<string, string> = {
+    'hotel': '🏨', 'bed-double': '🛏️', 'clipboard-list': '📋', 'spray-can': '🧹',
+    'utensils': '🍽️', 'concierge-bell': '🔔', 'message-circle': '💬', 'gift': '🎁',
+    'heart': '❤️', 'shield': '🛡️', 'dumbbell': '💪', 'bath': '🛁',
+    'folder-open': '📂', 'file-text': '📄', 'receipt': '🧾', 'trending-up': '📈',
+    'users': '👥', 'user-round-cog': '⚙️', 'clock': '⏰', 'hand-coins': '💰',
+    'star': '⭐', 'briefcase': '💼', 'package': '📦', 'wrench': '🔧',
+    'globe': '🌐', 'smartphone': '📱', 'wifi': '📶', 'building': '🏢',
+    'zap': '⚡', 'credit-card': '💳', 'settings': '⚙️', 'moon': '🌙',
+    'tag': '🏷️', 'calendar-days': '📅', 'chart-bar': '📊', 'hard-hat': '👷',
+    'tree-palm': '🌴', 'puzzle': '🧩', 'door-open': '🚪', 'bell': '🔔',
+  };
+
+  iconEmoji(icon: string): string { return this.iconMap[icon] || '📦'; }
 
   ngOnInit(): void {
     this.api.get('/features/tenant').subscribe({
