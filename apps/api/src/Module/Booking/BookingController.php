@@ -20,6 +20,7 @@ final class BookingController
     public function __construct(
         private readonly BookingService $bookingService,
         private readonly ResponseHelper $response,
+        private readonly ?\Lodgik\Service\ZeptoMailService $mailService = null,
     ) {}
 
     /** GET /api/bookings */
@@ -80,6 +81,7 @@ final class BookingController
             $tenantId = $request->getAttribute('tenant_id');
             $userId = $request->getAttribute('user_id');
             $booking = $this->bookingService->create($dto, $tenantId, $userId);
+
             return $this->response->created($response, $this->serialize($booking));
         } catch (\InvalidArgumentException $e) {
             return $this->response->validationError($response, ['error' => $e->getMessage()]);

@@ -76,7 +76,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
               @if (plan.id === currentPlanId()) {
                 <div class="w-full py-2 text-xs font-medium text-center text-emerald-700 bg-emerald-50 rounded-lg">Current Plan</div>
               } @else {
-                <button (click)="subscribeToPlan(plan)" [disabled]="processing()"
+                <button (click)="confirmUpgrade(plan)" [disabled]="processing()"
                         class="w-full py-2 text-xs font-medium bg-sage-600 text-white rounded-lg hover:bg-sage-700 disabled:opacity-50">
                   {{ processing() ? 'Processing...' : (currentPlanId() ? 'Upgrade' : 'Subscribe') }}
                 </button>
@@ -92,6 +92,32 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
           <h3 class="text-sm font-semibold text-red-700 mb-1">Cancel Subscription</h3>
           <p class="text-xs text-red-600 mb-3">Your access will continue until the end of your current billing period.</p>
           <button (click)="cancelSubscription()" [disabled]="processing()" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50">Cancel Subscription</button>
+        </div>
+      }
+
+      <!-- Upgrade Confirmation Modal -->
+      @if (showUpgradeConfirm && selectedPlan) {
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showUpgradeConfirm = false">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" (click)="$event.stopPropagation()">
+            <h3 class="text-lg font-semibold mb-2">{{ currentPlanId() ? 'Upgrade Plan' : 'Subscribe' }}</h3>
+            <div class="space-y-2 text-sm mb-4">
+              <div class="flex justify-between"><span class="text-gray-500">Plan</span><span class="font-semibold">{{ selectedPlan.name }}</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Billing</span><span>{{ billingCycle === 'monthly' ? 'Monthly' : 'Annual' }}</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Price</span><span class="font-bold text-sage-700">₦{{ (billingCycle === 'monthly' ? selectedPlan.monthly_price : selectedPlan.annual_price)?.toLocaleString() }}</span></div>
+              @if (currentPlanId()) {
+                <div class="pt-2 mt-2 border-t border-gray-100">
+                  <p class="text-xs text-gray-400">Pro-rata credit will be applied for unused time on your current plan. You'll only pay the difference.</p>
+                </div>
+              }
+            </div>
+            <p class="text-xs text-gray-500 mb-4">You'll be redirected to Paystack to complete payment securely.</p>
+            <div class="flex gap-2">
+              <button (click)="subscribeToPlan(selectedPlan)" [disabled]="processing()" class="flex-1 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 disabled:opacity-50">
+                {{ processing() ? 'Processing...' : 'Proceed to Payment' }}
+              </button>
+              <button (click)="showUpgradeConfirm = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-xl">Cancel</button>
+            </div>
+          </div>
         </div>
       }
     }
@@ -146,6 +172,8 @@ export class BillingPage implements OnInit {
   currentPlanId = signal<string>('');
   billingCycle: 'monthly' | 'annually' = 'monthly';
   tab = 'plan';
+  showUpgradeConfirm = false;
+  selectedPlan: any = null;
 
   ngOnInit(): void {
     // Check for Paystack callback
@@ -158,6 +186,11 @@ export class BillingPage implements OnInit {
     });
     this.api.get('/usage/current').subscribe(r => { if (r.success) this.usage.set(r.data); });
     this.api.get('/plans').subscribe(r => { if (r.success) this.plans.set(r.data || []); this.loading.set(false); });
+  }
+
+  confirmUpgrade(plan: any): void {
+    this.selectedPlan = plan;
+    this.showUpgradeConfirm = true;
   }
 
   subscribeToPlan(plan: any): void {

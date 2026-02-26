@@ -20,6 +20,7 @@ final class SubscriptionService
         private readonly TenantRepository $tenantRepo,
         private readonly PaystackService $paystack,
         private readonly AuditService $audit,
+        private readonly ?\Lodgik\Service\ZeptoMailService $mailService = null,
     ) {}
 
     // ─── Current Subscription ──────────────────────────────────
@@ -263,6 +264,17 @@ final class SubscriptionService
 
         // Phase 9D: Auto-trigger merchant commission if hotel bound to merchant
         $this->triggerMerchantCommission($tenantId, $sub->getId(), $plan->getName(), $billingCycle, $amount, $commissionScope);
+
+        // Send subscription confirmation email
+        try {
+            if ($this->mailService && $tenant->getEmail()) {
+                $this->mailService->sendSubscriptionConfirmation(
+                    $tenant->getEmail(),
+                    $tenant->getBusinessName() ?? 'Hotel',
+                    ['plan_name' => $plan->getName(), 'billing_cycle' => $billingCycle, 'amount' => $amount, 'period_end' => $periodEnd->format('Y-m-d')],
+                );
+            }
+        } catch (\Throwable) {}
 
         return [
             'subscription_id' => $sub->getId(),

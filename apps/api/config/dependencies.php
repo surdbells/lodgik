@@ -445,6 +445,7 @@ return function (ContainerBuilder $builder): void {
                 tenantRepo: $c->get(TenantRepository::class),
                 paystack: $c->get(PaystackService::class),
                 audit: $c->get(AuditService::class),
+                mailService: $c->get(\Lodgik\Service\ZeptoMailService::class),
             );
         },
 
@@ -581,6 +582,7 @@ return function (ContainerBuilder $builder): void {
             return new BookingController(
                 bookingService: $c->get(BookingService::class),
                 response: $c->get(ResponseHelper::class),
+                mailService: $c->get(\Lodgik\Service\ZeptoMailService::class),
             );
         },
 
