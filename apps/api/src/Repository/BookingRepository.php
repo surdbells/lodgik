@@ -67,11 +67,12 @@ final class BookingRepository extends BaseRepository
             ->where('b.propertyId = :prop')
             ->andWhere('b.deletedAt IS NULL')
             ->andWhere(
-                '(DATE(b.checkIn) = :today OR DATE(b.checkOut) = :today)'
+                '((b.checkIn >= :todayStart AND b.checkIn < :todayEnd) OR (b.checkOut >= :todayStart AND b.checkOut < :todayEnd))'
             )
             ->andWhere('b.status NOT IN (:excluded)')
             ->setParameter('prop', $propertyId)
-            ->setParameter('today', $today)
+            ->setParameter('todayStart', $today . ' 00:00:00')
+            ->setParameter('todayEnd', $today . ' 23:59:59')
             ->setParameter('excluded', [BookingStatus::CANCELLED->value, BookingStatus::NO_SHOW->value])
             ->orderBy('b.checkIn', 'ASC')
             ->getQuery()

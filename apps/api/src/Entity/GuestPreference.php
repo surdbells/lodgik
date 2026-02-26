@@ -15,7 +15,7 @@ class GuestPreference implements TenantAware
     #[ORM\Column(name: 'special_occasions', type: Types::JSON, nullable: true)] private ?array $specialOccasions = null;
     /** email|sms|whatsapp|phone */
     #[ORM\Column(name: 'communication_preference', type: Types::STRING, length: 15, options: ['default' => 'whatsapp'])] private string $communicationPreference = 'whatsapp';
-    #[ORM\Column(name: 'vip_status', type: Types::TEXT, nullable: true)] private ?string $notes = null;
+    #[ORM\Column(name: 'notes', type: Types::TEXT, nullable: true)] private ?string $notes = null;
     #[ORM\Column(name: 'vip_status', type: Types::BOOLEAN, options: ['default' => false])] private bool $vipStatus = false;
     #[ORM\Column(name: 'preferred_language', type: Types::STRING, length: 5, options: ['default' => 'en'])] private string $preferredLanguage = 'en';
 

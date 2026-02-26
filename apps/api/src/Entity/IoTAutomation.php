@@ -15,7 +15,7 @@ class IoTAutomation implements TenantAware
     #[ORM\Column(name: 'trigger_type', type: Types::STRING, length: 15)] private string $triggerType;
     #[ORM\Column(name: 'trigger_config', type: Types::JSON)] private array $triggerConfig;
     /** Array of {device_type, action, params} */
-    #[ORM\Column(name: 'is_active', type: Types::JSON)] private array $actions;
+    #[ORM\Column(name: 'actions', type: Types::JSON)] private array $actions;
     #[ORM\Column(name: 'is_active', type: Types::BOOLEAN, options: ['default' => true])] private bool $isActive = true;
 
     public function __construct(string $propertyId, string $name, string $triggerType, array $triggerConfig, array $actions, string $tenantId)

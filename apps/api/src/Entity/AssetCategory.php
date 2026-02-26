@@ -9,7 +9,7 @@ use Lodgik\Entity\Contract\TenantAware; use Lodgik\Entity\Traits\{HasUuid, HasTe
 class AssetCategory implements TenantAware
 {
     use HasUuid, HasTenant, HasTimestamps;
-    #[ORM\Column(name: 'parent_id', type: Types::STRING, length: 100)] private string $name;
+    #[ORM\Column(name: 'name', type: Types::STRING, length: 100)] private string $name;
     #[ORM\Column(name: 'parent_id', type: Types::STRING, length: 36, nullable: true)] private ?string $parentId = null;
     #[ORM\Column(type: Types::STRING, length: 50, nullable: true)] private ?string $icon = null;
     #[ORM\Column(type: Types::TEXT, nullable: true)] private ?string $description = null;

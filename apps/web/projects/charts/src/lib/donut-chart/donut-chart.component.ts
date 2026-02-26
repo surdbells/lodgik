@@ -83,7 +83,8 @@ export class DonutChartComponent implements OnChanges {
   segments = signal<Segment[]>([]);
 
   ngOnChanges(): void {
-    this.buildSegments();
+    // Defer to next microtask to ensure Angular has evaluated all bindings
+    Promise.resolve().then(() => this.buildSegments());
   }
 
   private buildSegments(): void {

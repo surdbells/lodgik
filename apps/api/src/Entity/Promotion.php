@@ -15,7 +15,7 @@ class Promotion implements TenantAware
     #[ORM\Column(type: Types::STRING, length: 100)] private string $name;
     /** percentage|fixed|room_upgrade|free_night */
     #[ORM\Column(type: Types::STRING, length: 15)] private string $type;
-    #[ORM\Column(name: 'start_date', type: Types::DECIMAL, precision: 10, scale: 2)] private string $value;
+    #[ORM\Column(name: 'value', type: Types::DECIMAL, precision: 10, scale: 2)] private string $value;
     #[ORM\Column(name: 'start_date', type: Types::DATE_IMMUTABLE)] private \DateTimeImmutable $startDate;
     #[ORM\Column(name: 'end_date', type: Types::DATE_IMMUTABLE)] private \DateTimeImmutable $endDate;
     #[ORM\Column(name: 'usage_limit', type: Types::INTEGER, nullable: true)] private ?int $usageLimit = null;

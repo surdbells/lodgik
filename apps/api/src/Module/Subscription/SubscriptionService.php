@@ -48,6 +48,8 @@ final class SubscriptionService
         return [
             'tenant_id' => $tenantId,
             'status' => $tenant->getSubscriptionStatus()->value,
+            'plan_id' => $plan?->getId(),
+            'plan_name' => $plan?->getName(),
             'plan' => $plan ? [
                 'id' => $plan->getId(),
                 'name' => $plan->getName(),
@@ -55,6 +57,8 @@ final class SubscriptionService
                 'monthly_price' => $plan->getMonthlyPrice(),
                 'annual_price' => $plan->getAnnualPrice(),
             ] : null,
+            'billing_cycle' => $sub?->getBillingCycle(),
+            'next_payment_date' => $sub?->getNextPaymentDate()?->format('c'),
             'subscription' => $sub ? [
                 'id' => $sub->getId(),
                 'billing_cycle' => $sub->getBillingCycle(),

@@ -720,10 +720,9 @@ return function (ContainerBuilder $builder): void {
         ChatMessageRepository::class => fn(ContainerInterface $c) => new ChatMessageRepository($c->get(EntityManagerInterface::class)),
 
         TermiiService::class => fn(ContainerInterface $c) => new TermiiService(
-            redis: $c->get(RedisClient::class),
-            logger: $c->get(LoggerInterface::class),
             apiKey: $_ENV['TERMII_API_KEY'] ?? '',
             senderId: $_ENV['TERMII_SENDER_ID'] ?? 'Lodgik',
+            logger: $c->get(LoggerInterface::class),
         ),
 
         GuestAuthService::class => fn(ContainerInterface $c) => new GuestAuthService(

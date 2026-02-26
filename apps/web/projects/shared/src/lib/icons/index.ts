@@ -51,6 +51,7 @@ import {
   Globe,
   Smartphone,
   Wifi,
+  Handshake,
 
   // ─── System ───────────────────────────
   Building,
@@ -118,6 +119,7 @@ export const LODGIK_ICONS = {
   Globe,
   Smartphone,
   Wifi,
+  Handshake,
   Building,
   Puzzle,
   Zap,

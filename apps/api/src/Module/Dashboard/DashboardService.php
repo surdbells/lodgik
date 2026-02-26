@@ -77,10 +77,11 @@ final class DashboardService
             ->from(Booking::class, 'b')
             ->where('b.propertyId = :prop')
             ->andWhere('b.status = :status')
-            ->andWhere('DATE(b.checkIn) = :today')
+            ->andWhere('b.checkIn >= :todayStart AND b.checkIn < :todayEnd')
             ->setParameter('prop', $propertyId)
             ->setParameter('status', BookingStatus::CONFIRMED->value)
-            ->setParameter('today', $today)
+            ->setParameter('todayStart', $today . ' 00:00:00')
+            ->setParameter('todayEnd', $today . ' 23:59:59')
             ->getQuery()
             ->getSingleScalarResult();
 

@@ -13,7 +13,7 @@ class OtaChannel implements TenantAware
     /** booking_com|expedia|agoda|hotels_com|airbnb|direct */
     #[ORM\Column(name: 'channel_name', type: Types::STRING, length: 30)] private string $channelName;
     #[ORM\Column(name: 'display_name', type: Types::STRING, length: 100)] private string $displayName;
-    #[ORM\Column(name: 'room_type_mapping', type: Types::JSON, nullable: true)] private ?array $credentials = null;
+    #[ORM\Column(name: 'credentials', type: Types::JSON, nullable: true)] private ?array $credentials = null;
     #[ORM\Column(name: 'room_type_mapping', type: Types::JSON, nullable: true)] private ?array $roomTypeMapping = null;
     #[ORM\Column(name: 'rate_plan_mapping', type: Types::JSON, nullable: true)] private ?array $ratePlanMapping = null;
     #[ORM\Column(name: 'commission_percentage', type: Types::DECIMAL, precision: 5, scale: 2, options: ['default' => '15.00'])] private string $commissionPercentage = '15.00';

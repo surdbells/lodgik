@@ -17,7 +17,7 @@ class MaintenanceLog implements TenantAware
     #[ORM\Column(name: 'engineer_name', type: Types::STRING, length: 100)] private string $engineerName;
     #[ORM\Column(name: 'action_taken', type: Types::TEXT)] private string $actionTaken;
     #[ORM\Column(name: 'parts_replaced', type: Types::TEXT, nullable: true)] private ?string $partsReplaced = null;
-    #[ORM\Column(name: 'downtime_minutes', type: Types::BIGINT, nullable: true)] private ?string $cost = null;
+    #[ORM\Column(name: 'cost', type: Types::BIGINT, nullable: true)] private ?string $cost = null;
     #[ORM\Column(name: 'downtime_minutes', type: Types::INTEGER, nullable: true)] private ?int $downtimeMinutes = null;
     #[ORM\Column(name: 'log_date', type: Types::DATE_IMMUTABLE)] private \DateTimeImmutable $logDate;
 

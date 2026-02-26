@@ -14,11 +14,11 @@ class IoTDevice implements TenantAware
     #[ORM\Column(name: 'room_number', type: Types::STRING, length: 20, nullable: true)] private ?string $roomNumber = null;
     /** ac|light|curtain|tv|door_lock|thermostat|minibar_sensor */
     #[ORM\Column(name: 'device_type', type: Types::STRING, length: 20)] private string $deviceType;
-    #[ORM\Column(name: 'mqtt_topic', type: Types::STRING, length: 100)] private string $name;
+    #[ORM\Column(name: 'name', type: Types::STRING, length: 100)] private string $name;
     #[ORM\Column(name: 'mqtt_topic', type: Types::STRING, length: 200, nullable: true)] private ?string $mqttTopic = null;
     #[ORM\Column(name: 'current_state', type: Types::JSON, nullable: true)] private ?array $currentState = null;
     /** online|offline|error */
-    #[ORM\Column(name: 'last_seen', type: Types::STRING, length: 10, options: ['default' => 'offline'])] private string $status = 'offline';
+    #[ORM\Column(name: 'status', type: Types::STRING, length: 10, options: ['default' => 'offline'])] private string $status = 'offline';
     #[ORM\Column(name: 'last_seen', type: Types::DATETIME_IMMUTABLE, nullable: true)] private ?\DateTimeImmutable $lastSeen = null;
     #[ORM\Column(name: 'energy_kwh', type: Types::DECIMAL, precision: 10, scale: 2, options: ['default' => '0.00'])] private string $energyKwh = '0.00';
 
