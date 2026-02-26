@@ -166,6 +166,8 @@ final class AdminService
         $plan->setForTenantId($dto->forTenantId);
         $plan->setTrialDays($dto->trialDays);
         $plan->setSortOrder($dto->sortOrder);
+        if ($dto->paystackPlanCodeMonthly) $plan->setPaystackPlanCodeMonthly($dto->paystackPlanCodeMonthly);
+        if ($dto->paystackPlanCodeAnnual) $plan->setPaystackPlanCodeAnnual($dto->paystackPlanCodeAnnual);
 
         $this->em->persist($plan);
         $this->em->flush();
@@ -193,6 +195,8 @@ final class AdminService
         if (isset($data['is_active'])) $plan->setIsActive((bool) $data['is_active']);
         if (isset($data['sort_order'])) $plan->setSortOrder((int) $data['sort_order']);
         if (isset($data['trial_days'])) $plan->setTrialDays((int) $data['trial_days']);
+        if (isset($data['paystack_plan_code_monthly'])) $plan->setPaystackPlanCodeMonthly($data['paystack_plan_code_monthly'] ?: null);
+        if (isset($data['paystack_plan_code_annual'])) $plan->setPaystackPlanCodeAnnual($data['paystack_plan_code_annual'] ?: null);
 
         $this->em->flush();
 

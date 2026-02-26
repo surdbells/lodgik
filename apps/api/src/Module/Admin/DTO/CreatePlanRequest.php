@@ -22,6 +22,8 @@ final class CreatePlanRequest
         public readonly ?string $forTenantId = null,
         public readonly int $trialDays = 14,
         public readonly int $sortOrder = 0,
+        public readonly ?string $paystackPlanCodeMonthly = null,
+        public readonly ?string $paystackPlanCodeAnnual = null,
     ) {}
 
     public function validate(): array
@@ -77,6 +79,8 @@ final class CreatePlanRequest
             forTenantId: $data['for_tenant_id'] ?? null,
             trialDays: (int) ($data['trial_days'] ?? 14),
             sortOrder: (int) ($data['sort_order'] ?? 0),
+            paystackPlanCodeMonthly: $data['paystack_plan_code_monthly'] ?? null,
+            paystackPlanCodeAnnual: $data['paystack_plan_code_annual'] ?? null,
         );
     }
 }

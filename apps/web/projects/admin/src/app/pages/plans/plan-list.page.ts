@@ -43,6 +43,14 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
             <input [(ngModel)]="form.trial_days" type="number" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></div>
         </div>
 
+        <!-- Paystack Integration -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div><label class="block text-xs font-medium text-gray-600 mb-1">Paystack Plan Code (Monthly) <span class="text-gray-400">for auto-debit</span></label>
+            <input [(ngModel)]="form.paystack_plan_code_monthly" placeholder="PLN_xxxxxxxxxxxxx" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50 font-mono"></div>
+          <div><label class="block text-xs font-medium text-gray-600 mb-1">Paystack Plan Code (Annual) <span class="text-gray-400">for auto-debit</span></label>
+            <input [(ngModel)]="form.paystack_plan_code_annual" placeholder="PLN_xxxxxxxxxxxxx" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50 font-mono"></div>
+        </div>
+
         <!-- Visibility -->
         <div class="flex items-center gap-6 mb-4 text-sm">
           <label class="flex items-center gap-2"><input type="checkbox" [(ngModel)]="form.is_public" class="rounded"> Public plan (visible on pricing page)</label>
@@ -163,7 +171,7 @@ export class PlanListPage implements OnInit {
   }
 
   emptyForm(): any {
-    return { name: '', tier: 'starter', monthly_price: 0, annual_price: 0, max_rooms: 10, max_staff: 5, max_properties: 1, trial_days: 14, is_public: true, for_tenant_id: null, included_modules: ['auth', 'booking_engine', 'room_management', 'guest_management', 'dashboard'] };
+    return { name: '', tier: 'starter', monthly_price: 0, annual_price: 0, max_rooms: 10, max_staff: 5, max_properties: 1, trial_days: 14, is_public: true, for_tenant_id: null, paystack_plan_code_monthly: '', paystack_plan_code_annual: '', included_modules: ['auth', 'booking_engine', 'room_management', 'guest_management', 'dashboard'] };
   }
 
   toggleCreate(): void { this.showCreate = !this.showCreate; if (!this.showCreate) { this.editingId = null; this.form = this.emptyForm(); this.depWarnings.set([]); } }

@@ -378,6 +378,8 @@ final class AdminController
             'for_tenant_id' => $p->getForTenantId(),
             'trial_days' => $p->getTrialDays(),
             'sort_order' => $p->getSortOrder(),
+            'paystack_plan_code_monthly' => $p->getPaystackPlanCodeMonthly(),
+            'paystack_plan_code_annual' => $p->getPaystackPlanCodeAnnual(),
         ];
     }
 

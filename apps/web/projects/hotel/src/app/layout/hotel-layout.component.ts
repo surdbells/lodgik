@@ -194,7 +194,15 @@ export class HotelLayoutComponent implements OnInit {
 
   private collapsedGroups = signal<Set<number>>(new Set([2, 3, 4, 5, 6, 7]));
 
-  propertyName = computed(() => this.branding().appName || 'My Hotel');
+  propertyName = computed(() => {
+    const pid = this.currentPropertyId();
+    const props = this.allProperties();
+    if (pid && props.length) {
+      const match = props.find((p: any) => p.id === pid);
+      if (match) return match.name;
+    }
+    return this.branding().appName || 'My Hotel';
+  });
   propertyInitial = computed(() => this.propertyName().charAt(0).toUpperCase());
   staffRole = computed(() => {
     const role = this.user()?.role;
