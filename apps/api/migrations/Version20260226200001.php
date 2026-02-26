@@ -19,12 +19,12 @@ final class Version20260226200001 extends AbstractMigration
         $this->addSql('
             CREATE TABLE IF NOT EXISTS user_property_access (
                 id UUID NOT NULL DEFAULT gen_random_uuid(),
-                user_id UUID NOT NULL,
-                property_id UUID NOT NULL,
-                tenant_id UUID NOT NULL,
+                user_id VARCHAR(36) NOT NULL,
+                property_id VARCHAR(36) NOT NULL,
+                tenant_id VARCHAR(36) NOT NULL,
                 role VARCHAR(50) DEFAULT NULL,
                 is_default BOOLEAN NOT NULL DEFAULT false,
-                granted_by UUID DEFAULT NULL,
+                granted_by VARCHAR(36) DEFAULT NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 PRIMARY KEY (id),
                 UNIQUE (user_id, property_id)
