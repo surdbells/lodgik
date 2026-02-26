@@ -67,6 +67,17 @@ final class InvoiceController
         return $this->response->success($response, $invoice->toArray(), 'Invoice voided');
     }
 
+    public function pay(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $body = (array) ($request->getParsedBody() ?? []);
+            $invoice = $this->invoiceService->markPaid($args['id'], $body['payment_method'] ?? 'bank_transfer', $body['reference'] ?? null);
+            return $this->response->success($response, $invoice->toArray(), 'Invoice marked as paid');
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 422);
+        }
+    }
+
     /** GET /api/invoices/tax-config */
     public function taxConfig(Request $request, Response $response): Response
     {

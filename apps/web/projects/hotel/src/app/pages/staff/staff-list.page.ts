@@ -37,6 +37,48 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
     @if (!loading()) {
       <ui-data-table [columns]="columns" [data]="staff()" [actions]="actions" [totalItems]="total()" (pageChange)="onPage($event)"></ui-data-table>
     }
+
+    <!-- Edit Staff Modal -->
+    @if (showEdit && editForm) {
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showEdit = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5" (click)="$event.stopPropagation()">
+          <h3 class="text-lg font-semibold mb-4">Edit {{ editForm.first_name }} {{ editForm.last_name }}</h3>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="text-xs text-gray-500">First Name</label>
+                <input [(ngModel)]="editForm.first_name" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></div>
+              <div><label class="text-xs text-gray-500">Last Name</label>
+                <input [(ngModel)]="editForm.last_name" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></div>
+            </div>
+            <div><label class="text-xs text-gray-500">Email</label>
+              <input [(ngModel)]="editForm.email" type="email" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></div>
+            <div><label class="text-xs text-gray-500">Phone</label>
+              <input [(ngModel)]="editForm.phone" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50" placeholder="+234..."></div>
+            <div><label class="text-xs text-gray-500">Role</label>
+              <select [(ngModel)]="editForm.role" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+                <option value="manager">Manager</option><option value="front_desk">Front Desk</option>
+                <option value="housekeeping">Housekeeping</option><option value="maintenance">Maintenance</option>
+                <option value="restaurant">Restaurant</option><option value="bar">Bar</option>
+                <option value="kitchen">Kitchen</option><option value="accountant">Accountant</option>
+                <option value="security">Security</option><option value="concierge">Concierge</option>
+              </select></div>
+            <div class="flex items-center gap-2">
+              <input type="checkbox" [(ngModel)]="editForm.is_active" id="editActive" class="rounded">
+              <label for="editActive" class="text-sm">Active</label>
+            </div>
+
+            <div class="border-t pt-3 mt-3">
+              <label class="text-xs text-gray-500">Reset Password (leave empty to keep current)</label>
+              <input [(ngModel)]="editForm.new_password" type="password" placeholder="New password" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50 mt-1">
+            </div>
+          </div>
+          <div class="flex gap-2 mt-5">
+            <button (click)="saveEdit()" class="flex-1 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700">Save</button>
+            <button (click)="showEdit = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-xl">Cancel</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class StaffListPage implements OnInit {
@@ -55,8 +97,14 @@ export class StaffListPage implements OnInit {
     { key: 'is_active', label: 'Active', render: (v: boolean) => v ? '<span class="text-emerald-600">Active</span>' : '<span class="text-gray-400">Inactive</span>' },
   ];
   actions: TableAction[] = [
+    { label: 'Edit', handler: (r) => this.openEdit(r) },
+    { label: 'Reset Password', handler: (r) => this.resetPassword(r) },
     { label: 'Deactivate', color: 'danger', handler: (r) => this.deactivate(r), hidden: (r) => !r.is_active },
+    { label: 'Reactivate', handler: (r) => this.reactivate(r), hidden: (r) => r.is_active },
   ];
+
+  showEdit = false;
+  editForm: any = null;
 
   ngOnInit(): void { this.load(); }
   load(): void {
@@ -65,12 +113,39 @@ export class StaffListPage implements OnInit {
   onPage(e: any): void { this.page = e.page; this.load(); }
   addStaff(): void {
     this.api.post('/staff', this.form).subscribe(r => {
-      if (r.success) { this.toast.success('Staff added'); this.showAdd = false; this.load(); }
+      if (r.success) { this.toast.success('Staff added'); this.showAdd = false; this.form = { first_name: '', last_name: '', email: '', password: '', role: 'front_desk' }; this.load(); }
       else this.toast.error(r.message || 'Failed');
     });
+  }
+  openEdit(row: any): void {
+    this.editForm = { id: row.id, first_name: row.first_name, last_name: row.last_name, email: row.email, phone: row.phone || '', role: row.role, is_active: row.is_active, new_password: '' };
+    this.showEdit = true;
+  }
+  saveEdit(): void {
+    if (!this.editForm) return;
+    const { id, new_password, ...body } = this.editForm;
+    if (new_password) body.password = new_password;
+    this.api.patch(`/staff/${id}`, body).subscribe(r => {
+      if (r.success) { this.toast.success('Staff updated'); this.showEdit = false; this.load(); }
+      else this.toast.error(r.message || 'Failed');
+    });
+  }
+  resetPassword(row: any): void {
+    const pw = prompt(`Enter new password for ${row.first_name} ${row.last_name}:`);
+    if (pw && pw.length >= 6) {
+      this.api.patch(`/staff/${row.id}`, { password: pw }).subscribe(r => {
+        if (r.success) this.toast.success('Password reset');
+        else this.toast.error(r.message || 'Failed');
+      });
+    } else if (pw) { this.toast.error('Password must be at least 6 characters'); }
   }
   async deactivate(row: any): Promise<void> {
     const ok = await this.confirm.confirm({ title: 'Deactivate Staff', message: `Deactivate ${row.first_name} ${row.last_name}?`, variant: 'warning' });
     if (ok) this.api.patch(`/staff/${row.id}`, { is_active: false }).subscribe(r => { if (r.success) { this.toast.success('Deactivated'); this.load(); } });
+  }
+  reactivate(row: any): void {
+    this.api.patch(`/staff/${row.id}`, { is_active: true }).subscribe(r => {
+      if (r.success) { this.toast.success('Reactivated'); this.load(); }
+    });
   }
 }

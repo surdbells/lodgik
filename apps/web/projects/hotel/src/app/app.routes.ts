@@ -161,6 +161,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/chat/chat.page').then(m => m.ChatPage),
       },
       {
+        path: 'notifications',
+        loadComponent: () => import('./pages/notifications/notifications.page').then(m => m.NotificationsPage),
+      },
+      {
         path: 'pos',
         loadComponent: () => import('./pages/pos/pos.page').then(m => m.PosPage),
       },

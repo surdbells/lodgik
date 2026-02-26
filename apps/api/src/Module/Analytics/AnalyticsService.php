@@ -52,10 +52,13 @@ final class AnalyticsService
 
     /** Top rooms by revenue */
     public function getTopRoomsByRevenue(string $propertyId, string $from, string $to, int $limit = 10): array
-    { $qb = $this->em->createQueryBuilder()->select("b.roomNumber, COUNT(b.id) as bookings, SUM(b.totalAmount) as revenue")
-        ->from(Booking::class, 'b')->where('b.propertyId = :p')->andWhere('b.createdAt >= :f')->andWhere('b.createdAt <= :t')
+    { $qb = $this->em->createQueryBuilder()->select("r.roomNumber, COUNT(b.id) as bookings, SUM(b.totalAmount) as revenue")
+        ->from(Booking::class, 'b')
+        ->join(\Lodgik\Entity\Room::class, 'r', 'WITH', 'r.id = b.roomId')
+        ->where('b.propertyId = :p')->andWhere('b.createdAt >= :f')->andWhere('b.createdAt <= :t')
+        ->andWhere('b.roomId IS NOT NULL')
         ->setParameter('p', $propertyId)->setParameter('f', $from . ' 00:00:00')->setParameter('t', $to . ' 23:59:59')
-        ->groupBy('b.roomNumber')->orderBy('revenue', 'DESC')->setMaxResults($limit); return $qb->getQuery()->getResult(); }
+        ->groupBy('r.roomNumber')->orderBy('revenue', 'DESC')->setMaxResults($limit); return $qb->getQuery()->getResult(); }
 
     /** Expense vs Revenue (P&L summary) */
     public function getProfitLossSummary(string $propertyId, string $from, string $to): array

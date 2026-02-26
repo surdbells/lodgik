@@ -15,6 +15,8 @@ final class UpdateStaffRequest
         public readonly ?string $phone = null,
         public readonly ?string $propertyId = null,
         public readonly ?bool $isActive = null,
+        public readonly ?string $password = null,
+        public readonly ?string $email = null,
     ) {}
 
     public function validate(): array
@@ -49,6 +51,8 @@ final class UpdateStaffRequest
             phone: $data['phone'] ?? null,
             propertyId: array_key_exists('property_id', $data) ? $data['property_id'] : null,
             isActive: isset($data['is_active']) ? (bool) $data['is_active'] : null,
+            password: $data['password'] ?? null,
+            email: $data['email'] ?? null,
         );
     }
 }

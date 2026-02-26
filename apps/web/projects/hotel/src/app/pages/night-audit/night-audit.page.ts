@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, AuthService, ToastService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-night-audit',
@@ -52,8 +52,17 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent } from '@lodgi
 })
 export default class NightAuditPage implements OnInit {
   private api = inject(ApiService);
+  private auth = inject(AuthService);
+  private toast = inject(ToastService);
   loading = signal(true); running = signal(false); audits = signal<any[]>([]); lastAudit = signal<any>(null);
+  get pid(): string { return this.auth.currentUser?.property_id || ''; }
   ngOnInit() { this.load(); }
-  load() { this.api.get('/night-audit').subscribe((r: any) => { const d = r?.data || []; this.audits.set(d); if (d.length) this.lastAudit.set(d[0]); this.loading.set(false); }); }
-  runAudit() { this.running.set(true); this.api.post('/night-audit/generate', {}).subscribe({ next: () => { this.running.set(false); this.load(); }, error: () => this.running.set(false) }); }
+  load() { this.api.get('/night-audit', { property_id: this.pid }).subscribe((r: any) => { const d = r?.data || []; this.audits.set(d); if (d.length) this.lastAudit.set(d[0]); this.loading.set(false); }); }
+  runAudit() {
+    this.running.set(true);
+    this.api.post('/night-audit/generate', { property_id: this.pid, date: new Date().toISOString().split('T')[0] }).subscribe({
+      next: (r: any) => { this.running.set(false); if (r.success) { this.toast.success('Night audit generated'); this.load(); } else this.toast.error(r.message || 'Failed'); },
+      error: () => { this.running.set(false); this.toast.error('Audit failed'); },
+    });
+  }
 }

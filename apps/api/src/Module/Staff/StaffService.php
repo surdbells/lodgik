@@ -216,6 +216,17 @@ final class StaffService
         if ($dto->isActive !== null) {
             $user->setIsActive($dto->isActive);
         }
+        if ($dto->password !== null && $dto->password !== '') {
+            $user->setPasswordHash(password_hash($dto->password, PASSWORD_ARGON2ID));
+        }
+        if ($dto->email !== null && $dto->email !== '') {
+            // Check email uniqueness
+            $existing = $this->userRepo->findByEmail($dto->email);
+            if ($existing !== null && $existing->getId() !== $userId) {
+                throw new \RuntimeException('Email already in use by another staff member');
+            }
+            $user->setEmail($dto->email);
+        }
 
         $this->em->flush();
 

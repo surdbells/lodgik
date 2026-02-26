@@ -54,8 +54,13 @@ import { AuthService, ToastService } from '@lodgik/shared';
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-                <input type="password" [(ngModel)]="password" name="password" required
-                       class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all bg-gray-50 focus:bg-white">
+                <div class="relative">
+                  <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password" required
+                         class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all bg-gray-50 focus:bg-white pr-10">
+                  <button type="button" (click)="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    {{ showPassword ? '🙈' : '👁️' }}
+                  </button>
+                </div>
               </div>
               @if (error()) {
                 <p class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ error() }}</p>
@@ -79,7 +84,7 @@ export class LoginPage {
   private auth = inject(AuthService);
   private router = inject(Router);
   private toast = inject(ToastService);
-  email = ''; password = '';
+  email = ''; password = ''; showPassword = false;
   loading = signal(false); error = signal('');
 
   login(): void {

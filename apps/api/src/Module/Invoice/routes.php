@@ -16,6 +16,7 @@ return function (App $app): void {
         $g->get('/{id}/pdf', [InvoiceController::class, 'pdf']);
         $g->post('/{id}/email', [InvoiceController::class, 'email']);
         $g->post('/{id}/void', [InvoiceController::class, 'void']);
+        $g->post('/{id}/pay', [InvoiceController::class, 'pay']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager', 'accountant']))
         ->add(TenantMiddleware::class)

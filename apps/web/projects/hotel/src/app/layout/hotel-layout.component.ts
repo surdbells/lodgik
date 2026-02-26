@@ -109,7 +109,7 @@ interface NavGroup {
 
         <!-- Bottom: Notifications + Settings -->
         <div class="border-t border-gray-100 p-2 space-y-0.5">
-          <a routerLink="/chat" routerLinkActive="sidebar-active"
+          <a routerLink="/notifications" routerLinkActive="sidebar-active"
              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors"
              [class.justify-center]="collapsed()" [title]="collapsed() ? 'Notifications' : ''">
             <lucide-icon name="bell" [size]="18" [strokeWidth]="1.75" class="shrink-0 opacity-70"></lucide-icon>

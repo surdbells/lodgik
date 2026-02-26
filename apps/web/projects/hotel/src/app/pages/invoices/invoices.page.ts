@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ToastService } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -37,6 +37,7 @@ export class InvoicesPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private toast = inject(ToastService);
 
   loading = signal(true);
   invoices = signal<any[]>([]);
@@ -50,17 +51,19 @@ export class InvoicesPage implements OnInit {
   columns: TableColumn[] = [
     { key: 'invoice_number', label: 'Invoice #' },
     { key: 'guest_name', label: 'Guest' },
-    { key: 'status', label: 'Status', render: (r) => {
-      const colors: Record<string, string> = { issued: '#f59e0b', paid: '#22c55e', void: '#ef4444' };
-      return `<span style="color:${colors[r.status] || '#6b7280'};font-weight:600">${r.status.toUpperCase()}</span>`;
+    { key: 'status', label: 'Status', render: (v: string) => {
+      const colors: Record<string, string> = { issued: '#f59e0b', paid: '#22c55e', void: '#ef4444', draft: '#6b7280' };
+      return `<span style="color:${colors[v] || '#6b7280'};font-weight:600">${(v || '').toUpperCase()}</span>`;
     }},
-    { key: 'grand_total', label: 'Total', render: (r) => `₦${(+r.grand_total).toLocaleString()}` },
-    { key: 'tax_total', label: 'VAT', render: (r) => `₦${(+r.tax_total).toLocaleString()}` },
-    { key: 'invoice_date', label: 'Date' },
+    { key: 'grand_total', label: 'Total', render: (v: any) => `₦${(+v).toLocaleString()}` },
+    { key: 'tax_total', label: 'VAT', render: (v: any) => `₦${(+v).toLocaleString()}` },
+    { key: 'invoice_date', label: 'Date', render: (v: string) => v ? new Date(v).toLocaleDateString() : '—' },
   ];
 
   actions: TableAction[] = [
     { label: 'View', handler: (r) => this.router.navigate(['/invoices', r.id]) },
+    { label: 'Mark Paid', handler: (r) => this.markPaid(r), hidden: (r) => r.status !== 'issued' },
+    { label: 'Void', handler: (r) => this.voidInvoice(r), hidden: (r) => r.status === 'void' || r.status === 'paid' },
     { label: 'PDF', handler: (r) => this.downloadPdf(r.id) },
   ];
 
@@ -89,5 +92,20 @@ export class InvoicesPage implements OnInit {
 
   downloadPdf(id: string): void {
     window.open(`/api/invoices/${id}/pdf`, '_blank');
+  }
+
+  markPaid(row: any): void {
+    this.api.post(`/invoices/${row.id}/pay`, { payment_method: 'bank_transfer' }).subscribe((r: any) => {
+      if (r.success) { this.toast.success('Invoice marked as paid'); this.loadInvoices(); }
+      else this.toast.error(r.message || 'Failed');
+    });
+  }
+
+  voidInvoice(row: any): void {
+    if (!confirm(`Void invoice ${row.invoice_number}?`)) return;
+    this.api.post(`/invoices/${row.id}/void`, {}).subscribe((r: any) => {
+      if (r.success) { this.toast.success('Invoice voided'); this.loadInvoices(); }
+      else this.toast.error(r.message || 'Failed');
+    });
   }
 }

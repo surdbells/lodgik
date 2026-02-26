@@ -23,7 +23,7 @@ final class FinanceController
 
     // Night Audit
     public function listAudits(Request $req, Response $res): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->listNightAudits($req->getQueryParams()['property_id'] ?? '')]); }
-    public function generateAudit(Request $req, Response $res): Response { $d = $this->body($req); return $this->json($res, ['success' => true, 'data' => $this->svc->generateNightAudit($d['property_id'], $d['date'] ?? date('Y-m-d'), $req->getAttribute('auth.tenant_id'))->toArray()], 201); }
+    public function generateAudit(Request $req, Response $res): Response { $d = $this->body($req); $pid = $d['property_id'] ?? $req->getQueryParams()['property_id'] ?? $req->getAttribute('auth.property_id') ?? ''; if (!$pid) return $this->json($res, ['success' => false, 'message' => 'property_id is required'], 422); return $this->json($res, ['success' => true, 'data' => $this->svc->generateNightAudit($pid, $d['date'] ?? date('Y-m-d'), $req->getAttribute('auth.tenant_id'))->toArray()], 201); }
     public function closeAudit(Request $req, Response $res, array $args): Response { $d = $this->body($req); return $this->json($res, ['success' => true, 'data' => $this->svc->closeNightAudit($args['id'], $req->getAttribute('auth.user_id'), $d['closer_name'] ?? '', $d['notes'] ?? null)->toArray()]); }
 
     // Police Reports

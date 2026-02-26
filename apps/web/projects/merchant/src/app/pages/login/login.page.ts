@@ -91,8 +91,13 @@ import { AuthService, ApiService } from '@lodgik/shared';
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-                  <input [(ngModel)]="password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" (keyup.enter)="login()"
-                         class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all">
+                  <div class="relative">
+                    <input [(ngModel)]="password" [type]="showPassword ? 'text' : 'password'" placeholder="••••••••" (keyup.enter)="login()"
+                           class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all pr-10">
+                    <button type="button" (click)="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      {{ showPassword ? '🙈' : '👁️' }}
+                    </button>
+                  </div>
                 </div>
                 <button (click)="login()" [disabled]="loading()"
                         class="w-full py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
@@ -116,7 +121,7 @@ export class LoginPage implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  email = ''; password = '';
+  email = ''; password = ''; showPassword = false;
   newPassword = ''; confirmPassword = '';
   loading = signal(false); error = signal('');
   mode = signal<'login' | 'invite'>('login');
