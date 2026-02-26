@@ -1,6 +1,6 @@
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { AuthService, TokenService, FeatureService, BrandingService, LODGIK_ICONS } from '@lodgik/shared';
+import { AuthService, TokenService, FeatureService, BrandingService, LODGIK_ICONS, ApiService } from '@lodgik/shared';
 import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
 
 interface NavItem {
@@ -48,7 +48,8 @@ interface NavGroup {
 
         <!-- Property Selector -->
         @if (!collapsed()) {
-          <div class="mx-3 mb-2 px-3 py-2.5 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+          <div class="mx-3 mb-2 px-3 py-2.5 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors relative"
+               (click)="showPropertySwitcher = !showPropertySwitcher">
             <div class="flex items-center gap-2.5">
               <div class="w-7 h-7 rounded-md bg-sage-100 flex items-center justify-center text-sage-700 text-xs font-bold shrink-0">
                 {{ propertyInitial() }}
@@ -59,6 +60,18 @@ interface NavGroup {
               </div>
               <lucide-icon name="chevron-down" [size]="14" class="text-gray-400 shrink-0"></lucide-icon>
             </div>
+            @if (showPropertySwitcher && allProperties().length > 1) {
+              <div class="absolute left-0 right-0 top-full mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-40 overflow-y-auto" (click)="$event.stopPropagation()">
+                @for (p of allProperties(); track p.id) {
+                  <button (click)="switchToProperty(p)" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                          [class.bg-sage-50]="p.id === currentPropertyId()" [class.font-semibold]="p.id === currentPropertyId()">
+                    <span class="w-5 h-5 rounded bg-sage-100 flex items-center justify-center text-sage-700 text-[10px] font-bold shrink-0">{{ p.name?.charAt(0) }}</span>
+                    <span class="truncate">{{ p.name }}</span>
+                    @if (p.id === currentPropertyId()) { <span class="text-sage-600 text-xs ml-auto">✓</span> }
+                  </button>
+                }
+              </div>
+            }
           </div>
         }
 
@@ -169,6 +182,7 @@ interface NavGroup {
 })
 export class HotelLayoutComponent implements OnInit {
   private auth = inject(AuthService);
+  private api = inject(ApiService);
   private router = inject(Router);
   private featureService = inject(FeatureService);
   private brandingService = inject(BrandingService);
@@ -186,6 +200,23 @@ export class HotelLayoutComponent implements OnInit {
     const role = this.user()?.role;
     return role ? role.replace('_', ' ') : '';
   });
+
+  // Property switcher
+  showPropertySwitcher = false;
+  allProperties = signal<any[]>([]);
+  currentPropertyId = signal('');
+
+  switchToProperty(property: any): void {
+    this.showPropertySwitcher = false;
+    const userData = localStorage.getItem('lodgik_user');
+    if (userData) {
+      const user = JSON.parse(userData);
+      user.property_id = property.id;
+      localStorage.setItem('lodgik_user', JSON.stringify(user));
+    }
+    this.currentPropertyId.set(property.id);
+    window.location.href = '/dashboard';
+  }
 
   userInitials = computed(() => {
     const u = this.user();
@@ -305,6 +336,11 @@ export class HotelLayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.featureService.load();
+    this.currentPropertyId.set(this.auth.currentUser?.property_id || '');
+    // Load all properties for switcher
+    this.api.get('/properties').subscribe((r: any) => {
+      if (r?.success) this.allProperties.set(r.data || []);
+    });
     const path = this.router.url;
     const visible = this.visibleNavGroups();
     visible.forEach((g, i) => {
