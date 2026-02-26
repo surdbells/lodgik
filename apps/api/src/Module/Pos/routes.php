@@ -25,6 +25,7 @@ return function (App $app): void {
         $g->post('/orders/{id}/close', [PosController::class, 'closeOrder']);
         $g->post('/orders/{id}/cancel', [PosController::class, 'cancelOrder']);
         $g->post('/orders/{id}/post-to-folio', [PosController::class, 'postToFolio']);
+        $g->get('/kitchen/queue', [PosController::class, 'kitchenQueue']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager', 'bar', 'kitchen', 'front_desk']))
         ->add(TenantMiddleware::class)

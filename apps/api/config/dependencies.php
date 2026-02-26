@@ -848,7 +848,7 @@ return function (ContainerBuilder $builder): void {
             em: $c->get(EntityManagerInterface::class),
         ),
         \Lodgik\Module\Finance\FinanceController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Finance\FinanceController(
-            service: $c->get(\Lodgik\Module\Finance\FinanceService::class),
+            svc: $c->get(\Lodgik\Module\Finance\FinanceService::class),
         ),
 
         // ─── Phase 8B: Asset Management ─────────────────────────

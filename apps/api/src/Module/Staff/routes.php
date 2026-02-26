@@ -13,6 +13,7 @@ return function (App $app): void {
     $app->group('/api/staff', function (RouteCollectorProxy $group) {
         $group->get('', [StaffController::class, 'list']);
         $group->get('/{id}', [StaffController::class, 'show']);
+        $group->post('', [StaffController::class, 'create']);
         $group->post('/invite', [StaffController::class, 'invite']);
         $group->patch('/{id}', [StaffController::class, 'update']);
         $group->delete('/{id}', [StaffController::class, 'delete']);

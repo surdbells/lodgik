@@ -21,12 +21,12 @@ final class FolioRepository extends BaseRepository
     public function findByProperty(string $propertyId, ?string $status = null, int $page = 1, int $limit = 20): array
     {
         $qb = $this->createQueryBuilder('f')
-            ->where('f.propertyId = :pid')->setParameter('pid', $propertyId)
-            ->orderBy('f.createdAt', 'DESC');
+            ->where('f.propertyId = :pid')->setParameter('pid', $propertyId);
         if ($status) $qb->andWhere('f.status = :s')->setParameter('s', $status);
-        $total = (clone $qb)->select('COUNT(f.id)')->getQuery()->getSingleScalarResult();
-        $items = $qb->setFirstResult(($page - 1) * $limit)->setMaxResults($limit)->getQuery()->getResult();
-        return ['items' => $items, 'total' => (int)$total];
+        $countQb = (clone $qb)->select('COUNT(f.id)');
+        $total = (int) $countQb->getQuery()->getSingleScalarResult();
+        $items = $qb->orderBy('f.createdAt', 'DESC')->setFirstResult(($page - 1) * $limit)->setMaxResults($limit)->getQuery()->getResult();
+        return ['items' => $items, 'total' => $total];
     }
 
     public function generateFolioNumber(string $tenantId): string

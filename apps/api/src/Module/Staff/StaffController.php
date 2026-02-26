@@ -66,6 +66,30 @@ final class StaffController
         return $this->response->success($response, $this->serializeUser($user));
     }
 
+    /** POST /api/staff — create staff directly (active, with password) */
+    public function create(Request $request, Response $response): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        foreach (['first_name', 'last_name', 'email', 'password', 'role'] as $f) {
+            if (empty($body[$f])) return $this->response->validationError($response, ["$f is required"]);
+        }
+        try {
+            $user = $this->staffService->createDirect(
+                firstName: $body['first_name'],
+                lastName: $body['last_name'],
+                email: $body['email'],
+                password: $body['password'],
+                roleStr: $body['role'],
+                tenantId: $request->getAttribute('auth.tenant_id'),
+                propertyId: $request->getAttribute('auth.property_id') ?? '',
+                actorId: $request->getAttribute('auth.user_id'),
+            );
+            return $this->response->success($response, $this->serializeUser($user), 'Staff member created');
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 422);
+        }
+    }
+
     /**
      * POST /api/staff/invite
      */

@@ -46,6 +46,16 @@ final class TenantMiddleware implements MiddlewareInterface
         // Set TenantListener context for INSERT operations
         $this->tenantListener->setCurrentTenantId($tenantId);
 
+        // Load tenant's enabled modules for FeatureMiddleware fallback
+        try {
+            $tenant = $this->em->find(\Lodgik\Entity\Tenant::class, $tenantId);
+            if ($tenant !== null) {
+                $request = $request->withAttribute('auth.enabled_modules', $tenant->getEnabledModules() ?? []);
+            }
+        } catch (\Throwable) {
+            // Non-critical — FeatureMiddleware will fail-open
+        }
+
         return $handler->handle($request);
     }
 }

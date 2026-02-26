@@ -4,7 +4,7 @@ namespace Lodgik\Helper;
 
 use Psr\Http\Message\ResponseInterface as Response;
 
-final class JsonResponse
+class JsonResponse
 {
     public static function ok(Response $response, mixed $data = null, string $message = '', ?array $meta = null): Response
     {

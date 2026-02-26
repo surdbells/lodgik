@@ -24,9 +24,7 @@ final class EmployeeRepository extends BaseRepository
         int $limit = 20,
     ): array {
         $qb = $this->createQueryBuilder('e')
-            ->where('e.deletedAt IS NULL')
-            ->orderBy('e.lastName', 'ASC')
-            ->addOrderBy('e.firstName', 'ASC');
+            ->where('e.deletedAt IS NULL');
 
         if ($propertyId) $qb->andWhere('e.propertyId = :pid')->setParameter('pid', $propertyId);
         if ($departmentId) $qb->andWhere('e.departmentId = :did')->setParameter('did', $departmentId);
@@ -37,10 +35,11 @@ final class EmployeeRepository extends BaseRepository
                ->setParameter('s', $s);
         }
 
-        $total = (clone $qb)->select('COUNT(e.id)')->getQuery()->getSingleScalarResult();
-        $items = $qb->setFirstResult(($page - 1) * $limit)->setMaxResults($limit)->getQuery()->getResult();
+        $total = (int) (clone $qb)->select('COUNT(e.id)')->getQuery()->getSingleScalarResult();
+        $items = $qb->orderBy('e.lastName', 'ASC')->addOrderBy('e.firstName', 'ASC')
+            ->setFirstResult(($page - 1) * $limit)->setMaxResults($limit)->getQuery()->getResult();
 
-        return ['items' => $items, 'total' => (int) $total];
+        return ['items' => $items, 'total' => $total];
     }
 
     /** @return Employee[] */

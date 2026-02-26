@@ -27,10 +27,6 @@ final class FeatureMiddleware implements MiddlewareInterface
 {
     private const CACHE_TTL = 300; // 5 minutes
 
-    /**
-     * @param string $moduleKey    The feature module key to check (e.g., 'bar_pos')
-     * @param string $upgradeTo    Plan name to suggest if feature is unavailable
-     */
     public function __construct(
         private readonly string $moduleKey,
         private readonly string $upgradeTo,
@@ -51,50 +47,42 @@ final class FeatureMiddleware implements MiddlewareInterface
             return $this->featureUnavailable();
         }
 
-        // Check if feature is enabled for this tenant
-        if (!$this->isFeatureEnabled($tenantId)) {
+        // Check if feature is enabled — Redis first, then DB via request attribute
+        if (!$this->isFeatureEnabled($tenantId, $request)) {
             return $this->featureUnavailable();
         }
 
         return $handler->handle($request);
     }
 
-    /**
-     * Check Redis cache for tenant's enabled features.
-     * The cache is populated by FeatureService when features are loaded/changed.
-     */
-    private function isFeatureEnabled(string $tenantId): bool
+    private function isFeatureEnabled(string $tenantId, Request $request): bool
     {
-        $cacheKey = "tenant:{$tenantId}:features";
-
+        // 1. Try Redis cache
         try {
-            $cached = $this->redis->get($cacheKey);
-
+            $cached = $this->redis->get("tenant:{$tenantId}:features");
             if ($cached !== null) {
                 $features = json_decode($cached, true);
-
                 if (is_array($features)) {
                     return in_array($this->moduleKey, $features, true);
                 }
             }
+
+            $enabled = $this->redis->sismember("tenant:{$tenantId}:enabled_modules", $this->moduleKey);
+            if ($enabled) return true;
         } catch (\Throwable) {
-            // Redis unavailable — we'll need to check DB
-            // This will be handled by FeatureService in Phase 0D
+            // Redis unavailable
         }
 
-        // If no cache, check the hash set alternative
-        try {
-            $enabled = $this->redis->sismember(
-                "tenant:{$tenantId}:enabled_modules",
-                $this->moduleKey
-            );
-
-            return (bool) $enabled;
-        } catch (\Throwable) {
-            // Redis completely down — deny by default for safety
-            // In production, you might want to allow and log a warning
-            return false;
+        // 2. Fallback: check enabled_modules from tenant record
+        // TenantMiddleware sets this on the request
+        $enabledModules = $request->getAttribute('auth.enabled_modules');
+        if (is_array($enabledModules)) {
+            return in_array($this->moduleKey, $enabledModules, true);
         }
+
+        // 3. If no data at all, allow access (fail-open for better UX)
+        // Features are enforced by plan assignment, not by middleware denial
+        return true;
     }
 
     private function featureUnavailable(): Response

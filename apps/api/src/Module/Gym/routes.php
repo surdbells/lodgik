@@ -31,6 +31,8 @@ return function (App $app): void {
         $g->post('/classes/book', [GymController::class, 'enroll']);
         $g->get('/payments', [GymController::class, 'listPayments']);
         $g->post('/payments', [GymController::class, 'recordPayment']);
+        $g->get('/payments/monthly-revenue', [GymController::class, 'monthlyRevenue']);
+        $g->get('/visits/per-day', [GymController::class, 'visitsPerDay']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager', 'gym_staff', 'front_desk']))
         ->add(TenantMiddleware::class)

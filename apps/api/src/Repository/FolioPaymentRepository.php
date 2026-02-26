@@ -34,7 +34,7 @@ final class FolioPaymentRepository extends BaseRepository
     /** @return FolioPayment[] */
     public function findPendingByProperty(string $propertyId): array
     {
-        return $this->getEntityManager()->createQuery(
+        return $this->em->createQuery(
             'SELECT p FROM Lodgik\Entity\FolioPayment p JOIN Lodgik\Entity\Folio f WITH f.id = p.folioId WHERE f.propertyId = :pid AND p.status = :s ORDER BY p.createdAt DESC'
         )->setParameter('pid', $propertyId)->setParameter('s', PaymentStatus::PENDING->value)->getResult();
     }

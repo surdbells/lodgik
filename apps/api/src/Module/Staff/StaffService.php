@@ -291,4 +291,58 @@ final class StaffService
             ]);
         }
     }
+
+    /**
+     * Create a staff member directly (active, with password — no invitation flow).
+     */
+    public function createDirect(
+        string $firstName,
+        string $lastName,
+        string $email,
+        string $password,
+        string $roleStr,
+        string $tenantId,
+        string $propertyId,
+        string $actorId,
+    ): User {
+        $existing = $this->userRepo->findByEmail($email);
+        if ($existing !== null) {
+            throw new \RuntimeException('A staff member with this email already exists.');
+        }
+
+        $tenant = $this->tenantRepo->find($tenantId);
+        if ($tenant === null) throw new \RuntimeException('Tenant not found');
+
+        $currentCount = $this->userRepo->countActiveStaff();
+        if ($currentCount >= $tenant->getMaxStaff()) {
+            throw new \RuntimeException("Staff limit reached ({$tenant->getMaxStaff()}). Upgrade your plan to add more.");
+        }
+
+        $role = UserRole::from($roleStr);
+        $user = new User(
+            firstName: $firstName,
+            lastName: $lastName,
+            email: $email,
+            passwordHash: password_hash($password, PASSWORD_ARGON2ID),
+            role: $role,
+            tenantId: $tenantId,
+        );
+        $user->setPropertyId($propertyId);
+        $user->setIsActive(true);
+
+        $this->em->persist($user);
+        $this->em->flush();
+
+        $this->audit->logDeferred(
+            action: 'create_staff',
+            entityType: 'User',
+            entityId: $user->getId(),
+            tenantId: $tenantId,
+            userId: $actorId,
+            description: "Created staff {$user->getFullName()} ({$role->label()})",
+        );
+        $this->em->flush();
+
+        return $user;
+    }
 }
