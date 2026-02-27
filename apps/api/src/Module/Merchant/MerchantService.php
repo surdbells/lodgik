@@ -712,7 +712,7 @@ final class MerchantService
     public function listAllHotels(?string $status = null): array
     {
         $conn = $this->em->getConnection();
-        $sql = "SELECT h.*, m.business_name as merchant_name, m.contact_name as merchant_contact
+        $sql = "SELECT h.*, m.business_name as merchant_name, m.legal_name as merchant_contact
                 FROM merchant_hotels h
                 JOIN merchants m ON m.id = h.merchant_id";
         $params = [];
