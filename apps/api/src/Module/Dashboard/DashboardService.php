@@ -24,6 +24,7 @@ final class DashboardService
         private readonly RoomRepository $roomRepo,
         private readonly DailySnapshotRepository $snapshotRepo,
         private readonly LoggerInterface $logger,
+        private readonly ?\Lodgik\Repository\PropertyRepository $propertyRepo = null,
     ) {}
 
     /**
@@ -362,5 +363,125 @@ final class DashboardService
         $this->logger->info("Snapshot generated for {$propertyId} on {$dateStr}");
 
         return $snapshot;
+    }
+
+    // ═══ Cross-Property Aggregation ═══════════════════════════
+
+    /**
+     * Aggregated overview across all tenant properties.
+     */
+    public function getAggregatedOverview(string $tenantId): array
+    {
+        $properties = $this->propertyRepo?->findBy(['tenantId' => $tenantId, 'isActive' => true]) ?? [];
+        if (empty($properties)) return ['properties' => [], 'totals' => $this->emptyTotals()];
+
+        $propertyData = [];
+        $totals = $this->emptyTotals();
+
+        foreach ($properties as $prop) {
+            try {
+                $overview = $this->getOverview($prop->getId());
+                $overview['property_id'] = $prop->getId();
+                $overview['property_name'] = $prop->getName();
+                $overview['city'] = $prop->getCity();
+                $propertyData[] = $overview;
+
+                // Aggregate totals
+                $totals['total_rooms'] += $overview['rooms']['total'] ?? 0;
+                $totals['occupied_rooms'] += $overview['rooms']['occupied'] ?? 0;
+                $totals['available_rooms'] += $overview['rooms']['available'] ?? 0;
+                $totals['today_check_ins'] += $overview['today_check_ins'] ?? 0;
+                $totals['today_check_outs'] += $overview['today_check_outs'] ?? 0;
+                $totals['pending_check_ins'] += $overview['pending_check_ins'] ?? 0;
+                $totals['pending_bookings'] += $overview['pending_bookings'] ?? 0;
+                $totals['today_revenue'] += (float) ($overview['today_revenue'] ?? 0);
+            } catch (\Throwable $e) {
+                $this->logger->warning("Failed to get overview for property {$prop->getId()}: {$e->getMessage()}");
+            }
+        }
+
+        // Compute aggregate rates
+        $totals['occupancy_rate'] = $totals['total_rooms'] > 0
+            ? round(($totals['occupied_rooms'] / $totals['total_rooms']) * 100, 1) : 0;
+        $totals['adr'] = $totals['occupied_rooms'] > 0
+            ? round($totals['today_revenue'] / $totals['occupied_rooms'], 2) : 0;
+        $totals['revpar'] = $totals['total_rooms'] > 0
+            ? round($totals['today_revenue'] / $totals['total_rooms'], 2) : 0;
+        $totals['today_revenue'] = number_format($totals['today_revenue'], 2, '.', '');
+        $totals['adr'] = number_format($totals['adr'], 2, '.', '');
+        $totals['revpar'] = number_format($totals['revpar'], 2, '.', '');
+        $totals['property_count'] = count($propertyData);
+
+        return [
+            'properties' => $propertyData,
+            'totals' => $totals,
+        ];
+    }
+
+    /**
+     * Revenue comparison across properties for a given period.
+     */
+    public function getPropertyComparison(string $tenantId, int $days = 30): array
+    {
+        $from = (new \DateTimeImmutable())->modify("-{$days} days")->format('Y-m-d');
+        $properties = $this->propertyRepo?->findBy(['tenantId' => $tenantId, 'isActive' => true]) ?? [];
+
+        $comparison = [];
+        foreach ($properties as $prop) {
+            try {
+                $revenue = (float) $this->em->createQueryBuilder()
+                    ->select('COALESCE(SUM(b.totalAmount), 0)')
+                    ->from(Booking::class, 'b')
+                    ->where('b.propertyId = :prop')
+                    ->andWhere('b.status = :status')
+                    ->andWhere('b.checkedOutAt >= :from')
+                    ->andWhere('b.deletedAt IS NULL')
+                    ->setParameter('prop', $prop->getId())
+                    ->setParameter('status', BookingStatus::CHECKED_OUT->value)
+                    ->setParameter('from', $from)
+                    ->getQuery()
+                    ->getSingleScalarResult();
+
+                $bookingCount = (int) $this->em->createQueryBuilder()
+                    ->select('COUNT(b.id)')
+                    ->from(Booking::class, 'b')
+                    ->where('b.propertyId = :prop')
+                    ->andWhere('b.deletedAt IS NULL')
+                    ->andWhere('b.createdAt >= :from')
+                    ->setParameter('prop', $prop->getId())
+                    ->setParameter('from', $from)
+                    ->getQuery()
+                    ->getSingleScalarResult();
+
+                $roomCounts = $this->roomRepo->countByStatus($prop->getId());
+                $totalRooms = array_sum($roomCounts);
+                $occupied = $roomCounts[RoomStatus::OCCUPIED->value] ?? 0;
+
+                $comparison[] = [
+                    'property_id' => $prop->getId(),
+                    'property_name' => $prop->getName(),
+                    'city' => $prop->getCity(),
+                    'total_rooms' => $totalRooms,
+                    'occupied_rooms' => $occupied,
+                    'occupancy_rate' => $totalRooms > 0 ? round(($occupied / $totalRooms) * 100, 1) : 0,
+                    'revenue' => number_format($revenue, 2, '.', ''),
+                    'bookings' => $bookingCount,
+                ];
+            } catch (\Throwable $e) {
+                $this->logger->warning("Comparison failed for {$prop->getId()}: {$e->getMessage()}");
+            }
+        }
+
+        return $comparison;
+    }
+
+    private function emptyTotals(): array
+    {
+        return [
+            'total_rooms' => 0, 'occupied_rooms' => 0, 'available_rooms' => 0,
+            'today_check_ins' => 0, 'today_check_outs' => 0,
+            'pending_check_ins' => 0, 'pending_bookings' => 0,
+            'today_revenue' => 0, 'occupancy_rate' => 0, 'adr' => 0, 'revpar' => 0,
+        ];
     }
 }

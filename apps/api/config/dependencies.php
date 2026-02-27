@@ -600,6 +600,7 @@ return function (ContainerBuilder $builder): void {
                 roomRepo: $c->get(RoomRepository::class),
                 snapshotRepo: $c->get(DailySnapshotRepository::class),
                 logger: $c->get(LoggerInterface::class),
+                propertyRepo: $c->get(PropertyRepository::class),
             );
         },
 

@@ -18,12 +18,35 @@ final class DashboardController
     /** GET /api/dashboard/overview */
     public function overview(Request $request, Response $response): Response
     {
-        $propertyId = $request->getQueryParams()['property_id'] ?? null;
+        $params = $request->getQueryParams();
+        $scope = $params['scope'] ?? null;
+
+        // Cross-property aggregated view
+        if ($scope === 'all_properties') {
+            $tenantId = $request->getAttribute('auth.tenant_id');
+            if (!$tenantId) {
+                return $this->response->error($response, 'Tenant not found', 400);
+            }
+            $data = $this->dashboardService->getAggregatedOverview($tenantId);
+            return $this->response->success($response, $data);
+        }
+
+        // Single property view
+        $propertyId = $params['property_id'] ?? null;
         if ($propertyId === null) {
             return $this->response->validationError($response, ['property_id' => 'Required']);
         }
 
         $data = $this->dashboardService->getOverview($propertyId);
+        return $this->response->success($response, $data);
+    }
+
+    /** GET /api/dashboard/property-comparison */
+    public function propertyComparison(Request $request, Response $response): Response
+    {
+        $tenantId = $request->getAttribute('auth.tenant_id');
+        $days = (int) ($request->getQueryParams()['days'] ?? 30);
+        $data = $this->dashboardService->getPropertyComparison($tenantId, $days);
         return $this->response->success($response, $data);
     }
 

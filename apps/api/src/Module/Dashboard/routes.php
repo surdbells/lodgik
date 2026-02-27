@@ -12,6 +12,7 @@ use Slim\Routing\RouteCollectorProxy;
 return function (App $app): void {
     $app->group('/api/dashboard', function (RouteCollectorProxy $group) {
         $group->get('/overview', [DashboardController::class, 'overview']);
+        $group->get('/property-comparison', [DashboardController::class, 'propertyComparison']);
         $group->get('/occupancy-trends', [DashboardController::class, 'occupancyTrends']);
         $group->get('/revenue-breakdown', [DashboardController::class, 'revenueBreakdown']);
         $group->get('/activity-feed', [DashboardController::class, 'activityFeed']);
