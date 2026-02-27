@@ -253,6 +253,10 @@ export const routes: Routes = [
         path: 'iot',
         loadComponent: () => import('./pages/iot/iot.page'),
       },
+      {
+        path: 'audit-log',
+        loadComponent: () => import('./pages/audit-log/audit-log.page').then(m => m.AuditLogPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

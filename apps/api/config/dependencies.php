@@ -282,6 +282,12 @@ return function (ContainerBuilder $builder): void {
         AuditService::class => function (ContainerInterface $c): AuditService {
             return new AuditService($c->get(EntityManagerInterface::class));
         },
+        \Lodgik\Module\Audit\AuditController::class => function (ContainerInterface $c): \Lodgik\Module\Audit\AuditController {
+            return new \Lodgik\Module\Audit\AuditController(
+                em: $c->get(EntityManagerInterface::class),
+                response: $c->get(ResponseHelper::class),
+            );
+        },
 
         ZeptoMailService::class => function (ContainerInterface $c): ZeptoMailService {
             $settings = $c->get('settings')['zeptomail'];

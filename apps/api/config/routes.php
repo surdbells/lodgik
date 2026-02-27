@@ -79,4 +79,7 @@ return function (App $app): void {
 
     // ─── Platform Settings ────────────────────────────────────
     (require __DIR__ . '/../src/Module/Settings/routes.php')($app);
+
+    // ─── Audit Logs ──────────────────────────────────────────
+    (require __DIR__ . '/../src/Module/Audit/routes.php')($app);
 };

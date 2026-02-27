@@ -15,6 +15,12 @@ return function (App $app): void {
 
     // Middleware is applied in reverse order (last added = first executed)
 
+    // 0. Audit all write operations (innermost — runs after route/auth)
+    $app->add(new \Lodgik\Middleware\AuditMiddleware(
+        em: $container->get(\Doctrine\ORM\EntityManagerInterface::class),
+        logger: $container->get(LoggerInterface::class),
+    ));
+
     // 1. Parse JSON request bodies
     $app->add(new JsonBodyParserMiddleware());
 

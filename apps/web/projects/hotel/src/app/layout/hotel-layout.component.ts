@@ -133,6 +133,12 @@ interface NavGroup {
               }
             }
           </a>
+          <a routerLink="/audit-log" routerLinkActive="sidebar-active"
+             class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors"
+             [class.justify-center]="collapsed()" [title]="collapsed() ? 'Audit Log' : ''">
+            <lucide-icon name="shield-check" [size]="18" [strokeWidth]="1.75" class="shrink-0 opacity-70"></lucide-icon>
+            @if (!collapsed()) { <span>Audit Log</span> }
+          </a>
           <a routerLink="/settings" routerLinkActive="sidebar-active"
              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors"
              [class.justify-center]="collapsed()" [title]="collapsed() ? 'Settings' : ''">
