@@ -154,6 +154,7 @@ export class AdminLayoutComponent implements OnInit {
       label: 'Marketplace',
       items: [
         { label: 'Merchants', icon: 'users', route: '/merchants' },
+        { label: 'Hotel Approvals', icon: 'hotel', route: '/hotel-approvals' },
         { label: 'KYC Review', icon: 'shield', route: '/kyc-review' },
         { label: 'Commission Config', icon: 'hand-coins', route: '/commission-config' },
         { label: 'Payout Processing', icon: 'credit-card', route: '/payout-processing' },

@@ -86,6 +86,10 @@ export const routes: Routes = [
         path: 'audit-log',
         loadComponent: () => import('./pages/audit-log/audit-log.page').then(m => m.AdminAuditLogPage),
       },
+      {
+        path: 'hotel-approvals',
+        loadComponent: () => import('./pages/hotel-approvals/hotel-approvals.page').then(m => m.HotelApprovalsPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

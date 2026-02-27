@@ -1,11 +1,12 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ApiService, StatsCardComponent, PageHeaderComponent } from '@lodgik/shared';
 import { LineChartComponent, DonutChartComponent, BarChartComponent, SparklineChartComponent, ChartSeries, ChartDataPoint } from '@lodgik/charts';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [StatsCardComponent, PageHeaderComponent, LineChartComponent, DonutChartComponent, BarChartComponent, SparklineChartComponent],
+  imports: [RouterLink, StatsCardComponent, PageHeaderComponent, LineChartComponent, DonutChartComponent, BarChartComponent, SparklineChartComponent],
   template: `
     <ui-page-header title="Platform Dashboard" subtitle="Overview of your SaaS platform" icon="layout-dashboard"></ui-page-header>
 
@@ -14,6 +15,17 @@ import { LineChartComponent, DonutChartComponent, BarChartComponent, SparklineCh
         <div class="animate-spin rounded-full border-2 border-gray-300 border-t-sage-600 w-7 h-7"></div>
       </div>
     } @else {
+      <!-- Pending Actions -->
+      @if (pendingHotels() > 0) {
+        <a routerLink="/hotel-approvals" class="flex items-center gap-3 px-4 py-3 mb-4 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors">
+          <span class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-sm font-bold">{{ pendingHotels() }}</span>
+          <div>
+            <p class="text-sm font-medium text-amber-800">Hotel{{ pendingHotels() > 1 ? 's' : '' }} awaiting approval</p>
+            <p class="text-xs text-amber-600">Merchants have submitted hotels for provisioning</p>
+          </div>
+          <span class="ml-auto text-amber-400 text-xs">Review →</span>
+        </a>
+      }
       <!-- Stats row -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <ui-stats-card label="Total Tenants" [value]="stats().total_tenants" icon="hotel" [trend]="stats().tenant_growth_pct">
@@ -95,8 +107,17 @@ export class DashboardPage implements OnInit {
   trendSeries = signal<ChartSeries[]>([]);
   trendLabels = signal<string[]>([]);
   recentTenants = signal<any[]>([]);
+  pendingHotels = signal(0);
 
   ngOnInit(): void {
+    // Load pending hotels count
+    this.api.get('/admin/merchants/hotels/pending').subscribe({
+      next: (r: any) => {
+        const hotels = r?.data || [];
+        this.pendingHotels.set(hotels.filter((h: any) => h.onboarding_status === 'pending').length);
+      },
+    });
+
     this.api.get('/admin/dashboard').subscribe({
       next: r => {
         if (r.success) {

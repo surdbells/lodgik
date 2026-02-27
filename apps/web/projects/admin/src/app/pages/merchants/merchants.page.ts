@@ -17,6 +17,27 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading()) {
+      <!-- Pending Hotels Alert -->
+      @if (pendingHotels().length > 0) {
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600 text-lg">🏨</span>
+            <div>
+              <p class="text-sm font-semibold text-amber-900">{{ pendingHotels().length }} Hotel{{ pendingHotels().length > 1 ? 's' : '' }} Pending Approval</p>
+              <p class="text-xs text-amber-700">
+                @for (h of pendingHotels().slice(0, 3); track h.id) {
+                  {{ h.hotel_name }} ({{ h.merchant_name }}){{ !$last ? ', ' : '' }}
+                }
+                @if (pendingHotels().length > 3) { <span>… and {{ pendingHotels().length - 3 }} more</span> }
+              </p>
+            </div>
+          </div>
+          <button (click)="reviewPendingHotel(pendingHotels()[0])" class="px-4 py-2 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 whitespace-nowrap">
+            Review Now
+          </button>
+        </div>
+      }
+
       <!-- Filters -->
       <div class="flex gap-2 mb-4 flex-wrap">
         <input [(ngModel)]="search" (keyup.enter)="load()" placeholder="Search merchants..." class="px-3 py-2 border rounded-lg text-sm w-64 focus:ring-2 focus:ring-sage-300 focus:border-sage-400 outline-none">
@@ -194,6 +215,7 @@ export class MerchantsPage implements OnInit {
 
   loading = signal(true);
   merchants = signal<any[]>([]);
+  pendingHotels = signal<any[]>([]);
   filterStatus = signal('');
   showOnboard = signal(false);
   submitting = signal(false);
@@ -212,7 +234,22 @@ export class MerchantsPage implements OnInit {
   stats = signal<{ label: string; count: number }[]>([]);
   inviteResult = signal<{ url: string; email: string } | null>(null);
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+    this.loadPendingHotels();
+  }
+
+  loadPendingHotels(): void {
+    this.api.get('/admin/merchants/hotels/pending').subscribe({
+      next: (r: any) => this.pendingHotels.set(r.data || []),
+      error: () => {},
+    });
+  }
+
+  reviewPendingHotel(h: any): void {
+    // Navigate to merchant detail page with hotels tab
+    this.router.navigate(['/merchants', h.merchant_id]);
+  }
 
   load(): void {
     this.loading.set(true);

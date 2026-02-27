@@ -47,6 +47,10 @@ return function (App $app): void {
 
         // Hotel onboarding status (admin update)
         $g->post('/hotels/{id}/status', [MerchantController::class, 'updateHotelStatus']);
+        $g->post('/hotels/{id}/approve', [MerchantController::class, 'approveHotel']);
+        $g->post('/hotels/{id}/reject', [MerchantController::class, 'rejectHotel']);
+        $g->get('/hotels/pending', [MerchantController::class, 'pendingHotels']);
+        $g->get('/hotels', [MerchantController::class, 'allHotels']);
 
         // List hotels for a specific merchant (admin)
         $g->get('/{id}/hotels', [MerchantController::class, 'adminListHotels']);

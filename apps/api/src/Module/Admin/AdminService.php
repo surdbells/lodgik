@@ -303,6 +303,16 @@ final class AdminService
             $tenantSpark[] = $count;
         }
 
+        // ─── Pending hotels ───────────────────────────────────
+        $pendingHotels = 0;
+        try {
+            $pendingHotels = (int) $conn->fetchOne("SELECT COUNT(*) FROM merchant_hotels WHERE onboarding_status = 'pending'");
+        } catch (\Throwable $e) { /* table may not exist */ }
+        $totalHotels = 0;
+        try {
+            $totalHotels = (int) $conn->fetchOne("SELECT COUNT(*) FROM merchant_hotels");
+        } catch (\Throwable $e) {}
+
         return [
             'total_tenants' => $tenantCount,
             'active_tenants' => $activeTenants,
@@ -314,6 +324,8 @@ final class AdminService
             'total_merchants' => $totalMerchants,
             'active_merchants' => $activeMerchants,
             'pending_merchants' => $pendingMerchants,
+            'pending_hotels' => $pendingHotels,
+            'total_hotels' => $totalHotels,
             'mrr' => $mrr,
             'tenants_by_status' => $tenantsByStatus,
             'revenue_by_plan' => $revenueByPlan,

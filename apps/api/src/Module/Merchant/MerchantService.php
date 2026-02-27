@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace Lodgik\Module\Merchant;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Lodgik\Entity\{Merchant, MerchantKyc, MerchantBankAccount, MerchantHotel, CommissionTier, Commission, CommissionPayout, MerchantResource, MerchantResourceDownload, MerchantSupportTicket, MerchantAuditLog, MerchantNotification, MerchantLead, MerchantStatement, User};
+use Lodgik\Entity\{Merchant, MerchantKyc, MerchantBankAccount, MerchantHotel, CommissionTier, Commission, CommissionPayout, MerchantResource, MerchantResourceDownload, MerchantSupportTicket, MerchantAuditLog, MerchantNotification, MerchantLead, MerchantStatement, User, Tenant, Property, UserProperty};
 use Lodgik\Enum\{MerchantStatus, MerchantCategory, CommissionScope, CommissionStatus, UserRole};
 use Lodgik\Service\ZeptoMailService;
 use Lodgik\Service\JwtService;
@@ -487,6 +487,23 @@ final class MerchantService
         $this->em->persist($h);
         $this->em->flush();
         $this->audit($merchantId, $merchantId, 'merchant', 'hotel_registered', 'MerchantHotel', $h->getId());
+
+        // Notify admin about new pending hotel
+        try {
+            $adminEmail = $_ENV['ADMIN_EMAIL'] ?? 'admin@lodgik.co';
+            $this->mailer->send(
+                $adminEmail, 'Lodgik Admin',
+                "New Hotel Pending Approval: {$h->getHotelName()}",
+                "<h2>New Hotel Registration</h2>"
+                . "<p>Merchant <strong>{$m->getBusinessName()}</strong> has registered a new hotel for onboarding.</p>"
+                . "<p><strong>Hotel:</strong> {$h->getHotelName()}</p>"
+                . "<p><strong>Location:</strong> " . ($h->getLocation() ?: 'Not specified') . "</p>"
+                . "<p><strong>Contact:</strong> " . ($h->getContactPerson() ?: '—') . " ({$h->getContactEmail()})</p>"
+                . "<p><strong>Rooms:</strong> {$h->getRoomsCount()} · Category: {$h->getHotelCategory()}</p>"
+                . "<p><a href='https://admin.lodgik.co/merchants'>Review in Admin Panel →</a></p>",
+            );
+        } catch (\Throwable $e) { /* Don't fail if email fails */ }
+
         return $h;
     }
 
@@ -495,6 +512,18 @@ final class MerchantService
         $criteria = ['merchantId' => $merchantId];
         if ($status) $criteria['onboardingStatus'] = $status;
         return array_map(fn($h) => $h->toArray(), $this->em->getRepository(MerchantHotel::class)->findBy($criteria, ['createdAt' => 'DESC']));
+    }
+
+    /** List ALL pending hotels across all merchants (admin view) */
+    public function listAllPendingHotels(?string $status = null): array
+    {
+        $conn = $this->em->getConnection();
+        $sql = "SELECT h.*, m.business_name as merchant_name, m.status as merchant_status
+                FROM merchant_hotels h
+                JOIN merchants m ON m.id = h.merchant_id
+                ORDER BY CASE h.onboarding_status WHEN 'pending' THEN 0 WHEN 'provisioned' THEN 1 ELSE 2 END, h.created_at DESC";
+        $rows = $conn->fetchAllAssociative($sql);
+        return $rows;
     }
 
     public function getHotelDetail(string $merchantId, string $hotelId): array
@@ -514,6 +543,185 @@ final class MerchantService
         if ($propertyId) $h->setPropertyId($propertyId);
         $this->em->flush();
         return $h;
+    }
+
+    /**
+     * Approve & provision a merchant-registered hotel:
+     * 1. Create Tenant
+     * 2. Create Property
+     * 3. Create admin User with temporary password
+     * 4. Link MerchantHotel → tenant_id + property_id
+     * 5. Send welcome email
+     * 6. Notify merchant
+     */
+    public function approveHotel(string $hotelId, string $adminUserId, string $appUrl): array
+    {
+        $h = $this->em->find(MerchantHotel::class, $hotelId);
+        if (!$h) throw new \RuntimeException('Hotel not found');
+        if ($h->getOnboardingStatus() !== 'pending') {
+            throw new \RuntimeException('Hotel is not pending approval (current: ' . $h->getOnboardingStatus() . ')');
+        }
+        if (!$h->getContactEmail()) throw new \RuntimeException('Hotel has no contact email');
+
+        $merchant = $this->getMerchant($h->getMerchantId());
+
+        // Check email uniqueness
+        $filters = $this->em->getFilters();
+        $wasEnabled = $filters->isEnabled('tenant_filter');
+        if ($wasEnabled) $filters->disable('tenant_filter');
+        $existingUser = $this->em->getRepository(User::class)->findOneBy(['email' => strtolower(trim($h->getContactEmail()))]);
+        if ($wasEnabled) $filters->enable('tenant_filter');
+        if ($existingUser) throw new \RuntimeException('Email already registered: ' . $h->getContactEmail());
+
+        // 1. Create Tenant
+        $slug = preg_replace('/[^a-z0-9]+/', '-', strtolower($h->getHotelName()));
+        $slug = trim($slug, '-') ?: 'hotel-' . substr(bin2hex(random_bytes(4)), 0, 8);
+        // Ensure unique slug
+        $existing = $this->em->getRepository(Tenant::class)->findOneBy(['slug' => $slug]);
+        if ($existing) $slug .= '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+
+        $tenant = new Tenant($h->getHotelName(), $slug);
+        $tenant->setEmail($h->getContactEmail());
+        $tenant->setPhone($h->getContactPhone());
+        $tenant->setSubscriptionStatus(\Lodgik\Enum\SubscriptionStatus::TRIAL);
+        $tenant->setTrialEndsAt(new \DateTimeImmutable('+14 days'));
+        $tenant->setEnabledModules(['room_management', 'guest_management', 'booking_engine', 'front_desk', 'dashboard']);
+        $this->em->persist($tenant);
+        $this->em->flush();
+
+        // 2. Create Property
+        $property = new Property($h->getHotelName(), $tenant->getId());
+        $property->setSlug($slug);
+        $property->setEmail($h->getContactEmail());
+        $property->setPhone($h->getContactPhone());
+        if ($h->getLocation()) $property->setAddress($h->getLocation());
+        $this->em->persist($property);
+        $this->em->flush();
+
+        // 3. Create admin User
+        $names = $this->splitName($h->getContactPerson() ?? 'Hotel Admin');
+        $tempPassword = bin2hex(random_bytes(6)); // 12-char temp password
+        $user = new User(
+            $names[0], $names[1],
+            strtolower(trim($h->getContactEmail())),
+            password_hash($tempPassword, PASSWORD_ARGON2ID),
+            \Lodgik\Enum\UserRole::PROPERTY_ADMIN,
+            $tenant->getId(),
+        );
+        $user->setPropertyId($property->getId());
+        $user->markEmailVerified();
+        $user->setIsActive(true);
+        $this->em->persist($user);
+        $this->em->flush();
+
+        // 4. Link MerchantHotel
+        $h->setOnboardingStatus('provisioned');
+        $h->setTenantId($tenant->getId());
+        $h->setPropertyId($property->getId());
+        $this->em->flush();
+
+        // 5. Send welcome email with credentials
+        try {
+            $html = "<h2>Welcome to Lodgik!</h2>"
+                . "<p>Great news! Your hotel <strong>{$h->getHotelName()}</strong> has been approved and provisioned.</p>"
+                . "<p><strong>Login URL:</strong> {$appUrl}/login</p>"
+                . "<p><strong>Email:</strong> {$h->getContactEmail()}</p>"
+                . "<p><strong>Temporary Password:</strong> {$tempPassword}</p>"
+                . "<p>Please change your password after your first login.</p>"
+                . "<p>Your 14-day free trial has started. Referred by: {$merchant->getBusinessName()}</p>";
+            $this->mailer->send(
+                $h->getContactEmail(),
+                $h->getContactPerson() ?? 'Hotel Admin',
+                "Your Hotel is Live on Lodgik!",
+                $html,
+            );
+        } catch (\Throwable $e) {
+            // Don't fail provisioning if email fails
+        }
+
+        // 6. Notify merchant
+        $this->notify($h->getMerchantId(), 'hotel_approved',
+            'Hotel Approved', "Your hotel \"{$h->getHotelName()}\" has been approved and is now live on Lodgik!");
+
+        // 7. Audit
+        $this->audit($h->getMerchantId(), $adminUserId, 'admin', 'hotel_approved', 'MerchantHotel', $h->getId());
+
+        return [
+            'hotel' => $h->toArray(),
+            'tenant_id' => $tenant->getId(),
+            'property_id' => $property->getId(),
+            'login_email' => $h->getContactEmail(),
+            'temp_password' => $tempPassword,
+        ];
+    }
+
+    /**
+     * Reject a pending hotel with a reason.
+     */
+    public function rejectHotel(string $hotelId, string $reason, string $adminUserId): MerchantHotel
+    {
+        $h = $this->em->find(MerchantHotel::class, $hotelId);
+        if (!$h) throw new \RuntimeException('Hotel not found');
+        $h->setOnboardingStatus('rejected');
+        $this->em->flush();
+
+        // Notify merchant in-app
+        $this->notify($h->getMerchantId(), 'hotel_rejected',
+            'Hotel Rejected', "Your hotel \"{$h->getHotelName()}\" was not approved. Reason: {$reason}");
+
+        // Email hotel contact about rejection
+        if ($h->getContactEmail()) {
+            try {
+                $merchant = $this->getMerchant($h->getMerchantId());
+                $this->mailer->send(
+                    $h->getContactEmail(),
+                    $h->getContactPerson() ?? 'Hotel Owner',
+                    "Hotel Application Update: {$h->getHotelName()}",
+                    "<h2>Application Update</h2>"
+                    . "<p>We've reviewed the application for <strong>{$h->getHotelName()}</strong> submitted through {$merchant->getBusinessName()}.</p>"
+                    . "<p>Unfortunately, we were unable to approve the application at this time.</p>"
+                    . "<p><strong>Reason:</strong> {$reason}</p>"
+                    . "<p>If you believe this was in error, please contact your referral partner or reach out to our support team.</p>"
+                    . "<p>Best regards,<br>The Lodgik Team</p>",
+                );
+            } catch (\Throwable $e) { /* Don't fail if email fails */ }
+        }
+
+        // Email merchant about rejection
+        try {
+            $merchant = $merchant ?? $this->getMerchant($h->getMerchantId());
+            if ($merchant->getEmail()) {
+                $this->mailer->send(
+                    $merchant->getEmail(),
+                    $merchant->getContactName() ?? 'Merchant',
+                    "Hotel Application Rejected: {$h->getHotelName()}",
+                    "<h2>Hotel Application Update</h2>"
+                    . "<p>The hotel <strong>{$h->getHotelName()}</strong> that you submitted for onboarding has been reviewed.</p>"
+                    . "<p><strong>Status:</strong> Rejected</p>"
+                    . "<p><strong>Reason:</strong> {$reason}</p>"
+                    . "<p>You may re-submit with corrected information through your merchant portal.</p>",
+                );
+            }
+        } catch (\Throwable $e) { /* Don't fail if email fails */ }
+
+        $this->audit($h->getMerchantId(), $adminUserId, 'admin', 'hotel_rejected', 'MerchantHotel', $h->getId());
+        return $h;
+    }
+
+    /** List all hotels across all merchants (optionally filter by status) */
+    public function listAllHotels(?string $status = null): array
+    {
+        $conn = $this->em->getConnection();
+        $sql = "SELECT h.*, m.business_name as merchant_name, m.contact_name as merchant_contact
+                FROM merchant_hotels h
+                JOIN merchants m ON m.id = h.merchant_id";
+        $params = [];
+        if ($status) {
+            $sql .= " WHERE h.onboarding_status = ?";
+            $params[] = $status;
+        }
+        $sql .= " ORDER BY h.created_at DESC";
+        return $conn->fetchAllAssociative($sql, $params);
     }
 
     // ─── Commission Engine ─────────────────────────────────────

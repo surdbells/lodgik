@@ -256,6 +256,41 @@ final class MerchantController
         return JsonResponse::ok($res, $h->toArray());
     }
 
+    /** POST /admin/merchants/hotels/{id}/approve — Full provisioning */
+    public function approveHotel(Request $req, Response $res, array $args): Response
+    {
+        $body = (array) ($req->getParsedBody() ?? []);
+        $appUrl = $body['app_url'] ?? 'https://app.lodgik.co';
+        $adminId = $req->getAttribute('auth.user_id');
+        $result = $this->service->approveHotel($args['id'], $adminId, $appUrl);
+        return JsonResponse::ok($res, $result, 'Hotel approved and provisioned');
+    }
+
+    /** POST /admin/merchants/hotels/{id}/reject */
+    public function rejectHotel(Request $req, Response $res, array $args): Response
+    {
+        $body = (array) ($req->getParsedBody() ?? []);
+        $reason = $body['reason'] ?? 'Not specified';
+        $adminId = $req->getAttribute('auth.user_id');
+        $h = $this->service->rejectHotel($args['id'], $reason, $adminId);
+        return JsonResponse::ok($res, $h->toArray(), 'Hotel rejected');
+    }
+
+    /** GET /admin/merchants/hotels/pending — All pending hotels across all merchants */
+    public function pendingHotels(Request $req, Response $res): Response
+    {
+        $hotels = $this->service->listAllPendingHotels();
+        return JsonResponse::ok($res, $hotels);
+    }
+
+    /** GET /admin/merchants/hotels — All hotels across all merchants */
+    public function allHotels(Request $req, Response $res): Response
+    {
+        $q = $req->getQueryParams();
+        $hotels = $this->service->listAllHotels($q['status'] ?? null);
+        return JsonResponse::ok($res, $hotels);
+    }
+
     // ─── Commissions ───────────────────────────────────────────
 
     public function listCommissions(Request $req, Response $res): Response

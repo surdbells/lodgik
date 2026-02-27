@@ -244,13 +244,39 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
               @if (hotels().length > 0) {
                 <div class="space-y-3">
                   @for (h of hotels(); track h.id) {
-                    <div class="border rounded-lg p-4 flex items-center justify-between">
-                      <div>
-                        <div class="font-medium text-gray-900">{{ h.hotel_name }}</div>
-                        <div class="text-xs text-gray-500">{{ h.location }} · {{ h.contact_person }}</div>
+                    <div class="border rounded-lg p-4">
+                      <div class="flex items-center justify-between mb-2">
+                        <div>
+                          <div class="font-medium text-gray-900">{{ h.hotel_name }}</div>
+                          <div class="text-xs text-gray-500">{{ h.location || '—' }} · {{ h.contact_person || '—' }} · {{ h.contact_email }}</div>
+                        </div>
+                        <ui-badge [variant]="hotelStatusVariant(h.onboarding_status)">{{ h.onboarding_status }}</ui-badge>
                       </div>
-                      <div class="flex items-center gap-3">
-                        <ui-badge [variant]="h.onboarding_status === 'live' ? 'success' : 'warning'">{{ h.onboarding_status }}</ui-badge>
+                      <div class="flex items-center gap-4 text-xs text-gray-400 mb-3">
+                        <span>{{ h.rooms_count || 0 }} rooms</span>
+                        <span>{{ h.hotel_category }}</span>
+                        @if (h.tenant_id) { <span class="text-green-600">Tenant: {{ h.tenant_id.substring(0,8) }}…</span> }
+                      </div>
+                      <!-- Actions based on status -->
+                      <div class="flex gap-2">
+                        @if (h.onboarding_status === 'pending') {
+                          <button (click)="approveHotel(h.id)" class="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700">
+                            Approve & Provision
+                          </button>
+                          <button (click)="rejectHotel(h.id)" class="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700">
+                            Reject
+                          </button>
+                        }
+                        @if (h.onboarding_status === 'provisioned' || h.onboarding_status === 'live') {
+                          <span class="px-3 py-1.5 bg-green-50 text-green-700 text-xs rounded-lg">Provisioned</span>
+                          @if (h.tenant_id) {
+                            <a [href]="'/tenants/' + h.tenant_id" class="px-3 py-1.5 border text-xs rounded-lg hover:bg-gray-50">View Tenant</a>
+                          }
+                        }
+                        @if (h.onboarding_status === 'rejected') {
+                          <span class="px-3 py-1.5 bg-red-50 text-red-700 text-xs rounded-lg">Rejected</span>
+                          <button (click)="resetHotelStatus(h.id)" class="px-3 py-1.5 border text-xs rounded-lg hover:bg-gray-50">Reset to Pending</button>
+                        }
                       </div>
                     </div>
                   }
@@ -473,4 +499,35 @@ export class MerchantDetailPage implements OnInit {
   statusVariant(s: string): any { return ({ active: 'success', suspended: 'danger', terminated: 'danger', pending_approval: 'warning', kyc_in_progress: 'info' } as any)[s] || 'neutral'; }
   kycVariant(s: string): any { return ({ approved: 'success', rejected: 'danger', under_review: 'warning', not_submitted: 'neutral' } as any)[s] || 'neutral'; }
   bankVariant(s: string): any { return ({ verified: 'success', frozen: 'danger', pending: 'warning' } as any)[s] || 'neutral'; }
+  hotelStatusVariant(s: string): any { return ({ provisioned: 'success', live: 'success', pending: 'warning', rejected: 'danger' } as any)[s] || 'neutral'; }
+
+  // ─── Hotel Actions ──────────────────────────────────────────
+
+  approveHotel(hotelId: string): void {
+    if (!confirm('Approve this hotel? This will create a tenant, property, and admin user.')) return;
+    this.api.post(`/admin/merchants/hotels/${hotelId}/approve`, { app_url: 'https://app.lodgik.co' }).subscribe({
+      next: (r: any) => {
+        this.toast.success('Hotel approved and provisioned! Credentials sent to hotel contact.');
+        this.loadHotels();
+        this.loadMerchant();
+      },
+      error: (e: any) => this.toast.error(e.error?.message || 'Failed to approve hotel'),
+    });
+  }
+
+  rejectHotel(hotelId: string): void {
+    const reason = prompt('Rejection reason:');
+    if (reason === null) return;
+    this.api.post(`/admin/merchants/hotels/${hotelId}/reject`, { reason: reason || 'Does not meet requirements' }).subscribe({
+      next: () => { this.toast.success('Hotel rejected'); this.loadHotels(); },
+      error: (e: any) => this.toast.error(e.error?.message || 'Failed to reject hotel'),
+    });
+  }
+
+  resetHotelStatus(hotelId: string): void {
+    this.api.post(`/admin/merchants/hotels/${hotelId}/status`, { status: 'pending' }).subscribe({
+      next: () => { this.toast.success('Hotel reset to pending'); this.loadHotels(); },
+      error: (e: any) => this.toast.error(e.error?.message || 'Failed'),
+    });
+  }
 }
