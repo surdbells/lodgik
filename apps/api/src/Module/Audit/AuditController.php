@@ -40,7 +40,7 @@ final class AuditController
 
         // Count
         $countQb = clone $qb;
-        $countQb->select('COUNT(a.id)');
+        $countQb->select('COUNT(a.id)')->resetDQLPart('orderBy');
         $total = (int) $countQb->getQuery()->getSingleScalarResult();
 
         // Paginate
@@ -118,7 +118,7 @@ final class AuditController
         }
 
         $countQb = clone $qb;
-        $countQb->select('COUNT(a.id)');
+        $countQb->select('COUNT(a.id)')->resetDQLPart('orderBy');
         $total = (int) $countQb->getQuery()->getSingleScalarResult();
 
         $page = max(1, (int) ($params['page'] ?? 1));
