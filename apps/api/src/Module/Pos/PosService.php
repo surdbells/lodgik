@@ -260,6 +260,39 @@ final class PosService
         return $result;
     }
 
+    /** Delete a category (only if no products exist under it) */
+    public function deleteCategory(string $id): void
+    {
+        $cat = $this->em->find(PosCategory::class, $id) ?? throw new \RuntimeException('Category not found');
+        $productCount = $this->em->createQueryBuilder()
+            ->select('COUNT(p.id)')->from(PosProduct::class, 'p')
+            ->where('p.categoryId = :cid')->setParameter('cid', $id)
+            ->getQuery()->getSingleScalarResult();
+        if ($productCount > 0) throw new \RuntimeException('Cannot delete category with existing products. Remove all products first.');
+        $this->em->remove($cat);
+        $this->em->flush();
+    }
+
+    /** Delete a product */
+    public function deleteProduct(string $id): void
+    {
+        $product = $this->em->find(PosProduct::class, $id) ?? throw new \RuntimeException('Product not found');
+        $this->em->remove($product);
+        $this->em->flush();
+    }
+
+    /** Update a category */
+    public function updateCategory(string $id, array $data): PosCategory
+    {
+        $cat = $this->em->find(PosCategory::class, $id) ?? throw new \RuntimeException('Category not found');
+        if (isset($data['name'])) $cat->setName($data['name']);
+        if (isset($data['type'])) $cat->setType($data['type']);
+        if (isset($data['sort_order'])) $cat->setSortOrder((int)$data['sort_order']);
+        if (isset($data['is_active'])) $cat->setIsActive((bool)$data['is_active']);
+        $this->em->flush();
+        return $cat;
+    }
+
     /** Split an order into groups */
     public function splitOrder(string $orderId): array
     {

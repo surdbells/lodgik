@@ -181,4 +181,22 @@ final class PosController
             return JsonResponse::ok($res, $order->toArray());
         } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 400); }
     }
+
+    public function updateCategory(Request $req, Response $res, array $args): Response
+    {
+        try { return JsonResponse::ok($res, $this->service->updateCategory($args['id'], (array) $req->getParsedBody())->toArray()); }
+        catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 404); }
+    }
+
+    public function deleteCategory(Request $req, Response $res, array $args): Response
+    {
+        try { $this->service->deleteCategory($args['id']); return JsonResponse::ok($res, null, 'Category deleted'); }
+        catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 400); }
+    }
+
+    public function deleteProduct(Request $req, Response $res, array $args): Response
+    {
+        try { $this->service->deleteProduct($args['id']); return JsonResponse::ok($res, null, 'Product deleted'); }
+        catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 400); }
+    }
 }

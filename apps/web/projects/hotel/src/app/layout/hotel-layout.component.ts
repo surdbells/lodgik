@@ -254,6 +254,7 @@ export class HotelLayoutComponent implements OnInit {
       label: 'F&B & Facilities',
       items: [
         { label: 'POS / Restaurant', icon: 'utensils', route: '/pos', requiredModule: 'bar_pos' },
+        { label: 'Menu & Pricing', icon: 'book-open', route: '/pos/menu', requiredModule: 'bar_pos' },
         { label: 'Gym & Fitness', icon: 'dumbbell', route: '/gym', requiredModule: 'gym_membership' },
         { label: 'Spa & Pool', icon: 'bath', route: '/spa' },
       ],

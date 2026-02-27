@@ -169,6 +169,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/pos/pos.page').then(m => m.PosPage),
       },
       {
+        path: 'pos/menu',
+        loadComponent: () => import('./pages/pos/menu.page').then(m => m.MenuPage),
+      },
+      {
         path: 'security',
         loadComponent: () => import('./pages/security/security.page').then(m => m.SecurityPage),
       },

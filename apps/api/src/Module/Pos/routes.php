@@ -13,9 +13,12 @@ return function (App $app): void {
         $g->post('/tables', [PosController::class, 'createTable']);
         $g->get('/categories', [PosController::class, 'listCategories']);
         $g->post('/categories', [PosController::class, 'createCategory']);
+        $g->put('/categories/{id}', [PosController::class, 'updateCategory']);
+        $g->delete('/categories/{id}', [PosController::class, 'deleteCategory']);
         $g->get('/products', [PosController::class, 'listProducts']);
         $g->post('/products', [PosController::class, 'createProduct']);
         $g->put('/products/{id}', [PosController::class, 'updateProduct']);
+        $g->delete('/products/{id}', [PosController::class, 'deleteProduct']);
         $g->get('/orders', [PosController::class, 'listOrders']);
         $g->post('/orders', [PosController::class, 'createOrder']);
         $g->get('/orders/{id}/items', [PosController::class, 'getOrder']);
