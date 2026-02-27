@@ -6,7 +6,7 @@ namespace Lodgik\Module\Audit;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Entity\AuditLog;
-use Lodgik\Service\ResponseHelper;
+use Lodgik\Helper\ResponseHelper;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
