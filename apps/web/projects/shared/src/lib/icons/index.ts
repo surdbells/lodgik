@@ -32,6 +32,7 @@ import {
   ChartBar,
   FileChartColumn,
   ShieldAlert,
+  ShieldCheck,
 
   // ─── Human Resources ──────────────────
   UserRoundCog,
@@ -106,6 +107,7 @@ export const LODGIK_ICONS = {
   ChartBar,
   FileChartColumn,
   ShieldAlert,
+  ShieldCheck,
   UserRoundCog,
   Clock,
   TreePalm,

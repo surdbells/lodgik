@@ -45,7 +45,15 @@ final class ChatController
     {
         $pid = $req->getQueryParams()['property_id'] ?? '';
         if (empty($pid)) return JsonResponse::error($res, 'property_id required', 422);
-        return JsonResponse::ok($res, $this->service->getActiveChats($pid));
+        return JsonResponse::ok($res, $this->service->getActiveChatsEnriched($pid));
+    }
+
+    /** GET /chat/occupied-guests — Guests in occupied rooms (for starting conversations) */
+    public function occupiedGuests(Request $req, Response $res): Response
+    {
+        $pid = $req->getQueryParams()['property_id'] ?? '';
+        if (empty($pid)) return JsonResponse::error($res, 'property_id required', 422);
+        return JsonResponse::ok($res, $this->service->getOccupiedGuests($pid));
     }
 
     /** GET /chat/unread/{bookingId} — Unread count for a booking */
