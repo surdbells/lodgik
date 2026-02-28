@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
@@ -11,7 +11,17 @@ import { AuthService } from '@lodgik/shared';
   imports: [FormsModule, RouterLink, DatePipe, DecimalPipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
     <ui-page-header title="Bookings" subtitle="Reservations, check-ins and check-outs">
-      <a routerLink="/bookings/new" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Booking</a>
+      <div class="flex gap-2">
+        <div class="flex border border-gray-200 rounded-lg overflow-hidden">
+          <button (click)="viewMode.set('list')" class="px-3 py-2 text-sm font-medium transition-colors"
+            [class.bg-sage-600]="viewMode()==='list'" [class.text-white]="viewMode()==='list'"
+            [class.bg-white]="viewMode()!=='list'" [class.text-gray-500]="viewMode()!=='list'">☰ List</button>
+          <button (click)="viewMode.set('calendar'); loadCalendar()" class="px-3 py-2 text-sm font-medium transition-colors border-l border-gray-200"
+            [class.bg-sage-600]="viewMode()==='calendar'" [class.text-white]="viewMode()==='calendar'"
+            [class.bg-white]="viewMode()!=='calendar'" [class.text-gray-500]="viewMode()!=='calendar'">📅 Calendar</button>
+        </div>
+        <a routerLink="/bookings/new" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Booking</a>
+      </div>
     </ui-page-header>
 
     <!-- Quick Stats -->
@@ -73,22 +83,75 @@ import { AuthService } from '@lodgik/shared';
       </div>
     }
 
-    <!-- Status Filter Tabs -->
-    <div class="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
-      @for (s of statusTabs; track s.value) {
-        <button (click)="statusFilter = s.value; load()"
-                class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
-                [class.bg-white]="statusFilter === s.value" [class.shadow-sm]="statusFilter === s.value"
-                [class.text-gray-500]="statusFilter !== s.value">
-          {{ s.label }}
-        </button>
-      }
-    </div>
+    <!-- Status Filter Tabs — only in list mode -->
+    @if (viewMode() === 'list') {
+      <div class="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
+        @for (s of statusTabs; track s.value) {
+          <button (click)="statusFilter = s.value; load()"
+                  class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                  [class.bg-white]="statusFilter === s.value" [class.shadow-sm]="statusFilter === s.value"
+                  [class.text-gray-500]="statusFilter !== s.value">
+            {{ s.label }}
+          </button>
+        }
+      </div>
 
-    <ui-loading [loading]="loading()"></ui-loading>
-    @if (!loading()) {
-      <ui-data-table [columns]="columns" [data]="bookings()" [actions]="actions" [totalItems]="total()" [searchable]="true" searchPlaceholder="Search by ref..." (pageChange)="onPage($event)"></ui-data-table>
+      <ui-loading [loading]="loading()"></ui-loading>
+      @if (!loading()) {
+        <ui-data-table [columns]="columns" [data]="bookings()" [actions]="actions" [totalItems]="total()" [searchable]="true" searchPlaceholder="Search by ref..." (pageChange)="onPage($event)"></ui-data-table>
+      }
     }
+
+    <!-- Calendar View -->
+    @if (viewMode() === 'calendar') {
+      <!-- Month Navigation -->
+      <div class="flex items-center justify-between mb-4">
+        <button (click)="prevMonth()" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600">◀</button>
+        <h2 class="text-base font-semibold text-gray-800">{{ calendarMonth() | date:'MMMM yyyy' }}</h2>
+        <button (click)="nextMonth()" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600">▶</button>
+      </div>
+      <ui-loading [loading]="calendarLoading()"></ui-loading>
+      @if (!calendarLoading()) {
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden">
+          <!-- Day headers -->
+          <div class="grid grid-cols-7 border-b border-gray-100">
+            @for (d of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; track d) {
+              <div class="px-2 py-2 text-center text-xs font-semibold text-gray-400 uppercase">{{ d }}</div>
+            }
+          </div>
+          <!-- Calendar grid -->
+          <div class="grid grid-cols-7">
+            @for (cell of calendarCells(); track $index) {
+              <div class="min-h-[80px] border-r border-b border-gray-50 p-1.5"
+                   [class.bg-gray-50]="!cell.inMonth" [class.bg-sage-50]="cell.isToday">
+                <div class="text-xs font-medium mb-1"
+                     [class.text-gray-300]="!cell.inMonth"
+                     [class.text-sage-700]="cell.isToday"
+                     [class.text-gray-600]="cell.inMonth && !cell.isToday">
+                  {{ cell.day }}
+                </div>
+                @for (b of cell.bookings; track b.id) {
+                  <div (click)="viewCalendarBooking(b)"
+                       class="px-1 py-0.5 rounded text-[10px] font-medium text-white mb-0.5 cursor-pointer truncate"
+                       [style.background-color]="b.status_color"
+                       [title]="b.booking_ref + ' — ' + b.guest_name">
+                    {{ b.booking_ref }}
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+        <!-- Legend -->
+        <div class="flex flex-wrap gap-3 mt-3">
+          @for (s of statusTabs.slice(1); track s.value) {
+            <div class="flex items-center gap-1.5 text-xs text-gray-500">
+              <span class="w-3 h-3 rounded-full inline-block" [style.background]="statusColor(s.value)"></span>
+              {{ s.label }}
+            </div>
+          }
+        </div>
+      }
 
     <!-- Booking Detail Modal -->
     @if (showDetail && detail) {
@@ -146,6 +209,11 @@ export class BookingsPage implements OnInit {
   roomTypes = signal<any[]>([]);
   guestResults = signal<any[]>([]);
   todayStats = signal<any>({ check_ins: 0, check_outs: 0, in_house: 0, upcoming: 0 });
+  viewMode = signal<'list' | 'calendar'>('list');
+  calendarLoading = signal(false);
+  calendarMonth = signal<Date>(new Date());
+  calendarBookings = signal<any[]>([]);
+  calendarCells = computed(() => this.buildCells());
   page = 1;
   statusFilter = '';
   showNew = false;
@@ -277,6 +345,66 @@ export class BookingsPage implements OnInit {
     this.api.get(`/bookings/${row.id}`).subscribe(r => {
       if (r.success) { this.detail = r.data; this.showDetail = true; }
     });
+  }
+
+  loadCalendar(): void {
+    this.calendarLoading.set(true);
+    const d = this.calendarMonth();
+    const from = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+    const to = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0];
+    this.api.get('/bookings/calendar', { property_id: this.propertyId, from, to }).subscribe({
+      next: r => { this.calendarBookings.set(r.data ?? []); this.calendarLoading.set(false); },
+      error: () => this.calendarLoading.set(false),
+    });
+  }
+
+  prevMonth(): void {
+    const d = this.calendarMonth();
+    this.calendarMonth.set(new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    this.loadCalendar();
+  }
+
+  nextMonth(): void {
+    const d = this.calendarMonth();
+    this.calendarMonth.set(new Date(d.getFullYear(), d.getMonth() + 1, 1));
+    this.loadCalendar();
+  }
+
+  buildCells(): any[] {
+    const d = this.calendarMonth();
+    const year = d.getFullYear(), month = d.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const cells: any[] = [];
+    // Pad start
+    for (let i = 0; i < firstDay; i++) {
+      const day = new Date(year, month, -firstDay + i + 1).getDate();
+      cells.push({ day, inMonth: false, isToday: false, bookings: [] });
+    }
+    // Current month days
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === i;
+      const bookings = this.calendarBookings().filter((b: any) => {
+        const ci = b.check_in?.split('T')[0];
+        const co = b.check_out?.split('T')[0];
+        return ci <= dateStr && co >= dateStr;
+      });
+      cells.push({ day: i, inMonth: true, isToday, bookings, dateStr });
+    }
+    // Pad end to complete grid (multiple of 7)
+    const remaining = (7 - (cells.length % 7)) % 7;
+    for (let i = 1; i <= remaining; i++) cells.push({ day: i, inMonth: false, isToday: false, bookings: [] });
+    return cells;
+  }
+
+  viewCalendarBooking(b: any): void {
+    this.detail = b; this.showDetail = true;
+  }
+
+  statusColor(status: string): string {
+    return { pending: '#f59e0b', confirmed: '#3b82f6', checked_in: '#22c55e', checked_out: '#6b7280', cancelled: '#ef4444' }[status] ?? '#6b7280';
   }
 
   async doCheckIn(bookingId: string): Promise<void> {

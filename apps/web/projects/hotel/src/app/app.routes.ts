@@ -250,6 +250,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/ota-channels/ota-channels.page'),
       },
       {
+        path: 'amenities',
+        loadComponent: () => import('./pages/amenities/amenities.page'),
+      },
+      {
         path: 'spa',
         loadComponent: () => import('./pages/spa/spa.page'),
       },

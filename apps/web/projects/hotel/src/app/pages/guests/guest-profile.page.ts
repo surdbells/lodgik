@@ -62,11 +62,23 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComp
 
         <!-- Booking History -->
         <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-card p-5">
-          <h3 class="text-sm font-semibold text-gray-700 mb-4">Booking History</h3>
-          @if (bookings().length === 0) {
-            <p class="text-gray-400 text-sm py-8 text-center">No bookings yet</p>
-          } @else {
-            <div class="space-y-3 max-h-[500px] overflow-y-auto">
+          <!-- Tabs -->
+          <div class="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
+            @for (tab of ['Bookings', 'Documents']; track tab) {
+              <button (click)="activeTab.set(tab)"
+                class="px-4 py-1.5 rounded-md text-xs font-medium transition-all"
+                [class.bg-white]="activeTab() === tab" [class.shadow-sm]="activeTab() === tab"
+                [class.text-sage-700]="activeTab() === tab" [class.text-gray-500]="activeTab() !== tab">
+                {{ tab }}
+              </button>
+            }
+          </div>
+
+          @if (activeTab() === 'Bookings') {
+            @if (bookings().length === 0) {
+              <p class="text-gray-400 text-sm py-8 text-center">No bookings yet</p>
+            } @else {
+              <div class="space-y-3 max-h-[500px] overflow-y-auto">
               @for (b of bookings(); track b.id) {
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div class="flex items-center gap-3">
@@ -89,6 +101,27 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComp
               }
             </div>
           }
+          }
+
+          @if (activeTab() === 'Documents') {
+            @if (documents().length === 0) {
+              <p class="text-gray-400 text-sm py-8 text-center">No documents on file for this guest.</p>
+            } @else {
+              <div class="space-y-2">
+                @for (doc of documents(); track doc.id) {
+                  <div class="flex items-center justify-between py-2.5 border-b border-gray-50 text-sm">
+                    <div>
+                      <p class="font-medium text-gray-800">{{ doc.document_type_label || doc.document_type }}</p>
+                      <p class="text-xs text-gray-400">{{ doc.document_number }} · Uploaded {{ doc.created_at | date:'mediumDate' }}</p>
+                    </div>
+                    @if (doc.file_url) {
+                      <a [href]="doc.file_url" target="_blank" class="px-3 py-1 text-xs text-sage-600 border border-sage-200 rounded-lg hover:bg-sage-50">View</a>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
         </div>
       </div>
     }
@@ -101,6 +134,8 @@ export class GuestProfilePage implements OnInit {
   loading = signal(true);
   guest = signal<any>(null);
   bookings = signal<any[]>([]);
+  documents = signal<any[]>([]);
+  activeTab = signal<string>('Bookings');
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -112,6 +147,7 @@ export class GuestProfilePage implements OnInit {
       if (r.success) {
         this.guest.set(r.data);
         this.loadBookings(id);
+        this.loadDocuments(id);
       }
       this.loading.set(false);
     });
@@ -120,6 +156,12 @@ export class GuestProfilePage implements OnInit {
   loadBookings(guestId: string): void {
     this.api.get('/bookings', { guest_id: guestId, limit: 50 }).subscribe(r => {
       if (r.success) this.bookings.set(r.data ?? []);
+    });
+  }
+
+  loadDocuments(guestId: string): void {
+    this.api.get(`/guests/${guestId}/documents`).subscribe(r => {
+      if (r.success) this.documents.set(r.data ?? []);
     });
   }
 

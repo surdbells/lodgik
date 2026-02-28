@@ -26,6 +26,9 @@ interface RoomFilters {
         <button class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
                 [class.bg-sage-50]="viewMode() === 'list'" [class.border-blue-300]="viewMode() === 'list'"
                 (click)="viewMode.set('list')">List</button>
+        <button class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700" (click)="showBulk = !showBulk">
+          {{ showBulk ? 'Cancel' : '⚡ Bulk Create' }}
+        </button>
         <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showAdd = !showAdd">
           {{ showAdd ? 'Cancel' : '+ Add Room' }}
         </button>
@@ -70,6 +73,44 @@ interface RoomFilters {
           </div>
         </div>
         <button (click)="createRoom()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Create</button>
+      </div>
+    }
+
+    <!-- Bulk Create Rooms Form -->
+    @if (showBulk) {
+      <div class="bg-white rounded-xl border border-indigo-100 shadow-card p-5 mb-6">
+        <h3 class="text-sm font-semibold text-gray-700 mb-1">Bulk Create Rooms</h3>
+        <p class="text-xs text-gray-400 mb-4">Generate multiple rooms with sequential numbering in one step.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Room Type</label>
+            <select [(ngModel)]="bulkForm.room_type_id" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              <option value="">Select Room Type</option>
+              @for (rt of roomTypes(); track rt.id) {
+                <option [value]="rt.id">{{ rt.name }} — ₦{{ rt.base_rate | number }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Floor</label>
+            <input [(ngModel)]="bulkForm.floor" type="number" placeholder="e.g. 1" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Start Number</label>
+            <input [(ngModel)]="bulkForm.start_number" type="number" placeholder="e.g. 101" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Count</label>
+            <input [(ngModel)]="bulkForm.count" type="number" min="1" max="50" placeholder="e.g. 10" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          </div>
+        </div>
+        <div class="mb-3 p-3 bg-indigo-50 rounded-lg text-xs text-indigo-700">
+          Preview: Rooms <strong>{{ bulkForm.start_number }}</strong> to <strong>{{ (bulkForm.start_number || 0) + (bulkForm.count || 0) - 1 }}</strong> on floor {{ bulkForm.floor || '?' }} ({{ bulkForm.count || 0 }} rooms)
+        </div>
+        <div class="flex gap-2">
+          <button (click)="bulkCreate()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Create {{ bulkForm.count || 0 }} Rooms</button>
+          <button (click)="showBulk = false" class="px-4 py-2 text-sm text-gray-500 border rounded-lg">Cancel</button>
+        </div>
       </div>
     }
 
@@ -215,11 +256,13 @@ export class RoomsPage implements OnInit {
   viewMode = signal<'grid' | 'list'>('grid');
   page = 1;
   showAdd = false;
+  showBulk = false;
   showStatusDialog = false;
   selectedRoom: any = null;
 
   filters: RoomFilters = { property_id: '', room_type_id: '', status: '', floor: '', search: '' };
   addForm: any = { room_type_id: '', room_number: '', floor: null, notes: '', amenities: [] as string[] };
+  bulkForm: any = { room_type_id: '', floor: 1, start_number: 101, count: 10 };
   showEdit = false;
   editForm: any = null;
 
@@ -303,6 +346,29 @@ export class RoomsPage implements OnInit {
     this.api.post('/rooms', body).subscribe(r => {
       if (r.success) { this.toast.success('Room created'); this.showAdd = false; this.addForm = { room_type_id: '', room_number: '', floor: null, notes: '', amenities: [] }; this.load(); this.loadRoomTypes(); }
       else this.toast.error(r.message || 'Failed');
+    });
+  }
+
+  bulkCreate(): void {
+    if (!this.bulkForm.room_type_id || !this.bulkForm.count || !this.bulkForm.start_number) {
+      this.toast.error('Room type, start number, and count are required');
+      return;
+    }
+    const body = {
+      property_id: this.filters.property_id,
+      room_type_id: this.bulkForm.room_type_id,
+      floor: this.bulkForm.floor,
+      start_number: this.bulkForm.start_number,
+      count: this.bulkForm.count,
+    };
+    this.api.post('/rooms/bulk-create', body).subscribe(r => {
+      if (r.success) {
+        this.toast.success(`${r.data?.created ?? this.bulkForm.count} rooms created successfully`);
+        this.showBulk = false;
+        this.bulkForm = { room_type_id: '', floor: 1, start_number: 101, count: 10 };
+        this.load();
+        this.loadStatusCounts();
+      } else this.toast.error(r.message || 'Failed to bulk create rooms');
     });
   }
 

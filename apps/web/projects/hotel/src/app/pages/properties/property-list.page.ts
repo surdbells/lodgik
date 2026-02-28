@@ -102,6 +102,55 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
     @if (!loading()) {
       <ui-data-table [columns]="columns" [data]="properties()" [actions]="actions" [totalItems]="properties().length" [searchable]="true"></ui-data-table>
     }
+
+    <!-- Bank Accounts Modal -->
+    @if (showBankAccounts) {
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showBankAccounts = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-5 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Bank Accounts — {{ selectedProperty()?.name }}</h3>
+            <button (click)="showBankAccounts = false" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          </div>
+          <ui-loading [loading]="bankLoading()"></ui-loading>
+          @if (!bankLoading()) {
+            <div class="space-y-3 mb-5">
+              @for (b of bankAccounts(); track b.id) {
+                <div class="flex items-center justify-between p-4 rounded-xl border" [class.border-sage-300]="b.is_primary" [class.bg-sage-50]="b.is_primary" [class.border-gray-200]="!b.is_primary">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-semibold text-gray-900">{{ b.bank_name }}</span>
+                      @if (b.is_primary) { <span class="px-2 py-0.5 rounded-full text-xs bg-sage-200 text-sage-800 font-medium">Primary</span> }
+                    </div>
+                    <p class="text-sm text-gray-600 mt-0.5">{{ b.account_number }} · {{ b.account_name }}</p>
+                  </div>
+                  <div class="flex gap-2">
+                    @if (!b.is_primary) {
+                      <button (click)="setPrimaryBank(b.id)" class="px-3 py-1 text-xs text-sage-600 border border-sage-300 rounded-lg hover:bg-sage-50">Set Primary</button>
+                    }
+                    <button (click)="deleteBankAccount(b.id)" class="px-3 py-1 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50">Delete</button>
+                  </div>
+                </div>
+              }
+              @if (bankAccounts().length === 0) {
+                <p class="text-sm text-gray-400 py-4 text-center">No bank accounts added yet.</p>
+              }
+            </div>
+
+            <!-- Add Bank Account Form -->
+            <div class="border-t pt-4">
+              <h4 class="text-sm font-semibold text-gray-700 mb-3">Add Bank Account</h4>
+              <div class="grid grid-cols-2 gap-3">
+                <input [(ngModel)]="bankForm.bank_name" placeholder="Bank Name" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+                <input [(ngModel)]="bankForm.account_number" placeholder="Account Number" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+                <input [(ngModel)]="bankForm.account_name" placeholder="Account Name" class="col-span-2 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              </div>
+              <label class="flex items-center gap-2 text-sm mt-2"><input type="checkbox" [(ngModel)]="bankForm.is_primary" class="rounded"> Set as primary</label>
+              <button (click)="addBankAccount()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700">Add Account</button>
+            </div>
+          }
+        </div>
+      </div>
+    }
   `,
 })
 export class PropertyListPage implements OnInit {
@@ -132,6 +181,7 @@ export class PropertyListPage implements OnInit {
 
   actions: TableAction[] = [
     { label: 'Edit', handler: (r) => this.openEdit(r) },
+    { label: 'Bank Accounts', handler: (r) => this.openBankAccounts(r) },
     { label: 'Switch to', handler: (r) => this.switchProperty(r), hidden: (r) => r.id === this.currentPid() },
   ];
 
@@ -173,4 +223,57 @@ export class PropertyListPage implements OnInit {
     this.activeProperty.switchTo(row.id);
     this.toast.success(`Switching to ${row.name}...`);
   }
+
+  showBankAccounts = false;
+  bankLoading = signal(false);
+  bankAccounts = signal<any[]>([]);
+  selectedProperty = signal<any>(null);
+  bankForm: any = { bank_name: '', account_number: '', account_name: '', is_primary: false };
+
+  openBankAccounts(row: any): void {
+    this.selectedProperty.set(row);
+    this.showBankAccounts = true;
+    this.loadBankAccounts(row.id);
+  }
+
+  loadBankAccounts(propId: string): void {
+    this.bankLoading.set(true);
+    this.api.get(`/properties/${propId}/bank-accounts`).subscribe({
+      next: (r: any) => { this.bankAccounts.set(r.data || []); this.bankLoading.set(false); },
+      error: () => this.bankLoading.set(false),
+    });
+  }
+
+  addBankAccount(): void {
+    const pid = this.selectedProperty()?.id;
+    if (!pid || !this.bankForm.bank_name || !this.bankForm.account_number) {
+      this.toast.error('Bank name and account number are required'); return;
+    }
+    this.api.post(`/properties/${pid}/bank-accounts`, this.bankForm).subscribe((r: any) => {
+      if (r.success) {
+        this.toast.success('Bank account added');
+        this.bankForm = { bank_name: '', account_number: '', account_name: '', is_primary: false };
+        this.loadBankAccounts(pid);
+      } else this.toast.error(r.message || 'Failed');
+    });
+  }
+
+  setPrimaryBank(bankId: string): void {
+    const pid = this.selectedProperty()?.id;
+    if (!pid) return;
+    this.api.put(`/properties/${pid}/bank-accounts/${bankId}`, { is_primary: true }).subscribe((r: any) => {
+      if (r.success) { this.toast.success('Primary account updated'); this.loadBankAccounts(pid); }
+      else this.toast.error(r.message || 'Failed');
+    });
+  }
+
+  deleteBankAccount(bankId: string): void {
+    const pid = this.selectedProperty()?.id;
+    if (!pid) return;
+    this.api.delete(`/properties/${pid}/bank-accounts/${bankId}`).subscribe({
+      next: () => { this.toast.success('Account removed'); this.loadBankAccounts(pid); },
+    });
+  }
+
 }
+

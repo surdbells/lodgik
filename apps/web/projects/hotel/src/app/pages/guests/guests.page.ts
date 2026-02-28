@@ -130,6 +130,10 @@ export class GuestsPage implements OnInit {
   editId = '';
   showDetail = false;
   detailGuest: any = null;
+  showMerge = false;
+  mergeSourceId = '';
+  mergeTargetId = '';
+  mergeSourceName = '';
   private searchTimer: any;
 
   form: any = { first_name: '', last_name: '', email: '', phone: '', id_type: '', id_number: '', nationality: 'Nigerian', gender: '', vip_status: 'regular', company_name: '', city: '', state: '', notes: '' };
@@ -146,6 +150,7 @@ export class GuestsPage implements OnInit {
   actions: TableAction[] = [
     { label: 'Profile', handler: (r) => this.router.navigate(['/guests', r.id]) },
     { label: 'Edit', handler: (r) => this.edit(r) },
+    { label: 'Merge', handler: (r) => { this.mergeSourceId = r.id; this.mergeSourceName = r.full_name; this.mergeTargetId = ''; this.showMerge = true; } },
   ];
 
   ngOnInit(): void { this.load(); }

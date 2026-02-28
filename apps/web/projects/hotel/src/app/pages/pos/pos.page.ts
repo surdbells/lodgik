@@ -82,6 +82,14 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
               <div class="text-sm text-gray-500">{{ o.item_count }} items</div>
               <div class="text-lg font-bold mt-2">₦{{ formatAmount(o.total_amount) }}</div>
               @if (o.guest_name) { <div class="text-xs text-gray-400">Guest: {{ o.guest_name }}</div> }
+              <!-- Order Actions -->
+              <div class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-gray-100">
+                <button (click)="closeOrder(o.id)" class="px-2 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700">✓ Close</button>
+                @if (o.booking_id) {
+                  <button (click)="postToFolio(o.id)" class="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700">→ Folio</button>
+                }
+                <button (click)="cancelOrder(o.id)" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">✕ Cancel</button>
+              </div>
             </div>
           }
         </div>
@@ -100,7 +108,15 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
               @for (item of entry.items; track item.id) {
                 <div class="flex justify-between items-center text-sm py-1">
                   <span>{{ item.quantity }}x {{ item.product_name }}</span>
-                  <span class="text-xs px-2 py-0.5 rounded" [class]="item.status === 'ready' ? 'bg-green-100 text-green-700' : item.status === 'preparing' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100'">{{ item.status }}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs px-2 py-0.5 rounded" [class]="item.status === 'ready' ? 'bg-green-100 text-green-700' : item.status === 'preparing' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100'">{{ item.status }}</span>
+                    @if (item.status === 'pending') {
+                      <button (click)="updateItemStatus(entry.order.id, item.id, 'preparing')" class="px-1.5 py-0.5 text-[10px] bg-yellow-500 text-white rounded">Start</button>
+                    }
+                    @if (item.status === 'preparing') {
+                      <button (click)="updateItemStatus(entry.order.id, item.id, 'ready')" class="px-1.5 py-0.5 text-[10px] bg-green-600 text-white rounded">Ready</button>
+                    }
+                  </div>
                 </div>
               }
             </div>
@@ -154,4 +170,29 @@ export class PosPage implements OnInit {
   }
 
   formatAmount(kobo: any): string { return (+kobo / 100).toLocaleString('en-NG'); }
+
+  closeOrder(orderId: string): void {
+    this.api.post(`/pos/orders/${orderId}/close`, {}).subscribe((r: any) => {
+      if (r.success) this.load(); else alert(r.message || 'Failed to close order');
+    });
+  }
+
+  cancelOrder(orderId: string): void {
+    if (!confirm('Cancel this order?')) return;
+    this.api.post(`/pos/orders/${orderId}/cancel`, {}).subscribe((r: any) => {
+      if (r.success) this.load(); else alert(r.message || 'Failed to cancel order');
+    });
+  }
+
+  postToFolio(orderId: string): void {
+    this.api.post(`/pos/orders/${orderId}/post-to-folio`, {}).subscribe((r: any) => {
+      if (r.success) this.load(); else alert(r.message || 'Failed to post to folio');
+    });
+  }
+
+  updateItemStatus(orderId: string, itemId: string, status: string): void {
+    this.api.post(`/pos/orders/${orderId}/items/${itemId}/status`, { status }).subscribe((r: any) => {
+      if (r.success) this.load();
+    });
+  }
 }
