@@ -13,28 +13,28 @@ import { ReceptionApiService } from '../services/reception-api.service';
     </ActionBar>
     <GridLayout rows="auto,auto,auto,*">
       <GridLayout row="0" columns="*,*,*,*,*" class="p-4">
-        <StackLayout col="0" (tap)="router.navigate(['/checkin'])" class="bg-green-600 rounded-xl p-3 m-r-2 text-center">
+        <StackLayout col="0" (tap)="router.navigate(['/checkin'])" class="action-btn m-r-1">
           <Label text="✅" class="text-2xl"></Label><Label text="Check In" class="text-white text-xs font-bold"></Label>
         </StackLayout>
-        <StackLayout col="1" (tap)="router.navigate(['/checkout'])" class="bg-orange-500 rounded-xl p-3 m-r-2 text-center">
+        <StackLayout col="1" (tap)="router.navigate(['/checkout'])" class="action-btn-amber m-r-1">
           <Label text="📤" class="text-2xl"></Label><Label text="Check Out" class="text-white text-xs font-bold"></Label>
         </StackLayout>
-        <StackLayout col="2" (tap)="router.navigate(['/walkin'])" class="bg-blue-600 rounded-xl p-3 m-r-2 text-center">
+        <StackLayout col="2" (tap)="router.navigate(['/walkin'])" class="action-btn-blue m-r-1">
           <Label text="🚶" class="text-2xl"></Label><Label text="Walk-in" class="text-white text-xs font-bold"></Label>
         </StackLayout>
-        <StackLayout col="3" (tap)="router.navigate(['/housekeeping'])" class="bg-purple-600 rounded-xl p-3 m-r-2 text-center">
+        <StackLayout col="3" (tap)="router.navigate(['/housekeeping'])" class="action-btn m-r-1">
           <Label text="🧹" class="text-2xl"></Label><Label text="Cleaning" class="text-white text-xs font-bold"></Label>
         </StackLayout>
-        <StackLayout col="4" (tap)="router.navigate(["/service-requests"])" class="bg-rose-600 rounded-xl p-3 text-center">
+        <StackLayout col="4" (tap)="router.navigate(["/service-requests"])" class="action-btn-red">
           <Label text="🛎️" class="text-2xl"></Label><Label text="Requests" class="text-white text-xs font-bold"></Label>
         </StackLayout>
       </GridLayout>
       <GridLayout row="1" columns="*,*,*,*,*" class="p-x-4 m-b-2">
-        <StackLayout col="0" class="bg-white rounded-lg p-2 m-r-2 text-center border"><Label [text]="stats.available" class="text-xl font-bold text-green"></Label><Label text="Available" class="text-xs text-gray-500"></Label></StackLayout>
-        <StackLayout col="1" class="bg-white rounded-lg p-2 m-r-2 text-center border"><Label [text]="stats.occupied" class="text-xl font-bold text-blue"></Label><Label text="Occupied" class="text-xs text-gray-500"></Label></StackLayout>
-        <StackLayout col="2" class="bg-white rounded-lg p-2 m-r-2 text-center border"><Label [text]="stats.dirty" class="text-xl font-bold text-amber"></Label><Label text="Dirty" class="text-xs text-gray-500"></Label></StackLayout>
-        <StackLayout col="3" class="bg-white rounded-lg p-2 m-r-2 text-center border"><Label [text]="stats.arrivals" class="text-xl font-bold text-purple"></Label><Label text="Arrivals" class="text-xs text-gray-500"></Label></StackLayout>
-        <StackLayout col="4" class="bg-white rounded-lg p-2 text-center border"><Label [text]="stats.departures" class="text-xl font-bold text-orange"></Label><Label text="Departures" class="text-xs text-gray-500"></Label></StackLayout>
+        <StackLayout col="0" class="stat-card m-r-1"><Label [text]="stats.available" class="stat-value" style="color:#16a34a;"></Label><Label text="Available" class="stat-label"></Label></StackLayout>
+        <StackLayout col="1" class="stat-card m-r-1"><Label [text]="stats.occupied" class="stat-value" style="color:#2563eb;"></Label><Label text="Occupied" class="stat-label"></Label></StackLayout>
+        <StackLayout col="2" class="stat-card m-r-1"><Label [text]="stats.dirty" class="stat-value" style="color:#f79009;"></Label><Label text="Dirty" class="stat-label"></Label></StackLayout>
+        <StackLayout col="3" class="stat-card m-r-1"><Label [text]="stats.arrivals" class="stat-value" style="color:#7c3aed;"></Label><Label text="Arrivals" class="stat-label"></Label></StackLayout>
+        <StackLayout col="4" class="stat-card"><Label [text]="stats.departures" class="stat-value" style="color:#ea580c;"></Label><Label text="Departures" class="stat-label"></Label></StackLayout>
       </GridLayout>
       <Label row="2" [text]="'Room Grid · ' + stats.occupancy + '% occupancy'" class="text-sm text-gray-500 m-x-4 m-b-2"></Label>
       <ScrollView row="3">

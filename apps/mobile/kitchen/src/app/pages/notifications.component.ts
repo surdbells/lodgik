@@ -9,14 +9,14 @@ import { NativeScriptCommonModule, RouterExtensions } from '@nativescript/angula
   imports: [NativeScriptCommonModule],
   schemas: [NO_ERRORS_SCHEMA],
   template: `
-    <ActionBar title="Notifications" class="bg-dark">
+    <ActionBar title="Notifications">
       <NavigationButton text="Back" (tap)="router.back()"/>
       <ActionItem text="Mark All" (tap)="markAllRead()" ios.position="right" *ngIf="unread > 0"/>
     </ActionBar>
 
     <GridLayout rows="auto,*" class="bg-gray-900">
-      <StackLayout row="0" *ngIf="unread > 0" style="background-color:#374151; padding:8;">
-        <Label [text]="unread + ' unread'" style="color:#fbbf24; text-align:center; font-size:12; font-weight:bold;"/>
+      <StackLayout row="0" *ngIf="unread > 0" class="badge-sage" style="padding:8;">
+        <Label [text]="unread + ' unread'" class="text-primary" style="text-align:center; font-size:12; font-weight:bold;"/>
       </StackLayout>
       <ScrollView row="1">
         <StackLayout class="p-3">

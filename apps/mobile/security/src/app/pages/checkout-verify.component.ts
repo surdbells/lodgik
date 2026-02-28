@@ -4,19 +4,21 @@ import { SecurityApiService } from '../services/security-api.service';
 @Component({
   selector: 'ns-checkout-verify',
   template: `
-    <ActionBar title="Checkout Enforcement" class="action-bar" style="background-color:#6a1b9a; color:white;">
+    <ActionBar title="Checkout Enforcement">
       <NavigationButton text="Back" android.systemIcon="ic_menu_back"/>
     </ActionBar>
     <ScrollView>
-      <StackLayout class="p-15">
-        <Label text="Guests checked out but still on premise" class="m-b-15" style="color:#666;"/>
-        <StackLayout *ngFor="let b of checkouts" style="background-color:#fff; padding:12; margin-bottom:8; border-radius:8; border-left-width:3; border-left-color:#6a1b9a;">
-          <Label [text]="b.guest_name || 'Guest'" style="font-weight:bold;"/>
-          <Label [text]="'Room: ' + (b.room_number || 'N/A') + ' · Checkout: ' + (b.check_out || '')" style="font-size:13; color:#666;"/>
-          <Label [text]="'Balance: ' + (b.balance || '0')" style="font-size:13;" [style.color]="b.balance > 0 ? '#d32f2f' : '#2e7d32'"/>
-          <Button text="CONFIRM DEPARTURE" (tap)="confirmDeparture(b)" class="m-t-5" style="background-color:#6a1b9a; color:white; border-radius:6; padding:10; font-size:13;"/>
+      <StackLayout class="p-4">
+        <Label text="Guests checked out but still on premise" class="page-subtitle"/>
+        <StackLayout *ngFor="let b of checkouts" class="list-item" style="border-left-width:3; border-left-color:#466846;">
+          <Label [text]="b.guest_name || 'Guest'" class="list-item-title"/>
+          <Label [text]="'Room: ' + (b.room_number || 'N/A') + ' · Checkout: ' + (b.check_out || '')" class="list-item-subtitle"/>
+          <Label [text]="'Balance: ' + (b.balance || '0')" class="list-item-subtitle"
+            [style.color]="b.balance > 0 ? '#dc2626' : '#16a34a'"/>
+          <Button text="CONFIRM DEPARTURE" (tap)="confirmDeparture(b)" class="btn-primary-sm m-t-2"/>
         </StackLayout>
-        <Label *ngIf="checkouts.length === 0" text="All clear — no pending departures" class="m-t-20" style="color:#2e7d32; text-align:center; font-weight:bold;"/>
+        <Label *ngIf="checkouts.length === 0" text="All clear — no pending departures"
+          class="text-success text-center font-bold" style="margin-top:40; font-size:16;"/>
       </StackLayout>
     </ScrollView>
   `
@@ -24,9 +26,7 @@ import { SecurityApiService } from '../services/security-api.service';
 export class CheckoutVerifyComponent implements OnInit {
   checkouts: any[] = [];
   constructor(private api: SecurityApiService) {}
-  ngOnInit() {
-    this.api.getBookings('checked_out').subscribe({ next: (r: any) => this.checkouts = r?.data || [] });
-  }
+  ngOnInit() { this.api.getBookings('checked_out').subscribe({ next: (r: any) => this.checkouts = r?.data || [] }); }
   confirmDeparture(booking: any) {
     this.api.recordMovement({ guest_name: booking.guest_name, room_number: booking.room_number, direction: 'step_out', source: 'security_post' })
       .subscribe({ next: () => this.checkouts = this.checkouts.filter(b => b.id !== booking.id) });

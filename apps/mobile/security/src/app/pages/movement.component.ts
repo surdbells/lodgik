@@ -4,24 +4,30 @@ import { SecurityApiService } from '../services/security-api.service';
 @Component({
   selector: 'ns-movement',
   template: `
-    <ActionBar title="Guest Movement" class="action-bar" style="background-color:#2e7d32; color:white;">
+    <ActionBar title="Guest Movement">
       <NavigationButton text="Back" android.systemIcon="ic_menu_back"/>
     </ActionBar>
     <ScrollView>
-      <StackLayout class="p-15">
-        <Label text="Log guest/visitor entry or exit" class="m-b-15" style="color:#666;"/>
-        <TextField [(ngModel)]="guestName" hint="Guest/Visitor Name" class="m-b-8" style="border-width:1; border-color:#ccc; padding:12; border-radius:8;"/>
-        <TextField [(ngModel)]="roomNumber" hint="Room Number (if guest)" class="m-b-8" style="border-width:1; border-color:#ccc; padding:12; border-radius:8;"/>
-        <GridLayout columns="*,*" class="m-b-15">
-          <Button col="0" text="STEP IN" (tap)="record('step_in')" style="background-color:#2e7d32; color:white; padding:15; border-radius:8; font-weight:bold; margin-right:5;"/>
-          <Button col="1" text="STEP OUT" (tap)="record('step_out')" style="background-color:#f57c00; color:white; padding:15; border-radius:8; font-weight:bold; margin-left:5;"/>
-        </GridLayout>
-        <Label *ngIf="msg" [text]="msg" class="m-b-10" style="color:#2e7d32; font-weight:bold;"/>
+      <StackLayout class="p-4">
+        <Label text="Log guest or visitor entry / exit" class="page-subtitle"/>
 
-        <Label text="RECENT MOVEMENTS" class="m-t-10 m-b-5" style="font-weight:bold; color:#666;"/>
-        <StackLayout *ngFor="let m of movements" style="background-color:#fff; padding:10; margin-bottom:6; border-radius:6; border-left-width:3;" [style.border-left-color]="m.direction === 'step_in' ? '#2e7d32' : '#f57c00'">
-          <Label [text]="m.guest_name || 'Unknown'" style="font-weight:bold;"/>
-          <Label [text]="m.direction.toUpperCase() + ' · ' + (m.created_at || '')" style="font-size:12; color:#888;"/>
+        <Label text="GUEST / VISITOR NAME" class="input-label"/>
+        <TextField [(ngModel)]="guestName" hint="Full name" class="input m-b-3"/>
+        <Label text="ROOM NUMBER" class="input-label"/>
+        <TextField [(ngModel)]="roomNumber" hint="Optional" class="input m-b-4"/>
+
+        <GridLayout columns="*,*" class="m-b-3">
+          <Button col="0" text="⬅  STEP IN"  (tap)="record('step_in')"  class="btn-primary m-r-2"/>
+          <Button col="1" text="STEP OUT ➡" (tap)="record('step_out')" class="btn-warning"/>
+        </GridLayout>
+        <Label *ngIf="msg" [text]="msg" class="text-success text-center font-bold m-b-3"/>
+
+        <Label text="RECENT MOVEMENTS" class="section-title m-t-2"/>
+        <StackLayout *ngFor="let m of movements" class="list-item"
+          [style.border-left-width]="3"
+          [style.border-left-color]="m.direction === 'step_in' ? '#16a34a' : '#f79009'">
+          <Label [text]="m.guest_name || 'Unknown'" class="list-item-title"/>
+          <Label [text]="m.direction.replace('_',' ').toUpperCase() + ' · ' + (m.created_at || '')" class="list-item-meta"/>
         </StackLayout>
       </StackLayout>
     </ScrollView>
@@ -34,7 +40,7 @@ export class MovementComponent implements OnInit {
   record(direction: string) {
     if (!this.guestName) return;
     this.api.recordMovement({ guest_name: this.guestName, room_number: this.roomNumber, direction, source: 'security_post' }).subscribe({
-      next: () => { this.msg = `${direction === 'step_in' ? 'Entry' : 'Exit'} recorded`; this.guestName = ''; this.roomNumber = ''; this.loadMovements(); setTimeout(() => this.msg = '', 3000); }
+      next: () => { this.msg = direction === 'step_in' ? 'Entry recorded' : 'Exit recorded'; this.guestName = ''; this.roomNumber = ''; this.loadMovements(); setTimeout(() => this.msg = '', 3000); }
     });
   }
   loadMovements() { this.api.getMovements().subscribe({ next: (r: any) => this.movements = (r?.data || []).slice(0, 20) }); }

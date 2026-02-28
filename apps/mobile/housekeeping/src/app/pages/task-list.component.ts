@@ -44,7 +44,7 @@ import { ApplicationSettings } from '@nativescript/core';
               <Label col="0" [text]="task.assigned_to_name || 'Unassigned'"></Label>
               <Label col="1" [text]="task.estimated_minutes + ' min est.'" class="text-right"></Label>
             </GridLayout>
-            <Button *ngIf="task.status === 'pending' && !task.assigned_to_name" text="Assign to me" (tap)="selfAssign(task, $event)" class="bg-blue-100 text-blue rounded-full p-y-1 p-x-3 text-xs m-t-2" style="font-size:11;"></Button>
+            <Button *ngIf="task.status === 'pending' && !task.assigned_to_name" text="Assign to me" (tap)="selfAssign(task, $event)" class="btn-outline m-t-2" style="font-size:11;"></Button>
           </StackLayout>
           <Label *ngIf="filteredTasks.length === 0" text="No tasks found" class="text-center text-muted p-8"></Label>
         </StackLayout>

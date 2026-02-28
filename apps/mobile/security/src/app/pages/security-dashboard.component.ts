@@ -4,42 +4,44 @@ import { SecurityApiService } from '../services/security-api.service';
 @Component({
   selector: 'ns-security-dashboard',
   template: `
-    <ActionBar title="Security Dashboard" class="action-bar" style="background-color:#d32f2f; color:white;"/>
+    <ActionBar title="Security Dashboard"/>
     <ScrollView>
-      <StackLayout class="p-10">
+      <StackLayout class="p-4">
+
         <!-- Stats Grid -->
-        <GridLayout columns="*,*" rows="auto,auto" class="m-b-10">
-          <StackLayout col="0" row="0" class="card" style="background-color:#fff; margin:5; padding:15; border-radius:8;">
-            <Label text="ON PREMISE" style="font-size:11; color:#666;"/>
-            <Label [text]="onPremiseCount" style="font-size:28; font-weight:bold; color:#2e7d32;"/>
+        <GridLayout columns="*,*" rows="auto,auto" class="m-b-4">
+          <StackLayout col="0" row="0" class="stat-card">
+            <Label text="ON PREMISE" class="stat-label"/>
+            <Label [text]="onPremiseCount" class="stat-value"/>
           </StackLayout>
-          <StackLayout col="1" row="0" class="card" style="background-color:#fff; margin:5; padding:15; border-radius:8;">
-            <Label text="PENDING PASSES" style="font-size:11; color:#666;"/>
-            <Label [text]="pendingPasses" style="font-size:28; font-weight:bold; color:#f57c00;"/>
+          <StackLayout col="1" row="0" class="stat-card m-l-2">
+            <Label text="PENDING PASSES" class="stat-label"/>
+            <Label [text]="pendingPasses" class="stat-value" style="color:#f79009;"/>
           </StackLayout>
-          <StackLayout col="0" row="1" class="card" style="background-color:#fff; margin:5; padding:15; border-radius:8;">
-            <Label text="TODAY CHECK-INS" style="font-size:11; color:#666;"/>
-            <Label [text]="todayCheckIns" style="font-size:28; font-weight:bold; color:#1565c0;"/>
+          <StackLayout col="0" row="1" class="stat-card m-t-2">
+            <Label text="TODAY CHECK-INS" class="stat-label"/>
+            <Label [text]="todayCheckIns" class="stat-value" style="color:#2563eb;"/>
           </StackLayout>
-          <StackLayout col="1" row="1" class="card" style="background-color:#fff; margin:5; padding:15; border-radius:8;">
-            <Label text="INCIDENTS" style="font-size:11; color:#666;"/>
-            <Label [text]="activeIncidents" style="font-size:28; font-weight:bold; color:#d32f2f;"/>
+          <StackLayout col="1" row="1" class="stat-card m-l-2 m-t-2">
+            <Label text="INCIDENTS" class="stat-label"/>
+            <Label [text]="activeIncidents" class="stat-value" style="color:#dc2626;"/>
           </StackLayout>
         </GridLayout>
 
         <!-- Quick Actions -->
-        <Label text="QUICK ACTIONS" class="m-t-10 m-b-5" style="font-weight:bold; font-size:14; color:#666;"/>
-        <GridLayout columns="*,*" rows="auto,auto,auto" class="m-b-10">
-          <Button col="0" row="0" text="Verify Pass" (tap)="nav('/gate-verify')" class="m-5" style="background-color:#1565c0; color:white; border-radius:8; padding:18; font-weight:bold;"/>
-          <Button col="1" row="0" text="Record Entry" (tap)="nav('/movement')" class="m-5" style="background-color:#2e7d32; color:white; border-radius:8; padding:18; font-weight:bold;"/>
-          <Button col="0" row="1" text="Visitor Check" (tap)="nav('/visitors')" class="m-5" style="background-color:#f57c00; color:white; border-radius:8; padding:18; font-weight:bold;"/>
-          <Button col="1" row="1" text="Report Incident" (tap)="nav('/incident-report')" class="m-5" style="background-color:#d32f2f; color:white; border-radius:8; padding:18; font-weight:bold;"/>
-          <Button col="0" row="2" text="Checkout Verify" (tap)="nav('/checkout-verify')" class="m-5" style="background-color:#6a1b9a; color:white; border-radius:8; padding:18; font-weight:bold;"/>
-          <Button col="1" row="2" text="Muster List" (tap)="nav('/muster')" class="m-5" style="background-color:#00695c; color:white; border-radius:8; padding:18; font-weight:bold;"/>
+        <Label text="QUICK ACTIONS" class="section-title"/>
+        <GridLayout columns="*,*" rows="auto,auto,auto">
+          <Button col="0" row="0" text="Verify Pass"      (tap)="nav('/gate-verify')"     class="action-btn m-1"/>
+          <Button col="1" row="0" text="Record Entry"     (tap)="nav('/movement')"         class="action-btn m-1"/>
+          <Button col="0" row="1" text="Visitor Check"    (tap)="nav('/visitors')"         class="action-btn-amber m-1"/>
+          <Button col="1" row="1" text="Report Incident"  (tap)="nav('/incident-report')"  class="action-btn-red m-1"/>
+          <Button col="0" row="2" text="Checkout Verify"  (tap)="nav('/checkout-verify')"  class="action-btn m-1"/>
+          <Button col="1" row="2" text="Muster List"      (tap)="nav('/muster')"           class="action-btn m-1"/>
         </GridLayout>
 
-        <!-- Emergency Panic Button -->
-        <Button text="EMERGENCY PANIC" (tap)="triggerPanic()" style="background-color:#b71c1c; color:white; font-size:18; font-weight:bold; padding:20; border-radius:12; margin-top:20;"/>
+        <!-- Emergency -->
+        <Button text="⚠ EMERGENCY PANIC" (tap)="triggerPanic()" class="btn-emergency"/>
+
       </StackLayout>
     </ScrollView>
   `

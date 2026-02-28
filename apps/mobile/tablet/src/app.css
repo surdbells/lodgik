@@ -1,3 +1,383 @@
+/* ─────────────────────────────────────────────────────────────────
+   Lodgik Mobile Design System — app.css
+   Matches web sage palette. Used by all 7 NativeScript apps.
+───────────────────────────────────────────────────────────────── */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── CSS Custom Properties (sage palette) ─────────────────────── */
+.ns-root {
+  --sage-50:  #f4f7f4;
+  --sage-100: #e4ede4;
+  --sage-200: #c9dac9;
+  --sage-300: #a3bfa3;
+  --sage-400: #7a9e7a;
+  --sage-500: #5a825a;
+  --sage-600: #466846;
+  --sage-700: #3a543a;
+  --sage-800: #314431;
+  --sage-900: #293929;
+  --accent-500: #f79009;
+  --accent-600: #dc6803;
+}
+
+/* ── Page background ──────────────────────────────────────────── */
+Page {
+  background-color: #f4f7f4;
+  font-size: 14;
+}
+
+/* ── ActionBar — Sage ─────────────────────────────────────────── */
+ActionBar {
+  background-color: #466846;
+  color: #ffffff;
+  font-size: 17;
+  font-weight: bold;
+}
+ActionItem {
+  color: #ffffff;
+}
+NavigationButton {
+  color: #ffffff;
+}
+.action-bar {
+  background-color: #466846;
+  color: #ffffff;
+}
+
+/* ── Card ─────────────────────────────────────────────────────── */
+.card {
+  background-color: #ffffff;
+  border-radius: 14;
+  padding: 16;
+  margin-bottom: 12;
+  border-width: 1;
+  border-color: #e4ede4;
+}
+.card-sm {
+  background-color: #ffffff;
+  border-radius: 12;
+  padding: 12;
+  margin-bottom: 8;
+  border-width: 1;
+  border-color: #e4ede4;
+}
+.card-flat {
+  background-color: #ffffff;
+  border-radius: 10;
+  padding: 12;
+}
+
+/* ── Stat Card ────────────────────────────────────────────────── */
+.stat-card {
+  background-color: #ffffff;
+  border-radius: 12;
+  padding: 12;
+  margin: 4;
+  border-width: 1;
+  border-color: #e4ede4;
+  text-align: center;
+}
+.stat-value {
+  font-size: 26;
+  font-weight: bold;
+  color: #466846;
+  text-align: center;
+}
+.stat-label {
+  font-size: 11;
+  color: #9ca3af;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+.btn-primary {
+  background-color: #466846;
+  color: #ffffff;
+  border-radius: 12;
+  padding: 14 20;
+  font-size: 14;
+  font-weight: bold;
+}
+.btn-primary-sm {
+  background-color: #466846;
+  color: #ffffff;
+  border-radius: 10;
+  padding: 8 14;
+  font-size: 13;
+  font-weight: bold;
+}
+.btn-secondary {
+  background-color: #e4ede4;
+  color: #3a543a;
+  border-radius: 12;
+  padding: 14 20;
+  font-size: 14;
+  font-weight: bold;
+}
+.btn-outline {
+  background-color: transparent;
+  color: #466846;
+  border-width: 1.5;
+  border-color: #466846;
+  border-radius: 12;
+  padding: 12 18;
+  font-size: 14;
+}
+.btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-radius: 12;
+  padding: 14 20;
+  font-size: 14;
+  font-weight: bold;
+}
+.btn-warning {
+  background-color: #f79009;
+  color: #ffffff;
+  border-radius: 12;
+  padding: 14 20;
+  font-size: 14;
+  font-weight: bold;
+}
+.btn-ghost {
+  background-color: transparent;
+  color: #466846;
+  padding: 10 16;
+  font-size: 13;
+}
+
+/* ── Inputs ───────────────────────────────────────────────────── */
+.input {
+  background-color: #f9fafb;
+  border-width: 1;
+  border-color: #d1d5db;
+  border-radius: 10;
+  padding: 12 14;
+  font-size: 14;
+  color: #111827;
+  placeholder-color: #9ca3af;
+}
+.input:focus {
+  border-color: #466846;
+  background-color: #ffffff;
+}
+.input-label {
+  font-size: 12;
+  font-weight: bold;
+  color: #6b7280;
+  margin-bottom: 4;
+  text-transform: uppercase;
+}
+
+/* ── Section Header ───────────────────────────────────────────── */
+.section-title {
+  font-size: 13;
+  font-weight: bold;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 8;
+  margin-top: 4;
+}
+.page-title {
+  font-size: 20;
+  font-weight: bold;
+  color: #293929;
+  margin-bottom: 4;
+}
+.page-subtitle {
+  font-size: 13;
+  color: #6b7280;
+  margin-bottom: 16;
+}
+
+/* ── Badges / Status Pills ────────────────────────────────────── */
+.badge {
+  border-radius: 20;
+  padding: 3 10;
+  font-size: 11;
+  font-weight: bold;
+  text-align: center;
+}
+.badge-green {
+  background-color: #dcfce7;
+  color: #166534;
+}
+.badge-amber {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+.badge-red {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+.badge-blue {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+.badge-gray {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+.badge-sage {
+  background-color: #e4ede4;
+  color: #3a543a;
+}
+.badge-purple {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+}
+
+/* ── List Item ────────────────────────────────────────────────── */
+.list-item {
+  background-color: #ffffff;
+  border-radius: 12;
+  padding: 14 16;
+  margin-bottom: 8;
+  border-width: 1;
+  border-color: #e4ede4;
+}
+.list-item-title {
+  font-size: 15;
+  font-weight: bold;
+  color: #111827;
+}
+.list-item-subtitle {
+  font-size: 13;
+  color: #6b7280;
+  margin-top: 2;
+}
+.list-item-meta {
+  font-size: 11;
+  color: #9ca3af;
+  margin-top: 2;
+}
+
+/* ── Typography helpers ───────────────────────────────────────── */
+.text-muted {
+  color: #9ca3af;
+}
+.text-primary {
+  color: #466846;
+}
+.text-danger {
+  color: #dc2626;
+}
+.text-success {
+  color: #16a34a;
+}
+.text-warning {
+  color: #f79009;
+}
+
+/* ── Divider ──────────────────────────────────────────────────── */
+.divider {
+  background-color: #e5e7eb;
+  height: 1;
+  margin: 8 0;
+}
+
+/* ── Quick Action Button (dashboard grid) ─────────────────────── */
+.action-btn {
+  background-color: #466846;
+  color: #ffffff;
+  border-radius: 16;
+  padding: 16;
+  margin: 4;
+  font-size: 13;
+  font-weight: bold;
+  text-align: center;
+}
+.action-btn-amber {
+  background-color: #f79009;
+  color: #ffffff;
+  border-radius: 16;
+  padding: 16;
+  margin: 4;
+  font-size: 13;
+  font-weight: bold;
+  text-align: center;
+}
+.action-btn-red {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-radius: 16;
+  padding: 16;
+  margin: 4;
+  font-size: 13;
+  font-weight: bold;
+  text-align: center;
+}
+.action-btn-blue {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-radius: 16;
+  padding: 16;
+  margin: 4;
+  font-size: 13;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* ── Emergency / Panic Button ─────────────────────────────────── */
+.btn-emergency {
+  background-color: #b91c1c;
+  color: #ffffff;
+  border-radius: 16;
+  padding: 22;
+  font-size: 18;
+  font-weight: bold;
+  text-align: center;
+  margin: 16 0;
+}
+
+/* ── Tab Bar pills ────────────────────────────────────────────── */
+.tab-active {
+  background-color: #466846;
+  color: #ffffff;
+  border-radius: 20;
+  padding: 8 16;
+  font-size: 13;
+  font-weight: bold;
+}
+.tab-inactive {
+  background-color: #e4ede4;
+  color: #466846;
+  border-radius: 20;
+  padding: 8 16;
+  font-size: 13;
+}
+
+/* ── Room / Table grid tile ───────────────────────────────────── */
+.room-tile {
+  border-radius: 10;
+  padding: 8;
+  margin: 3;
+  text-align: center;
+  width: 80;
+  height: 70;
+}
+.table-tile {
+  border-radius: 12;
+  padding: 12;
+  margin: 6;
+  text-align: center;
+  width: 140;
+  height: 120;
+}
+
+/* ── Empty state ──────────────────────────────────────────────── */
+.empty-state {
+  color: #9ca3af;
+  text-align: center;
+  padding: 40;
+  font-size: 15;
+}
+
+/* ── Spinner / Loading ────────────────────────────────────────── */
+ActivityIndicator {
+  color: #466846;
+}

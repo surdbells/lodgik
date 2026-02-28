@@ -36,11 +36,11 @@ import { HousekeepingApiService } from '../services/housekeeping-api.service';
           <Label text="Photos" class="font-bold m-b-2"></Label>
           <GridLayout columns="*,*" class="m-b-2">
             <StackLayout col="0" class="text-center">
-              <Button text="📷 Before" (tap)="takePhoto('before')" class="btn btn-outline"></Button>
+              <Button text="📷 Before" (tap)="takePhoto('before')" class="btn-outline"></Button>
               <Label [text]="task.photo_before ? '✅ Uploaded' : 'No photo'" class="text-xs text-muted m-t-1"></Label>
             </StackLayout>
             <StackLayout col="1" class="text-center">
-              <Button text="📷 After" (tap)="takePhoto('after')" class="btn btn-outline"></Button>
+              <Button text="📷 After" (tap)="takePhoto('after')" class="btn-outline"></Button>
               <Label [text]="task.photo_after ? '✅ Uploaded' : 'No photo'" class="text-xs text-muted m-t-1"></Label>
             </StackLayout>
           </GridLayout>
@@ -54,9 +54,9 @@ import { HousekeepingApiService } from '../services/housekeeping-api.service';
 
         <!-- Actions -->
         <StackLayout class="m-b-8">
-          <Button *ngIf="task.status === 'assigned'" text="▶ Start Cleaning" (tap)="startTask()" class="btn btn-primary m-b-2 text-lg p-4"></Button>
+          <Button *ngIf="task.status === 'assigned'" text="▶ Start Cleaning" (tap)="startTask()" class="btn-primary m-b-2"></Button>
           <Button *ngIf="task.status === 'in_progress'" text="✅ Mark Complete" (tap)="completeTask()" class="btn btn-success m-b-2 text-lg p-4"></Button>
-          <Button *ngIf="task.status === 'completed'" text="🔍 Pass Inspection" (tap)="inspect(true)" class="btn btn-primary m-b-2"></Button>
+          <Button *ngIf="task.status === 'completed'" text="🔍 Pass Inspection" (tap)="inspect(true)" class="btn-primary m-b-2"></Button>
           <Button *ngIf="task.status === 'completed'" text="🔄 Needs Rework" (tap)="inspect(false)" class="btn btn-danger"></Button>
         </StackLayout>
       </StackLayout>
