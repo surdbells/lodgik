@@ -37,7 +37,11 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
             <div class="flex items-start justify-between mb-2">
               <div class="flex items-center gap-2">
                 @if (a.icon) {
-                  <span class="text-2xl">{{ a.icon }}</span>
+                  @if (isEmoji(a.icon)) {
+                    <span class="text-2xl leading-none">{{ a.icon }}</span>
+                  } @else {
+                    <span class="material-icons text-sage-600" style="font-size:28px;">{{ a.icon }}</span>
+                  }
                 }
                 <div>
                   <h4 class="text-sm font-semibold text-gray-900">{{ a.name }}</h4>
@@ -155,6 +159,11 @@ export default class AmenitiesPage implements OnInit {
 
   countByCategory(cat: string): number {
     return this.amenities().filter(a => a.category === cat).length;
+  }
+
+  /** Returns true if the string is emoji, false if it's a Material Icons ligature name */
+  isEmoji(icon: string): boolean {
+    return /\p{Emoji}/u.test(icon) && !/^[a-z_]+$/.test(icon);
   }
 
   ngOnInit(): void { this.load(); }

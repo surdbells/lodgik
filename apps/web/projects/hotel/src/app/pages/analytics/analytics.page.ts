@@ -9,11 +9,21 @@ import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartDataPo
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, LineChartComponent, BarChartComponent, DonutChartComponent],
   template: `
     <ui-page-header title="Analytics & BI" icon="chart-bar" subtitle="Revenue, occupancy, and performance insights">
-      <select [(ngModel)]="period" (ngModelChange)="reload()" class="border rounded-lg px-3 py-2 text-sm">
-        <option value="7">Last 7 days</option>
-        <option value="30">Last 30 days</option>
-        <option value="90">Last 90 days</option>
-      </select>
+      <div class="flex items-center gap-2 flex-wrap">
+        <select [(ngModel)]="period" (ngModelChange)="onPeriodChange()" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last 12 months</option>
+          <option value="custom">Custom range</option>
+        </select>
+        @if (period === 'custom') {
+          <input type="date" [(ngModel)]="dateFrom" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" [max]="dateTo || today">
+          <span class="text-gray-400 text-sm">to</span>
+          <input type="date" [(ngModel)]="dateTo" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" [min]="dateFrom" [max]="today">
+          <button (click)="reload()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">Apply</button>
+        }
+      </div>
     </ui-page-header>
 
     <ui-loading [loading]="loading()"></ui-loading>
@@ -24,7 +34,7 @@ import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartDataPo
         <ui-stats-card label="Total Revenue" [value]="'₦' + (revenue().total / 100).toLocaleString()" icon="banknote"></ui-stats-card>
         <ui-stats-card label="Room Revenue" [value]="'₦' + (revenue().room / 100).toLocaleString()" icon="bed-double"></ui-stats-card>
         <ui-stats-card label="F&B Revenue" [value]="'₦' + (revenue().fnb / 100).toLocaleString()" icon="utensils"></ui-stats-card>
-        <ui-stats-card label="Net Profit" [value]="'₦' + (pnl().net_profit / 100).toLocaleString()" icon="trending-up"></ui-stats-card>
+        <ui-stats-card label="Net Profit" [value]="'₦' + ((+pnl().net_profit || 0) / 100).toLocaleString()" icon="trending-up"></ui-stats-card>
         <ui-stats-card label="RevPAR" [value]="revparValue()" icon="chart-line"></ui-stats-card>
         <ui-stats-card label="Avg Occupancy" [value]="avgOccupancy() + '%'" icon="percent"></ui-stats-card>
       </div>
@@ -151,11 +161,11 @@ import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartDataPo
         <div class="bg-white rounded-xl border border-gray-100 shadow-card p-6">
           <h3 class="text-sm font-semibold text-gray-700 mb-4">Profit & Loss Summary</h3>
           <div class="space-y-3 max-w-lg">
-            <div class="flex justify-between py-2 border-b text-sm"><span class="text-gray-500">Total Revenue</span><span class="font-semibold text-emerald-700">₦{{ (pnl().total_revenue / 100).toLocaleString() }}</span></div>
-            <div class="flex justify-between py-2 border-b text-sm"><span class="text-gray-500">Total Expenses</span><span class="font-semibold text-red-600">₦{{ (pnl().total_expenses / 100).toLocaleString() }}</span></div>
-            <div class="flex justify-between py-2 border-b text-sm"><span class="text-gray-500">Gross Profit</span><span class="font-semibold">₦{{ (pnl().gross_profit / 100).toLocaleString() }}</span></div>
+            <div class="flex justify-between py-2 border-b text-sm"><span class="text-gray-500">Total Revenue</span><span class="font-semibold text-emerald-700">₦{{ ((+pnl().total_revenue || 0) / 100).toLocaleString() }}</span></div>
+            <div class="flex justify-between py-2 border-b text-sm"><span class="text-gray-500">Total Expenses</span><span class="font-semibold text-red-600">₦{{ ((+pnl().total_expenses || 0) / 100).toLocaleString() }}</span></div>
+            <div class="flex justify-between py-2 border-b text-sm"><span class="text-gray-500">Gross Profit</span><span class="font-semibold">₦{{ ((+pnl().gross_profit || 0) / 100).toLocaleString() }}</span></div>
             <div class="flex justify-between py-3 text-base font-bold" [class.text-emerald-700]="pnl().net_profit > 0" [class.text-red-600]="pnl().net_profit < 0">
-              <span>Net Profit</span><span>₦{{ (pnl().net_profit / 100).toLocaleString() }}</span>
+              <span>Net Profit</span><span>₦{{ ((+pnl().net_profit || 0) / 100).toLocaleString() }}</span>
             </div>
           </div>
         </div>
@@ -168,6 +178,9 @@ export default class AnalyticsPage implements OnInit {
   loading = signal(true);
   activeTab = signal('Revenue');
   period = '30';
+  dateFrom = '';
+  dateTo = '';
+  today = new Date().toISOString().split('T')[0];
   tabs = ['Revenue', 'Occupancy', 'Booking Sources', 'Demographics', 'P&L'];
 
   revenue = signal<any>({ total: 0, room: 0, fnb: 0, other: 0 });
@@ -204,12 +217,23 @@ export default class AnalyticsPage implements OnInit {
 
   ngOnInit() { this.reload(); }
 
+  onPeriodChange() {
+    if (this.period !== 'custom') {
+      this.dateFrom = '';
+      this.dateTo = '';
+      this.reload();
+    }
+  }
+
   reload() {
+    if (this.period === 'custom' && (!this.dateFrom || !this.dateTo)) return;
     this.loading.set(true);
-    let pending = 8;
+    let pending = 9;
     const done = () => { if (--pending === 0) this.loading.set(false); };
 
-    const params = { days: this.period };
+    const params: any = this.period === 'custom'
+      ? { date_from: this.dateFrom, date_to: this.dateTo }
+      : { days: this.period };
 
     this.api.get('/analytics/revenue', params).subscribe((r: any) => {
       this.revenue.set(r?.data || {}); this.buildDonut(); done();
@@ -228,7 +252,6 @@ export default class AnalyticsPage implements OnInit {
     this.api.get('/analytics/demographics', params).subscribe((r: any) => {
       this.demographics.set(r?.data || {}); this.buildDemographics(r?.data || {}); done();
     });
-    pending = 9; // correct count after adding demographics
   }
 
   buildDonut() {
