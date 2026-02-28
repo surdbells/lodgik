@@ -2,13 +2,14 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, ToastService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, ToastService , ConfirmDialogService, ConfirmDialogComponent } from '@lodgik/shared';
 
 @Component({
   selector: 'app-merchants',
   standalone: true,
-  imports: [DatePipe, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
+  imports: [DatePipe, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, ConfirmDialogComponent],
   template: `
+    <ui-confirm-dialog/>
     <ui-page-header title="Merchant Management" subtitle="Manage partners, resellers, and agents">
       <button (click)="showOnboard.set(true)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700 transition-colors flex items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -97,7 +98,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
                       <button (click)="approve(m.id)" class="text-xs px-2 py-1 rounded bg-green-50 text-green-700 hover:bg-green-100">Approve</button>
                     }
                     @if (m.status === 'active') {
-                      <button (click)="suspend(m.id)" class="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100">Suspend</button>
+                      <button (click)="openSuspendMerchant(m.id)" class="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100">Suspend</button>
                     }
                     @if (m.status === 'suspended') {
                       <button (click)="approve(m.id)" class="text-xs px-2 py-1 rounded bg-green-50 text-green-700 hover:bg-green-100">Reactivate</button>
@@ -206,11 +207,28 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
         </div>
       </div>
     }
+    <!-- Suspend Merchant Modal -->
+    @if (showSuspendMerchantModal) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" (click)="closeSuspendMerchant()"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-1">Suspend Merchant</h3>
+          <p class="text-sm text-gray-500 mb-3">The merchant will immediately lose platform access.</p>
+          <textarea [(ngModel)]="suspendReasonStr" rows="3" placeholder="Suspension reason..."
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4"></textarea>
+          <div class="flex justify-end gap-2">
+            <button (click)="closeSuspendMerchant()" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+            <button (click)="confirmSuspendMerchant()" class="px-4 py-2 text-sm text-white bg-amber-500 rounded-lg hover:bg-amber-600">Suspend</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class MerchantsPage implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmDialogService);
   private router = inject(Router);
 
   loading = signal(true);
@@ -308,11 +326,14 @@ export class MerchantsPage implements OnInit {
     });
   }
 
-  suspend(id: string): void {
-    const reason = prompt('Suspension reason:');
-    if (reason === null) return;
-    this.api.post(`/admin/merchants/${id}/suspend`, { reason: reason || 'Admin action' }).subscribe({
-      next: () => { this.toast.success('Merchant suspended'); this.load(); },
+  suspendingId = '';
+  suspendReasonStr = '';
+  showSuspendMerchantModal = false;
+  openSuspendMerchant(id: string): void { this.suspendingId = id; this.suspendReasonStr = ''; this.showSuspendMerchantModal = true; }
+  closeSuspendMerchant(): void { this.showSuspendMerchantModal = false; }
+  confirmSuspendMerchant(): void {
+    this.api.post(`/admin/merchants/${this.suspendingId}/suspend`, { reason: this.suspendReasonStr || 'Admin action' }).subscribe({
+      next: () => { this.toast.success('Merchant suspended'); this.showSuspendMerchantModal = false; this.load(); },
       error: (e: any) => this.toast.error(e.error?.message || 'Failed'),
     });
   }

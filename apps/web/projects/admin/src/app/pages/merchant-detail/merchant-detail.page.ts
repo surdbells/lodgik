@@ -1,13 +1,15 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, ToastService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, ToastService , ConfirmDialogService, ConfirmDialogComponent } from '@lodgik/shared';
 
 @Component({
   selector: 'app-merchant-detail',
   standalone: true,
-  imports: [DatePipe, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
+  imports: [DatePipe, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, ConfirmDialogComponent],
   template: `
+    <ui-confirm-dialog/>
     <ui-loading [loading]="loading()"></ui-loading>
     @if (!loading() && merchant()) {
       <!-- Header -->
@@ -30,7 +32,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
               <button (click)="forceActivate()" class="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700">Force Activate</button>
             }
             @if (merchant().status === 'active') {
-              <button (click)="suspend()" class="px-4 py-2 text-sm rounded-lg bg-amber-500 text-white hover:bg-amber-600">Suspend</button>
+              <button (click)="openSuspendModal()" class="px-4 py-2 text-sm rounded-lg bg-amber-500 text-white hover:bg-amber-600">Suspend</button>
             }
             @if (merchant().status === 'suspended') {
               <button (click)="reactivate()" class="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700">Reactivate</button>
@@ -263,7 +265,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
                           <button (click)="approveHotel(h.id)" class="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700">
                             Approve & Provision
                           </button>
-                          <button (click)="rejectHotel(h.id)" class="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700">
+                          <button (click)="openRejectHotel(h.id)" class="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700">
                             Reject
                           </button>
                         }
@@ -330,11 +332,47 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponen
         <button (click)="goBack()" class="text-sage-600 hover:underline text-sm">Back to merchants</button>
       </div>
     }
+
+
+    <!-- Reject Hotel Modal -->
+    @if (showRejectHotelModal) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" (click)="closeRejectHotel()"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-1">Reject Hotel Application</h3>
+          <p class="text-sm text-gray-500 mb-3">Provide a reason for rejection (sent to the hotel contact).</p>
+          <textarea [(ngModel)]="rejectHotelReason" rows="3" placeholder="Reason..."
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4"></textarea>
+          <div class="flex justify-end gap-2">
+            <button (click)="closeRejectHotel()" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+            <button (click)="confirmRejectHotel()" class="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700">Reject Hotel</button>
+          </div>
+        </div>
+      </div>
+    }
+    <!-- Suspend Reason Modal -->
+    @if (showSuspendModal()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" (click)="closeSuspendModal()"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-1">Suspend Merchant</h3>
+          <p class="text-sm text-gray-500 mb-4">The merchant will immediately lose access to the platform.</p>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Reason for suspension</label>
+          <textarea [(ngModel)]="suspendReason" rows="3" placeholder="Describe why this merchant is being suspended..."
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 mb-4"></textarea>
+          <div class="flex justify-end gap-2">
+            <button (click)="closeSuspendModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+            <button (click)="closeSuspendModal(); suspend()" class="px-4 py-2 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600">Suspend</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class MerchantDetailPage implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmDialogService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -428,8 +466,9 @@ export class MerchantDetailPage implements OnInit {
     });
   }
 
-  forceActivate(): void {
-    if (!confirm('Activate this merchant without completed KYC?')) return;
+  async forceActivate(): Promise<void> {
+    const ok = await this.confirm.confirm({ title: 'Force Activate Merchant', message: 'Activate this merchant without completed KYC? Use with caution.', confirmLabel: 'Activate', variant: 'warning' });
+    if (!ok) return;
     this.api.post(`/admin/merchants/${this.merchantId}/activate`, {}).subscribe({
       next: () => { this.toast.success('Merchant activated'); this.loadMerchant(); },
       error: (e: any) => this.toast.error(e.error?.message || 'Failed'),
@@ -443,17 +482,25 @@ export class MerchantDetailPage implements OnInit {
     });
   }
 
-  suspend(): void {
-    const reason = prompt('Suspension reason:');
-    if (reason === null) return;
-    this.api.post(`/admin/merchants/${this.merchantId}/suspend`, { reason: reason || 'Admin action' }).subscribe({
+  suspendReason = '';
+  showSuspendModal = signal(false);
+
+  openSuspendModal(): void { this.suspendReason = ''; this.showSuspendModal.set(true); }
+  closeSuspendModal(): void { this.showSuspendModal.set(false); }
+
+  async suspend(): Promise<void> {
+    const ok = await this.confirm.confirm({ title: 'Suspend Merchant', message: `Suspend this merchant? They will immediately lose access. Reason: "${this.suspendReason || 'Admin action'}"`, confirmLabel: 'Suspend', variant: 'danger' });
+    if (!ok) return;
+    const reason = this.suspendReason || 'Admin action';
+    this.api.post(`/admin/merchants/${this.merchantId}/suspend`, { reason }).subscribe({
       next: () => { this.toast.success('Merchant suspended'); this.loadMerchant(); },
       error: (e: any) => this.toast.error(e.error?.message || 'Failed'),
     });
   }
 
-  terminate(): void {
-    if (!confirm('Are you sure you want to terminate this merchant? This action cannot be undone.')) return;
+  async terminate(): Promise<void> {
+    const ok = await this.confirm.confirm({ title: 'Terminate Merchant', message: 'Terminate this merchant? This action cannot be undone and will immediately revoke access.', confirmLabel: 'Terminate', variant: 'danger' });
+    if (!ok) return;
     this.api.post(`/admin/merchants/${this.merchantId}/terminate`, { reason: 'Admin termination' }).subscribe({
       next: () => { this.toast.success('Merchant terminated'); this.loadMerchant(); },
       error: (e: any) => this.toast.error(e.error?.message || 'Failed'),
@@ -503,8 +550,9 @@ export class MerchantDetailPage implements OnInit {
 
   // ─── Hotel Actions ──────────────────────────────────────────
 
-  approveHotel(hotelId: string): void {
-    if (!confirm('Approve this hotel? This will create a tenant, property, and admin user.')) return;
+  async approveHotel(hotelId: string): Promise<void> {
+    const ok = await this.confirm.confirm({ title: 'Approve Hotel', message: 'Approve this hotel? This will create a Tenant, Property, and admin User account for the hotel.', confirmLabel: 'Approve', variant: 'info' });
+    if (!ok) return;
     this.api.post(`/admin/merchants/hotels/${hotelId}/approve`, { app_url: 'https://app.lodgik.co' }).subscribe({
       next: (r: any) => {
         this.toast.success('Hotel approved and provisioned! Credentials sent to hotel contact.');
@@ -515,11 +563,14 @@ export class MerchantDetailPage implements OnInit {
     });
   }
 
-  rejectHotel(hotelId: string): void {
-    const reason = prompt('Rejection reason:');
-    if (reason === null) return;
-    this.api.post(`/admin/merchants/hotels/${hotelId}/reject`, { reason: reason || 'Does not meet requirements' }).subscribe({
-      next: () => { this.toast.success('Hotel rejected'); this.loadHotels(); },
+  rejectHotelId = '';
+  rejectHotelReason = '';
+  showRejectHotelModal = false;
+  openRejectHotel(hotelId: string): void { this.rejectHotelId = hotelId; this.rejectHotelReason = ''; this.showRejectHotelModal = true; }
+  closeRejectHotel(): void { this.showRejectHotelModal = false; }
+  confirmRejectHotel(): void {
+    this.api.post(`/admin/merchants/hotels/${this.rejectHotelId}/reject`, { reason: this.rejectHotelReason || 'Does not meet requirements' }).subscribe({
+      next: () => { this.toast.success('Hotel rejected'); this.showRejectHotelModal = false; this.loadHotels(); },
       error: (e: any) => this.toast.error(e.error?.message || 'Failed to reject hotel'),
     });
   }

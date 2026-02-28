@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService } from '@lodgik/shared';
 import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartDataPoint, ChartSeries } from '@lodgik/charts';
 
 @Component({
@@ -175,6 +175,7 @@ import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartDataPo
 })
 export default class AnalyticsPage implements OnInit {
   private api = inject(ApiService);
+  private activeProperty = inject(ActivePropertyService);
   loading = signal(true);
   activeTab = signal('Revenue');
   period = '30';
@@ -228,19 +229,32 @@ export default class AnalyticsPage implements OnInit {
   reload() {
     if (this.period === 'custom' && (!this.dateFrom || !this.dateTo)) return;
     this.loading.set(true);
+    const pid = this.activeProperty.propertyId();
+
+    // Compute from/to date strings from period
+    let from: string, to: string;
+    if (this.period === 'custom') {
+      from = this.dateFrom;
+      to   = this.dateTo;
+    } else {
+      const days = parseInt(this.period, 10);
+      const toDate   = new Date();
+      const fromDate = new Date();
+      fromDate.setDate(fromDate.getDate() - days);
+      from = fromDate.toISOString().split('T')[0];
+      to   = toDate.toISOString().split('T')[0];
+    }
+
+    const params = { property_id: pid, from, to };
     let pending = 9;
     const done = () => { if (--pending === 0) this.loading.set(false); };
-
-    const params: any = this.period === 'custom'
-      ? { date_from: this.dateFrom, date_to: this.dateTo }
-      : { days: this.period };
 
     this.api.get('/analytics/revenue', params).subscribe((r: any) => {
       this.revenue.set(r?.data || {}); this.buildDonut(); done();
     });
     this.api.get('/analytics/profit-loss', params).subscribe((r: any) => { this.pnl.set(r?.data || {}); done(); });
     this.api.get('/analytics/top-rooms', params).subscribe((r: any) => { this.topRooms.set(r?.data || []); done(); });
-    this.api.get('/analytics/monthly-summary', params).subscribe((r: any) => { this.buildMonthly(r?.data || []); done(); });
+    this.api.get('/analytics/monthly-summary', { property_id: pid, months: this.period === '365' ? 12 : this.period === '90' ? 3 : this.period === '30' ? 1 : 1 }).subscribe((r: any) => { this.buildMonthly(r?.data || []); done(); });
     this.api.get('/analytics/adr-by-day', params).subscribe((r: any) => {
       this.adrData.set((r?.data || []).map((d: any) => ({ label: d.day, value: +(d.avg_adr || 0) / 100 }))); done();
     });

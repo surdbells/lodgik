@@ -1,9 +1,10 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ApiService, PageHeaderComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, AuthService, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent } from '@lodgik/shared';
 
 @Component({
-  selector: 'app-guest-services', standalone: true, imports: [PageHeaderComponent],
+  selector: 'app-guest-services', standalone: true, imports: [PageHeaderComponent, ConfirmDialogComponent],
   template: `
+    <ui-confirm-dialog/>
     <ui-page-header title="Guest Services" subtitle="Waitlist, charge transfers, amenity vouchers"></ui-page-header>
     <div class="flex gap-1 mb-4">
       @for (tab of tabs; track tab.key) {
@@ -95,10 +96,11 @@ export class GuestServicesPage implements OnInit {
     const user = this.auth.currentUser;
     this.api.post(`/guest-services/transfers/${id}/approve`, { user_id: user?.id, user_name: [user?.first_name, user?.last_name].filter(Boolean).join(' ') }).subscribe({ next: () => this.load() });
   }
-  rejectTransfer(id: string) {
-    const reason = prompt('Rejection reason:') || '';
+  async rejectTransfer(id: string) {
+    const ok = await this.confirm.confirm({ title: 'Reject Transfer Request', message: 'Reject this room transfer request?', confirmLabel: 'Reject', variant: 'warning' });
+    if (!ok) return;
     const user = this.auth.currentUser;
-    this.api.post(`/guest-services/transfers/${id}/reject`, { user_id: user?.id, user_name: [user?.first_name, user?.last_name].filter(Boolean).join(' '), reason }).subscribe({ next: () => this.load() });
+    this.api.post(`/guest-services/transfers/${id}/reject`, { user_id: user?.id, user_name: [user?.first_name, user?.last_name].filter(Boolean).join(' '), reason: 'Rejected by staff' }).subscribe({ next: () => this.load() });
   }
 
   formatAmount(kobo: any): string { return ((+kobo || 0) / 100).toLocaleString(); }

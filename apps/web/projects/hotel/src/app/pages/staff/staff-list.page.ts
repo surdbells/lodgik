@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService , ConfirmDialogComponent } from '@lodgik/shared';
 
 @Component({
   selector: 'app-staff-list',
   standalone: true,
-  imports: [PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, FormsModule],
+  imports: [PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, FormsModule, ConfirmDialogComponent],
   template: `
+    <ui-confirm-dialog/>
     <ui-page-header title="Staff" subtitle="Manage hotel staff members">
       <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showAdd = !showAdd">
         {{ showAdd ? 'Cancel' : '+ Add Staff' }}
@@ -145,6 +146,22 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
         </div>
       </div>
     }
+    <!-- Reset Password Modal -->
+    @if (resetPwStaff) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" (click)="closeResetPw()"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-1">Reset Password</h3>
+          <p class="text-sm text-gray-500 mb-3">Set a new password for {{ resetPwStaff.first_name }} {{ resetPwStaff.last_name }}.</p>
+          <input type="password" [(ngModel)]="resetPwValue" placeholder="New password (min 6 characters)"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4" (keyup.enter)="confirmResetPw()"/>
+          <div class="flex justify-end gap-2">
+            <button (click)="closeResetPw()" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+            <button (click)="confirmResetPw()" class="px-4 py-2 text-sm text-white bg-sage-600 rounded-lg hover:bg-sage-700">Reset Password</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class StaffListPage implements OnInit {
@@ -233,14 +250,17 @@ export class StaffListPage implements OnInit {
       else this.toast.error(r.message || 'Failed');
     });
   }
-  resetPassword(row: any): void {
-    const pw = prompt(`Enter new password for ${row.first_name} ${row.last_name}:`);
-    if (pw && pw.length >= 6) {
-      this.api.patch(`/staff/${row.id}`, { password: pw }).subscribe(r => {
-        if (r.success) this.toast.success('Password reset');
-        else this.toast.error(r.message || 'Failed');
-      });
-    } else if (pw) { this.toast.error('Password must be at least 6 characters'); }
+  resetPwStaff: any = null;
+  resetPwValue = '';
+  openResetPw(row: any): void { this.resetPwStaff = row; this.resetPwValue = ''; }
+  closeResetPw(): void { this.resetPwStaff = null; }
+  confirmResetPw(): void {
+    if (!this.resetPwStaff) return;
+    if (this.resetPwValue.length < 6) { this.toast.error('Password must be at least 6 characters'); return; }
+    this.api.patch(`/staff/${this.resetPwStaff.id}`, { password: this.resetPwValue }).subscribe(r => {
+      if (r.success) { this.toast.success('Password reset'); this.closeResetPw(); }
+      else this.toast.error(r.message || 'Failed');
+    });
   }
   async deactivate(row: any): Promise<void> {
     const ok = await this.confirm.confirm({ title: 'Deactivate Staff', message: `Deactivate ${row.first_name} ${row.last_name}?`, variant: 'warning' });

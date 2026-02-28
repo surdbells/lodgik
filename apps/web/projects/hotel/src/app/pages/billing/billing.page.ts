@@ -1,13 +1,14 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, ToastService, BadgeComponent, AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, ToastService, BadgeComponent, AuthService, ConfirmDialogService, ConfirmDialogComponent } from '@lodgik/shared';
 
 @Component({
   selector: 'app-billing',
   standalone: true,
-  imports: [PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, FormsModule, BadgeComponent],
+  imports: [PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, FormsModule, BadgeComponent, ConfirmDialogComponent],
   template: `
+    <ui-confirm-dialog/>
     <ui-page-header title="Billing & Subscription" subtitle="Manage your plan, payments, and invoices">
       <div class="flex gap-2">
         <button (click)="tab = 'plan'" [class]="tab === 'plan' ? 'bg-sage-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-2 text-sm rounded-lg">Plan</button>
@@ -162,6 +163,7 @@ export class BillingPage implements OnInit {
   private auth = inject(AuthService);
   private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
+  private confirm = inject(ConfirmDialogService);
   loading = signal(true);
   processing = signal(false);
   tenant = signal<any>({});
@@ -233,8 +235,14 @@ export class BillingPage implements OnInit {
     });
   }
 
-  cancelSubscription(): void {
-    if (!confirm('Are you sure you want to cancel? Access continues until end of billing period.')) return;
+  async cancelSubscription(): Promise<void> {
+    const ok = await this.confirm.confirm({
+      title: 'Cancel Subscription',
+      message: 'Are you sure you want to cancel? You will retain access until the end of the current billing period.',
+      confirmLabel: 'Cancel Subscription',
+      variant: 'warning',
+    });
+    if (!ok) return;
     this.processing.set(true);
     this.api.post('/subscriptions/cancel', {}).subscribe({
       next: r => {

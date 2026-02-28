@@ -1,14 +1,15 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ToastService, ActivePropertyService} from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ToastService, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-invoices',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
+  imports: [FormsModule, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent, ConfirmDialogComponent],
   template: `
+    <ui-confirm-dialog/>
     <ui-page-header title="Invoices" icon="file-text" [breadcrumbs]="['Finance', 'Invoices']" subtitle="Tax invoices and billing">
       <button (click)="showCreate = !showCreate" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700">{{ showCreate ? 'Cancel' : '+ Create Invoice' }}</button>
     </ui-page-header>
@@ -54,6 +55,7 @@ export class InvoicesPage implements OnInit {
   private router = inject(Router);
   private toast = inject(ToastService);
   private activeProperty = inject(ActivePropertyService);
+  private confirm = inject(ConfirmDialogService);
 
   loading = signal(true);
   invoices = signal<any[]>([]);
@@ -120,8 +122,14 @@ export class InvoicesPage implements OnInit {
     });
   }
 
-  voidInvoice(row: any): void {
-    if (!confirm(`Void invoice ${row.invoice_number}?`)) return;
+  async voidInvoice(row: any): Promise<void> {
+    const ok = await this.confirm.confirm({
+      title: 'Void Invoice',
+      message: `Void invoice ${row.invoice_number}? This action cannot be undone.`,
+      confirmLabel: 'Void Invoice',
+      variant: 'danger',
+    });
+    if (!ok) return;
     this.api.post(`/invoices/${row.id}/void`, {}).subscribe((r: any) => {
       if (r.success) { this.toast.success('Invoice voided'); this.loadInvoices(); }
       else this.toast.error(r.message || 'Failed');

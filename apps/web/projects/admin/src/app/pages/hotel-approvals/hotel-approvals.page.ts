@@ -1,15 +1,16 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, LODGIK_ICONS } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, LODGIK_ICONS, ConfirmDialogService, ConfirmDialogComponent } from '@lodgik/shared';
 import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
 
 @Component({
   selector: 'app-hotel-approvals',
   standalone: true,
-  imports: [DatePipe, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, LucideAngularModule],
+  imports: [DatePipe, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, LucideAngularModule, ConfirmDialogComponent],
   providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(LODGIK_ICONS) }],
   template: `
+    <ui-confirm-dialog/>
     <ui-page-header title="Hotel Approvals" subtitle="Review and provision merchant-submitted hotels">
       <div class="flex items-center gap-2 text-sm">
         <span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-medium">{{ pendingCount() }} pending</span>
@@ -151,6 +152,7 @@ import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-an
 export class HotelApprovalsPage implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmDialogService);
 
   loading = signal(true);
   processing = signal(false);
@@ -185,8 +187,9 @@ export class HotelApprovalsPage implements OnInit {
     });
   }
 
-  approve(h: any) {
-    if (!confirm(`Approve and provision "${h.hotel_name}"?\n\nThis will create a Tenant, Property, and admin User account for the hotel.`)) return;
+  async approve(h: any) {
+    const ok = await this.confirm.confirm({ title: 'Approve Hotel', message: `Approve and provision "${h.hotel_name}"? This will create a Tenant, Property, and admin User account for the hotel.`, confirmLabel: 'Approve', variant: 'info' });
+    if (!ok) return;
     this.processing.set(true);
     this.api.post(`/admin/merchants/hotels/${h.id}/approve`, { app_url: window.location.origin.replace('admin', 'app') }).subscribe({
       next: (r: any) => {

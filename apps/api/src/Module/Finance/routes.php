@@ -31,6 +31,7 @@ return function (App $app): void {
     $app->group('/api/police-reports', function (RouteCollectorProxy $g) {
         $g->get('', [FinanceController::class, 'listReports']);
         $g->post('', [FinanceController::class, 'createReport']);
+        $g->post('/{id}/submit', [FinanceController::class, 'submitReport']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'front_desk', 'security']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Performance Reviews: manager, hr, admin

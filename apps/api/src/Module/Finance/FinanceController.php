@@ -28,8 +28,9 @@ final class FinanceController
     public function closeAudit(Request $req, Response $res, array $args): Response { $d = $this->body($req); return $this->json($res, ['success' => true, 'data' => $this->svc->closeNightAudit($args['id'], $req->getAttribute('auth.user_id'), $d['closer_name'] ?? '', $d['notes'] ?? null)->toArray()]); }
 
     // Police Reports
-    public function listReports(Request $req, Response $res): Response { $p = $req->getQueryParams(); return $this->json($res, ['success' => true, 'data' => $this->svc->listPoliceReports($p['property_id'] ?? '', $p['from'] ?? null, $p['to'] ?? null)]); }
+    public function listReports(Request $req, Response $res): Response { $p = $req->getQueryParams(); $pid = $p['property_id'] ?? $req->getAttribute('auth.property_id') ?? ''; return $this->json($res, ['success' => true, 'data' => $this->svc->listPoliceReports($pid, $p['from'] ?? null, $p['to'] ?? null)]); }
     public function createReport(Request $req, Response $res): Response { $d = $this->body($req); $r = $this->svc->createPoliceReport($d['property_id'], $d['booking_id'], $d['guest_id'], $d['guest_name'], $d['arrival_date'], $req->getAttribute('auth.tenant_id'), $d); return $this->json($res, ['success' => true, 'data' => $r->toArray()], 201); }
+    public function submitReport(Request $req, Response $res, array $args): Response { $r = $this->svc->submitPoliceReport($args['id']); return $this->json($res, ['success' => true, 'data' => $r->toArray()]); }
 
     // Performance Reviews
     public function listReviews(Request $req, Response $res): Response { $p = $req->getQueryParams(); return $this->json($res, ['success' => true, 'data' => $this->svc->listReviews($p['property_id'] ?? '', $p['employee_id'] ?? null)]); }

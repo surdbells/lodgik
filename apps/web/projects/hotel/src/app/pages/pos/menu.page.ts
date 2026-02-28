@@ -31,8 +31,9 @@ interface Product {
 @Component({
   selector: 'app-menu',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
+  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, ConfirmDialogComponent],
   template: `
+    <ui-confirm-dialog/>
     <ui-page-header title="Menu & Pricing" subtitle="Manage F&B categories, items, and prices">
       <div class="flex gap-2">
         @if (activeTab() === 'categories') {
@@ -312,6 +313,7 @@ interface Product {
 export class MenuPage implements OnInit {
   private api = inject(ApiService);
   private activeProperty = inject(ActivePropertyService);
+  private confirm = inject(ConfirmDialogService);
 
   loading = signal(true);
   categories = signal<Category[]>([]);
@@ -403,11 +405,12 @@ export class MenuPage implements OnInit {
     this.api.put(`/pos/categories/${cat.id}`, { is_active: !cat.is_active }).subscribe(() => this.load());
   }
 
-  deleteCategory(cat: Category) {
-    if (!confirm(`Delete category "${cat.name}"? This cannot be undone.`)) return;
+  async deleteCategory(cat: Category) {
+    const ok = await this.confirm.confirm({ title: 'Delete Category', message: `Delete category "${cat.name}"? This cannot be undone.`, confirmLabel: 'Delete', variant: 'danger' });
+    if (!ok) return;
     this.api.delete(`/pos/categories/${cat.id}`).subscribe({
       next: () => this.load(),
-      error: (e: any) => alert(e?.error?.message ?? 'Cannot delete category with existing products.'),
+      error: (e: any) => this.confirm.confirm({ title: 'Cannot Delete', message: e?.error?.message ?? 'Cannot delete a category that has products. Remove all products first.', confirmLabel: 'OK', variant: 'warning' }),
     });
   }
 
@@ -458,8 +461,9 @@ export class MenuPage implements OnInit {
     this.api.put(`/pos/products/${p.id}`, { is_available: !p.is_available }).subscribe(() => this.load());
   }
 
-  deleteProduct(p: Product) {
-    if (!confirm(`Delete "${p.name}"?`)) return;
+  async deleteProduct(p: Product) {
+    const ok = await this.confirm.confirm({ title: 'Delete Product', message: `Delete "${p.name}"? This cannot be undone.`, confirmLabel: 'Delete', variant: 'danger' });
+    if (!ok) return;
     this.api.delete(`/pos/products/${p.id}`).subscribe(() => this.load());
   }
 }

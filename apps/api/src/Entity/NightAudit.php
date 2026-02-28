@@ -113,7 +113,9 @@ class NightAudit implements TenantAware
             'cash_collected' => $this->cashCollected, 'card_collected' => $this->cardCollected, 'transfer_collected' => $this->transferCollected,
             'occupancy_rate' => $this->occupancyRate, 'adr' => $this->adr, 'revpar' => $this->revpar,
             'discrepancies' => $this->discrepancies, 'notes' => $this->notes,
-            'status' => $this->status, 'closed_by_name' => $this->closedByName, 'closed_at' => $this->closedAt?->format('Y-m-d H:i:s'),
+            'status' => $this->status, 'closed_by_name' => $this->closedByName,
+            'auditor_name' => $this->closedByName, // alias used by frontend
+            'closed_at' => $this->closedAt?->format('Y-m-d H:i:s'),
         ];
     }
 }

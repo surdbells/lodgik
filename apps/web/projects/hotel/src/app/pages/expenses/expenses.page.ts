@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, AuthService, StatsCardComponent, ActivePropertyService} from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, AuthService, StatsCardComponent, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent } from '@lodgik/shared';
 
 @Component({
   selector: 'app-expenses',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
+  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ConfirmDialogComponent],
   template: `
+    <ui-confirm-dialog/>
     <ui-page-header title="Expenses" icon="receipt" [breadcrumbs]="['Finance', 'Expenses']" subtitle="Track and approve operational expenses">
       <div class="flex gap-2">
         <button (click)="showCatMgmt = !showCatMgmt; showForm = false; showVendorMgmt = false" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">{{ showCatMgmt ? 'Close' : 'Categories' }}</button>
@@ -123,7 +124,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                   @if (e.status === 'draft') { <button (click)="doSubmit(e.id)" class="text-sage-600 hover:underline text-xs mr-2">Submit</button> }
                   @if (e.status === 'pending') {
                     <button (click)="approve(e.id)" class="text-green-600 hover:underline text-xs mr-2">Approve</button>
-                    <button (click)="reject(e.id)" class="text-red-600 hover:underline text-xs">Reject</button>
+                    <button (click)="openRejectModal(e.id)" class="text-red-600 hover:underline text-xs">Reject</button>
                   }
                   @if (e.status === 'approved') { <button (click)="markPaid(e.id)" class="text-sage-600 hover:underline text-xs">Paid</button> }
                 </td>
@@ -189,7 +190,12 @@ export default class ExpensesPage implements OnInit {
   }
   doSubmit(id: string): void { this.api.post(`/expenses/${id}/submit`, {}).subscribe(() => { this.toast.success('Submitted'); this.loadExpenses(); }); }
   approve(id: string): void { this.api.post(`/expenses/${id}/approve`, {}).subscribe(() => { this.toast.success('Approved'); this.loadExpenses(); }); }
-  reject(id: string): void { const r = prompt('Reason:'); this.api.post(`/expenses/${id}/reject`, { reason: r }).subscribe(() => { this.toast.success('Rejected'); this.loadExpenses(); }); }
+  rejectingId = '';
+  rejectReason = '';
+  showRejectModal = false;
+  openRejectModal(id: string): void { this.rejectingId = id; this.rejectReason = ''; this.showRejectModal = true; }
+  closeRejectModal(): void { this.showRejectModal = false; }
+  confirmReject(): void { if (!this.rejectingId) return; this.api.post(`/expenses/${this.rejectingId}/reject`, { reason: this.rejectReason || 'Rejected by manager' }).subscribe(() => { this.toast.success('Rejected'); this.showRejectModal = false; this.loadExpenses(); }); }
   markPaid(id: string): void { this.api.post(`/expenses/${id}/paid`, { payment_method: 'bank_transfer' }).subscribe(() => { this.toast.success('Paid'); this.loadExpenses(); }); }
   fmtAmt(k: any): string { return (+k / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 }); }
   stCls(s: string): string { return ({ draft: 'bg-gray-100 text-gray-600', pending: 'bg-yellow-100 text-yellow-800', approved: 'bg-green-100 text-green-800', rejected: 'bg-red-100 text-red-800', paid: 'bg-sage-100 text-sage-800' } as any)[s] || 'bg-gray-100'; }

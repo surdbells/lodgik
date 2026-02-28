@@ -59,11 +59,14 @@ class PoliceReport implements TenantAware
     {
         $this->generateId(); $this->propertyId = $propertyId; $this->bookingId = $bookingId;
         $this->guestId = $guestId; $this->guestName = $guestName; $this->arrivalDate = $arrivalDate;
-        $this->submittedAt = new \DateTimeImmutable(); $this->setTenantId($tenantId);
+        // submittedAt intentionally null — report starts as 'pending'
+        $this->setTenantId($tenantId);
     }
 
     public function getPropertyId(): string { return $this->propertyId; }
     public function getBookingId(): string { return $this->bookingId; }
+    public function markSubmitted(): void { $this->submittedAt = new \DateTimeImmutable(); }
+    public function getStatus(): string { return $this->submittedAt !== null ? 'submitted' : 'pending'; }
     public function setNationality(?string $v): void { $this->nationality = $v; }
     public function setIdType(?string $v): void { $this->idType = $v; }
     public function setIdNumber(?string $v): void { $this->idNumber = $v; }
@@ -83,6 +86,10 @@ class PoliceReport implements TenantAware
             'id' => $this->getId(), 'property_id' => $this->propertyId, 'booking_id' => $this->bookingId,
             'guest_name' => $this->guestName, 'nationality' => $this->nationality,
             'id_type' => $this->idType, 'id_number' => $this->idNumber,
+            // Frontend aliases
+            'passport_number' => $this->idType === 'passport' ? $this->idNumber : null,
+            'nin'             => $this->idType === 'nin'      ? $this->idNumber : null,
+            'status' => $this->getStatus(),
             'address' => $this->address, 'phone' => $this->phone, 'email' => $this->email,
             'purpose_of_visit' => $this->purposeOfVisit,
             'arrival_date' => $this->arrivalDate->format('Y-m-d'),

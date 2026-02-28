@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService} from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, ToastService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-pos',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent],
+  imports: [FormsModule, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, ConfirmDialogComponent],
   template: `
+    <ui-confirm-dialog/>
     <ui-page-header title="Bar & Restaurant" subtitle="POS, table management, and kitchen display">
       <div class="flex gap-2">
         <button (click)="showTableForm = !showTableForm; showOrderForm = false" class="px-4 py-2 border rounded-lg text-sm">{{ showTableForm ? 'Cancel' : '+ Add Table' }}</button>
@@ -173,20 +174,21 @@ export class PosPage implements OnInit {
 
   closeOrder(orderId: string): void {
     this.api.post(`/pos/orders/${orderId}/close`, {}).subscribe((r: any) => {
-      if (r.success) this.load(); else alert(r.message || 'Failed to close order');
+      if (r.success) this.load(); else this.toast.error(r.message || 'Failed to close order');
     });
   }
 
-  cancelOrder(orderId: string): void {
-    if (!confirm('Cancel this order?')) return;
+  async cancelOrder(orderId: string): Promise<void> {
+    const ok = await this.confirm.confirm({ title: 'Cancel Order', message: 'Cancel this order? This cannot be undone.', variant: 'warning' });
+    if (!ok) return;
     this.api.post(`/pos/orders/${orderId}/cancel`, {}).subscribe((r: any) => {
-      if (r.success) this.load(); else alert(r.message || 'Failed to cancel order');
+      if (r.success) this.load(); else this.toast.error(r.message || 'Failed to cancel order');
     });
   }
 
   postToFolio(orderId: string): void {
     this.api.post(`/pos/orders/${orderId}/post-to-folio`, {}).subscribe((r: any) => {
-      if (r.success) this.load(); else alert(r.message || 'Failed to post to folio');
+      if (r.success) this.load(); else this.toast.error(r.message || 'Failed to post to folio');
     });
   }
 

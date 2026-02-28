@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,8 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
 import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
 import { LineChartComponent, BarChartComponent, DonutChartComponent, GaugeChartComponent, SparklineChartComponent, ChartDataPoint, ChartSeries } from '@lodgik/charts';
 import { AuthService } from '@lodgik/shared';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
@@ -293,8 +295,15 @@ export class DashboardPage implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.propertyId = this.activeProperty.propertyId();
-    this.loadAll();
+    // Effect: reload whenever active property changes (signal reactivity)
+    effect(() => {
+      const pid = this.activeProperty.propertyId();
+      if (pid) {
+        this.propertyId = pid;
+        this.loading.set(true);
+        this.loadAll();
+      }
+    }, { allowSignalWrites: true });
   }
 
   setScope(scope: 'single' | 'all'): void {
@@ -310,32 +319,36 @@ export class DashboardPage implements OnInit {
 
   private loadSingleProperty(): void {
     if (!this.propertyId) { this.loading.set(false); return; }
-    let loaded = 0;
-    const done = () => { loaded++; if (loaded >= 4) this.loading.set(false); };
+    const pid = this.propertyId;
 
-    this.api.get('/dashboard/overview', { property_id: this.propertyId }).subscribe({ next: r => { if (r.success) this.overview.set(r.data); done(); }, error: done });
-    this.api.get('/dashboard/occupancy-trends', { property_id: this.propertyId, days: 30 }).subscribe({ next: r => { if (r.success) this.trends.set(r.data ?? []); done(); }, error: done });
-    this.api.get('/dashboard/revenue-breakdown', { property_id: this.propertyId, days: 30 }).subscribe({
-      next: r => {
-        if (r.success) {
-          const colors: Record<string, string> = { overnight: '#3a543a', short_rest_3hr: '#d97706', short_rest_6hr: '#b45309', walk_in: '#7a9e7a', corporate: '#6366f1', half_day: '#0891b2' };
-          this.revenueBreakdown.set((r.data ?? []).map((d: any) => ({ label: d.booking_type, value: +d.revenue, color: colors[d.booking_type] || '#6b7280' })));
-        }
-        done();
-      }, error: done
+    forkJoin({
+      overview: this.api.get('/dashboard/overview', { property_id: pid }).pipe(catchError(() => of({ success: false, data: {} }))),
+      trends:   this.api.get('/dashboard/occupancy-trends', { property_id: pid, days: 30 }).pipe(catchError(() => of({ success: false, data: [] }))),
+      revenue:  this.api.get('/dashboard/revenue-breakdown', { property_id: pid, days: 30 }).pipe(catchError(() => of({ success: false, data: [] }))),
+      activity: this.api.get('/dashboard/activity-feed', { property_id: pid, limit: 10 }).pipe(catchError(() => of({ success: false, data: [] }))),
+    }).subscribe(({ overview, trends, revenue, activity }) => {
+      if ((overview as any).success) this.overview.set((overview as any).data);
+      if ((trends as any).success)   this.trends.set((trends as any).data ?? []);
+      if ((revenue as any).success) {
+        const colors: Record<string, string> = { overnight: '#3a543a', short_rest_3hr: '#d97706', short_rest_6hr: '#b45309', walk_in: '#7a9e7a', corporate: '#6366f1', half_day: '#0891b2' };
+        this.revenueBreakdown.set(((revenue as any).data ?? []).map((d: any) => ({ label: d.booking_type, value: +d.revenue, color: colors[d.booking_type] || '#6b7280' })));
+      }
+      if ((activity as any).success) this.activity.set((activity as any).data ?? []);
+      this.loading.set(false);
     });
-    this.api.get('/dashboard/activity-feed', { property_id: this.propertyId, limit: 10 }).subscribe({ next: r => { if (r.success) this.activity.set(r.data ?? []); done(); }, error: done });
   }
 
   private loadAllProperties(): void {
-    let loaded = 0;
-    const done = () => { loaded++; if (loaded >= 2) this.loading.set(false); };
-
-    this.api.get('/dashboard/overview', { scope: 'all_properties' }).subscribe({
-      next: r => { if (r.success) { this.overview.set(r.data); this.trends.set([]); this.revenueBreakdown.set([]); this.activity.set([]); } done(); }, error: done
-    });
-    this.api.get('/dashboard/property-comparison', { days: 30 }).subscribe({
-      next: r => { if (r.success) this.propertyComparison.set(r.data ?? []); done(); }, error: done
+    forkJoin({
+      overview:   this.api.get('/dashboard/overview', { scope: 'all_properties' }).pipe(catchError(() => of({ success: false, data: {} }))),
+      comparison: this.api.get('/dashboard/property-comparison', { days: 30 }).pipe(catchError(() => of({ success: false, data: [] }))),
+    }).subscribe(({ overview, comparison }) => {
+      if ((overview as any).success) {
+        this.overview.set((overview as any).data);
+        this.trends.set([]); this.revenueBreakdown.set([]); this.activity.set([]);
+      }
+      if ((comparison as any).success) this.propertyComparison.set((comparison as any).data ?? []);
+      this.loading.set(false);
     });
   }
 
