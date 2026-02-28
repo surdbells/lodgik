@@ -367,7 +367,6 @@ export class RoomsPage implements OnInit {
         this.showBulk = false;
         this.bulkForm = { room_type_id: '', floor: 1, start_number: 101, count: 10 };
         this.load();
-        this.loadStatusCounts();
       } else this.toast.error(r.message || 'Failed to bulk create rooms');
     });
   }

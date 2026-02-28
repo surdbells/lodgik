@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, StatsCardComponent } from '@lodgik/shared';
 import { BarChartComponent, ChartDataPoint } from '@lodgik/charts';
 
@@ -18,8 +18,8 @@ import { BarChartComponent, ChartDataPoint } from '@lodgik/charts';
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <ui-stats-card label="Total OTA Revenue" [value]="'₦' + (revenue().total_revenue / 100).toLocaleString()" icon="banknote"></ui-stats-card>
         <ui-stats-card label="Total Bookings" [value]="revenue().total_bookings ?? 0" icon="calendar-check"></ui-stats-card>
-        <ui-stats-card label="Active Channels" [value]="channels().filter(c => c.sync_status === 'active').length" icon="wifi"></ui-stats-card>
-        <ui-stats-card label="Pending Reservations" [value]="reservations().filter(r => r.sync_status === 'pending').length" icon="clock"></ui-stats-card>
+        <ui-stats-card label="Active Channels" [value]="activeChannelCount()" icon="wifi"></ui-stats-card>
+        <ui-stats-card label="Pending Reservations" [value]="pendingReservationCount()" icon="clock"></ui-stats-card>
       </div>
 
       <!-- Channel Revenue Bar Chart -->
@@ -114,6 +114,8 @@ export default class OtaChannelsPage implements OnInit {
   loading = signal(true);
   channels = signal<any[]>([]);
   reservations = signal<any[]>([]);
+  activeChannelCount = computed(() => this.channels().filter((c: any) => c.sync_status === 'active').length);
+  pendingReservationCount = computed(() => this.reservations().filter((r: any) => r.sync_status === 'pending').length);
   revenue = signal<any>({ total_revenue: 0, total_bookings: 0, by_channel: [] });
   channelRevData = signal<ChartDataPoint[]>([]);
   showAdd = false;

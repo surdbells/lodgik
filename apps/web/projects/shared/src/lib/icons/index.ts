@@ -19,6 +19,8 @@ import {
 
   // ─── F&B & Facilities ─────────────────
   Utensils,
+  BookOpen,
+  Sparkles,
   Dumbbell,
   Bath,
 
@@ -33,6 +35,8 @@ import {
   FileChartColumn,
   ShieldAlert,
   ShieldCheck,
+  Banknote,
+  CalendarCheck,
 
   // ─── Human Resources ──────────────────
   UserRoundCog,
@@ -96,6 +100,8 @@ export const LODGIK_ICONS = {
   Heart,
   Shield,
   Utensils,
+  BookOpen,
+  Sparkles,
   Dumbbell,
   Bath,
   FolderOpen,
@@ -108,6 +114,8 @@ export const LODGIK_ICONS = {
   FileChartColumn,
   ShieldAlert,
   ShieldCheck,
+  Banknote,
+  CalendarCheck,
   UserRoundCog,
   Clock,
   TreePalm,
