@@ -140,7 +140,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
           </div>
         } @empty {
           <div class="text-center py-12 text-gray-400">
-            <div class="text-3xl mb-2">{{ tabs.find(t => t.key === activeTab)?.emptyIcon || '📋' }}</div>
+            <div class="text-3xl mb-2">{{ activeTabEmptyIcon() }}</div>
             <p class="text-sm font-medium">No {{ typeLabel(activeTab) }} requests</p>
           </div>
         }
@@ -267,6 +267,10 @@ export class RoomControlsPage implements OnInit {
 
   // Helpers
   typeIcon(t: string): string { return t === 'dnd' ? '🔕' : t === 'make_up_room' ? '🧹' : '🔧'; }
+
+  activeTabEmptyIcon(): string {
+    return this.tabs.find(t => t.key === this.activeTab)?.emptyIcon || '📋';
+  }
 
   typeLabel(t: string): string {
     return t === 'dnd' ? 'DND' : t === 'make_up_room' ? 'Make Up Room' : 'Maintenance';
