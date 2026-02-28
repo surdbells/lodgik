@@ -4,6 +4,7 @@ import { Routes } from '@angular/router';
 
 const routes: Routes = [
   { path: '', redirectTo: '/tables', pathMatch: 'full' },
+  { path: 'notifications', loadComponent: () => import('./pages/notifications.component').then(m => m.PosNotificationsComponent) },
   { path: 'tables', loadComponent: () => import('./pages/table-map.component').then(m => m.TableMapComponent) },
   { path: 'order/:id', loadComponent: () => import('./pages/order.component').then(m => m.OrderComponent) },
   { path: 'menu', loadComponent: () => import('./pages/menu-manage.component').then(m => m.MenuManageComponent) },

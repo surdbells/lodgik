@@ -31,6 +31,18 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/info/info.component').then(m => m.LocalInfoComponent),
   },
   {
+    path: 'tablet-loyalty',
+    loadComponent: () => import('./pages/loyalty/loyalty.component').then(m => m.TabletLoyaltyComponent),
+  },
+  {
+    path: 'tablet-spa',
+    loadComponent: () => import('./pages/spa/spa.component').then(m => m.TabletSpaComponent),
+  },
+  {
+    path: 'tablet-pool',
+    loadComponent: () => import('./pages/pool/pool.component').then(m => m.TabletPoolComponent),
+  },
+  {
     path: 'iot-controls',
     loadComponent: () => import('./pages/iot-controls/iot-controls.component').then(m => m.IoTControlsComponent),
   },

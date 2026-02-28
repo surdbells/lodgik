@@ -9,6 +9,7 @@ import { ApplicationSettings } from '@nativescript/core';
   template: `
     <ActionBar title="Housekeeping Tasks">
       <ActionItem text="Lost&Found" (tap)="router.navigate(['/lost-found'])" ios.position="right"></ActionItem>
+      <ActionItem text="🔔" (tap)="router.navigate(["/notifications"])" ios.position="right"></ActionItem>
     </ActionBar>
     <StackLayout class="p-4">
       <!-- Stats Bar -->
@@ -43,6 +44,7 @@ import { ApplicationSettings } from '@nativescript/core';
               <Label col="0" [text]="task.assigned_to_name || 'Unassigned'"></Label>
               <Label col="1" [text]="task.estimated_minutes + ' min est.'" class="text-right"></Label>
             </GridLayout>
+            <Button *ngIf="task.status === 'pending' && !task.assigned_to_name" text="Assign to me" (tap)="selfAssign(task, $event)" class="bg-blue-100 text-blue rounded-full p-y-1 p-x-3 text-xs m-t-2" style="font-size:11;"></Button>
           </StackLayout>
           <Label *ngIf="filteredTasks.length === 0" text="No tasks found" class="text-center text-muted p-8"></Label>
         </StackLayout>
@@ -83,6 +85,13 @@ export class TaskListComponent implements OnInit {
   openTask(task: any) { this.router.navigate(['/tasks', task.id]); }
 
   priorityIcon(p: number): string { return p <= 1 ? '🔴' : p === 2 ? '🟠' : p === 3 ? '🟡' : '🟢'; }
+  selfAssign(task: any, event: any) {
+    event?.object?.stopPropagation?.();
+    this.api.selfAssignTask(task.id).subscribe({
+      next: (r: any) => { task.assigned_to_name = r.data?.assigned_to_name || 'You'; },
+    });
+  }
+
   statusClass(s: string): string {
     return s === 'pending' ? 'bg-gray' : s === 'in_progress' ? 'bg-blue' : s === 'completed' ? 'bg-green' : s === 'inspected' ? 'bg-teal' : 'bg-red';
   }

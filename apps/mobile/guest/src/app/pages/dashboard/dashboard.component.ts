@@ -12,6 +12,9 @@ import { BiometricService } from '../../services/biometric.service';
   template: `
     <ActionBar flat="true" class="bg-blue-600">
       <Label text="Lodgik Guest" class="text-white font-bold"></Label>
+      <ActionItem (tap)="nav("/notifications")" ios.position="right" android.position="actionBar">
+        <GridLayout><Label [text]="unreadCount > 0 ? "🔔 " + unreadCount : "🔔"" class="text-white font-bold"></Label></GridLayout>
+      </ActionItem>
     </ActionBar>
     <ScrollView>
       <StackLayout class="p-4">
@@ -53,7 +56,7 @@ import { BiometricService } from '../../services/biometric.service';
             <Label text="🔕" class="text-3xl"></Label>
             <Label text="Room Controls" class="text-sm font-medium m-t-1"></Label>
           </StackLayout>
-          <StackLayout col="1" row="1" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/chat')">
+          <StackLayout col="0" row="2" class="bg-white border rounded-xl p-4 m-1 text-center" (tap)="nav('/iot-controls')">
             <Label text="💬" class="text-3xl"></Label>
             <Label text="Chat" class="text-sm font-medium m-t-1"></Label>
           </StackLayout>

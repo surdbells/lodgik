@@ -21,7 +21,7 @@ import { Subscription } from 'rxjs';
 
       <!-- Main Content — Landscape Grid -->
       <ScrollView row="1">
-        <GridLayout columns="*, *, *, *" rows="auto, auto" class="p-6">
+        <GridLayout columns="*, *, *, *" rows="auto, auto, auto" class="p-6">
           <!-- Row 1 -->
           <StackLayout col="0" row="0" class="bg-white rounded-2xl p-6 m-2 text-center shadow-sm" (tap)="nav('/room-service')">
             <Label text="🛎️" class="text-5xl m-b-2"></Label>
@@ -75,6 +75,23 @@ import { Subscription } from 'rxjs';
             <Label text="🎛️" class="text-5xl m-b-2"></Label>
             <Label text="Smart Room" class="text-lg font-bold"></Label>
             <Label text="AC, lights, curtains" class="text-gray-400 text-sm m-t-1"></Label>
+          </StackLayout>
+          <StackLayout col="1" row="2" class="bg-white rounded-2xl p-6 m-2 text-center shadow-sm" (tap)="nav('/tablet-loyalty')">
+            <Label text="🏆" class="text-5xl m-b-2"></Label>
+            <Label text="Loyalty Points" class="text-lg font-bold"></Label>
+            <Label text="Rewards & benefits" class="text-gray-400 text-sm m-t-1"></Label>
+          </StackLayout>
+
+          <StackLayout col="2" row="2" class="bg-white rounded-2xl p-6 m-2 text-center shadow-sm" (tap)="nav('/tablet-spa')">
+            <Label text="🧖" class="text-5xl m-b-2"></Label>
+            <Label text="Spa & Wellness" class="text-lg font-bold"></Label>
+            <Label text="Book treatments" class="text-gray-400 text-sm m-t-1"></Label>
+          </StackLayout>
+
+          <StackLayout col="3" row="2" class="bg-white rounded-2xl p-6 m-2 text-center shadow-sm" (tap)="nav('/tablet-pool')">
+            <Label text="🏊" class="text-5xl m-b-2"></Label>
+            <Label text="Pool Access" class="text-lg font-bold"></Label>
+            <Label text="Pool info & access code" class="text-gray-400 text-sm m-t-1"></Label>
           </StackLayout>
         </GridLayout>
       </ScrollView>

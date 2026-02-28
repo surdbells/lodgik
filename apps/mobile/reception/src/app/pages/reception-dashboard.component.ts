@@ -12,7 +12,7 @@ import { ReceptionApiService } from '../services/reception-api.service';
       <ActionItem text="💬" (tap)="router.navigate(['/chat'])" ios.position="right"></ActionItem>
     </ActionBar>
     <GridLayout rows="auto,auto,auto,*">
-      <GridLayout row="0" columns="*,*,*,*" class="p-4">
+      <GridLayout row="0" columns="*,*,*,*,*" class="p-4">
         <StackLayout col="0" (tap)="router.navigate(['/checkin'])" class="bg-green-600 rounded-xl p-3 m-r-2 text-center">
           <Label text="✅" class="text-2xl"></Label><Label text="Check In" class="text-white text-xs font-bold"></Label>
         </StackLayout>
@@ -22,8 +22,11 @@ import { ReceptionApiService } from '../services/reception-api.service';
         <StackLayout col="2" (tap)="router.navigate(['/walkin'])" class="bg-blue-600 rounded-xl p-3 m-r-2 text-center">
           <Label text="🚶" class="text-2xl"></Label><Label text="Walk-in" class="text-white text-xs font-bold"></Label>
         </StackLayout>
-        <StackLayout col="3" (tap)="router.navigate(['/housekeeping'])" class="bg-purple-600 rounded-xl p-3 text-center">
+        <StackLayout col="3" (tap)="router.navigate(['/housekeeping'])" class="bg-purple-600 rounded-xl p-3 m-r-2 text-center">
           <Label text="🧹" class="text-2xl"></Label><Label text="Cleaning" class="text-white text-xs font-bold"></Label>
+        </StackLayout>
+        <StackLayout col="4" (tap)="router.navigate(["/service-requests"])" class="bg-rose-600 rounded-xl p-3 text-center">
+          <Label text="🛎️" class="text-2xl"></Label><Label text="Requests" class="text-white text-xs font-bold"></Label>
         </StackLayout>
       </GridLayout>
       <GridLayout row="1" columns="*,*,*,*,*" class="p-x-4 m-b-2">

@@ -11,6 +11,9 @@ const routes: Routes = [
   { path: 'chat', loadComponent: () => import('./pages/chat-list.component').then(m => m.ChatListComponent) },
   { path: 'chat/:bookingId', loadComponent: () => import('./pages/chat-conversation.component').then(m => m.ChatConversationComponent) },
   { path: 'housekeeping', loadComponent: () => import('./pages/housekeeping-view.component').then(m => m.HousekeepingViewComponent) },
+  { path: 'service-requests', loadComponent: () => import('./pages/service-requests.component').then(m => m.ReceptionServiceRequestsComponent) },
+  { path: 'folio/:bookingId', loadComponent: () => import('./pages/folio.component').then(m => m.ReceptionFolioComponent) },
+  { path: 'notifications', loadComponent: () => import('./pages/notifications.component').then(m => m.ReceptionNotificationsComponent) },
   { path: 'guests', loadComponent: () => import('./pages/guest-list.component').then(m => m.GuestListComponent) },
 ];
 

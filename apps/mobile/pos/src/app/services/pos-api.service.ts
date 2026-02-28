@@ -27,4 +27,10 @@ export class PosApiService {
   sendToKitchen(orderId: string): Observable<any> { return this.http.post(`${this.baseUrl}/pos/orders/${orderId}/send`, {}, { headers: this.h() }); }
   payOrder(orderId: string, data: any): Observable<any> { return this.http.post(`${this.baseUrl}/pos/orders/${orderId}/pay`, data, { headers: this.h() }); }
   splitOrder(orderId: string): Observable<any> { return this.http.get(`${this.baseUrl}/pos/orders/${orderId}/split`, { headers: this.h() }); }
+  cancelOrder(orderId: string, reason: string): Observable<any> { return this.http.post(`${this.baseUrl}/pos/orders/${orderId}/cancel`, { reason }, { headers: this.h() }); }
+  postToFolio(orderId: string, bookingId: string): Observable<any> { return this.http.post(`${this.baseUrl}/pos/orders/${orderId}/post-to-folio`, { booking_id: bookingId }, { headers: this.h() }); }
+  getBookings(pid: string): Observable<any> { return this.http.get(`${this.baseUrl}/bookings?property_id=${pid}&status=checked_in`, { headers: this.h() }); }
+  getNotifications(pid: string): Observable<any> { return this.http.get(`${this.baseUrl}/notifications?property_id=${pid}&limit=50`, { headers: this.h() }); }
+  markNotificationRead(id: string): Observable<any> { return this.http.post(`${this.baseUrl}/notifications/${id}/read`, {}, { headers: this.h() }); }
+  markAllNotificationsRead(pid: string): Observable<any> { return this.http.post(`${this.baseUrl}/notifications/read-all`, { property_id: pid }, { headers: this.h() }); }
 }

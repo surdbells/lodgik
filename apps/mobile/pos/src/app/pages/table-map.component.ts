@@ -9,6 +9,7 @@ import { ApplicationSettings } from '@nativescript/core';
   template: `
     <ActionBar title="Tables">
       <ActionItem text="Menu" (tap)="router.navigate(['/menu'])" ios.position="right"></ActionItem>
+    <ActionItem text="🔔" (tap)="router.navigate(["/notifications"])" ios.position="right"></ActionItem>
     </ActionBar>
     <GridLayout rows="auto,*">
       <!-- Section Filter -->

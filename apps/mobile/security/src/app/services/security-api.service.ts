@@ -43,4 +43,8 @@ export class SecurityApiService {
 
   // Auth
   login(email: string, password: string): Observable<any> { return this.http.post(`${this.baseUrl}/auth/login`, { email, password }); }
+  createVisitorCode(data: any): Observable<any> { return this.http.post(`${this.baseUrl}/security/visitor-codes`, { ...data, property_id: this.propertyId }, { headers: this.h() }); }
+  getNotifications(): Observable<any> { return this.http.get(`${this.baseUrl}/notifications?property_id=${this.propertyId}&limit=50`, { headers: this.h() }); }
+  markNotificationRead(id: string): Observable<any> { return this.http.post(`${this.baseUrl}/notifications/${id}/read`, {}, { headers: this.h() }); }
+  markAllNotificationsRead(): Observable<any> { return this.http.post(`${this.baseUrl}/notifications/read-all`, { property_id: this.propertyId }, { headers: this.h() }); }
 }

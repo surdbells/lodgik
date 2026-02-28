@@ -52,12 +52,27 @@ import { ApplicationSettings } from '@nativescript/core';
       </ScrollView>
 
       <!-- Bottom Actions -->
-      <GridLayout row="2" columns="*,*,*" class="bg-white p-3 border-top">
+      <GridLayout row="2" columns="*,*,*,*" class="bg-white p-3 border-top">
         <Button col="0" text="🍳 Kitchen" (tap)="sendToKitchen()" class="btn btn-primary"></Button>
         <Button col="1" text="💰 Pay" (tap)="openPayment()" class="btn btn-success"></Button>
-        <Button col="2" text="📋 Split" (tap)="splitBill()" class="btn btn-outline"></Button>
+        <Button col="2" text="🏨 Post Folio" (tap)="openFolioModal()" class="btn btn-outline"></Button>
+        <Button col="3" text="❌ Cancel" (tap)="confirmCancel()" class="btn btn-danger"></Button>
       </GridLayout>
     </GridLayout>
+
+    <!-- Post to Folio Modal -->
+    <AbsoluteLayout *ngIf="showFolioModal" style="background-color: rgba(0,0,0,0.5)" width="100%" height="100%" top="0" left="0">
+      <StackLayout style="background-color:white; margin:40; border-radius:12; padding:20;">
+        <Label text="Post to Room Folio" style="font-weight:bold; font-size:16; margin-bottom:12;"></Label>
+        <StackLayout *ngFor="let b of checkedInBookings" (tap)="postToFolio(b.id)" style="background-color:#f9fafb; border-radius:8; padding:10; margin-bottom:6;">
+          <Label [text]="b.guest_name + ' · Room ' + b.room_number" style="font-weight:bold; font-size:13;"></Label>
+          <Label [text]="formatAmount(order?.total_amount) + ' will be added to folio'" style="font-size:11; color:#6b7280;"></Label>
+        </StackLayout>
+        <Label *ngIf="!checkedInBookings.length" text="No checked-in guests found" style="color:#9ca3af; text-align:center; padding:12;"></Label>
+        <Button text="Close" (tap)="showFolioModal = false" style="background-color:#f3f4f6; color:#374151; border-radius:8; padding:10; margin-top:8;"></Button>
+        <Label *ngIf="folioMsg" [text]="folioMsg" style="text-align:center; margin-top:8; font-weight:bold;" [ngStyle]="{'color': folioOk ? '#16a34a' : '#dc2626'}"></Label>
+      </StackLayout>
+    </AbsoluteLayout>
   `,
 })
 export class OrderComponent implements OnInit {
@@ -105,4 +120,31 @@ export class OrderComponent implements OnInit {
   }
 
   formatAmount(kobo: any): string { return ((+kobo || 0) / 100).toLocaleString(); }
+
+  showFolioModal = false;
+  checkedInBookings: any[] = [];
+  folioMsg = ''; folioOk = true;
+
+  openFolioModal() {
+    this.showFolioModal = true;
+    this.api.getBookings(this.propertyId).subscribe({ next: (r: any) => { this.checkedInBookings = r.data || []; } });
+  }
+
+  confirmCancel() {
+    import('@nativescript/core').then(({ Dialogs }) => {
+      Dialogs.confirm({ title: 'Cancel Order', message: 'Cancel this order? This cannot be undone.', okButtonText: 'Yes, Cancel', cancelButtonText: 'No' }).then((ok: boolean) => {
+        if (ok) this.api.cancelOrder(this.orderId, 'Cancelled by staff').subscribe({
+          next: () => this.router.navigate(['/tables'], { clearHistory: true }),
+        });
+      });
+    });
+  }
+
+  postToFolio(bookingId: string) {
+    this.api.postToFolio(this.orderId, bookingId).subscribe({
+      next: () => { this.folioMsg = 'Posted to folio'; this.folioOk = true; setTimeout(() => { this.showFolioModal = false; this.folioMsg = ''; }, 2000); },
+      error: (e: any) => { this.folioMsg = e.error?.message || 'Failed'; this.folioOk = false; },
+    });
+  }
 }
+

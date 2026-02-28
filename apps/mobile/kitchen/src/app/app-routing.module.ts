@@ -4,6 +4,7 @@ import { Routes } from '@angular/router';
 
 const routes: Routes = [
   { path: '', redirectTo: '/queue', pathMatch: 'full' },
+  { path: 'notifications', loadComponent: () => import('./pages/notifications.component').then(m => m.KitchenNotificationsComponent) },
   { path: 'queue', loadComponent: () => import('./pages/kitchen-queue.component').then(m => m.KitchenQueueComponent) },
 ];
 

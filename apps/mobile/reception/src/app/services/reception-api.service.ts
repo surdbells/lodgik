@@ -109,4 +109,25 @@ export class ReceptionApiService {
   getFolio(bookingId: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/folios/booking/${bookingId}`, { headers: this.h() });
   }
+
+  // ─── Notifications ────────────────────────────────────────
+  getNotifications(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/notifications?property_id=${this.propertyId}&limit=50`, { headers: this.h() });
+  }
+  markNotificationRead(id: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/notifications/${id}/read`, {}, { headers: this.h() });
+  }
+  markAllNotificationsRead(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/notifications/read-all`, { property_id: this.propertyId }, { headers: this.h() });
+  }
+
+  // ─── Service Requests ─────────────────────────────────────
+  getServiceRequests(status?: string): Observable<any> {
+    let url = `${this.baseUrl}/service-requests?property_id=${this.propertyId}`;
+    if (status) url += `&status=${status}`;
+    return this.http.get(url, { headers: this.h() });
+  }
+  updateServiceRequest(id: string, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/service-requests/${id}`, data, { headers: this.h() });
+  }
 }

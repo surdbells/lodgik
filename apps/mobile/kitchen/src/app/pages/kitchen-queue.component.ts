@@ -8,6 +8,7 @@ import { ApplicationSettings, Utils } from '@nativescript/core';
   template: `
     <ActionBar title="🍳 Kitchen Display" class="bg-dark">
       <ActionItem text="🔊" (tap)="toggleSound()" ios.position="right"></ActionItem>
+      <ActionItem text="🔔" (tap)="router.navigate(["/notifications"])" ios.position="right"></ActionItem>
     </ActionBar>
     <GridLayout rows="auto,*" class="bg-gray-900">
       <!-- Stats Bar -->

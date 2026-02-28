@@ -58,4 +58,28 @@ export class HousekeepingApiService {
   getLostAndFound(propertyId: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/housekeeping/lost-and-found?property_id=${propertyId}`, { headers: this.headers() });
   }
+
+  assignTask(taskId: string, staffId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/housekeeping/tasks/${taskId}/assign`, { assigned_to: staffId }, { headers: this.headers() });
+  }
+
+  selfAssignTask(taskId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/housekeeping/tasks/${taskId}/assign`, {}, { headers: this.headers() });
+  }
+
+  claimLostItem(itemId: string, data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/housekeeping/lost-and-found/${itemId}/claim`, data, { headers: this.headers() });
+  }
+
+  getNotifications(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/notifications?limit=50`, { headers: this.headers() });
+  }
+
+  markNotificationRead(id: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/notifications/${id}/read`, {}, { headers: this.headers() });
+  }
+
+  markAllNotificationsRead(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/notifications/read-all`, {}, { headers: this.headers() });
+  }
 }
