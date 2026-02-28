@@ -87,7 +87,7 @@ import { AuthService } from '@lodgik/shared';
     @if (viewMode() === 'list') {
       <div class="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
         @for (s of statusTabs; track s.value) {
-          <button (click)="statusFilter = s.value; load()"
+          <button (click)="statusFilter = s.value; page = 1; load()"
                   class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
                   [class.bg-white]="statusFilter === s.value" [class.shadow-sm]="statusFilter === s.value"
                   [class.text-gray-500]="statusFilter !== s.value">

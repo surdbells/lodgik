@@ -101,7 +101,7 @@ interface NavGroup {
               @for (item of group.items; track item.route) {
                 <a [routerLink]="item.route"
                    routerLinkActive="sidebar-active"
-                   [routerLinkActiveOptions]="{exact: item.route === '/dashboard'}"
+                   [routerLinkActiveOptions]="{ exact: true }"
                    class="relative flex items-center gap-3 py-[9px] mx-2 rounded-lg text-[14px] font-medium text-gray-500 hover:bg-sage-50 hover:text-sage-700 transition-all duration-150"
                    [class.px-3]="!collapsed()"
                    [class.justify-center]="collapsed()"

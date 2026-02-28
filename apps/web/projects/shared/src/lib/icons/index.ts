@@ -81,6 +81,8 @@ import {
   ArrowUpRight,
   CircleCheck,
   CircleX,
+  UserCheck,
+  Key,
 } from 'lucide-angular';
 
 /**
@@ -150,6 +152,8 @@ export const LODGIK_ICONS = {
   ArrowUpRight,
   CircleCheck,
   CircleX,
+  UserCheck,
+  Key,
 };
 
 /**

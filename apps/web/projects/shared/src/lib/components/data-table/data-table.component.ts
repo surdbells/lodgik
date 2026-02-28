@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, computed, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, computed, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 export interface TableColumn {
@@ -181,7 +181,7 @@ export interface SortEvent {
     </div>
   `,
 })
-export class DataTableComponent {
+export class DataTableComponent implements OnChanges {
   @Input() columns: TableColumn[] = [];
   @Input() data: any[] = [];
   @Input() actions: TableAction[] = [];
@@ -207,9 +207,18 @@ export class DataTableComponent {
   sortDir = signal<'asc' | 'desc'>('asc');
   openMenuRow: any = null;
 
+  /** Signal-backed copy of data @Input so computed() reacts to Angular change detection */
+  private dataSignal = signal<any[]>([]);
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['data']) {
+      this.dataSignal.set(changes['data'].currentValue ?? []);
+    }
+  }
+
   displayRows = computed(() => {
-    if (this.serverSide) return this.data;
-    let rows = [...this.data];
+    if (this.serverSide) return this.dataSignal();
+    let rows = [...this.dataSignal()];
     const q = this.searchQuery().toLowerCase();
     if (q) {
       rows = rows.filter(row =>
