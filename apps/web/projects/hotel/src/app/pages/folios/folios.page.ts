@@ -54,7 +54,7 @@ export class FoliosPage implements OnInit {
 
   columns: TableColumn[] = [
     { key: 'folio_number', label: 'Folio #' },
-    { key: 'status_label', label: 'Status', render: (_v, row) => `<span style="color:${row.status_color};font-weight:600">${row.status_label}</span>` },
+    { key: 'status_label', label: 'Status', type: 'badge', badgeColor: (r) => r.status_color || '#6b7280', badgeLabel: (r) => r.status_label || r.status },
     { key: 'total_charges', label: 'Charges', render: (v) => `₦${(+v).toLocaleString()}` },
     { key: 'total_payments', label: 'Paid', render: (v) => `₦${(+v).toLocaleString()}` },
     { key: 'balance', label: 'Balance', render: (v) => `<span style="color:${+v > 0 ? '#ef4444' : '#22c55e'};font-weight:600">₦${(+v).toLocaleString()}</span>` },

@@ -239,7 +239,7 @@ export class BookingsPage implements OnInit {
 
   columns: TableColumn[] = [
     { key: 'booking_ref', label: 'Ref', sortable: true, width: '140px' },
-    { key: 'status_label', label: 'Status', render: (_v: any, r: any) => `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium text-white" style="background:${r.status_color}">${r.status_label}</span>` },
+    { key: 'status_label', label: 'Status', type: 'badge', badgeColor: (r) => r.status_color || '#6b7280', badgeLabel: (r) => r.status_label || r.status },
     { key: 'booking_type_label', label: 'Type' },
     { key: 'check_in', label: 'Check-in', render: (v: string) => new Date(v).toLocaleDateString() },
     { key: 'check_out', label: 'Check-out', render: (v: string) => new Date(v).toLocaleDateString() },

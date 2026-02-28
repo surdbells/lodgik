@@ -8,6 +8,10 @@ export interface TableColumn {
   width?: string;
   align?: 'left' | 'center' | 'right';
   render?: (value: any, row: any) => string;
+  /** Render as a colored badge without innerHTML — avoids Angular sanitizer stripping styles */
+  type?: 'text' | 'badge';
+  badgeColor?: (row: any) => string;
+  badgeLabel?: (row: any) => string;
 }
 
 export interface TableAction {
@@ -93,7 +97,12 @@ export interface SortEvent {
                 }
                 @for (col of columns; track col.key) {
                   <td class="px-5 py-3.5 text-gray-700" [style.text-align]="col.align ?? 'left'">
-                    @if (col.render) {
+                    @if (col.type === 'badge') {
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold text-white"
+                            [style.background-color]="col.badgeColor ? col.badgeColor(row) : '#6b7280'">
+                        {{ col.badgeLabel ? col.badgeLabel(row) : (row[col.key] ?? '—') }}
+                      </span>
+                    } @else if (col.render) {
                       <span [innerHTML]="col.render(row[col.key], row)"></span>
                     } @else {
                       {{ row[col.key] ?? '—' }}

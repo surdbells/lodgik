@@ -286,7 +286,7 @@ export class RoomsPage implements OnInit {
   columns: TableColumn[] = [
     { key: 'room_number', label: 'Room', sortable: true, width: '80px' },
     { key: 'floor', label: 'Floor', width: '60px' },
-    { key: 'status_label', label: 'Status', render: (_v: any, r: any) => `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium text-white" style="background:${r.status_color}">${r.status_label}</span>` },
+    { key: 'status_label', label: 'Status', type: 'badge', badgeColor: (r: any) => r.status_color || '#6b7280', badgeLabel: (r: any) => r.status_label || r.status },
     { key: 'room_type_id', label: 'Type', render: (_v: any, r: any) => this.getRoomTypeName(r.room_type_id) },
     { key: 'is_active', label: 'Active', render: (v: boolean) => v ? '<span class="text-emerald-600">Yes</span>' : '<span class="text-gray-400">No</span>' },
   ];

@@ -142,7 +142,7 @@ export class GuestsPage implements OnInit {
     { key: 'full_name', label: 'Name', sortable: true },
     { key: 'phone', label: 'Phone', render: (v: any) => v || '—' },
     { key: 'email', label: 'Email', render: (v: any) => v || '—' },
-    { key: 'vip_status', label: 'VIP', render: (v: string) => `<span class="px-2 py-0.5 rounded-full text-xs font-medium ${this.vipClass(v)}">${v.toUpperCase()}</span>` },
+    { key: 'vip_status', label: 'VIP', type: 'badge', badgeColor: (r: any) => this.vipColor(r.vip_status), badgeLabel: (r: any) => (r.vip_status || '').toUpperCase() },
     { key: 'total_stays', label: 'Stays', width: '60px' },
     { key: 'total_spent', label: 'Spent (₦)', render: (v: any) => `₦${Number(v).toLocaleString()}` },
   ];
@@ -198,6 +198,14 @@ export class GuestsPage implements OnInit {
       if (r.success) { this.toast.success(this.editId ? 'Updated' : 'Created'); this.showForm = false; this.resetForm(); this.load(); }
       else this.toast.error(r.message || 'Failed');
     });
+  }
+
+  vipColor(status: string): string {
+    const map: Record<string, string> = {
+      regular: '#9ca3af', silver: '#6b7280', gold: '#d97706',
+      platinum: '#7c3aed', vvip: '#dc2626',
+    };
+    return map[status] ?? '#9ca3af';
   }
 
   vipClass(status: string): string {
