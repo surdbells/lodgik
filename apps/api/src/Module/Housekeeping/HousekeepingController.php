@@ -26,7 +26,7 @@ final class HousekeepingController
             if (empty($d[$f])) return JsonResponse::error($res, "$f required", 422);
         }
         $t = $this->service->createTask($d['property_id'], $d['room_id'], $d['room_number'], $d['task_type'], $req->getAttribute('auth.tenant_id'), $d);
-        return JsonResponse::ok($res, $t->toArray(), 'Task created', 201);
+        return JsonResponse::created($res, $t->toArray(), 'Task created');
     }
 
     public function assignTask(Request $req, Response $res, array $args): Response
@@ -86,7 +86,7 @@ final class HousekeepingController
             if (empty($d[$f])) return JsonResponse::error($res, "$f required", 422);
         }
         $lf = $this->service->reportLostItem($d['property_id'], $d['description'], $d['found_location'], $req->getAttribute('auth.user_id') ?? '', $req->getAttribute('auth.tenant_id'), $d);
-        return JsonResponse::ok($res, $lf->toArray(), 'Item reported', 201);
+        return JsonResponse::created($res, $lf->toArray(), 'Item reported');
     }
 
     public function claimItem(Request $req, Response $res, array $args): Response

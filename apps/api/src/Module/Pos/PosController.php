@@ -22,7 +22,7 @@ final class PosController
     {
         $d = (array) $req->getParsedBody();
         if (empty($d['property_id']) || empty($d['number'])) return JsonResponse::error($res, 'property_id and number required', 422);
-        return JsonResponse::ok($res, $this->service->createTable($d['property_id'], $d['number'], $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Table created', 201);
+        return JsonResponse::created($res, $this->service->createTable($d['property_id'], $d['number'], $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Table created');
     }
 
     // Categories
@@ -35,7 +35,7 @@ final class PosController
     {
         $d = (array) $req->getParsedBody();
         if (empty($d['property_id']) || empty($d['name'])) return JsonResponse::error($res, 'property_id and name required', 422);
-        return JsonResponse::ok($res, $this->service->createCategory($d['property_id'], $d['name'], $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Category created', 201);
+        return JsonResponse::created($res, $this->service->createCategory($d['property_id'], $d['name'], $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Category created');
     }
 
     // Products
@@ -51,7 +51,7 @@ final class PosController
         foreach (['property_id', 'category_id', 'name', 'price'] as $f) {
             if (empty($d[$f])) return JsonResponse::error($res, "$f required", 422);
         }
-        return JsonResponse::ok($res, $this->service->createProduct($d['property_id'], $d['category_id'], $d['name'], (string)$d['price'], $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Product created', 201);
+        return JsonResponse::created($res, $this->service->createProduct($d['property_id'], $d['category_id'], $d['name'], (string)$d['price'], $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Product created');
     }
 
     public function updateProduct(Request $req, Response $res, array $args): Response
@@ -73,7 +73,7 @@ final class PosController
         $d = (array) $req->getParsedBody();
         if (empty($d['property_id'])) return JsonResponse::error($res, 'property_id required', 422);
         $d['served_by'] = $req->getAttribute('auth.user_id');
-        return JsonResponse::ok($res, $this->service->createOrder($d['property_id'], $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Order created', 201);
+        return JsonResponse::created($res, $this->service->createOrder($d['property_id'], $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Order created');
     }
 
     public function getOrder(Request $req, Response $res, array $args): Response
@@ -89,7 +89,7 @@ final class PosController
         if (empty($d['product_id'])) return JsonResponse::error($res, 'product_id required', 422);
         try {
             $item = $this->service->addItem($args['id'], $d['product_id'], (int)($d['quantity'] ?? 1), $req->getAttribute('auth.tenant_id'), $d['notes'] ?? null, (int)($d['split_group'] ?? 1));
-            return JsonResponse::ok($res, $item->toArray(), 'Item added', 201);
+            return JsonResponse::created($res, $item->toArray(), 'Item added');
         } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 422); }
     }
 

@@ -37,7 +37,7 @@ final class GymController
             if (empty($d[$f])) return JsonResponse::error($res, "$f required", 422);
         }
         $p = $this->service->createPlan($d['property_id'], $d['name'], (int)$d['duration_days'], (string)$d['price'], $req->getAttribute('auth.tenant_id'), $d);
-        return JsonResponse::ok($res, $p->toArray(), 'Plan created', 201);
+        return JsonResponse::created($res, $p->toArray(), 'Plan created');
     }
 
     public function updatePlan(Request $req, Response $res, array $args): Response
@@ -74,7 +74,7 @@ final class GymController
             if (empty($d[$f])) return JsonResponse::error($res, "$f required", 422);
         }
         $m = $this->service->registerMember($d['property_id'], $d['first_name'], $d['last_name'], $d['phone'], $req->getAttribute('auth.tenant_id'), $d);
-        return JsonResponse::ok($res, $m->toArray(), 'Member registered', 201);
+        return JsonResponse::created($res, $m->toArray(), 'Member registered');
     }
 
     public function updateMember(Request $req, Response $res, array $args): Response
@@ -221,7 +221,7 @@ final class GymController
             if (empty($d[$f])) return JsonResponse::error($res, "$f required", 422);
         }
         $c = $this->service->createClass($d['property_id'], $d['name'], $d['scheduled_at'], $req->getAttribute('auth.tenant_id'), $d);
-        return JsonResponse::ok($res, $c->toArray(), 'Class created', 201);
+        return JsonResponse::created($res, $c->toArray(), 'Class created');
     }
 
     public function bookClass(Request $req, Response $res): Response
@@ -230,7 +230,7 @@ final class GymController
         if (empty($d['class_id']) || empty($d['member_id'])) return JsonResponse::error($res, 'class_id and member_id required', 422);
         try {
             $b = $this->service->bookClass($d['class_id'], $d['member_id'], $req->getAttribute('auth.tenant_id'));
-            return JsonResponse::ok($res, $b->toArray(), 'Booked', 201);
+            return JsonResponse::created($res, $b->toArray(), 'Booked');
         } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 422); }
     }
 
