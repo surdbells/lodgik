@@ -33,7 +33,7 @@ class LostAndFound implements TenantAware
     #[ORM\Column(name: 'room_id', type: Types::STRING, length: 36, nullable: true)]
     private ?string $roomId = null;
 
-    #[ORM\Column(name: 'found_by', type: Types::STRING, length: 36)]
+    #[ORM\Column(name: 'found_by', type: Types::STRING, length: 150)]
     private string $foundBy;
 
     #[ORM\Column(name: 'found_at', type: Types::DATETIME_IMMUTABLE)]

@@ -85,7 +85,8 @@ final class HousekeepingController
         foreach (['property_id', 'description', 'found_location'] as $f) {
             if (empty($d[$f])) return JsonResponse::error($res, "$f required", 422);
         }
-        $lf = $this->service->reportLostItem($d['property_id'], $d['description'], $d['found_location'], $req->getAttribute('auth.user_id') ?? '', $req->getAttribute('auth.tenant_id'), $d);
+        $foundBy = !empty($d['found_by']) ? $d['found_by'] : ($req->getAttribute('auth.user_id') ?? '');
+        $lf = $this->service->reportLostItem($d['property_id'], $d['description'], $d['found_location'], $foundBy, $req->getAttribute('auth.tenant_id'), $d);
         return JsonResponse::created($res, $lf->toArray(), 'Item reported');
     }
 
