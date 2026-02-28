@@ -131,6 +131,8 @@ export class PosPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private activeProperty = inject(ActivePropertyService);
+  private confirm = inject(ConfirmDialogService);
+  private toast = inject(ToastService);
   loading = signal(true);
   tables = signal<any[]>([]);
   orders = signal<any[]>([]);

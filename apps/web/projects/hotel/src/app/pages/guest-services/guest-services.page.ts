@@ -75,6 +75,7 @@ import { ApiService, PageHeaderComponent, AuthService, ActivePropertyService, Co
 })
 export class GuestServicesPage implements OnInit {
   private api = inject(ApiService); private auth = inject(AuthService);
+  private confirm = inject(ConfirmDialogService);
   private activeProperty = inject(ActivePropertyService);
   waitlist = signal<any[]>([]); transfers = signal<any[]>([]); vouchers = signal<any[]>([]);
   activeTab = 'waitlist';

@@ -3,7 +3,8 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
-  ApiService, PageHeaderComponent, LoadingSpinnerComponent, ActivePropertyService
+  ApiService, PageHeaderComponent, LoadingSpinnerComponent, ActivePropertyService,
+  ConfirmDialogService, ConfirmDialogComponent
 } from '@lodgik/shared';
 
 type CategoryType = 'food' | 'drink' | 'dessert' | 'other';

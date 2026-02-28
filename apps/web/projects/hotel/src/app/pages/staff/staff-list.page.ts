@@ -188,7 +188,7 @@ export class StaffListPage implements OnInit {
   actions: TableAction[] = [
     { label: 'Edit', handler: (r) => this.openEdit(r) },
     { label: 'Properties', handler: (r) => this.openPropertyAccess(r) },
-    { label: 'Reset Password', handler: (r) => this.resetPassword(r) },
+    { label: 'Reset Password', handler: (r) => this.openResetPw(r) },
     { label: 'Deactivate', color: 'danger', handler: (r) => this.deactivate(r), hidden: (r) => !r.is_active },
     { label: 'Reactivate', handler: (r) => this.reactivate(r), hidden: (r) => r.is_active },
   ];

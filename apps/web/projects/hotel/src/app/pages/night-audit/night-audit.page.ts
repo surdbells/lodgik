@@ -164,7 +164,7 @@ export default class NightAuditPage implements OnInit {
     });
     if (!ok) return;
 
-    const user = this.auth.currentUser();
+    const user = this.auth.currentUser;
     const name = user ? `${user.first_name} ${user.last_name}`.trim() : 'System';
     this.api.post(`/night-audit/${audit.id}/close`, { closer_name: name }).subscribe({
       next: () => { this.toast.success('Audit closed'); this.load(); },
