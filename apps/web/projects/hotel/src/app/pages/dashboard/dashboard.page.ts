@@ -1,4 +1,6 @@
-import { Component, inject, OnInit, signal, computed, effect, untracked } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -213,7 +215,7 @@ import { catchError } from 'rxjs/operators';
     </div>
   `,
 })
-export class DashboardPage implements OnInit {
+export class DashboardPage implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private activeProperty = inject(ActivePropertyService);
@@ -228,6 +230,7 @@ export class DashboardPage implements OnInit {
   propertyComparison = signal<any[]>([]);
   scope = signal<'single' | 'all'>('single');
   private _manualScope = false; // true after user explicitly clicks a scope button
+  private _propertySub?: Subscription;
   propertyId = '';
 
   isMultiProperty = this.activeProperty.isMultiProperty;
@@ -297,33 +300,35 @@ export class DashboardPage implements OnInit {
 
   ngOnInit(): void {
     /**
-     * TRACKED: only this.activeProperty.propertyId()
-     * Everything else is read inside untracked() so scope changes, loading
-     * changes, etc. do NOT re-trigger this effect and cause duplicate loads.
+     * Convert propertyId signal → observable so we can subscribe in a
+     * standard RxJS pipeline. Angular 21 requires effect() to be called in
+     * an injection context (constructor / field initializer), NOT ngOnInit.
+     * toObservable() is safe to call in ngOnInit because it uses DestroyRef
+     * internally and does NOT require an injection context guard.
      *
-     * This effect re-runs ONLY when the active property changes — i.e. on
-     * first load (when accessible-properties resolves is_current) and when
-     * the user switches to a different property in the sidebar.
+     * Emits whenever the active property changes:
+     *  - '' on first render (no property resolved yet)
+     *  - UUID once accessible-properties resolves
+     *  - new UUID when user switches property
      */
-    effect(() => {
-      const pid = this.activeProperty.propertyId(); // ← the ONLY tracked signal
-
-      untracked(() => {
+    this._propertySub = toObservable(this.activeProperty.propertyId)
+      .pipe()
+      .subscribe(pid => {
         if (pid) {
           this.propertyId = pid;
-          // Auto-switch back to single view if scope was forced to 'all'
-          // only because there was no pid on first render
           if (this.scope() === 'all' && !this._manualScope) {
             this.scope.set('single');
           }
         } else {
-          // No resolvable property — show aggregated all-properties view
           if (!this._manualScope) this.scope.set('all');
         }
         this.loading.set(true);
         this.scope() === 'all' ? this.loadAllProperties() : this.loadSingleProperty();
       });
-    });
+  }
+
+  ngOnDestroy(): void {
+    this._propertySub?.unsubscribe();
   }
 
   setScope(scope: 'single' | 'all'): void {
