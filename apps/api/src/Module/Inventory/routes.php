@@ -1,8 +1,33 @@
-<?php
+<?
+
+    // ── Report read endpoints (property_admin, manager, accountant) ──
+    $app->group('/api/inventory/reports', function (RouteCollectorProxy $g) {
+        // Static before variable routes
+        $g->get('/valuation',           [InventoryReportController::class, 'valuation']);
+        $g->get('/slow-moving',          [InventoryReportController::class, 'slowMoving']);
+        $g->get('/expiry',               [InventoryReportController::class, 'expiryAlerts']);
+        $g->get('/shrinkage',            [InventoryReportController::class, 'shrinkage']);
+        $g->get('/usage',                [InventoryReportController::class, 'departmentUsage']);
+        $g->get('/property-comparison',  [InventoryReportController::class, 'propertyComparison']);
+        $g->get('/low-stock',            [InventoryReportController::class, 'lowStock']);
+    })
+        ->add(new RoleMiddleware(['property_admin', 'manager', 'accountant']))
+        ->add(TenantMiddleware::class)
+        ->add(AuthMiddleware::class);
+
+    // ── Low-stock notify trigger (property_admin, manager only) ──────
+    $app->group('/api/inventory/reports', function (RouteCollectorProxy $g) {
+        $g->post('/low-stock/notify',    [InventoryReportController::class, 'triggerLowStockNotify']);
+    })
+        ->add(new RoleMiddleware(['property_admin', 'manager']))
+        ->add(TenantMiddleware::class)
+        ->add(AuthMiddleware::class);
+php
 
 declare(strict_types=1);
 
 use Lodgik\Module\Inventory\InventoryController;
+use Lodgik\Module\Inventory\InventoryReportController;
 use Lodgik\Module\Inventory\MovementController;
 use Lodgik\Middleware\RoleMiddleware;
 use Lodgik\Middleware\AuthMiddleware;

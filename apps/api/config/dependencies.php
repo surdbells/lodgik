@@ -119,6 +119,10 @@ return function (ContainerBuilder $builder): void {
     $builder->addDefinitions([
 
         // ─── Phase D/E: Recipe + Inventory Reports + Low-Stock Alerts ─
+        \Lodgik\Module\Inventory\InventoryReportController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Inventory\InventoryReportController(
+            reportService: $c->get(\Lodgik\Module\Inventory\InventoryReportService::class),
+            alertService:  $c->get(\Lodgik\Module\Inventory\LowStockAlertService::class),
+        ),
         \Lodgik\Module\Inventory\InventoryReportService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Inventory\InventoryReportService(
             em:     $c->get(EntityManagerInterface::class),
             logger: $c->get(LoggerInterface::class),
@@ -968,6 +972,10 @@ return function (ContainerBuilder $builder): void {
         ),
 
         // ─── Phase D/E: Recipe + Inventory Reports + Low-Stock Alerts ─
+        \Lodgik\Module\Inventory\InventoryReportController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Inventory\InventoryReportController(
+            reportService: $c->get(\Lodgik\Module\Inventory\InventoryReportService::class),
+            alertService:  $c->get(\Lodgik\Module\Inventory\LowStockAlertService::class),
+        ),
         \Lodgik\Module\Inventory\InventoryReportService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Inventory\InventoryReportService(
             em:     $c->get(EntityManagerInterface::class),
             logger: $c->get(LoggerInterface::class),
