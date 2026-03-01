@@ -64,7 +64,7 @@ const BLANK_FORM = () => ({
   <ui-stats-card label="Total Items" [value]="summary()?.total_items ?? 0" icon="package" color="sage" />
   <ui-stats-card label="Locations" [value]="summary()?.total_locations ?? 0" icon="map-pin" color="blue" />
   <ui-stats-card label="Stock Value" [value]="stockValueDisplay()" icon="trending-up" color="green" />
-  <ui-stats-card label="Low Stock Alerts" [value]="summary()?.low_stock_count ?? 0" icon="alert-triangle"
+  <ui-stats-card label="Low Stock Alerts" [value]="summary()?.low_stock_count ?? 0" icon="triangle-alert"
     />
 </div>
 

@@ -289,7 +289,7 @@ export class InventoryReportsPage implements OnInit {
   tabs: Tab[] = [
     { key: 'valuation',   label: 'Stock Valuation',   icon: 'trending-up' },
     { key: 'slow-moving', label: 'Slow Moving',        icon: 'clock' },
-    { key: 'expiry',      label: 'Expiry Alerts',      icon: 'alert-triangle' },
+    { key: 'expiry',      label: 'Expiry Alerts',      icon: 'triangle-alert' },
     { key: 'shrinkage',   label: 'Shrinkage',          icon: 'trending-down' },
     { key: 'usage',       label: 'Dept Usage',         icon: 'bar-chart-2' },
     { key: 'comparison',  label: 'Property Compare',   icon: 'layers' },
