@@ -25,8 +25,8 @@ return function (App $app): void {
     // Properties
     $app->group('/api/properties', function (RouteCollectorProxy $group) {
         $group->get('', [TenantController::class, 'listProperties']);
-        $group->get('/{id}', [TenantController::class, 'showProperty']);
         $group->post('', [TenantController::class, 'createProperty']);
+        $group->get('/{id}', [TenantController::class, 'showProperty']);
         $group->patch('/{id}', [TenantController::class, 'updateProperty']);
         $group->patch('/{id}/settings', [TenantController::class, 'patchPropertySettings']);
         $group->delete('/{id}', [TenantController::class, 'deleteProperty']);

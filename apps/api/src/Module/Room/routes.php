@@ -14,8 +14,8 @@ return function (App $app): void {
     // ─── Room Types ────────────────────────────────────────
     $app->group('/api/room-types', function (RouteCollectorProxy $group) {
         $group->get('', [RoomController::class, 'listRoomTypes']);
-        $group->get('/{id}', [RoomController::class, 'showRoomType']);
         $group->post('', [RoomController::class, 'createRoomType']);
+        $group->get('/{id}', [RoomController::class, 'showRoomType']);
         $group->put('/{id}', [RoomController::class, 'updateRoomType']);
         $group->delete('/{id}', [RoomController::class, 'deleteRoomType']);
     })
@@ -29,9 +29,9 @@ return function (App $app): void {
         $group->get('/status-counts', [RoomController::class, 'statusCounts']);
         $group->get('/available', [RoomController::class, 'available']);
         $group->get('/floors', [RoomController::class, 'floors']);
-        $group->get('/{id}', [RoomController::class, 'showRoom']);
         $group->post('', [RoomController::class, 'createRoom']);
         $group->post('/bulk-create', [RoomController::class, 'bulkCreateRooms']);
+        $group->get('/{id}', [RoomController::class, 'showRoom']);
         $group->put('/{id}', [RoomController::class, 'updateRoom']);
         $group->delete('/{id}', [RoomController::class, 'deleteRoom']);
         $group->patch('/{id}/status', [RoomController::class, 'changeStatus']);

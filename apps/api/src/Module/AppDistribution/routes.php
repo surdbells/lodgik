@@ -23,8 +23,8 @@ return function (App $app): void {
     // Super Admin: release management
     $app->group('/api/admin/releases', function (RouteCollectorProxy $group) {
         $group->get('', [AppDistributionController::class, 'listReleases']);
-        $group->get('/{id}', [AppDistributionController::class, 'showRelease']);
         $group->post('', [AppDistributionController::class, 'createRelease']);
+        $group->get('/{id}', [AppDistributionController::class, 'showRelease']);
         $group->patch('/{id}', [AppDistributionController::class, 'updateRelease']);
         $group->delete('/{id}', [AppDistributionController::class, 'deleteRelease']);
         $group->post('/{id}/publish', [AppDistributionController::class, 'publishRelease']);

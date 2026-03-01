@@ -14,11 +14,11 @@ return function (App $app): void {
         $group->get('/search', [GuestController::class, 'search']);
         $group->get('/nationalities', [GuestController::class, 'nationalities']);
         $group->get('', [GuestController::class, 'list']);
-        $group->get('/{id}', [GuestController::class, 'show']);
         $group->post('', [GuestController::class, 'create']);
+        $group->post('/merge', [GuestController::class, 'merge']);
+        $group->get('/{id}', [GuestController::class, 'show']);
         $group->put('/{id}', [GuestController::class, 'update']);
         $group->delete('/{id}', [GuestController::class, 'delete']);
-        $group->post('/merge', [GuestController::class, 'merge']);
         $group->get('/{id}/documents', [GuestController::class, 'documents']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager', 'front_desk']))
