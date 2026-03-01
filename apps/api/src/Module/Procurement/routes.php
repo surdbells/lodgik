@@ -18,10 +18,11 @@ return function (App $app): void {
     $app->group('/api/procurement', function (RouteCollectorProxy $g) {
 
         // ── Vendors ──────────────────────────────────────────────────
+        // IMPORTANT: static routes must be registered BEFORE variable routes
+        // in FastRoute or the variable route shadows the static one.
         $g->get('/vendors',              [ProcurementController::class, 'listVendors']);
-        $g->get('/vendors/{id}',         [ProcurementController::class, 'getVendor']);
-        // Vendor price comparison for a given stock item
         $g->get('/vendors/comparison',   [ProcurementController::class, 'getVendorComparison']);
+        $g->get('/vendors/{id}',         [ProcurementController::class, 'getVendor']);
 
         // ── Purchase Requests ─────────────────────────────────────────
         $g->get('/requests',             [ProcurementController::class, 'listPurchaseRequests']);
