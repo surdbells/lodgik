@@ -232,6 +232,9 @@ export class DashboardPage implements OnInit, OnDestroy {
   private _manualScope = false; // true after user explicitly clicks a scope button
   private _propertySub?: Subscription;
   propertyId = '';
+  // toObservable() internally calls inject(DestroyRef) so it MUST run in an
+  // injection context (field initializer), not in ngOnInit.
+  private readonly _propertyId$ = toObservable(this.activeProperty.propertyId);
 
   isMultiProperty = this.activeProperty.isMultiProperty;
   currentPropertyName = this.activeProperty.propertyName;
@@ -311,7 +314,7 @@ export class DashboardPage implements OnInit, OnDestroy {
      *  - UUID once accessible-properties resolves
      *  - new UUID when user switches property
      */
-    this._propertySub = toObservable(this.activeProperty.propertyId)
+    this._propertySub = this._propertyId$
       .pipe()
       .subscribe(pid => {
         if (pid) {
