@@ -821,6 +821,7 @@ return function (ContainerBuilder $builder): void {
             em: $c->get(EntityManagerInterface::class),
             logger: $c->get(LoggerInterface::class),
             folioService: $c->get(\Lodgik\Module\Folio\FolioService::class),
+            movementService: $c->get(\Lodgik\Module\Inventory\MovementService::class),
         ),
         \Lodgik\Module\Pos\PosController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\PosController(
             service: $c->get(\Lodgik\Module\Pos\PosService::class),

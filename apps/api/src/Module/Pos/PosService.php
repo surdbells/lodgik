@@ -12,6 +12,7 @@ use Lodgik\Entity\PosOrder;
 use Lodgik\Entity\PosOrderItem;
 use Lodgik\Enum\PosOrderStatus;
 use Lodgik\Module\Folio\FolioService;
+use Lodgik\Module\Inventory\MovementService;
 use Psr\Log\LoggerInterface;
 
 final class PosService
@@ -22,6 +23,7 @@ final class PosService
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface $logger,
         private readonly ?FolioService $folioService = null,
+        private readonly ?MovementService $movementService = null,
     ) {}
 
     // ─── Tables ─────────────────────────────────────────────────
@@ -235,7 +237,20 @@ final class PosService
             if ($table) $table->release();
         }
 
-        $this->em->flush(); return $order;
+        $this->em->flush();
+
+        // Inventory deduction — non-fatal, must never block payment
+        if ($this->movementService) {
+            $this->movementService->processPosDeduction(
+                orderId:    $orderId,
+                tenantId:   $order->getTenantId(),
+                propertyId: $order->getPropertyId(),
+                userId:     'pos',
+                userName:   'POS System',
+            );
+        }
+
+        return $order;
     }
 
     /** @return PosOrderItem[] */
