@@ -330,6 +330,7 @@ interface StockItem { id: string; sku: string; name: string; }
                   }
                 </div>
               }
+            </div>
           </div>
           <div class="flex gap-3 mt-5">
             <button (click)="saveProduct()" [disabled]="savingProduct()"
