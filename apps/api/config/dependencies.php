@@ -118,6 +118,17 @@ use Psr\Log\LoggerInterface;
 return function (ContainerBuilder $builder): void {
     $builder->addDefinitions([
 
+        // ─── Phase D/E: Recipe + Inventory Reports + Low-Stock Alerts ─
+        \Lodgik\Module\Inventory\InventoryReportService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Inventory\InventoryReportService(
+            em:     $c->get(EntityManagerInterface::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        \Lodgik\Module\Inventory\LowStockAlertService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Inventory\LowStockAlertService(
+            em:                  $c->get(EntityManagerInterface::class),
+            logger:              $c->get(LoggerInterface::class),
+            notificationService: $c->get(\Lodgik\Module\Notification\NotificationService::class),
+        ),
+
         // ─── Settings ──────────────────────────────────────────────
         'settings' => function (): array {
             return require __DIR__ . '/app.php';
@@ -954,6 +965,17 @@ return function (ContainerBuilder $builder): void {
         ),
         \Lodgik\Module\Procurement\ProcurementController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Procurement\ProcurementController(
             service: $c->get(\Lodgik\Module\Procurement\ProcurementService::class),
+        ),
+
+        // ─── Phase D/E: Recipe + Inventory Reports + Low-Stock Alerts ─
+        \Lodgik\Module\Inventory\InventoryReportService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Inventory\InventoryReportService(
+            em:     $c->get(EntityManagerInterface::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        \Lodgik\Module\Inventory\LowStockAlertService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Inventory\LowStockAlertService(
+            em:                  $c->get(EntityManagerInterface::class),
+            logger:              $c->get(LoggerInterface::class),
+            notificationService: $c->get(\Lodgik\Module\Notification\NotificationService::class),
         ),
 
         // ─── Settings ─────────────────────────────────────────
