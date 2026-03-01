@@ -929,6 +929,25 @@ return function (ContainerBuilder $builder): void {
             service: $c->get(\Lodgik\Module\Merchant\MerchantService::class),
         ),
 
+        // ─── Phase C: Procurement ─────────────────────────────
+        //
+        // MovementService is registered explicitly here so PHP-DI injects
+        // ProcurementService into the optional constructor param. Without
+        // this, autowiring resolves the optional to null.
+        \Lodgik\Module\Inventory\MovementService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Inventory\MovementService(
+            em:          $c->get(EntityManagerInterface::class),
+            logger:      $c->get(LoggerInterface::class),
+            procurement: $c->get(\Lodgik\Module\Procurement\ProcurementService::class),
+        ),
+        \Lodgik\Module\Procurement\ProcurementService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Procurement\ProcurementService(
+            em:     $c->get(EntityManagerInterface::class),
+            mailer: $c->get(\Lodgik\Service\ZeptoMailService::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        \Lodgik\Module\Procurement\ProcurementController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Procurement\ProcurementController(
+            service: $c->get(\Lodgik\Module\Procurement\ProcurementService::class),
+        ),
+
         // ─── Settings ─────────────────────────────────────────
         \Lodgik\Module\Settings\SettingsService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Settings\SettingsService(
             em: $c->get(EntityManagerInterface::class),
