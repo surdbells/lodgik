@@ -522,6 +522,7 @@ final class BookingService
         return $log;
     }
 
+    /**
      * Preview rate calculation without creating a booking.
      *
      * @return array{rate: string, nights: int, hours: int|null, subtotal: string, discount: string, total: string}
