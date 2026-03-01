@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
 import {
   ApiService, PageHeaderComponent, ToastService,
   ConfirmDialogService, ActivePropertyService
@@ -18,7 +19,7 @@ const BLANK_FORM = () => ({
 @Component({
   selector: 'app-recipe-builder',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent],
+  imports: [FormsModule, DecimalPipe, PageHeaderComponent],
   template: `
     <ui-page-header title="Recipe Builder" subtitle="Link stock ingredients to POS menu items for automatic food-cost tracking">
       <button (click)="openModal()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">
@@ -325,9 +326,9 @@ export class RecipeBuilderPage implements OnInit {
   }
 
   save(): void {
-    if (!this.form.product_id) { this.toast.show('Select a product', 'error'); return; }
-    if (this.form.ingredients.length === 0) { this.toast.show('Add at least one ingredient', 'error'); return; }
-    if (this.form.ingredients.some(l => !l.stock_item_id)) { this.toast.show('All ingredient lines need a stock item', 'error'); return; }
+    if (!this.form.product_id) { this.toast.error('Select a product'); return; }
+    if (this.form.ingredients.length === 0) { this.toast.error('Add at least one ingredient'); return; }
+    if (this.form.ingredients.some(l => !l.stock_item_id)) { this.toast.error('All ingredient lines need a stock item'); return; }
 
     this.saving.set(true);
     const payload = {
@@ -345,17 +346,17 @@ export class RecipeBuilderPage implements OnInit {
     };
 
     this.api.post('/pos/recipes', payload).subscribe({
-      next: () => { this.toast.show('Recipe saved', 'success'); this.closeModal(); this.load(); this.saving.set(false); },
-      error: () => { this.toast.show('Failed to save recipe', 'error'); this.saving.set(false); },
+      next: () => { this.toast.success('Recipe saved'); this.closeModal(); this.load(); this.saving.set(false); },
+      error: () => { this.toast.error('Failed to save recipe'); this.saving.set(false); },
     });
   }
 
   deleteRecipe(r: Recipe): void {
-    this.confirm.confirm({ title: 'Delete recipe?', message: `Remove the recipe for "${r.product_name}"? This will stop automatic ingredient deduction.`, confirmText: 'Delete', cancelText: 'Cancel' }).subscribe(ok => {
+    this.confirm.confirm({ title: 'Delete recipe?', message: `Remove the recipe for "${r.product_name}"? This will stop automatic ingredient deduction.`, confirmLabel: 'Delete', cancelLabel: 'Cancel', variant: 'danger' }).then((ok: boolean) => {
       if (!ok) return;
       this.api.delete(`/pos/recipes/${r.id}`).subscribe({
-        next: () => { this.toast.show('Recipe deleted', 'success'); this.load(); },
-        error: () => this.toast.show('Delete failed', 'error'),
+        next: () => { this.toast.success('Recipe deleted'); this.load(); },
+        error: () => this.toast.error('Delete failed'),
       });
     });
   }

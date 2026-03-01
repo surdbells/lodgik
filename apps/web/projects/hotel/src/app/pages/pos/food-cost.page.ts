@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
-import { FormsModule, DecimalPipe } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
 import {
   ApiService, PageHeaderComponent, ToastService, ActivePropertyService
 } from '@lodgik/shared';
@@ -174,7 +175,7 @@ export class FoodCostPage implements OnInit {
     if (pid) params['property_id'] = pid;
     this.api.get('/pos/food-cost-report', params).subscribe({
       next: r => { this.report.set(r.data); this.loading.set(false); },
-      error: () => { this.toast.show('Failed to load report', 'error'); this.loading.set(false); },
+      error: () => { this.toast.error('Failed to load report'); this.loading.set(false); },
     });
   }
 

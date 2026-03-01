@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
-import { FormsModule, DecimalPipe, DatePipe } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import {
   ApiService, PageHeaderComponent, ToastService, ActivePropertyService
 } from '@lodgik/shared';
@@ -317,7 +318,7 @@ export class InventoryReportsPage implements OnInit {
     const path = this.apiPath(tab, params);
     this.api.get(path, params).subscribe({
       next: r => { this.reportData.set(r.data ?? r); this.loading.set(false); },
-      error: () => { this.toast.show('Failed to load report', 'error'); this.loading.set(false); },
+      error: () => { this.toast.error('Failed to load report'); this.loading.set(false); },
     });
   }
 

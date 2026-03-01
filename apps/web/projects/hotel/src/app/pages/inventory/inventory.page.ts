@@ -466,10 +466,14 @@ export class InventoryPage implements OnInit {
       next: (r: any) => {
         const n = r.data?.notified ?? 0;
         const s = r.data?.skipped  ?? 0;
-        this.toast.show(n > 0 ? `Notified staff: ${n} low-stock item(s) (${s} already sent today)` : 'All alerts already sent today', n > 0 ? 'success' : 'info');
+        if (n > 0) {
+            this.toast.success(`Notified staff: ${n} low-stock item(s) (${s} already sent today)`);
+          } else {
+            this.toast.warning('All alerts already sent today');
+          }
         this.notifying.set(false);
       },
-      error: () => { this.toast.show('Notification failed', 'error'); this.notifying.set(false); },
+      error: () => { this.toast.error('Notification failed'); this.notifying.set(false); },
     });
   }
 
