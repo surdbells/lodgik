@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Lodgik\Module\Inventory\InventoryController;
+use Lodgik\Module\Inventory\MovementController;
 use Lodgik\Middleware\RoleMiddleware;
 use Lodgik\Middleware\AuthMiddleware;
 use Lodgik\Middleware\TenantMiddleware;
@@ -32,6 +33,10 @@ return function (App $app): void {
         $g->get('/items/{id}', [InventoryController::class, 'getItem']);
         $g->get('/items/{id}/balances', [InventoryController::class, 'getItemBalances']);
 
+        // Movement ledger (read)
+        $g->get('/movements', [MovementController::class, 'listMovements']);
+        $g->get('/movements/{id}', [MovementController::class, 'getMovement']);
+
     })
         ->add(new RoleMiddleware(['property_admin', 'manager', 'accountant']))
         ->add(TenantMiddleware::class)
@@ -60,8 +65,12 @@ return function (App $app): void {
         $g->put('/items/{id}', [InventoryController::class, 'updateItem']);
         $g->delete('/items/{id}', [InventoryController::class, 'deleteItem']);
 
-        // Opening balances (Phase A only — no movement log yet)
-        $g->post('/balances/opening', [InventoryController::class, 'setOpeningBalance']);
+        // Movements — all writes through MovementController
+        $g->post('/movements/opening',    [MovementController::class, 'createOpening']);
+        $g->post('/movements/grn',        [MovementController::class, 'createGrn']);
+        $g->post('/movements/issue',      [MovementController::class, 'createIssue']);
+        $g->post('/movements/transfer',   [MovementController::class, 'createTransfer']);
+        $g->post('/movements/adjustment', [MovementController::class, 'createAdjustment']);
 
     })
         ->add(new RoleMiddleware(['property_admin', 'manager']))

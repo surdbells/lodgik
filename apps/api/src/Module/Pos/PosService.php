@@ -101,6 +101,8 @@ final class PosService
         if (isset($data['is_available'])) $p->setIsAvailable($data['is_available']);
         if (isset($data['prep_time_minutes'])) $p->setPrepTimeMinutes($data['prep_time_minutes']);
         if (isset($data['requires_kitchen'])) $p->setRequiresKitchen($data['requires_kitchen']);
+        // stock_item_id: pass null explicitly to unlink; omit key to leave unchanged
+        if (array_key_exists('stock_item_id', $data)) $p->setStockItemId($data['stock_item_id'] ?: null);
         $this->em->flush(); return $p;
     }
 
