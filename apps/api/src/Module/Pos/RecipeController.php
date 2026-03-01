@@ -17,7 +17,7 @@ final class RecipeController
     // GET /api/pos/recipes?property_id=
     public function listRecipes(Request $req, Response $res): Response
     {
-        $tid = $req->getAttribute('tenantId');
+        $tid = $req->getAttribute('auth.tenant_id');
         $pid = $req->getQueryParams()['property_id'] ?? null;
         $data = $this->service->listRecipes($tid, $pid ?: null);
         return ResponseHelper::json($res, ['success' => true, 'data' => $data]);
@@ -26,7 +26,7 @@ final class RecipeController
     // GET /api/pos/recipes/product/{product_id}
     public function getByProduct(Request $req, Response $res, array $args): Response
     {
-        $tid = $req->getAttribute('tenantId');
+        $tid = $req->getAttribute('auth.tenant_id');
         $data = $this->service->getRecipeByProduct($args['product_id'], $tid);
         if (!$data) {
             return ResponseHelper::json($res, ['success' => false, 'message' => 'No recipe for this product'], 404);
@@ -38,7 +38,7 @@ final class RecipeController
     public function getRecipe(Request $req, Response $res, array $args): Response
     {
         try {
-            $data = $this->service->getRecipe($args['id'], $req->getAttribute('tenantId'));
+            $data = $this->service->getRecipe($args['id'], $req->getAttribute('auth.tenant_id'));
             return ResponseHelper::json($res, ['success' => true, 'data' => $data]);
         } catch (\RuntimeException $e) {
             return ResponseHelper::json($res, ['success' => false, 'message' => $e->getMessage()], 404);
@@ -53,8 +53,8 @@ final class RecipeController
             return ResponseHelper::json($res, ['success' => false, 'message' => 'product_id required'], 422);
         }
         try {
-            $recipe = $this->service->upsertRecipe($body['product_id'], $req->getAttribute('tenantId'), $body);
-            $data   = $this->service->getRecipe($recipe->getId(), $req->getAttribute('tenantId'));
+            $recipe = $this->service->upsertRecipe($body['product_id'], $req->getAttribute('auth.tenant_id'), $body);
+            $data   = $this->service->getRecipe($recipe->getId(), $req->getAttribute('auth.tenant_id'));
             return ResponseHelper::json($res, ['success' => true, 'data' => $data], 201);
         } catch (\Throwable $e) {
             return ResponseHelper::json($res, ['success' => false, 'message' => $e->getMessage()], 500);
@@ -65,7 +65,7 @@ final class RecipeController
     public function deleteRecipe(Request $req, Response $res, array $args): Response
     {
         try {
-            $this->service->deleteRecipe($args['id'], $req->getAttribute('tenantId'));
+            $this->service->deleteRecipe($args['id'], $req->getAttribute('auth.tenant_id'));
             return ResponseHelper::json($res, ['success' => true, 'message' => 'Recipe deleted']);
         } catch (\RuntimeException $e) {
             return ResponseHelper::json($res, ['success' => false, 'message' => $e->getMessage()], 404);
@@ -75,7 +75,7 @@ final class RecipeController
     // GET /api/pos/recipes/food-cost/{product_id}
     public function foodCostByProduct(Request $req, Response $res, array $args): Response
     {
-        $data = $this->service->calculateFoodCost($args['product_id'], $req->getAttribute('tenantId'));
+        $data = $this->service->calculateFoodCost($args['product_id'], $req->getAttribute('auth.tenant_id'));
         return ResponseHelper::json($res, ['success' => true, 'data' => $data]);
     }
 
@@ -83,7 +83,7 @@ final class RecipeController
     public function foodCostReport(Request $req, Response $res): Response
     {
         $q    = $req->getQueryParams();
-        $tid  = $req->getAttribute('tenantId');
+        $tid  = $req->getAttribute('auth.tenant_id');
         $from = $q['date_from'] ?? date('Y-m-01');
         $to   = $q['date_to']   ?? date('Y-m-d');
         $pid  = $q['property_id'] ?? null;

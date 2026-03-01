@@ -25,7 +25,7 @@ final class InventoryReportController
     public function valuation(Request $req, Response $res): Response
     {
         $q   = $req->getQueryParams();
-        $tid = $req->getAttribute('tenantId');
+        $tid = $req->getAttribute('auth.tenant_id');
         $data = $this->reportService->getStockValuation(
             $tid,
             $q['property_id'] ?? null,
@@ -46,7 +46,7 @@ final class InventoryReportController
     public function slowMoving(Request $req, Response $res): Response
     {
         $q    = $req->getQueryParams();
-        $tid  = $req->getAttribute('tenantId');
+        $tid  = $req->getAttribute('auth.tenant_id');
         $days = (int) ($q['days'] ?? 30);
         $data = $this->reportService->getSlowMoving($tid, $q['property_id'] ?? null, $days);
 
@@ -64,7 +64,7 @@ final class InventoryReportController
     public function expiryAlerts(Request $req, Response $res): Response
     {
         $q    = $req->getQueryParams();
-        $tid  = $req->getAttribute('tenantId');
+        $tid  = $req->getAttribute('auth.tenant_id');
         $days = (int) ($q['days'] ?? 30);
         $data = $this->reportService->getExpiryAlerts($tid, $q['property_id'] ?? null, $days);
 
@@ -82,7 +82,7 @@ final class InventoryReportController
     public function shrinkage(Request $req, Response $res): Response
     {
         $q   = $req->getQueryParams();
-        $tid = $req->getAttribute('tenantId');
+        $tid = $req->getAttribute('auth.tenant_id');
         $data = $this->reportService->getShrinkageReport(
             $tid,
             $q['property_id'] ?? null,
@@ -104,7 +104,7 @@ final class InventoryReportController
     public function departmentUsage(Request $req, Response $res): Response
     {
         $q   = $req->getQueryParams();
-        $tid = $req->getAttribute('tenantId');
+        $tid = $req->getAttribute('auth.tenant_id');
         $data = $this->reportService->getDepartmentUsage(
             $tid,
             $q['property_id'] ?? null,
@@ -131,7 +131,7 @@ final class InventoryReportController
     public function propertyComparison(Request $req, Response $res): Response
     {
         $q   = $req->getQueryParams();
-        $tid = $req->getAttribute('tenantId');
+        $tid = $req->getAttribute('auth.tenant_id');
         $data = $this->reportService->getPropertyComparison($tid, $q['date_from'] ?? '', $q['date_to'] ?? '');
         return ResponseHelper::json($res, ['success' => true, 'data' => $data]);
     }
@@ -140,7 +140,7 @@ final class InventoryReportController
     public function lowStock(Request $req, Response $res): Response
     {
         $q   = $req->getQueryParams();
-        $tid = $req->getAttribute('tenantId');
+        $tid = $req->getAttribute('auth.tenant_id');
         $items = $this->alertService->getLowStockItems($tid, $q['property_id'] ?? null);
         return ResponseHelper::json($res, ['success' => true, 'data' => $items, 'count' => count($items)]);
     }
@@ -149,7 +149,7 @@ final class InventoryReportController
     public function triggerLowStockNotify(Request $req, Response $res): Response
     {
         $q      = $req->getQueryParams();
-        $tid    = $req->getAttribute('tenantId');
+        $tid    = $req->getAttribute('auth.tenant_id');
         $result = $this->alertService->checkAndNotify($tid, $q['property_id'] ?? null);
         return ResponseHelper::json($res, ['success' => true, 'data' => $result]);
     }
