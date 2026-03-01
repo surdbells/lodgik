@@ -14,12 +14,14 @@ use Lodgik\Entity\PosOrder;
 use Lodgik\Entity\PosOrderItem;
 use Lodgik\Entity\PosProduct;
 use Psr\Log\LoggerInterface;
+use Lodgik\Module\Procurement\ProcurementService;
 
 final class MovementService
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface $logger,
+        private readonly ?ProcurementService $procurement = null,
     ) {}
 
     // ═══════════════════════════════════════════════════════════════
@@ -184,6 +186,15 @@ final class MovementService
         $movement->setTotalValue((string) $totalValue);
 
         $this->em->flush();
+
+        // Hook: update PO delivery progress if this GRN is linked to a purchase order
+        if (!empty($extra['purchase_order_id']) && $this->procurement !== null) {
+            $this->procurement->applyGrnToOrder(
+                $extra['purchase_order_id'],
+                $lines,
+                $tenantId,
+            );
+        }
 
         $this->logger->info("GRN posted: ref={$movement->getReferenceNumber()}, lines={$movement->getLineCount()}, value={$totalValue}");
 
