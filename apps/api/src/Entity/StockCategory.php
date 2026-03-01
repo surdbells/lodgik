@@ -13,7 +13,7 @@ use Lodgik\Entity\Traits\HasTimestamps;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'stock_categories')]
-#[ORM\Index(columns: ['tenant_id', 'parent_id'], name: 'idx_sc_parent')]
+#[ORM\Index(columns: ['tenant_id', 'parent_id'], name: 'stk_cat_parent')]
 #[ORM\HasLifecycleCallbacks]
 class StockCategory implements TenantAware
 {

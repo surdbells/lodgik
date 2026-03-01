@@ -21,8 +21,8 @@ use Lodgik\Entity\Traits\HasTimestamps;
 #[ORM\Entity]
 #[ORM\Table(name: 'stock_balances')]
 #[ORM\UniqueConstraint(name: 'uq_sb_item_location', columns: ['tenant_id', 'item_id', 'location_id'])]
-#[ORM\Index(columns: ['tenant_id', 'location_id'], name: 'idx_sb_location')]
-#[ORM\Index(columns: ['tenant_id', 'item_id'], name: 'idx_sb_item')]
+#[ORM\Index(columns: ['tenant_id', 'location_id'], name: 'stk_bal_location')]
+#[ORM\Index(columns: ['tenant_id', 'item_id'], name: 'stk_bal_item')]
 #[ORM\HasLifecycleCallbacks]
 class StockBalance implements TenantAware
 {
