@@ -284,6 +284,16 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/procurement/purchase-orders.page').then(m => m.PurchaseOrdersPage),
       },
 
+      // POS — Recipe Builder & Food Cost
+      {
+        path: 'pos/recipes',
+        loadComponent: () => import('./pages/pos/recipe-builder.page').then(m => m.RecipeBuilderPage),
+      },
+      {
+        path: 'pos/food-cost',
+        loadComponent: () => import('./pages/pos/food-cost.page').then(m => m.FoodCostPage),
+      },
+
       {
         path: 'spa',
         loadComponent: () => import('./pages/spa/spa.page'),

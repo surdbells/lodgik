@@ -265,6 +265,8 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Vendors', icon: 'building-2', route: '/procurement/vendors' },
         { label: 'Purchase Requests', icon: 'clipboard-list', route: '/procurement/requests' },
         { label: 'Purchase Orders', icon: 'file-text', route: '/procurement/orders' },
+      { label: 'Recipe Builder', icon: 'chef-hat', route: '/pos/recipes' },
+      { label: 'Food Cost', icon: 'percent', route: '/pos/food-cost' },
       ],
     },
     {
