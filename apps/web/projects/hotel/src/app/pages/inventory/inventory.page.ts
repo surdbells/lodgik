@@ -422,6 +422,8 @@ export class InventoryPage implements OnInit {
   uoms        = signal<UnitOfMeasure[]>([]);
   locations   = signal<any[]>([]);
   summary     = signal<InventorySummary | null>(null);
+  /** item_id → total on-hand qty (sum across all locations) */
+  balances     = signal<Record<string, number>>({});
 
   total      = signal(0);
   page       = signal(1);
@@ -490,14 +492,34 @@ export class InventoryPage implements OnInit {
 
     this.api.get('/inventory/items', params).subscribe({
       next: r => {
-        this.items.set(r.data ?? []);
+        const items = r.data ?? [];
+        this.items.set(items);
         this.total.set(r.meta?.['total'] ?? 0);
         this.loading.set(false);
+        this.loadBalancesForItems(items);
       },
       error: () => {
         this.toast.error('Failed to load inventory items');
         this.loading.set(false);
       }
+    });
+  }
+
+  loadBalancesForItems(items: StockItem[]): void {
+    if (!items.length) return;
+    // Fetch balances for each item in parallel and accumulate into a map
+    const map: Record<string, number> = {};
+    let pending = items.length;
+    items.forEach(item => {
+      this.api.get(`/inventory/items/${item.id}/balances`).subscribe({
+        next: (r: any) => {
+          const rows: any[] = r.data ?? [];
+          const total = rows.reduce((sum: number, b: any) => sum + parseFloat(b.quantity_on_hand ?? '0'), 0);
+          map[item.id] = total;
+        },
+        error: () => { map[item.id] = 0; },
+        complete: () => { if (--pending === 0) this.balances.set({ ...this.balances(), ...map }); },
+      });
     });
   }
 
@@ -622,17 +644,19 @@ export class InventoryPage implements OnInit {
     if (!item) return;
 
     this.savingBalance.set(true);
-    this.api.post('/inventory/balances/opening', {
-      item_id:     item.id,
-      location_id: this.balanceForm.location_id,
-      quantity:    this.balanceForm.quantity,
-      unit_cost:   this.balanceForm.unit_cost,
-      property_id: this.propSvc.activeProperty()?.id ?? null,
+    this.api.post('/inventory/movements/opening', {
+      item_id:          item.id,
+      location_id:      this.balanceForm.location_id,
+      quantity:         this.balanceForm.quantity,
+      unit_cost:        Math.round(this.balanceForm.unit_cost * 100), // ₦ → kobo
+      property_id:      this.propSvc.activeProperty()?.id ?? null,
+      created_by_name:  'Staff',
     }).subscribe({
       next: () => {
         this.toast.success('Opening balance set');
         this.closeBalanceModal();
         this.loadSummary();
+        this.loadBalancesForItems([item]); // refresh on-hand for this item
         this.savingBalance.set(false);
       },
       error: (e: any) => {
@@ -654,10 +678,11 @@ export class InventoryPage implements OnInit {
   }
 
   onHandDisplay(item: StockItem): string {
-    // Phase A: balances come from stock_balances table
-    // For now we show the par level context
+    const qty = this.balances()[item.id];
     const uom = this.uoms().find(u => u.id === item.issue_uom_id);
-    return `— ${uom?.symbol ?? ''}`;
+    const sym = uom?.symbol ?? '';
+    if (qty === undefined) return `— ${sym}`;
+    return `${qty % 1 === 0 ? qty : qty.toFixed(3)} ${sym}`;
   }
 
   isLowStock(item: StockItem): boolean {

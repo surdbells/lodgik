@@ -27,7 +27,10 @@ interface Product {
   prep_time_minutes: number;
   requires_kitchen: boolean;
   sort_order: number;
+  stock_item_id: string | null;
 }
+
+interface StockItem { id: string; sku: string; name: string; }
 
 @Component({
   selector: 'app-menu',
@@ -295,6 +298,40 @@ interface Product {
                 <span class="text-sm text-gray-700">Available now</span>
               </label>
             </div>
+            <!-- Stock item link for inventory deduction -->
+            <div class="pt-2">
+              <label class="block text-xs text-gray-500 font-medium mb-1">
+                Linked Stock Item <span class="text-gray-400">(optional — for automatic inventory deduction)</span>
+              </label>
+              <div class="flex gap-2">
+                <input type="text" [(ngModel)]="stockSearch"
+                  placeholder="Search inventory item by name or SKU…"
+                  class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
+              </div>
+              <div class="mt-1.5 max-h-40 overflow-y-auto border border-gray-100 rounded-lg" *ngIf="filteredStockItems().length > 0">
+              @if (filteredStockItems().length > 0 || productForm.stock_item_id) {
+                <div class="border border-gray-200 rounded-lg overflow-hidden mt-1">
+                  @if (productForm.stock_item_id) {
+                    <div class="flex items-center justify-between px-3 py-2 bg-sage-50 text-sm">
+                      <span class="text-sage-700 font-medium">{{ linkedItemName() }}</span>
+                      <button type="button" (click)="productForm.stock_item_id = null; stockSearch = ''"
+                        class="text-xs text-red-500 hover:text-red-700">Unlink</button>
+                    </div>
+                  }
+                  @if (!productForm.stock_item_id && filteredStockItems().length > 0) {
+                    <div class="max-h-36 overflow-y-auto divide-y divide-gray-50">
+                      @for (si of filteredStockItems(); track si.id) {
+                        <button type="button" (click)="productForm.stock_item_id = si.id; stockSearch = ''"
+                          class="w-full text-left px-3 py-2 text-sm hover:bg-sage-50 flex items-center gap-2">
+                          <span class="font-mono text-xs text-gray-400">{{ si.sku }}</span>
+                          <span>{{ si.name }}</span>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
           </div>
           <div class="flex gap-3 mt-5">
             <button (click)="saveProduct()" [disabled]="savingProduct()"
@@ -318,7 +355,9 @@ export class MenuPage implements OnInit {
 
   loading = signal(true);
   categories = signal<Category[]>([]);
-  products = signal<Product[]>([]);
+  products    = signal<Product[]>([]);
+  stockItems  = signal<StockItem[]>([]);
+  stockSearch = '';
   activeTab = signal<'categories' | 'items'>('categories');
   filterCategory = signal<string | null>(null);
 
@@ -334,12 +373,27 @@ export class MenuPage implements OnInit {
     category_id: string; name: string; description: string;
     price_naira: number; prep_time_minutes: number;
     requires_kitchen: boolean; is_available: boolean;
-  } = { category_id: '', name: '', description: '', price_naira: 0, prep_time_minutes: 15, requires_kitchen: true, is_available: true };
+    stock_item_id: string | null;
+  } = { category_id: '', name: '', description: '', price_naira: 0, prep_time_minutes: 15, requires_kitchen: true, is_available: true, stock_item_id: null };
 
   tabs = [
     { key: 'categories' as const, label: 'Categories' },
     { key: 'items' as const, label: 'Menu Items' },
   ];
+
+  filteredStockItems = computed(() => {
+    const q = this.stockSearch.toLowerCase();
+    const items = this.stockItems();
+    if (!q) return items.slice(0, 10);
+    return items.filter(i => i.name.toLowerCase().includes(q) || i.sku.toLowerCase().includes(q)).slice(0, 10);
+  });
+
+  linkedItemName(): string {
+    const id = this.productForm.stock_item_id;
+    if (!id) return '';
+    const found = this.stockItems().find(i => i.id === id);
+    return found ? `${found.sku} — ${found.name}` : id;
+  }
 
   filteredProducts = computed(() => {
     const cat = this.filterCategory();
@@ -352,6 +406,10 @@ export class MenuPage implements OnInit {
   load() {
     const pid = this.activeProperty.propertyId();
     this.api.get(`/pos/categories?property_id=${pid}`).subscribe({ next: (r: any) => this.categories.set(r.data || []) });
+    this.api.get('/inventory/items', { active_only: true, per_page: 500 }).subscribe({
+      next: (r: any) => this.stockItems.set(r.data ?? []),
+      error: () => {},
+    });
     this.api.get(`/pos/products?property_id=${pid}`).subscribe({
       next: (r: any) => { this.products.set(r.data || []); this.loading.set(false); },
       error: () => this.loading.set(false),
@@ -423,8 +481,10 @@ export class MenuPage implements OnInit {
           category_id: p.category_id, name: p.name, description: p.description ?? '',
           price_naira: parseInt(p.price, 10) / 100, prep_time_minutes: p.prep_time_minutes,
           requires_kitchen: p.requires_kitchen, is_available: p.is_available,
+          stock_item_id: p.stock_item_id ?? null,
         }
-      : { category_id: '', name: '', description: '', price_naira: 0, prep_time_minutes: 15, requires_kitchen: true, is_available: true };
+      : { category_id: '', name: '', description: '', price_naira: 0, prep_time_minutes: 15, requires_kitchen: true, is_available: true, stock_item_id: null };
+    this.stockSearch = '';
     this.showProductModal.set(true);
   }
 
@@ -446,6 +506,7 @@ export class MenuPage implements OnInit {
       requires_kitchen: this.productForm.requires_kitchen,
       is_available: this.productForm.is_available,
       property_id: pid,
+      stock_item_id: this.productForm.stock_item_id || null,
     };
 
     const call = editing
