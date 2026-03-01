@@ -19,10 +19,15 @@ export class ActivePropertyService {
   private _properties = signal<AccessibleProperty[]>([]);
   readonly properties = this._properties.asReadonly();
 
-  /** The currently active property ID */
+  /** The currently active property ID.
+   * Reads from JWT first. Falls back to the is_current property in the
+   * accessible-properties list for accounts where property_id is null in
+   * the token (e.g. tenant admins not pinned to a single property). */
   readonly propertyId = computed(() => {
     const user = this.token.user();
-    return user?.property_id || '';
+    if (user?.property_id) return user.property_id;
+    // Fallback: find the property marked as current in the loaded list
+    return this._properties().find(p => p.is_current)?.id || '';
   });
 
   /** The currently active property object */

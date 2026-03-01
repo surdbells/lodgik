@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -296,22 +296,34 @@ export class DashboardPage implements OnInit {
   ];
 
   ngOnInit(): void {
-    // Effect: reload whenever the active property signal changes
+    /**
+     * TRACKED: only this.activeProperty.propertyId()
+     * Everything else is read inside untracked() so scope changes, loading
+     * changes, etc. do NOT re-trigger this effect and cause duplicate loads.
+     *
+     * This effect re-runs ONLY when the active property changes — i.e. on
+     * first load (when accessible-properties resolves is_current) and when
+     * the user switches to a different property in the sidebar.
+     */
     effect(() => {
-      const pid = this.activeProperty.propertyId();
-      if (pid) {
-        this.propertyId = pid;
-        // If we were in 'all' mode only because there was no pid, switch back to single
-        if (this.scope() === 'all' && !this._manualScope) this.scope.set('single');
+      const pid = this.activeProperty.propertyId(); // ← the ONLY tracked signal
+
+      untracked(() => {
+        if (pid) {
+          this.propertyId = pid;
+          // Auto-switch back to single view if scope was forced to 'all'
+          // only because there was no pid on first render
+          if (this.scope() === 'all' && !this._manualScope) {
+            this.scope.set('single');
+          }
+        } else {
+          // No resolvable property — show aggregated all-properties view
+          if (!this._manualScope) this.scope.set('all');
+        }
         this.loading.set(true);
-        this.loadAll();
-      } else {
-        // No property_id in token (e.g. tenant-admin) — show aggregated view
-        this.scope.set('all');
-        this.loading.set(true);
-        this.loadAllProperties();
-      }
-    }, { allowSignalWrites: true });
+        this.scope() === 'all' ? this.loadAllProperties() : this.loadSingleProperty();
+      });
+    });
   }
 
   setScope(scope: 'single' | 'all'): void {
