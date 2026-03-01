@@ -83,6 +83,16 @@ import {
   CircleX,
   UserCheck,
   Key,
+
+  // ─── Inventory & Food Cost (added Phase D/E) ──────────────
+  ArrowLeftRight,
+  BarChart,
+  BarChart2,
+  Building2,
+  ChefHat,
+  Percent,
+  Settings2,
+  Truck,
 } from 'lucide-angular';
 
 /**
@@ -154,6 +164,16 @@ export const LODGIK_ICONS = {
   CircleX,
   UserCheck,
   Key,
+
+  // ─── Inventory & Food Cost ───────────────────────────────
+  ArrowLeftRight,
+  BarChart,
+  BarChart2,
+  Building2,
+  ChefHat,
+  Percent,
+  Settings2,
+  Truck,
 };
 
 /**

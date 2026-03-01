@@ -200,7 +200,7 @@ export class HotelLayoutComponent implements OnInit {
   collapsed = signal(false);
   notificationCount = signal(0);
 
-  private collapsedGroups = signal<Set<number>>(new Set([2, 3, 4, 5, 6, 7]));
+  private collapsedGroups = signal<Set<number>>(new Set([2, 4, 5, 6, 7, 8]));
 
   propertyName = computed(() => this.activeProperty.propertyName());
   propertyInitial = computed(() => this.propertyName().charAt(0).toUpperCase());
@@ -258,17 +258,20 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Gym & Fitness', icon: 'dumbbell', route: '/gym', requiredModule: 'gym_membership' },
         { label: 'Spa & Pool', icon: 'bath', route: '/spa' },
         { label: 'Amenities', icon: 'sparkles', route: '/amenities' },
-        { label: 'Stock & Inventory', icon: 'package', route: '/inventory' },
-        { label: 'Stock Movements', icon: 'arrow-left-right', route: '/inventory/movements' },
-        { label: 'Goods Received (GRN)', icon: 'truck', route: '/inventory/grn' },
-        { label: 'Inventory Settings', icon: 'settings-2', route: '/inventory/settings' },
-        { label: 'Vendors', icon: 'building-2', route: '/procurement/vendors' },
-        { label: 'Purchase Requests', icon: 'clipboard-list', route: '/procurement/requests' },
-        { label: 'Purchase Orders', icon: 'file-text', route: '/procurement/orders' },
-      { label: 'Recipe Builder', icon: 'chef-hat', route: '/pos/recipes' },
-      { label: 'Food Cost', icon: 'percent', route: '/pos/food-cost' },
-      { label: 'Inventory Reports', icon: 'bar-chart', route: '/inventory/reports' },
-      { label: 'Inventory Reports', icon: 'bar-chart-2', route: '/inventory/reports' },
+      ],
+    },
+    {
+      label: 'Inventory & Food Cost',
+      items: [
+        { label: 'Stock & Inventory',    icon: 'package',    route: '/inventory' },
+        { label: 'Stock Movements',      icon: 'arrow-left-right', route: '/inventory/movements' },
+        { label: 'Goods Received (GRN)', icon: 'truck',      route: '/inventory/grn' },
+        { label: 'Vendors',              icon: 'building-2', route: '/procurement/vendors' },
+        { label: 'Purchase Requests',    icon: 'clipboard-list', route: '/procurement/requests' },
+        { label: 'Purchase Orders',      icon: 'file-text',  route: '/procurement/orders' },
+        { label: 'Recipe Builder',       icon: 'chef-hat',   route: '/pos/recipes' },
+        { label: 'Food Cost',            icon: 'percent',    route: '/pos/food-cost' },
+        { label: 'Inventory Reports',    icon: 'bar-chart-2', route: '/inventory/reports' },
       ],
     },
     {
