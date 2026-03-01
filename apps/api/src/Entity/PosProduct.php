@@ -40,6 +40,13 @@ class PosProduct implements TenantAware
     #[ORM\Column(name: 'requires_kitchen', type: Types::BOOLEAN, options: ['default' => true])]
     private bool $requiresKitchen = true;
 
+    /**
+     * Optional link to a StockItem for automatic deduction on POS order close.
+     * NULL = no inventory deduction (e.g. service items, or not yet mapped).
+     */
+    #[ORM\Column(name: 'stock_item_id', type: Types::STRING, length: 36, nullable: true)]
+    private ?string $stockItemId = null;
+
     public function __construct(string $propertyId, string $categoryId, string $name, string $price, string $tenantId)
     {
         $this->generateId(); $this->propertyId = $propertyId; $this->categoryId = $categoryId;
@@ -62,9 +69,11 @@ class PosProduct implements TenantAware
     public function setRequiresKitchen(bool $v): void { $this->requiresKitchen = $v; }
     public function getSortOrder(): int { return $this->sortOrder; }
     public function setSortOrder(int $v): void { $this->sortOrder = $v; }
+    public function getStockItemId(): ?string { return $this->stockItemId; }
+    public function setStockItemId(?string $v): void { $this->stockItemId = $v; }
 
     public function toArray(): array
     {
-        return ['id' => $this->getId(), 'property_id' => $this->propertyId, 'category_id' => $this->categoryId, 'name' => $this->name, 'description' => $this->description, 'price' => $this->price, 'is_available' => $this->isAvailable, 'prep_time_minutes' => $this->prepTimeMinutes, 'requires_kitchen' => $this->requiresKitchen, 'sort_order' => $this->sortOrder, 'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s')];
+        return ['id' => $this->getId(), 'property_id' => $this->propertyId, 'category_id' => $this->categoryId, 'name' => $this->name, 'description' => $this->description, 'price' => $this->price, 'is_available' => $this->isAvailable, 'prep_time_minutes' => $this->prepTimeMinutes, 'requires_kitchen' => $this->requiresKitchen, 'sort_order' => $this->sortOrder, 'stock_item_id' => $this->stockItemId, 'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s')];
     }
 }
