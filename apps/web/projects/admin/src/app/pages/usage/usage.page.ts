@@ -1,11 +1,12 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, ToastService } from '@lodgik/shared';
 import { BarChartComponent, ChartDataPoint } from '@lodgik/charts';
 
 @Component({
   selector: 'app-usage',
   standalone: true,
-  imports: [PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, BarChartComponent],
+  imports: [PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, BarChartComponent, DatePipe],
   template: `
     <ui-page-header title="Usage & Installations" icon="trending-up" [breadcrumbs]="['Overview', 'Usage']" subtitle="Platform-wide app downloads, installs, and usage snapshots">
       <button (click)="recordSnapshot()" [disabled]="snapshotting()"

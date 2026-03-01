@@ -227,6 +227,7 @@ export class DashboardPage implements OnInit {
   activity = signal<any[]>([]);
   propertyComparison = signal<any[]>([]);
   scope = signal<'single' | 'all'>('single');
+  private _manualScope = false; // true after user explicitly clicks a scope button
   propertyId = '';
 
   isMultiProperty = this.activeProperty.isMultiProperty;
@@ -295,21 +296,27 @@ export class DashboardPage implements OnInit {
   ];
 
   ngOnInit(): void {
-    // Effect: reload whenever active property changes (signal reactivity)
+    // Effect: reload whenever the active property signal changes
     effect(() => {
       const pid = this.activeProperty.propertyId();
       if (pid) {
         this.propertyId = pid;
+        // If we were in 'all' mode only because there was no pid, switch back to single
+        if (this.scope() === 'all' && !this._manualScope) this.scope.set('single');
         this.loading.set(true);
         this.loadAll();
       } else {
-        this.loading.set(false); // no property selected yet — don't hang
+        // No property_id in token (e.g. tenant-admin) — show aggregated view
+        this.scope.set('all');
+        this.loading.set(true);
+        this.loadAllProperties();
       }
     }, { allowSignalWrites: true });
   }
 
   setScope(scope: 'single' | 'all'): void {
     if (this.scope() === scope) return;
+    this._manualScope = true;
     this.scope.set(scope);
     this.loading.set(true);
     this.loadAll();
@@ -323,34 +330,43 @@ export class DashboardPage implements OnInit {
     if (!this.propertyId) { this.loading.set(false); return; }
     const pid = this.propertyId;
 
+    // Clear stale data before fetching so we never show previous scope's data
+    this.overview.set({}); this.trends.set([]); this.revenueBreakdown.set([]); this.activity.set([]);
+
     forkJoin({
       overview: this.api.get('/dashboard/overview', { property_id: pid }).pipe(catchError(() => of({ success: false, data: {} }))),
       trends:   this.api.get('/dashboard/occupancy-trends', { property_id: pid, days: 30 }).pipe(catchError(() => of({ success: false, data: [] }))),
       revenue:  this.api.get('/dashboard/revenue-breakdown', { property_id: pid, days: 30 }).pipe(catchError(() => of({ success: false, data: [] }))),
       activity: this.api.get('/dashboard/activity-feed', { property_id: pid, limit: 10 }).pipe(catchError(() => of({ success: false, data: [] }))),
-    }).subscribe(({ overview, trends, revenue, activity }) => {
-      if ((overview as any).success) this.overview.set((overview as any).data);
-      if ((trends as any).success)   this.trends.set((trends as any).data ?? []);
-      if ((revenue as any).success) {
-        const colors: Record<string, string> = { overnight: '#3a543a', short_rest_3hr: '#d97706', short_rest_6hr: '#b45309', walk_in: '#7a9e7a', corporate: '#6366f1', half_day: '#0891b2' };
-        this.revenueBreakdown.set(((revenue as any).data ?? []).map((d: any) => ({ label: d.booking_type, value: +d.revenue, color: colors[d.booking_type] || '#6b7280' })));
-      }
-      if ((activity as any).success) this.activity.set((activity as any).data ?? []);
-      this.loading.set(false);
+    }).subscribe({
+      next: ({ overview, trends, revenue, activity }) => {
+        if ((overview as any).success) this.overview.set((overview as any).data);
+        if ((trends as any).success)   this.trends.set((trends as any).data ?? []);
+        if ((revenue as any).success) {
+          const colors: Record<string, string> = { overnight: '#3a543a', short_rest_3hr: '#d97706', short_rest_6hr: '#b45309', walk_in: '#7a9e7a', corporate: '#6366f1', half_day: '#0891b2' };
+          this.revenueBreakdown.set(((revenue as any).data ?? []).map((d: any) => ({ label: d.booking_type, value: +d.revenue, color: colors[d.booking_type] || '#6b7280' })));
+        }
+        if ((activity as any).success) this.activity.set((activity as any).data ?? []);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 
   private loadAllProperties(): void {
+    // Clear stale data before fetching
+    this.overview.set({}); this.trends.set([]); this.revenueBreakdown.set([]); this.activity.set([]);
+
     forkJoin({
       overview:   this.api.get('/dashboard/overview', { scope: 'all_properties' }).pipe(catchError(() => of({ success: false, data: {} }))),
       comparison: this.api.get('/dashboard/property-comparison', { days: 30 }).pipe(catchError(() => of({ success: false, data: [] }))),
-    }).subscribe(({ overview, comparison }) => {
-      if ((overview as any).success) {
-        this.overview.set((overview as any).data);
-        this.trends.set([]); this.revenueBreakdown.set([]); this.activity.set([]);
-      }
-      if ((comparison as any).success) this.propertyComparison.set((comparison as any).data ?? []);
-      this.loading.set(false);
+    }).subscribe({
+      next: ({ overview, comparison }) => {
+        if ((overview as any).success) this.overview.set((overview as any).data);
+        if ((comparison as any).success) this.propertyComparison.set((comparison as any).data ?? []);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 
