@@ -1,28 +1,4 @@
-<?
-
-    // ── Report read endpoints (property_admin, manager, accountant) ──
-    $app->group('/api/inventory/reports', function (RouteCollectorProxy $g) {
-        // Static before variable routes
-        $g->get('/valuation',           [InventoryReportController::class, 'valuation']);
-        $g->get('/slow-moving',          [InventoryReportController::class, 'slowMoving']);
-        $g->get('/expiry',               [InventoryReportController::class, 'expiryAlerts']);
-        $g->get('/shrinkage',            [InventoryReportController::class, 'shrinkage']);
-        $g->get('/usage',                [InventoryReportController::class, 'departmentUsage']);
-        $g->get('/property-comparison',  [InventoryReportController::class, 'propertyComparison']);
-        $g->get('/low-stock',            [InventoryReportController::class, 'lowStock']);
-    })
-        ->add(new RoleMiddleware(['property_admin', 'manager', 'accountant']))
-        ->add(TenantMiddleware::class)
-        ->add(AuthMiddleware::class);
-
-    // ── Low-stock notify trigger (property_admin, manager only) ──────
-    $app->group('/api/inventory/reports', function (RouteCollectorProxy $g) {
-        $g->post('/low-stock/notify',    [InventoryReportController::class, 'triggerLowStockNotify']);
-    })
-        ->add(new RoleMiddleware(['property_admin', 'manager']))
-        ->add(TenantMiddleware::class)
-        ->add(AuthMiddleware::class);
-php
+<?php
 
 declare(strict_types=1);
 
@@ -97,6 +73,28 @@ return function (App $app): void {
         $g->post('/movements/transfer',   [MovementController::class, 'createTransfer']);
         $g->post('/movements/adjustment', [MovementController::class, 'createAdjustment']);
 
+    })
+        ->add(new RoleMiddleware(['property_admin', 'manager']))
+        ->add(TenantMiddleware::class)
+        ->add(AuthMiddleware::class);
+
+    // ── Inventory Reports — read (property_admin, manager, accountant) ──
+    $app->group('/api/inventory/reports', function (RouteCollectorProxy $g) {
+        $g->get('/valuation',          [InventoryReportController::class, 'valuation']);
+        $g->get('/slow-moving',        [InventoryReportController::class, 'slowMoving']);
+        $g->get('/expiry',             [InventoryReportController::class, 'expiryAlerts']);
+        $g->get('/shrinkage',          [InventoryReportController::class, 'shrinkage']);
+        $g->get('/usage',              [InventoryReportController::class, 'departmentUsage']);
+        $g->get('/property-comparison',[InventoryReportController::class, 'propertyComparison']);
+        $g->get('/low-stock',          [InventoryReportController::class, 'lowStock']);
+    })
+        ->add(new RoleMiddleware(['property_admin', 'manager', 'accountant']))
+        ->add(TenantMiddleware::class)
+        ->add(AuthMiddleware::class);
+
+    // ── Inventory Reports — notify trigger (property_admin, manager) ──
+    $app->group('/api/inventory/reports', function (RouteCollectorProxy $g) {
+        $g->post('/low-stock/notify',  [InventoryReportController::class, 'triggerLowStockNotify']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager']))
         ->add(TenantMiddleware::class)
