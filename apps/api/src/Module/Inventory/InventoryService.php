@@ -342,6 +342,7 @@ class InventoryService
 
         $total = (int) (clone $qb)
             ->select('COUNT(i.id)')
+            ->resetDQLPart('orderBy')  // PostgreSQL: ORDER BY not allowed in aggregate SELECT without GROUP BY
             ->getQuery()->getSingleScalarResult();
 
         $items = $qb

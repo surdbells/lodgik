@@ -471,7 +471,7 @@ final class RecipeService
         return $this->em->createQueryBuilder()
             ->select('b')->from(StockBalance::class, 'b')
             ->join(\Lodgik\Entity\StockLocation::class, 'l', 'WITH', 'l.id = b.locationId')
-            ->where('b.stockItemId = :iid')
+            ->where('b.itemId = :iid')
             ->andWhere('b.tenantId  = :tid')
             ->andWhere('l.propertyId = :pid')
             ->andWhere('l.isActive = true')

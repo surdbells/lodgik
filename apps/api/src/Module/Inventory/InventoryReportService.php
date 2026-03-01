@@ -140,8 +140,8 @@ final class InventoryReportService
 
         $sql .= <<<'SQL'
             GROUP BY si.id, si.sku, si.name, sc.name, sl.property_id, sl.name, sb.quantity_on_hand, si.average_cost
-            HAVING last_issue_date IS NULL
-            ORDER BY stock_value_kobo DESC
+            HAVING MAX(sm.movement_date) IS NULL
+            ORDER BY (sb.quantity_on_hand * si.average_cost) DESC
         SQL;
 
         $rows = $conn->fetchAllAssociative($sql, $params);

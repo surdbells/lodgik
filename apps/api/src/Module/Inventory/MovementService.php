@@ -602,6 +602,7 @@ final class MovementService
 
         $total = (int) (clone $qb)
             ->select('COUNT(m.id)')
+            ->resetDQLPart('orderBy')  // PostgreSQL: ORDER BY not allowed in aggregate SELECT without GROUP BY
             ->getQuery()->getSingleScalarResult();
 
         $movements = $qb

@@ -283,6 +283,7 @@ final class ProcurementService
 
         $total = (int) (clone $qb)
             ->select('COUNT(pr.id)')
+            ->resetDQLPart('orderBy')  // PostgreSQL: ORDER BY not allowed in aggregate SELECT without GROUP BY
             ->getQuery()->getSingleScalarResult();
 
         $requests = $qb
@@ -532,6 +533,7 @@ final class ProcurementService
 
         $total = (int) (clone $qb)
             ->select('COUNT(po.id)')
+            ->resetDQLPart('orderBy')  // PostgreSQL: ORDER BY not allowed in aggregate SELECT without GROUP BY
             ->getQuery()->getSingleScalarResult();
 
         $orders = $qb
