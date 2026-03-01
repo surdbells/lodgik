@@ -1,127 +1,250 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, ToastService } from '@lodgik/shared';
+import { TitleCasePipe } from '@angular/common';
+import {
+  ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent,
+  AuthService, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, ToastService
+} from '@lodgik/shared';
 
 @Component({
   selector: 'app-pos',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, ConfirmDialogComponent],
+  imports: [FormsModule, TitleCasePipe, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, ConfirmDialogComponent],
   template: `
     <ui-confirm-dialog/>
     <ui-page-header title="Bar & Restaurant" subtitle="POS, table management, and kitchen display">
       <div class="flex gap-2">
-        <button (click)="showTableForm = !showTableForm; showOrderForm = false" class="px-4 py-2 border rounded-lg text-sm">{{ showTableForm ? 'Cancel' : '+ Add Table' }}</button>
-        <button (click)="showOrderForm = !showOrderForm; showTableForm = false" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">{{ showOrderForm ? 'Cancel' : '+ New Order' }}</button>
+        <button (click)="openTableModal()" class="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">+ Add Table</button>
+        <button (click)="showOrderForm = !showOrderForm; showTableForm = false"
+          class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">
+          {{ showOrderForm ? 'Cancel' : '+ New Order' }}
+        </button>
       </div>
     </ui-page-header>
 
     <ui-loading [loading]="loading()"></ui-loading>
 
-    <!-- Add Table Form -->
-    @if (showTableForm) {
-      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
-        <h3 class="text-sm font-semibold text-gray-700 mb-3">Add Table</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <input [(ngModel)]="tableForm.number" placeholder="Table number (e.g. T1)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
-          <input [(ngModel)]="tableForm.seats" type="number" placeholder="Seats" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
-          <input [(ngModel)]="tableForm.section" placeholder="Section (optional)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
-        </div>
-        <div class="flex gap-2 mt-3">
-          <button (click)="createTable()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700">Create</button>
-          <button (click)="showTableForm = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-xl">Cancel</button>
-        </div>
-      </div>
-    }
-
     <!-- New Order Form -->
     @if (showOrderForm) {
-      <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">New Order</h3>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <select [(ngModel)]="orderForm.table_id" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <select [(ngModel)]="orderForm.table_id" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
             <option value="">Select Table</option>
-            @for (t of tables(); track t.id) { <option [value]="t.id">{{ t.number }} ({{ t.seats }} seats)</option> }
+            @for (t of tables(); track t.id) {
+              <option [value]="t.id" [disabled]="t.status === 'occupied'">
+                {{ t.number }} ({{ t.seats }} seats) {{ t.status === 'occupied' ? '— occupied' : '' }}
+              </option>
+            }
           </select>
-          <select [(ngModel)]="orderForm.order_type" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
-            <option value="dine_in">Dine In</option><option value="takeaway">Takeaway</option><option value="room_service">Room Service</option>
+          <select [(ngModel)]="orderForm.order_type" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+            <option value="dine_in">Dine In</option>
+            <option value="takeaway">Takeaway</option>
+            <option value="room_service">Room Service</option>
           </select>
-          <input [(ngModel)]="orderForm.guest_name" placeholder="Guest name (optional)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+          <input [(ngModel)]="orderForm.guest_name" placeholder="Guest name (optional)"
+            class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
         </div>
         <div class="flex gap-2 mt-3">
-          <button (click)="createOrder()" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700">Create Order</button>
-          <button (click)="showOrderForm = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-xl">Cancel</button>
+          <button (click)="createOrder()" [disabled]="creatingOrder()"
+            class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700 disabled:opacity-50">
+            {{ creatingOrder() ? 'Creating...' : 'Create Order' }}
+          </button>
+          <button (click)="showOrderForm = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
         </div>
       </div>
     }
 
     @if (!loading()) {
+      <!-- Stats Row -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl border border-gray-100 p-4">
+          <p class="text-xs text-gray-500 mb-1">Tables</p>
+          <p class="text-2xl font-bold text-gray-800">{{ tables().length }}</p>
+          <p class="text-xs text-gray-400">{{ availableTables() }} available</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-4">
+          <p class="text-xs text-gray-500 mb-1">Active Orders</p>
+          <p class="text-2xl font-bold text-sage-700">{{ orders().length }}</p>
+          <p class="text-xs text-gray-400">in progress</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-4">
+          <p class="text-xs text-gray-500 mb-1">Kitchen Queue</p>
+          <p class="text-2xl font-bold text-amber-600">{{ kitchenQueue().length }}</p>
+          <p class="text-xs text-gray-400">pending items</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-4">
+          <p class="text-xs text-gray-500 mb-1">Revenue Today</p>
+          <p class="text-xl font-bold text-green-700">₦{{ formatAmount(todayRevenue()) }}</p>
+          <p class="text-xs text-gray-400">from orders</p>
+        </div>
+      </div>
+
       <!-- Table Map -->
-      <div class="mb-6">
-        <h3 class="text-sm font-semibold text-gray-700 mb-3">Tables</h3>
+      <div class="bg-white rounded-xl border border-gray-100 p-5 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-gray-700">Table Map</h3>
+          <div class="flex items-center gap-3 text-xs text-gray-500">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> Available</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> Occupied</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> Reserved</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-gray-400 inline-block"></span> Inactive</span>
+          </div>
+        </div>
+        @if (tables().length === 0) {
+          <div class="py-10 text-center text-gray-400">
+            <p class="text-4xl mb-3">🍽️</p>
+            <p class="font-medium">No tables configured</p>
+            <p class="text-sm mt-1">Click "Add Table" to get started</p>
+          </div>
+        }
         <div class="flex flex-wrap gap-3">
           @for (t of tables(); track t.id) {
-            <div class="w-28 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:opacity-80 text-white" [style.background]="tableColor(t.status)">
+            <div class="relative group w-28 h-28 rounded-xl flex flex-col items-center justify-center text-white shadow-sm cursor-pointer transition-transform hover:scale-105"
+              [style.background]="tableColor(t.status)">
               <div class="text-lg font-bold">{{ t.number }}</div>
-              <div class="text-xs">{{ t.seats }} seats</div>
-              <div class="text-xs opacity-75">{{ t.status }}</div>
+              <div class="text-xs opacity-90">{{ t.seats }} seats</div>
+              <div class="text-xs opacity-75 capitalize">{{ t.status }}</div>
+              @if (t.section) { <div class="text-[10px] opacity-60">{{ t.section }}</div> }
+              <!-- Hover actions -->
+              <div class="absolute inset-0 rounded-xl bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <button (click)="openTableModal(t)" class="p-1.5 bg-white/20 hover:bg-white/40 rounded-lg text-xs" title="Edit">✏️</button>
+                <button (click)="deleteTable(t)" class="p-1.5 bg-white/20 hover:bg-white/40 rounded-lg text-xs" title="Delete">🗑️</button>
+              </div>
             </div>
           }
         </div>
       </div>
 
       <!-- Active Orders -->
-      <div class="mb-6">
-        <h3 class="text-sm font-semibold text-gray-700 mb-3">Active Orders</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          @for (o of orders(); track o.id) {
-            <div class="bg-white border rounded-lg p-4">
-              <div class="flex justify-between items-center mb-2">
-                <div class="font-bold">{{ o.order_number }}</div>
-                <span class="text-xs px-2 py-1 rounded" [style.background]="o.status_color + '20'" [style.color]="o.status_color">{{ o.status_label }}</span>
+      @if (orders().length > 0) {
+        <div class="mb-6">
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">Active Orders</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            @for (o of orders(); track o.id) {
+              <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                  <div class="font-bold text-gray-800">#{{ o.order_number }}</div>
+                  <span class="text-xs px-2 py-1 rounded-full font-medium"
+                    [style.background]="o.status_color + '20'" [style.color]="o.status_color">
+                    {{ o.status_label }}
+                  </span>
+                </div>
+                <div class="text-sm text-gray-500">{{ o.table_number ? 'Table ' + o.table_number : 'No table' }} · {{ o.order_type | titlecase }}</div>
+                <div class="text-sm text-gray-500">{{ o.item_count || 0 }} items</div>
+                @if (o.guest_name) { <div class="text-xs text-gray-400 mt-1">👤 {{ o.guest_name }}</div> }
+                <div class="text-lg font-bold mt-2 text-gray-800">₦{{ formatAmount(o.total_amount) }}</div>
+                <div class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-gray-100">
+                  <button (click)="closeOrder(o.id)" class="px-2.5 py-1 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700 font-medium">✓ Close</button>
+                  @if (o.booking_id) {
+                    <button (click)="postToFolio(o.id)" class="px-2.5 py-1 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 font-medium">→ Folio</button>
+                  }
+                  <button (click)="cancelOrder(o.id)" class="px-2.5 py-1 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 font-medium">✕ Cancel</button>
+                </div>
               </div>
-              <div class="text-sm text-gray-500">Table: {{ o.table_number || 'N/A' }} · {{ o.order_type }}</div>
-              <div class="text-sm text-gray-500">{{ o.item_count }} items</div>
-              <div class="text-lg font-bold mt-2">₦{{ formatAmount(o.total_amount) }}</div>
-              @if (o.guest_name) { <div class="text-xs text-gray-400">Guest: {{ o.guest_name }}</div> }
-              <!-- Order Actions -->
-              <div class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-gray-100">
-                <button (click)="closeOrder(o.id)" class="px-2 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700">✓ Close</button>
-                @if (o.booking_id) {
-                  <button (click)="postToFolio(o.id)" class="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700">→ Folio</button>
-                }
-                <button (click)="cancelOrder(o.id)" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">✕ Cancel</button>
-              </div>
-            </div>
-          }
+            }
+          </div>
         </div>
-      </div>
+      }
 
       <!-- Kitchen Queue -->
-      <div>
-        <h3 class="text-sm font-semibold text-gray-700 mb-3">Kitchen Queue</h3>
-        <div class="space-y-2">
-          @for (entry of kitchenQueue(); track entry.order.id) {
-            <div class="bg-white border rounded-lg p-3">
-              <div class="flex justify-between items-center mb-2">
-                <span class="font-bold">#{{ entry.order.order_number }}</span>
-                <span class="text-xs text-gray-400">Table {{ entry.order.table_number || 'N/A' }}</span>
-              </div>
-              @for (item of entry.items; track item.id) {
-                <div class="flex justify-between items-center text-sm py-1">
-                  <span>{{ item.quantity }}x {{ item.product_name }}</span>
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs px-2 py-0.5 rounded" [class]="item.status === 'ready' ? 'bg-green-100 text-green-700' : item.status === 'preparing' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100'">{{ item.status }}</span>
-                    @if (item.status === 'pending') {
-                      <button (click)="updateItemStatus(entry.order.id, item.id, 'preparing')" class="px-1.5 py-0.5 text-[10px] bg-yellow-500 text-white rounded">Start</button>
-                    }
-                    @if (item.status === 'preparing') {
-                      <button (click)="updateItemStatus(entry.order.id, item.id, 'ready')" class="px-1.5 py-0.5 text-[10px] bg-green-600 text-white rounded">Ready</button>
-                    }
-                  </div>
+      @if (kitchenQueue().length > 0) {
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-700">Kitchen Queue</h3>
+            <span class="text-xs text-gray-400">{{ kitchenQueue().length }} active orders</span>
+          </div>
+          <div class="space-y-3">
+            @for (entry of kitchenQueue(); track entry.order.id) {
+              <div class="border border-gray-100 rounded-lg p-3">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="font-bold text-sm">#{{ entry.order.order_number }}</span>
+                  <span class="text-xs text-gray-400">Table {{ entry.order.table_number || 'N/A' }}</span>
                 </div>
-              }
+                @for (item of entry.items; track item.id) {
+                  <div class="flex justify-between items-center text-sm py-1.5 border-t border-gray-50">
+                    <span class="text-gray-700">{{ item.quantity }}× {{ item.product_name }}</span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs px-2 py-0.5 rounded-full"
+                        [class]="item.status === 'ready' ? 'bg-green-100 text-green-700' : item.status === 'preparing' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'">
+                        {{ item.status }}
+                      </span>
+                      @if (item.status === 'pending') {
+                        <button (click)="updateItemStatus(entry.order.id, item.id, 'preparing')"
+                          class="px-2 py-0.5 text-xs bg-amber-500 text-white rounded-lg hover:bg-amber-600">Start</button>
+                      }
+                      @if (item.status === 'preparing') {
+                        <button (click)="updateItemStatus(entry.order.id, item.id, 'ready')"
+                          class="px-2 py-0.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700">Ready</button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Empty state -->
+      @if (orders().length === 0 && kitchenQueue().length === 0) {
+        <div class="bg-white rounded-xl border border-gray-100 p-12 text-center">
+          <p class="text-4xl mb-3">🍴</p>
+          <p class="font-medium text-gray-700">No active orders</p>
+          <p class="text-sm text-gray-400 mt-1">Click "New Order" to start taking orders</p>
+        </div>
+      }
+    }
+
+    <!-- Table Modal (Create / Edit) -->
+    @if (showTableForm) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" (click)="closeTableModal()"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editingTable ? 'Edit Table' : 'Add Table' }}</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Table Number <span class="text-red-500">*</span></label>
+              <input [(ngModel)]="tableForm.number" placeholder="e.g. T1, A3, Bar-1"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
             </div>
-          }
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Seats</label>
+                <input [(ngModel)]="tableForm.seats" type="number" min="1" max="50"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Section</label>
+                <select [(ngModel)]="tableForm.section"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
+                  <option value="restaurant">Restaurant</option>
+                  <option value="bar">Bar</option>
+                  <option value="poolside">Poolside</option>
+                  <option value="terrace">Terrace</option>
+                  <option value="private">Private Dining</option>
+                </select>
+              </div>
+            </div>
+            @if (editingTable) {
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select [(ngModel)]="tableForm.status"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
+                  <option value="available">Available</option>
+                  <option value="reserved">Reserved</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            }
+          </div>
+          <div class="flex justify-end gap-2 mt-5">
+            <button (click)="closeTableModal()" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+            <button (click)="saveTable()" [disabled]="savingTable()"
+              class="px-4 py-2 text-sm text-white bg-sage-600 rounded-lg hover:bg-sage-700 disabled:opacity-50">
+              {{ savingTable() ? 'Saving...' : (editingTable ? 'Update Table' : 'Create Table') }}
+            </button>
+          </div>
         </div>
       </div>
     }
@@ -129,74 +252,150 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
 })
 export class PosPage implements OnInit {
   private api = inject(ApiService);
-  private auth = inject(AuthService);
   private activeProperty = inject(ActivePropertyService);
   private confirm = inject(ConfirmDialogService);
   private toast = inject(ToastService);
+
   loading = signal(true);
+  savingTable = signal(false);
+  creatingOrder = signal(false);
+
   tables = signal<any[]>([]);
   orders = signal<any[]>([]);
   kitchenQueue = signal<any[]>([]);
+
   showTableForm = false;
   showOrderForm = false;
-  tableForm: any = { number: '', seats: 4, section: '' };
+  editingTable: any = null;
+
+  tableForm: any = { number: '', seats: 4, section: 'restaurant', status: 'available' };
   orderForm: any = { table_id: '', order_type: 'dine_in', guest_name: '' };
+
+  availableTables = computed(() => this.tables().filter(t => t.status === 'available').length);
+  todayRevenue = computed(() => this.orders().reduce((s: number, o: any) => s + (+o.total_amount || 0), 0));
+
+  get pid() { return this.activeProperty.propertyId(); }
 
   ngOnInit() { this.load(); }
 
   load() {
-    const pid = this.activeProperty.propertyId();
-    this.api.get(`/pos/tables?property_id=${pid}`).subscribe({ next: (r: any) => this.tables.set(r.data || []) });
-    this.api.get(`/pos/orders?property_id=${pid}&limit=20`).subscribe({ next: (r: any) => this.orders.set((r.data || []).filter((o: any) => o.status !== 'paid' && o.status !== 'cancelled')) });
-    this.api.get(`/pos/kitchen/queue?property_id=${pid}`).subscribe({
+    const pid = this.pid;
+    this.api.get(`/pos/tables`, { property_id: pid }).subscribe({ next: (r: any) => this.tables.set(r.data || []) });
+    this.api.get(`/pos/orders`, { property_id: pid, status: 'open' }).subscribe({ next: (r: any) => this.orders.set(r.data || []) });
+    this.api.get(`/pos/kitchen/queue`, { property_id: pid }).subscribe({
       next: (r: any) => { this.kitchenQueue.set(r.data || []); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
   }
 
-  createTable(): void {
-    const pid = this.activeProperty.propertyId();
-    this.api.post('/pos/tables', { ...this.tableForm, property_id: pid }).subscribe((r: any) => {
-      if (r.success) { this.showTableForm = false; this.tableForm = { number: '', seats: 4, section: '' }; this.load(); }
+  // ── Table CRUD ─────────────────────────────────────────────────
+  openTableModal(table?: any) {
+    this.editingTable = table || null;
+    this.tableForm = table
+      ? { number: table.number, seats: table.seats, section: table.section, status: table.status }
+      : { number: '', seats: 4, section: 'restaurant', status: 'available' };
+    this.showTableForm = true;
+  }
+
+  closeTableModal() { this.showTableForm = false; this.editingTable = null; }
+
+  saveTable() {
+    if (!this.tableForm.number?.trim()) { this.toast.error('Table number is required'); return; }
+    if (this.savingTable()) return; // prevent double-submit
+    this.savingTable.set(true);
+
+    const req$ = this.editingTable
+      ? this.api.put(`/pos/tables/${this.editingTable.id}`, this.tableForm)
+      : this.api.post('/pos/tables', { ...this.tableForm, property_id: this.pid });
+
+    req$.subscribe({
+      next: (r: any) => {
+        this.savingTable.set(false);
+        if (r.success || r.data) {
+          this.toast.success(this.editingTable ? 'Table updated' : 'Table created');
+          this.closeTableModal();
+          this.load();
+        } else {
+          this.toast.error(r.message || 'Failed to save table');
+        }
+      },
+      error: (e: any) => {
+        this.savingTable.set(false);
+        this.toast.error(e?.error?.message || 'Failed to save table');
+      },
     });
   }
 
-  createOrder(): void {
-    const pid = this.activeProperty.propertyId();
-    this.api.post('/pos/orders', { ...this.orderForm, property_id: pid }).subscribe((r: any) => {
-      if (r.success) { this.showOrderForm = false; this.orderForm = { table_id: '', order_type: 'dine_in', guest_name: '' }; this.load(); }
+  async deleteTable(table: any) {
+    const ok = await this.confirm.confirm({
+      title: 'Delete Table',
+      message: `Delete table "${table.number}"? Active orders on this table will not be affected.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    this.api.delete(`/pos/tables/${table.id}`).subscribe({
+      next: () => { this.toast.success('Table deleted'); this.load(); },
+      error: () => this.toast.error('Failed to delete table'),
+    });
+  }
+
+  // ── Orders ─────────────────────────────────────────────────────
+  createOrder() {
+    if (this.creatingOrder()) return;
+    this.creatingOrder.set(true);
+    this.api.post('/pos/orders', { ...this.orderForm, property_id: this.pid }).subscribe({
+      next: (r: any) => {
+        this.creatingOrder.set(false);
+        if (r.success || r.data) {
+          this.toast.success('Order created');
+          this.showOrderForm = false;
+          this.orderForm = { table_id: '', order_type: 'dine_in', guest_name: '' };
+          this.load();
+        } else {
+          this.toast.error(r.message || 'Failed to create order');
+        }
+      },
+      error: (e: any) => {
+        this.creatingOrder.set(false);
+        this.toast.error(e?.error?.message || 'Failed to create order');
+      },
+    });
+  }
+
+  closeOrder(orderId: string) {
+    this.api.post(`/pos/orders/${orderId}/close`, {}).subscribe({
+      next: (r: any) => { if (r.success || r.data) { this.toast.success('Order closed'); this.load(); } else this.toast.error(r.message || 'Failed'); },
+      error: () => this.toast.error('Failed to close order'),
+    });
+  }
+
+  postToFolio(orderId: string) {
+    this.api.post(`/pos/orders/${orderId}/post-to-folio`, {}).subscribe({
+      next: (r: any) => { if (r.success || r.data) this.toast.success('Posted to folio'); else this.toast.error(r.message || 'Failed'); },
+      error: () => this.toast.error('Failed to post to folio'),
+    });
+  }
+
+  async cancelOrder(orderId: string) {
+    const ok = await this.confirm.confirm({ title: 'Cancel Order', message: 'Cancel this order? This cannot be undone.', variant: 'warning' });
+    if (!ok) return;
+    this.api.post(`/pos/orders/${orderId}/cancel`, {}).subscribe({
+      next: (r: any) => { if (r.success || r.data) { this.toast.success('Order cancelled'); this.load(); } else this.toast.error(r.message || 'Failed'); },
+      error: () => this.toast.error('Failed to cancel order'),
+    });
+  }
+
+  updateItemStatus(orderId: string, itemId: string, status: string) {
+    this.api.post(`/pos/orders/${orderId}/items/${itemId}/status`, { status }).subscribe({
+      next: () => this.load(),
+      error: () => this.toast.error('Failed to update item status'),
     });
   }
 
   tableColor(status: string): string {
-    return status === 'available' ? '#22c55e' : status === 'occupied' ? '#3b82f6' : status === 'reserved' ? '#8b5cf6' : '#6b7280';
+    return { available: '#22c55e', occupied: '#3b82f6', reserved: '#8b5cf6', inactive: '#9ca3af' }[status] || '#6b7280';
   }
 
-  formatAmount(kobo: any): string { return (+kobo / 100).toLocaleString('en-NG'); }
-
-  closeOrder(orderId: string): void {
-    this.api.post(`/pos/orders/${orderId}/close`, {}).subscribe((r: any) => {
-      if (r.success) this.load(); else this.toast.error(r.message || 'Failed to close order');
-    });
-  }
-
-  async cancelOrder(orderId: string): Promise<void> {
-    const ok = await this.confirm.confirm({ title: 'Cancel Order', message: 'Cancel this order? This cannot be undone.', variant: 'warning' });
-    if (!ok) return;
-    this.api.post(`/pos/orders/${orderId}/cancel`, {}).subscribe((r: any) => {
-      if (r.success) this.load(); else this.toast.error(r.message || 'Failed to cancel order');
-    });
-  }
-
-  postToFolio(orderId: string): void {
-    this.api.post(`/pos/orders/${orderId}/post-to-folio`, {}).subscribe((r: any) => {
-      if (r.success) this.load(); else this.toast.error(r.message || 'Failed to post to folio');
-    });
-  }
-
-  updateItemStatus(orderId: string, itemId: string, status: string): void {
-    this.api.post(`/pos/orders/${orderId}/items/${itemId}/status`, { status }).subscribe((r: any) => {
-      if (r.success) this.load();
-    });
-  }
+  formatAmount(kobo: any): string { return ((+kobo || 0) / 100).toLocaleString('en-NG', { minimumFractionDigits: 0 }); }
 }

@@ -45,6 +45,8 @@ return function (App $app): void {
     $app->group('/api/amenities', function (RouteCollectorProxy $group) {
         $group->get('', [RoomController::class, 'listAmenities']);
         $group->post('', [RoomController::class, 'createAmenity']);
+        $group->put('/{id}', [RoomController::class, 'updateAmenity']);
+        $group->delete('/{id}', [RoomController::class, 'deleteAmenity']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager']))
         ->add(TenantMiddleware::class)

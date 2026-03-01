@@ -48,17 +48,26 @@ final class AnalyticsService
     { $qb = $this->em->createQueryBuilder()->select("b.source, COUNT(b.id) as cnt, SUM(b.totalAmount) as revenue")
         ->from(Booking::class, 'b')->where('b.propertyId = :p')->andWhere('b.createdAt >= :f')->andWhere('b.createdAt <= :t')
         ->setParameter('p', $propertyId)->setParameter('f', $from . ' 00:00:00')->setParameter('t', $to . ' 23:59:59')
-        ->groupBy('b.source'); return $qb->getQuery()->getResult(); }
+        ->groupBy('b.source');
+      $rows = $qb->getQuery()->getResult();
+      $total = array_sum(array_column($rows, 'cnt')) ?: 1;
+      return array_map(fn($r) => [
+        'source'     => $r['source'] ?? 'direct',
+        'bookings'   => (int)$r['cnt'],
+        'revenue'    => (int)$r['revenue'],
+        'percentage' => round((int)$r['cnt'] / $total * 100, 1),
+      ], $rows); }
 
     /** Top rooms by revenue */
     public function getTopRoomsByRevenue(string $propertyId, string $from, string $to, int $limit = 10): array
-    { $qb = $this->em->createQueryBuilder()->select("r.roomNumber, COUNT(b.id) as bookings, SUM(b.totalAmount) as revenue")
+    { $qb = $this->em->createQueryBuilder()->select("r.roomNumber as room_number, COUNT(b.id) as bookings, SUM(b.totalAmount) as revenue")
         ->from(Booking::class, 'b')
         ->join(\Lodgik\Entity\Room::class, 'r', 'WITH', 'r.id = b.roomId')
         ->where('b.propertyId = :p')->andWhere('b.createdAt >= :f')->andWhere('b.createdAt <= :t')
         ->andWhere('b.roomId IS NOT NULL')
         ->setParameter('p', $propertyId)->setParameter('f', $from . ' 00:00:00')->setParameter('t', $to . ' 23:59:59')
-        ->groupBy('r.roomNumber')->orderBy('revenue', 'DESC')->setMaxResults($limit); return $qb->getQuery()->getResult(); }
+        ->groupBy('r.roomNumber')->orderBy('revenue', 'DESC')->setMaxResults($limit);
+      return array_map(fn($r) => ['room_number' => $r['room_number'], 'bookings' => (int)$r['bookings'], 'revenue' => (int)$r['revenue']], $qb->getQuery()->getResult()); }
 
     /** Expense vs Revenue (P&L summary) */
     public function getProfitLossSummary(string $propertyId, string $from, string $to): array
@@ -73,7 +82,11 @@ final class AnalyticsService
     { $qb = $this->em->createQueryBuilder()->select("pr.nationality, COUNT(pr.id) as cnt")
         ->from(\Lodgik\Entity\PoliceReport::class, 'pr')->where('pr.propertyId = :p')->andWhere('pr.arrivalDate >= :f')->andWhere('pr.arrivalDate <= :t')
         ->setParameter('p', $propertyId)->setParameter('f', $from)->setParameter('t', $to)
-        ->groupBy('pr.nationality')->orderBy('cnt', 'DESC'); return $qb->getQuery()->getResult(); }
+        ->groupBy('pr.nationality')->orderBy('cnt', 'DESC');
+      $rows = $qb->getQuery()->getResult();
+      $nationalities = array_map(fn($r) => ['nationality' => $r['nationality'] ?? 'Unknown', 'count' => (int)$r['cnt']], $rows);
+      // Age groups not tracked — return empty for now (extend when guest DOB is captured)
+      return ['nationalities' => $nationalities, 'age_groups' => []]; }
 
     /** Monthly summary for dashboard */
     public function getMonthlySummary(string $propertyId, int $monthsBack = 12): array

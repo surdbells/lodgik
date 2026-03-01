@@ -364,6 +364,29 @@ final class RoomController
         ]);
     }
 
+
+    /** PUT /api/amenities/{id} */
+    public function updateAmenity(Request $request, Response $response, array $args): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        $amenity = $this->roomService->updateAmenity($args['id'], $body);
+        if (!$amenity) return $this->response->notFound($response, 'Amenity not found');
+        return $this->response->success($response, [
+            'id' => $amenity->getId(),
+            'name' => $amenity->getName(),
+            'category' => $amenity->getCategory(),
+            'icon' => $amenity->getIcon(),
+            'is_active' => $amenity->isActive(),
+        ]);
+    }
+
+    /** DELETE /api/amenities/{id} */
+    public function deleteAmenity(Request $request, Response $response, array $args): Response
+    {
+        $this->roomService->deleteAmenity($args['id']);
+        return $this->response->success($response, null, 'Amenity deleted');
+    }
+
     // ─── Serializers ──────────────────────────────────────────
 
     private function serializeRoomType(RoomType $rt): array

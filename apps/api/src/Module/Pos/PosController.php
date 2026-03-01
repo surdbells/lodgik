@@ -25,6 +25,23 @@ final class PosController
         return JsonResponse::created($res, $this->service->createTable($d['property_id'], $d['number'], $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Table created');
     }
 
+    public function updateTable(Request $req, Response $res, array $args): Response
+    {
+        $d = (array) $req->getParsedBody();
+        try {
+            return JsonResponse::ok($res, $this->service->updateTable($args['id'], $d)->toArray());
+        } catch (\RuntimeException $e) {
+            return JsonResponse::error($res, $e->getMessage(), 404);
+        }
+    }
+
+    public function deleteTable(Request $req, Response $res, array $args): Response
+    {
+        $this->service->deleteTable($args['id']);
+        return JsonResponse::ok($res, null, 'Table deleted');
+    }
+
+
     // Categories
     public function listCategories(Request $req, Response $res): Response
     {

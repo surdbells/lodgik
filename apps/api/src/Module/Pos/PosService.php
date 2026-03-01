@@ -35,6 +35,24 @@ final class PosService
     }
 
     /** @return PosTable[] */
+
+    public function updateTable(string $id, array $data): PosTable
+    {
+        $t = $this->em->find(PosTable::class, $id) ?? throw new \RuntimeException('Table not found');
+        if (isset($data['number'])) $t->setNumber($data['number']);
+        if (isset($data['seats'])) $t->setSeats((int)$data['seats']);
+        if (isset($data['section'])) $t->setSection($data['section']);
+        if (isset($data['status'])) $t->setStatus($data['status']);
+        $this->em->flush();
+        return $t;
+    }
+
+    public function deleteTable(string $id): void
+    {
+        $t = $this->em->find(PosTable::class, $id);
+        if ($t) { $this->em->remove($t); $this->em->flush(); }
+    }
+
     public function listTables(string $propertyId): array
     {
         return $this->em->createQueryBuilder()->select('t')->from(PosTable::class, 't')

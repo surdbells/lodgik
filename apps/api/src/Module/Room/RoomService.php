@@ -290,6 +290,25 @@ final class RoomService
     // ═══ Amenities ═════════════════════════════════════════════
 
     /** @return Amenity[] */
+
+    public function updateAmenity(string $id, array $data): ?\Lodgik\Entity\Amenity
+    {
+        $amenity = $this->em->find(\Lodgik\Entity\Amenity::class, $id);
+        if (!$amenity) return null;
+        if (isset($data['name'])) $amenity->setName($data['name']);
+        if (isset($data['category'])) $amenity->setCategory($data['category']);
+        if (isset($data['icon'])) $amenity->setIcon($data['icon']);
+        if (isset($data['is_active'])) $amenity->setIsActive((bool)$data['is_active']);
+        $this->em->flush();
+        return $amenity;
+    }
+
+    public function deleteAmenity(string $id): void
+    {
+        $amenity = $this->em->find(\Lodgik\Entity\Amenity::class, $id);
+        if ($amenity) { $this->em->remove($amenity); $this->em->flush(); }
+    }
+
     public function listAmenities(?string $category = null): array
     {
         return $this->amenityRepo->listAll($category);

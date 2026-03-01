@@ -11,6 +11,8 @@ return function (App $app): void {
     $app->group('/api/pos', function (RouteCollectorProxy $g) {
         $g->get('/tables', [PosController::class, 'listTables']);
         $g->post('/tables', [PosController::class, 'createTable']);
+        $g->put('/tables/{id}', [PosController::class, 'updateTable']);
+        $g->delete('/tables/{id}', [PosController::class, 'deleteTable']);
         $g->get('/categories', [PosController::class, 'listCategories']);
         $g->post('/categories', [PosController::class, 'createCategory']);
         $g->put('/categories/{id}', [PosController::class, 'updateCategory']);
