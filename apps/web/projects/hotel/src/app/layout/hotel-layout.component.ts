@@ -259,6 +259,8 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Spa & Pool', icon: 'bath', route: '/spa' },
         { label: 'Amenities', icon: 'sparkles', route: '/amenities' },
         { label: 'Stock & Inventory', icon: 'package', route: '/inventory' },
+        { label: 'Stock Movements', icon: 'arrow-left-right', route: '/inventory/movements' },
+        { label: 'Goods Received (GRN)', icon: 'truck', route: '/inventory/grn' },
         { label: 'Inventory Settings', icon: 'settings-2', route: '/inventory/settings' },
       ],
     },

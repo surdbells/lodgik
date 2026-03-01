@@ -262,6 +262,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/inventory/inventory-settings.page').then(m => m.InventorySettingsPage),
       },
       {
+        path: 'inventory/movements',
+        loadComponent: () => import('./pages/inventory/inventory-movements.page').then(m => m.InventoryMovementsPage),
+      },
+      {
+        path: 'inventory/grn',
+        loadComponent: () => import('./pages/inventory/inventory-grn.page').then(m => m.InventoryGrnPage),
+      },
+      {
         path: 'spa',
         loadComponent: () => import('./pages/spa/spa.page'),
       },
