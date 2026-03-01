@@ -14,16 +14,21 @@ use Lodgik\Enum\PosOrderStatus;
 use Lodgik\Module\Folio\FolioService;
 use Lodgik\Module\Inventory\MovementService;
 use Psr\Log\LoggerInterface;
+use Lodgik\Module\Pos\RecipeService;
 
 final class PosService
 {
     private static int $orderCounter = 0;
+
+    /** Deduction warnings from last payOrder call — retrieved by controller */
+    private array $lastDeductionWarnings = [];
 
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface $logger,
         private readonly ?FolioService $folioService = null,
         private readonly ?MovementService $movementService = null,
+        private readonly ?RecipeService $recipeService = null,
     ) {}
 
     // ─── Tables ─────────────────────────────────────────────────
@@ -241,7 +246,7 @@ final class PosService
 
         $this->em->flush();
 
-        // Inventory deduction — non-fatal, must never block payment
+        // Inventory deduction (direct stock_item_id link) — non-fatal
         if ($this->movementService) {
             $this->movementService->processPosDeduction(
                 orderId:    $orderId,
@@ -251,6 +256,25 @@ final class PosService
                 userName:   'POS System',
             );
         }
+
+        // Recipe-based ingredient deduction — non-fatal, runs after direct deduction
+        $deductionWarnings = [];
+        if ($this->recipeService) {
+            $deductionWarnings = $this->recipeService->deductIngredients(
+                orderId:     $orderId,
+                tenantId:    $order->getTenantId(),
+                propertyId:  $order->getPropertyId(),
+                orderNumber: $order->getOrderNumber(),
+            );
+        }
+
+        // Attach warnings to order for caller to surface (non-blocking)
+        if (!empty($deductionWarnings)) {
+            $this->logger->warning('[RecipeDeduction] warnings', ['warnings' => $deductionWarnings, 'order' => $order->getOrderNumber()]);
+        }
+
+        // Store warnings for retrieval by the controller
+        $this->lastDeductionWarnings = $deductionWarnings;
 
         return $order;
     }
@@ -343,5 +367,10 @@ final class PosService
             $groups[$g]['total'] += intval($item->getLineTotal());
         }
         return $groups;
+    }
+
+    public function getLastDeductionWarnings(): array
+    {
+        return $this->lastDeductionWarnings;
     }
 }

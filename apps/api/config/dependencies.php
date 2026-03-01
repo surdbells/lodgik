@@ -817,14 +817,22 @@ return function (ContainerBuilder $builder): void {
 
         // ─── Phase 6: POS / F&B ────────────────────────────────
 
-        \Lodgik\Module\Pos\PosService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\PosService(
-            em: $c->get(EntityManagerInterface::class),
+        \Lodgik\Module\Pos\RecipeService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\RecipeService(
+            em:     $c->get(EntityManagerInterface::class),
             logger: $c->get(LoggerInterface::class),
-            folioService: $c->get(\Lodgik\Module\Folio\FolioService::class),
+        ),
+        \Lodgik\Module\Pos\PosService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\PosService(
+            em:              $c->get(EntityManagerInterface::class),
+            logger:          $c->get(LoggerInterface::class),
+            folioService:    $c->get(\Lodgik\Module\Folio\FolioService::class),
             movementService: $c->get(\Lodgik\Module\Inventory\MovementService::class),
+            recipeService:   $c->get(\Lodgik\Module\Pos\RecipeService::class),
         ),
         \Lodgik\Module\Pos\PosController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\PosController(
             service: $c->get(\Lodgik\Module\Pos\PosService::class),
+        ),
+        \Lodgik\Module\Pos\RecipeController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\RecipeController(
+            service: $c->get(\Lodgik\Module\Pos\RecipeService::class),
         ),
 
         // Phase 7: Security
