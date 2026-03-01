@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Entity\FeatureModule;
 use Lodgik\Entity\Tenant;
 use Lodgik\Entity\TenantFeatureModule;
+use Lodgik\Entity\SubscriptionPlan;
 use Lodgik\Repository\TenantRepository;
 
 final class FeatureService
@@ -60,8 +61,20 @@ final class FeatureService
             throw new \RuntimeException('Tenant not found');
         }
 
-        // Base: plan modules
-        $planModules = $tenant->getEnabledModules();
+        // Base: tenant's own enabled_modules snapshot (set at sign-up)
+        $tenantModules = $tenant->getEnabledModules();
+
+        // Merge live subscription plan's included_modules so that modules
+        // added to a plan after the tenant was created take effect automatically
+        $livePlanModules = [];
+        $planId = $tenant->getSubscriptionPlanId();
+        if ($planId !== null) {
+            $plan = $this->em->find(SubscriptionPlan::class, $planId);
+            if ($plan !== null) {
+                $livePlanModules = $plan->getIncludedModules();
+            }
+        }
+        $planModules = array_unique(array_merge($tenantModules, $livePlanModules));
 
         // Core modules always included
         $coreModules = $this->getCoreModuleKeys();
