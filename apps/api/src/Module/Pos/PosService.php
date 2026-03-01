@@ -93,9 +93,9 @@ final class PosService
     public function updateProduct(string $id, array $data): PosProduct
     {
         $p = $this->em->find(PosProduct::class, $id) ?? throw new \RuntimeException('Product not found');
-        foreach (['name' => 'setName', 'description' => 'setDescription', 'price' => 'setPrice'] as $k => $s) {
-            if (isset($data[$k])) $p->$s($data[$k]);
-        }
+        if (isset($data['name'])) $p->setName($data['name']);
+        if (isset($data['description'])) $p->setDescription($data['description']);
+        if (isset($data['price'])) $p->setPrice((string) $data['price']);
         if (isset($data['is_available'])) $p->setIsAvailable($data['is_available']);
         if (isset($data['prep_time_minutes'])) $p->setPrepTimeMinutes($data['prep_time_minutes']);
         if (isset($data['requires_kitchen'])) $p->setRequiresKitchen($data['requires_kitchen']);
