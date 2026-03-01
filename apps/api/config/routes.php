@@ -82,4 +82,7 @@ return function (App $app): void {
 
     // ─── Audit Logs ──────────────────────────────────────────
     (require __DIR__ . '/../src/Module/Audit/routes.php')($app);
+
+    // ─── Phase A: Stock & Inventory ──────────────────────────
+    (require __DIR__ . '/../src/Module/Inventory/routes.php')($app);
 };

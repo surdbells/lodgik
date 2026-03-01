@@ -258,6 +258,8 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Gym & Fitness', icon: 'dumbbell', route: '/gym', requiredModule: 'gym_membership' },
         { label: 'Spa & Pool', icon: 'bath', route: '/spa' },
         { label: 'Amenities', icon: 'sparkles', route: '/amenities' },
+        { label: 'Stock & Inventory', icon: 'package', route: '/inventory' },
+        { label: 'Inventory Settings', icon: 'settings-2', route: '/inventory/settings' },
       ],
     },
     {

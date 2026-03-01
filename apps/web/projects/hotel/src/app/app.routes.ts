@@ -254,6 +254,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/amenities/amenities.page'),
       },
       {
+        path: 'inventory',
+        loadComponent: () => import('./pages/inventory/inventory.page').then(m => m.InventoryPage),
+      },
+      {
+        path: 'inventory/settings',
+        loadComponent: () => import('./pages/inventory/inventory-settings.page').then(m => m.InventorySettingsPage),
+      },
+      {
         path: 'spa',
         loadComponent: () => import('./pages/spa/spa.page'),
       },
