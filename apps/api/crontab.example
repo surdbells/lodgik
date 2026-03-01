@@ -1,0 +1,53 @@
+# Lodgik Automated Job Schedule
+# ============================================================
+# Install with: crontab crontab.example
+# Or merge into /etc/cron.d/lodgik
+#
+# Assumes the API container is named 'lodgik-api' (see docker-compose.yml).
+# For bare-metal / VM deployments, replace the docker exec prefix with:
+#   cd /var/www/lodgik/apps/api && php bin/console
+#
+# Logs are written by Monolog inside the container.
+# Add >> /var/log/lodgik-cron.log 2>&1 to capture shell-level stdout.
+# ============================================================
+
+# ── Environment ──────────────────────────────────────────────
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Convenience alias (adjust if your container name differs)
+LODGIK_CLI=docker exec lodgik-api php bin/console
+
+# ── Fraud-prevention: auto-checkout cleared/overdue bookings ─
+# Runs at 01:00 AM daily — before night audit so revenue is accurate
+0 1 * * *   ${LODGIK_CLI} lodgik:fraud-auto-checkout >> /var/log/lodgik/fraud-checkout.log 2>&1
+
+# ── Night audit: generate + auto-close for all properties ─────
+# Runs at 02:00 AM daily
+0 2 * * *   ${LODGIK_CLI} lodgik:night-audit >> /var/log/lodgik/night-audit.log 2>&1
+
+# ── Database backup with AES-256 encryption ───────────────────
+# Runs at 02:30 AM daily (30 min after night audit completes)
+30 2 * * *  ${LODGIK_CLI} lodgik:database-backup >> /var/log/lodgik/backup.log 2>&1
+
+# ── Noon room status sweep ────────────────────────────────────
+# Flags overdue check-outs, sets rooms to cleaning, creates housekeeping tasks
+0 12 * * *  ${LODGIK_CLI} lodgik:noon-checkout >> /var/log/lodgik/noon-checkout.log 2>&1
+
+# ── Visitor overstay detection ────────────────────────────────
+# Every 30 minutes during operational hours (08:00 – 22:00)
+*/30 8-22 * * *  ${LODGIK_CLI} lodgik:visitor-overstay >> /var/log/lodgik/visitor-overstay.log 2>&1
+
+# ── Log rotation (weekly, keep 4 weeks) ──────────────────────
+# Requires logrotate to be installed
+# Add a file at /etc/logrotate.d/lodgik with:
+#
+#   /var/log/lodgik/*.log {
+#       weekly
+#       rotate 4
+#       compress
+#       delaycompress
+#       missingok
+#       notifempty
+#       create 0640 www-data www-data
+#   }

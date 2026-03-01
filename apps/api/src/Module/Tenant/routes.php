@@ -28,6 +28,7 @@ return function (App $app): void {
         $group->get('/{id}', [TenantController::class, 'showProperty']);
         $group->post('', [TenantController::class, 'createProperty']);
         $group->patch('/{id}', [TenantController::class, 'updateProperty']);
+        $group->patch('/{id}/settings', [TenantController::class, 'patchPropertySettings']);
         $group->delete('/{id}', [TenantController::class, 'deleteProperty']);
 
         // Bank accounts (nested under property)

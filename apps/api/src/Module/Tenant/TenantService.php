@@ -62,6 +62,12 @@ final class TenantService
         return $this->propertyRepo->findActive();
     }
 
+
+    /** Persist settings changes on an already-loaded property entity. */
+    public function flushProperty(Property $property): void
+    {
+        $this->em->flush();
+    }
     public function getProperty(string $id): ?Property
     {
         return $this->propertyRepo->find($id);

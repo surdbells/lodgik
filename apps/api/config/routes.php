@@ -86,4 +86,7 @@ return function (App $app): void {
     // ─── Phase A: Stock & Inventory ──────────────────────────
     (require __DIR__ . '/../src/Module/Inventory/routes.php')($app);
     (require __DIR__ . '/../src/Module/Procurement/routes.php')($app);
+
+    // System job management (super_admin only)
+    (require __DIR__ . '/../src/Module/System/routes.php')($app);
 };

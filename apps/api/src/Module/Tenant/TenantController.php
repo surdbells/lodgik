@@ -121,6 +121,45 @@ final class TenantController
         return $this->response->success($response, $this->serializeProperty($property), 'Property updated');
     }
 
+
+    /** PATCH /api/properties/{id}/settings — update arbitrary property settings (grace_period, etc.) */
+    public function patchPropertySettings(Request $request, Response $response, array $args): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        if (empty($body)) {
+            return $this->response->validationError($response, ['settings' => 'Request body must not be empty']);
+        }
+
+        // Allowed setting keys (whitelist to prevent injection of system keys)
+        $allowed = [
+            'grace_period_minutes',
+            'late_checkout_fee_kobo',
+            'checkout_time',
+            'checkin_time',
+            'currency',
+            'timezone',
+            'wifi_ssid',
+            'wifi_password',
+        ];
+
+        $property = $this->tenantService->getProperty($args['id']);
+        if (!$property) {
+            return $this->response->notFound($response, 'Property not found');
+        }
+
+        foreach ($body as $key => $value) {
+            if (!in_array($key, $allowed, true)) continue;
+            $property->setSetting($key, $value);
+        }
+
+        try {
+            $this->tenantService->flushProperty($property);
+        } catch (\Throwable $e) {
+            return $this->response->error($response, $e->getMessage(), 500);
+        }
+
+        return $this->response->success($response, $property->getSettings(), 'Property settings updated');
+    }
     /** DELETE /api/properties/{id} */
     public function deleteProperty(Request $request, Response $response, array $args): Response
     {

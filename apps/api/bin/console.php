@@ -12,6 +12,18 @@ use Doctrine\Migrations\Configuration\Migration\PhpFile;
 use Doctrine\Migrations\DependencyFactory;
 use Doctrine\Migrations\Tools\Console\Command as MigrationCommand;
 use Symfony\Component\Console\Application;
+use Lodgik\Module\Booking\BookingService;
+use Lodgik\Module\Finance\FinanceService;
+use Lodgik\Module\Housekeeping\HousekeepingService;
+use Lodgik\Module\Notification\NotificationService;
+use Lodgik\Command\DatabaseBackupCommand;
+use Lodgik\Command\FraudAutoCheckoutCommand;
+use Lodgik\Command\NightAuditCommand;
+use Lodgik\Command\NoonCheckoutCommand;
+use Lodgik\Command\LateCheckoutChargeCommand;
+use Lodgik\Command\VisitorOverstayCommand;
+use Lodgik\Module\Folio\FolioService;
+use Psr\Log\LoggerInterface;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -53,7 +65,56 @@ $app->addCommands([
     new MigrationCommand\VersionCommand($dependencyFactory),
 ]);
 
-// Custom commands will be registered here as we build them
-// $app->add($container->get(SeedCommand::class));
+// ─── Lodgik Automation Commands ─────────────────────────────
+$logger = $container->get(LoggerInterface::class);
+$em     = $container->get(EntityManagerInterface::class);
+
+$app->addCommands([
+    // Runs at 12:00 PM — flags overdue rooms, creates housekeeping tasks
+    new NoonCheckoutCommand(
+        em:                 $em,
+        logger:             $logger,
+        bookingService:     $container->get(BookingService::class),
+        housekeepingService:$container->get(HousekeepingService::class),
+        notificationService:$container->get(NotificationService::class),
+    ),
+
+    // Runs at 01:00 AM — auto-closes dual-cleared or 24h+ overdue bookings
+    new FraudAutoCheckoutCommand(
+        em:                 $em,
+        logger:             $logger,
+        bookingService:     $container->get(BookingService::class),
+        notificationService:$container->get(NotificationService::class),
+    ),
+
+    // Runs at 02:00 AM — generates and auto-closes night audits for all properties
+    new NightAuditCommand(
+        em:                 $em,
+        logger:             $logger,
+        financeService:     $container->get(FinanceService::class),
+        notificationService:$container->get(NotificationService::class),
+    ),
+
+    // Runs at 02:30 AM — encrypted pg_dump backup with 30-day retention
+    new DatabaseBackupCommand(
+        em:     $em,
+        logger: $logger,
+    ),
+
+    // Runs at 12:30 PM — posts late-checkout folio charges past grace period
+    new LateCheckoutChargeCommand(
+        em:                 $em,
+        logger:             $logger,
+        notificationService:$container->get(NotificationService::class),
+        folioService:       $container->get(FolioService::class),
+    ),
+
+    // Runs every 30 min (8 AM–10 PM) — detects visitor overstay
+    new VisitorOverstayCommand(
+        em:                 $em,
+        logger:             $logger,
+        notificationService:$container->get(NotificationService::class),
+    ),
+]);
 
 $app->run();

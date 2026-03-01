@@ -989,6 +989,37 @@ return function (ContainerBuilder $builder): void {
         ),
 
         // ─── Settings ─────────────────────────────────────────
+
+        // ─── System Job Management ──────────────────────────────────────────
+        \Symfony\Component\Console\Application::class => function (ContainerInterface $c): \Symfony\Component\Console\Application {
+            $app    = new \Symfony\Component\Console\Application('Lodgik CLI', '0.1.0');
+            $em     = $c->get(EntityManagerInterface::class);
+            $logger = $c->get(LoggerInterface::class);
+            $app->setAutoExit(false);
+            $app->addCommands([
+                new \Lodgik\Command\NoonCheckoutCommand($em, $logger,
+                    $c->get(\Lodgik\Module\Booking\BookingService::class),
+                    $c->get(\Lodgik\Module\Housekeeping\HousekeepingService::class),
+                    $c->get(\Lodgik\Module\Notification\NotificationService::class)),
+                new \Lodgik\Command\FraudAutoCheckoutCommand($em, $logger,
+                    $c->get(\Lodgik\Module\Booking\BookingService::class),
+                    $c->get(\Lodgik\Module\Notification\NotificationService::class)),
+                new \Lodgik\Command\NightAuditCommand($em, $logger,
+                    $c->get(\Lodgik\Module\Finance\FinanceService::class),
+                    $c->get(\Lodgik\Module\Notification\NotificationService::class)),
+                new \Lodgik\Command\DatabaseBackupCommand($em, $logger),
+                new \Lodgik\Command\VisitorOverstayCommand($em, $logger,
+                    $c->get(\Lodgik\Module\Notification\NotificationService::class)),
+                new \Lodgik\Command\LateCheckoutChargeCommand($em, $logger,
+                    $c->get(\Lodgik\Module\Notification\NotificationService::class),
+                    $c->get(\Lodgik\Module\Folio\FolioService::class)),
+            ]);
+            return $app;
+        },
+        \Lodgik\Module\System\SystemJobController::class => fn(ContainerInterface $c) => new \Lodgik\Module\System\SystemJobController(
+            consoleApp: $c->get(\Symfony\Component\Console\Application::class),
+            response:   $c->get(\Lodgik\Helper\ResponseHelper::class),
+        ),
         \Lodgik\Module\Settings\SettingsService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Settings\SettingsService(
             em: $c->get(EntityManagerInterface::class),
         ),
