@@ -360,7 +360,7 @@ const blankLine = (): PrLine => ({
                   <input type="text" [(ngModel)]="lineSearch[i]" (ngModelChange)="onLineSearch(i)"
                     placeholder="Search by name or SKU…"
                     class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
-                  @if (lineResults[i]?.length > 0) {
+                  @if ((lineResults[i] ?? []).length > 0) {
                     <div class="border border-gray-200 rounded-lg mt-1 max-h-32 overflow-y-auto bg-white shadow-sm">
                       @for (si of lineResults[i]; track si.id) {
                         <button type="button" (click)="selectItem(i, si)"
@@ -487,7 +487,7 @@ export class PurchaseRequestsPage implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    const pid = this.propSvc.activeProperty()?.id;
+    const pid = this.propSvc.propertyId();
     const params: any = { page: this.page(), per_page: 30 };
     if (this.filterStatus) params['status'] = this.filterStatus;
     if (pid) params['property_id'] = pid;
@@ -496,7 +496,7 @@ export class PurchaseRequestsPage implements OnInit {
       next: r => {
         this.requests.set(r.data ?? []);
         this.total.set(r.meta?.total ?? 0);
-        this.lastPage.set(r.meta?.last_page ?? 1);
+        this.lastPage.set(r.meta?.pages ?? 1);
         this.loading.set(false);
       },
       error: () => { this.toast.error('Failed to load purchase requests'); this.loading.set(false); },
@@ -650,7 +650,7 @@ export class PurchaseRequestsPage implements OnInit {
       if (!l.quantity || l.quantity <= 0) { this.toast.error('All quantities must be > 0'); return; }
     }
 
-    const pid = this.propSvc.activeProperty()?.id ?? '';
+    const pid = this.propSvc.propertyId() ?? '';
     this.creating.set(true);
 
     const payload = {

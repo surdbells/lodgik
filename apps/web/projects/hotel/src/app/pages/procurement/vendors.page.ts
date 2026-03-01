@@ -91,7 +91,7 @@ const BLANK_FORM = () => ({
               <td class="px-4 py-3">
                 <p class="font-medium text-gray-800">{{ v.name }}</p>
                 @if (v.city || v.country) {
-                  <p class="text-xs text-gray-400">{{ [v.city, v.country].filter(Boolean).join(', ') }}</p>
+                  <p class="text-xs text-gray-400">{{ cityCountry(v) }}</p>
                 }
               </td>
               <td class="px-4 py-3">
@@ -348,6 +348,10 @@ export class VendorsPage implements OnInit {
       next: () => { this.toast.success('Vendor deleted'); this.load(); },
       error: (e: any) => this.toast.error(e.error?.message ?? 'Cannot delete this vendor'),
     });
+  }
+
+  cityCountry(v: Vendor): string {
+    return [v.city, v.country].filter(s => !!s).join(', ');
   }
 
   termsLabel(t: string): string {

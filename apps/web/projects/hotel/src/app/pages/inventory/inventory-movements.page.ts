@@ -346,7 +346,7 @@ export class InventoryMovementsPage implements OnInit {
   }
 
   private loadLocations(): void {
-    const pid = this.activeProperty.getPropertyId();
+    const pid = this.activeProperty.propertyId();
     this.api.get('/inventory/locations', pid ? { property_id: pid } : {}).subscribe({
       next: (r: any) => this.locations.set(r.data ?? []),
     });
@@ -354,7 +354,7 @@ export class InventoryMovementsPage implements OnInit {
 
   loadMovements(): void {
     this.loading.set(true);
-    const pid = this.activeProperty.getPropertyId();
+    const pid = this.activeProperty.propertyId();
     const params: any = { page: this.page(), per_page: this.perPage };
     if (pid)                  params['property_id']  = pid;
     if (this.filterType)      params['type']         = this.filterType;

@@ -308,9 +308,8 @@ interface StockItem { id: string; sku: string; name: string; }
                   placeholder="Search inventory item by name or SKU…"
                   class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
               </div>
-              <div class="mt-1.5 max-h-40 overflow-y-auto border border-gray-100 rounded-lg" *ngIf="filteredStockItems().length > 0">
               @if (filteredStockItems().length > 0 || productForm.stock_item_id) {
-                <div class="border border-gray-200 rounded-lg overflow-hidden mt-1">
+                <div class="mt-1.5 border border-gray-200 rounded-lg overflow-hidden">
                   @if (productForm.stock_item_id) {
                     <div class="flex items-center justify-between px-3 py-2 bg-sage-50 text-sm">
                       <span class="text-sage-700 font-medium">{{ linkedItemName() }}</span>
@@ -331,7 +330,6 @@ interface StockItem { id: string; sku: string; name: string; }
                   }
                 </div>
               }
-            </div>
           </div>
           <div class="flex gap-3 mt-5">
             <button (click)="saveProduct()" [disabled]="savingProduct()"

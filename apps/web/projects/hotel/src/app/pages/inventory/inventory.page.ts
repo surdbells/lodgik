@@ -64,7 +64,7 @@ const BLANK_FORM = () => ({
   <ui-stats-card label="Locations" [value]="summary()?.total_locations ?? 0" icon="map-pin" color="blue" />
   <ui-stats-card label="Stock Value" [value]="stockValueDisplay()" icon="trending-up" color="green" />
   <ui-stats-card label="Low Stock Alerts" [value]="summary()?.low_stock_count ?? 0" icon="alert-triangle"
-    [color]="(summary()?.low_stock_count ?? 0) > 0 ? 'red' : 'gray'" />
+    />
 </div>
 
 <!-- Low stock banner -->
@@ -473,7 +473,7 @@ export class InventoryPage implements OnInit {
   }
 
   private async loadLocations(): Promise<void> {
-    const pid = this.propSvc.activeProperty()?.id;
+    const pid = this.propSvc.propertyId();
     this.api.get('/inventory/locations', pid ? { property_id: pid } : {}).subscribe({
       next: r => this.locations.set(r.data ?? []),
       error: () => {}
@@ -524,7 +524,7 @@ export class InventoryPage implements OnInit {
   }
 
   loadSummary(): void {
-    const pid = this.propSvc.activeProperty()?.id;
+    const pid = this.propSvc.propertyId();
     this.api.get('/inventory/summary', pid ? { property_id: pid } : {}).subscribe({
       next: r => this.summary.set(r.data),
       error: () => {}
@@ -649,7 +649,7 @@ export class InventoryPage implements OnInit {
       location_id:      this.balanceForm.location_id,
       quantity:         this.balanceForm.quantity,
       unit_cost:        Math.round(this.balanceForm.unit_cost * 100), // ₦ → kobo
-      property_id:      this.propSvc.activeProperty()?.id ?? null,
+      property_id:      this.propSvc.propertyId() ?? null,
       created_by_name:  'Staff',
     }).subscribe({
       next: () => {

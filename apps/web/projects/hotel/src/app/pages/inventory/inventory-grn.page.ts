@@ -324,7 +324,7 @@ export class InventoryGrnPage implements OnInit {
   }
 
   private loadMasterData(): void {
-    const pid = this.activeProperty.getPropertyId();
+    const pid = this.activeProperty.propertyId();
     let done = 0;
     const check = () => { if (++done === 3) this.loading.set(false); };
 
