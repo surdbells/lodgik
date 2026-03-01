@@ -302,6 +302,8 @@ export class DashboardPage implements OnInit {
         this.propertyId = pid;
         this.loading.set(true);
         this.loadAll();
+      } else {
+        this.loading.set(false); // no property selected yet — don't hang
       }
     }, { allowSignalWrites: true });
   }

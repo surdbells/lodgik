@@ -5,6 +5,8 @@ import {
   LoadingSpinnerComponent, EmptyStateComponent, ToastService,
   ActivePropertyService
 } from '@lodgik/shared';
+import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
+import { LODGIK_ICONS } from '@lodgik/shared';
 import { Router } from '@angular/router';
 
 interface StockMovement {
@@ -31,12 +33,13 @@ interface StockItem { id: string; sku: string; name: string; }
 @Component({
   selector: 'app-inventory-movements',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, EmptyStateComponent],
+  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, EmptyStateComponent, LucideAngularModule],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(LODGIK_ICONS) }],
   template: `
 <ui-page-header
   title="Stock Movements"
   icon="arrow-left-right"
-  [breadcrumbs]="['F&B & Facilities', 'Stock Movements']"
+  [breadcrumbs]="['Inventory & Food Cost', 'Stock Movements']"
   subtitle="Full audit ledger of all stock-in, stock-out and transfer activity">
   <div class="flex gap-2">
     <button (click)="router.navigate(['/inventory/grn'])"

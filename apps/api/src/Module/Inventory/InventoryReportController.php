@@ -6,7 +6,7 @@ namespace Lodgik\Module\Inventory;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Lodgik\Helper\ResponseHelper;
+use Lodgik\Helper\JsonResponse;
 
 /**
  * InventoryReportController
@@ -39,7 +39,7 @@ final class InventoryReportController
             );
         }
 
-        return ResponseHelper::json($res, ['success' => true, 'data' => $data]);
+        return JsonResponse::ok($res, $data);
     }
 
     // GET /api/inventory/reports/slow-moving?days=30
@@ -57,7 +57,7 @@ final class InventoryReportController
             );
         }
 
-        return ResponseHelper::json($res, ['success' => true, 'data' => $data]);
+        return JsonResponse::ok($res, $data);
     }
 
     // GET /api/inventory/reports/expiry?days=30
@@ -75,7 +75,7 @@ final class InventoryReportController
             );
         }
 
-        return ResponseHelper::json($res, ['success' => true, 'data' => $data]);
+        return JsonResponse::ok($res, $data);
     }
 
     // GET /api/inventory/reports/shrinkage?date_from=&date_to=
@@ -97,7 +97,7 @@ final class InventoryReportController
             );
         }
 
-        return ResponseHelper::json($res, ['success' => true, 'data' => $data]);
+        return JsonResponse::ok($res, $data);
     }
 
     // GET /api/inventory/reports/usage?date_from=&date_to=
@@ -124,7 +124,7 @@ final class InventoryReportController
             );
         }
 
-        return ResponseHelper::json($res, ['success' => true, 'data' => $data]);
+        return JsonResponse::ok($res, $data);
     }
 
     // GET /api/inventory/reports/property-comparison?date_from=&date_to=
@@ -133,7 +133,7 @@ final class InventoryReportController
         $q   = $req->getQueryParams();
         $tid = $req->getAttribute('auth.tenant_id');
         $data = $this->reportService->getPropertyComparison($tid, $q['date_from'] ?? '', $q['date_to'] ?? '');
-        return ResponseHelper::json($res, ['success' => true, 'data' => $data]);
+        return JsonResponse::ok($res, $data);
     }
 
     // GET /api/inventory/reports/low-stock?property_id=
@@ -142,7 +142,7 @@ final class InventoryReportController
         $q   = $req->getQueryParams();
         $tid = $req->getAttribute('auth.tenant_id');
         $items = $this->alertService->getLowStockItems($tid, $q['property_id'] ?? null);
-        return ResponseHelper::json($res, ['success' => true, 'data' => $items, 'count' => count($items)]);
+        return JsonResponse::ok($res, $items, '', ['count' => count($items)]);
     }
 
     // POST /api/inventory/reports/low-stock/notify?property_id=
@@ -151,7 +151,7 @@ final class InventoryReportController
         $q      = $req->getQueryParams();
         $tid    = $req->getAttribute('auth.tenant_id');
         $result = $this->alertService->checkAndNotify($tid, $q['property_id'] ?? null);
-        return ResponseHelper::json($res, ['success' => true, 'data' => $result]);
+        return JsonResponse::ok($res, $result);
     }
 
     // ─────────────────────────────────────────────────────────────────

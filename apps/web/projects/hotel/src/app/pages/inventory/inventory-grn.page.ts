@@ -51,7 +51,7 @@ const blankLine = (): GrnLine => ({
 <ui-page-header
   title="Goods Received Note"
   icon="truck"
-  [breadcrumbs]="['F&B & Facilities', 'Stock Movements', 'GRN']"
+  [breadcrumbs]="['Inventory & Food Cost', 'Stock Movements', 'GRN']"
   subtitle="Record inbound stock from a supplier">
   <button (click)="router.navigate(['/inventory/movements'])"
     class="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">

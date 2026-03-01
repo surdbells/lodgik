@@ -31,7 +31,7 @@ type Tab = 'locations' | 'categories' | 'uoms';
 <ui-page-header
   title="Inventory Settings"
   icon="settings-2"
-  [breadcrumbs]="['F&B & Facilities', 'Inventory', 'Settings']"
+  [breadcrumbs]="['Inventory & Food Cost', 'Inventory Settings']"
   subtitle="Manage stock locations, categories, and units of measure">
 </ui-page-header>
 

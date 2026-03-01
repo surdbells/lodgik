@@ -249,23 +249,23 @@ export default class AnalyticsPage implements OnInit {
     let pending = 9;
     const done = () => { if (--pending === 0) this.loading.set(false); };
 
-    this.api.get('/analytics/revenue', params).subscribe((r: any) => {
+    this.api.get('/analytics/revenue', params).subscribe({ next: (r: any) => {
       this.revenue.set(r?.data || {}); this.buildDonut(); done();
-    });
-    this.api.get('/analytics/profit-loss', params).subscribe((r: any) => { this.pnl.set(r?.data || {}); done(); });
-    this.api.get('/analytics/top-rooms', params).subscribe((r: any) => { this.topRooms.set(r?.data || []); done(); });
-    this.api.get('/analytics/monthly-summary', { property_id: pid, months: this.period === '365' ? 12 : this.period === '90' ? 3 : this.period === '30' ? 1 : 1 }).subscribe((r: any) => { this.buildMonthly(r?.data || []); done(); });
-    this.api.get('/analytics/adr-by-day', params).subscribe((r: any) => {
+    }, error: () => done() });
+    this.api.get('/analytics/profit-loss', params).subscribe({ next: (r: any) => { this.pnl.set(r?.data || {}); done(); }, error: () => done() });
+    this.api.get('/analytics/top-rooms', params).subscribe({ next: (r: any) => { this.topRooms.set(r?.data || []); done(); }, error: () => done() });
+    this.api.get('/analytics/monthly-summary', { property_id: pid, months: this.period === '365' ? 12 : this.period === '90' ? 3 : this.period === '30' ? 1 : 1 }).subscribe({ next: (r: any) => { this.buildMonthly(r?.data || []); done(); }, error: () => done() });
+    this.api.get('/analytics/adr-by-day', params).subscribe({ next: (r: any) => {
       this.adrData.set((r?.data || []).map((d: any) => ({ label: d.day, value: +(d.avg_adr || 0) / 100 }))); done();
-    });
-    this.api.get('/analytics/occupancy', params).subscribe((r: any) => { this.buildOccupancy(r?.data || []); done(); });
-    this.api.get('/analytics/revpar', params).subscribe((r: any) => { this.buildRevpar(r?.data || []); done(); });
-    this.api.get('/analytics/booking-sources', params).subscribe((r: any) => {
+    }, error: () => done() });
+    this.api.get('/analytics/occupancy', params).subscribe({ next: (r: any) => { this.buildOccupancy(r?.data || []); done(); }, error: () => done() });
+    this.api.get('/analytics/revpar', params).subscribe({ next: (r: any) => { this.buildRevpar(r?.data || []); done(); }, error: () => done() });
+    this.api.get('/analytics/booking-sources', params).subscribe({ next: (r: any) => {
       this.bookingSources.set(r?.data || []); this.buildSources(r?.data || []); done();
-    });
-    this.api.get('/analytics/demographics', params).subscribe((r: any) => {
+    }, error: () => done() });
+    this.api.get('/analytics/demographics', params).subscribe({ next: (r: any) => {
       this.demographics.set(r?.data || {}); this.buildDemographics(r?.data || {}); done();
-    });
+    }, error: () => done() });
   }
 
   buildDonut() {
