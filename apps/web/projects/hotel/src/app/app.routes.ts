@@ -269,6 +269,21 @@ export const routes: Routes = [
         path: 'inventory/grn',
         loadComponent: () => import('./pages/inventory/inventory-grn.page').then(m => m.InventoryGrnPage),
       },
+
+      // ── Procurement ────────────────────────────────────────────
+      {
+        path: 'procurement/vendors',
+        loadComponent: () => import('./pages/procurement/vendors.page').then(m => m.VendorsPage),
+      },
+      {
+        path: 'procurement/requests',
+        loadComponent: () => import('./pages/procurement/purchase-requests.page').then(m => m.PurchaseRequestsPage),
+      },
+      {
+        path: 'procurement/orders',
+        loadComponent: () => import('./pages/procurement/purchase-orders.page').then(m => m.PurchaseOrdersPage),
+      },
+
       {
         path: 'spa',
         loadComponent: () => import('./pages/spa/spa.page'),

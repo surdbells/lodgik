@@ -262,6 +262,9 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Stock Movements', icon: 'arrow-left-right', route: '/inventory/movements' },
         { label: 'Goods Received (GRN)', icon: 'truck', route: '/inventory/grn' },
         { label: 'Inventory Settings', icon: 'settings-2', route: '/inventory/settings' },
+        { label: 'Vendors', icon: 'building-2', route: '/procurement/vendors' },
+        { label: 'Purchase Requests', icon: 'clipboard-list', route: '/procurement/requests' },
+        { label: 'Purchase Orders', icon: 'file-text', route: '/procurement/orders' },
       ],
     },
     {

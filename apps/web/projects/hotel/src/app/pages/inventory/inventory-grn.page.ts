@@ -4,7 +4,7 @@ import {
   ApiService, PageHeaderComponent, LoadingSpinnerComponent,
   ToastService, ActivePropertyService
 } from '@lodgik/shared';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
 interface StockItem {
   id: string; sku: string; name: string;
@@ -14,6 +14,8 @@ interface StockItem {
 }
 interface UnitOfMeasure { id: string; name: string; symbol: string; }
 interface StockLocation { id: string; name: string; type: string; department?: string; }
+
+interface PurchaseOrder { id: string; reference_number: string; vendor_name: string; }
 
 interface GrnLine {
   item_id: string;
@@ -106,6 +108,24 @@ const blankLine = (): GrnLine => ({
         <label class="text-xs text-gray-500 font-medium">Notes</label>
         <input type="text" [(ngModel)]="form.notes" placeholder="Optional notes"
           class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
+      </div>
+
+      <!-- PO Link (optional) -->
+      <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
+        <label class="text-xs text-gray-500 font-medium">Link to Purchase Order
+          <span class="text-gray-400 font-normal">(optional — updates PO delivery progress)</span>
+        </label>
+        @if (purchaseOrders().length > 0) {
+          <select [(ngModel)]="form.purchase_order_id"
+            class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
+            <option value="">None (standalone GRN)</option>
+            @for (po of purchaseOrders(); track po.id) {
+              <option [value]="po.id">{{ po.reference_number }} — {{ po.vendor_name }}</option>
+            }
+          </select>
+        } @else {
+          <p class="text-xs text-gray-400 italic">No open purchase orders found</p>
+        }
       </div>
 
     </div>
@@ -261,6 +281,9 @@ export class InventoryGrnPage implements OnInit {
   private toast          = inject(ToastService);
   private activeProperty = inject(ActivePropertyService);
   router                 = inject(Router);
+  private route          = inject(ActivatedRoute);
+
+  purchaseOrders = signal<PurchaseOrder[]>([]);
 
   loading = signal(true);
   saving  = signal(false);
@@ -286,10 +309,18 @@ export class InventoryGrnPage implements OnInit {
     supplier_invoice: '',
     created_by_name: '',
     notes: '',
+    purchase_order_id: '',
   };
 
   ngOnInit(): void {
     this.loadMasterData();
+    this.loadOpenPurchaseOrders();
+    // Pre-select a PO if navigated from the PO detail drawer
+    this.route.queryParams.subscribe(q => {
+      if (q['purchase_order_id']) {
+        this.form.purchase_order_id = q['purchase_order_id'];
+      }
+    });
   }
 
   private loadMasterData(): void {
@@ -308,6 +339,20 @@ export class InventoryGrnPage implements OnInit {
     this.api.get('/inventory/locations', pid ? { property_id: pid, active_only: true } : { active_only: true }).subscribe({
       next: (r: any) => { this.locations.set(r.data ?? []); check(); },
       error: () => check(),
+    });
+  }
+
+  private loadOpenPurchaseOrders(): void {
+    this.api.get('/procurement/orders', { status: 'sent', per_page: 100 }).subscribe({
+      next: (r: any) => {
+        // Also load partially_delivered POs
+        const sent = r.data ?? [];
+        this.api.get('/procurement/orders', { status: 'partially_delivered', per_page: 100 }).subscribe({
+          next: (r2: any) => this.purchaseOrders.set([...sent, ...(r2.data ?? [])]),
+          error: () => this.purchaseOrders.set(sent),
+        });
+      },
+      error: () => {},
     });
   }
 
@@ -407,6 +452,7 @@ export class InventoryGrnPage implements OnInit {
 
     const payload = {
       ...this.form,
+      purchase_order_id: this.form.purchase_order_id || undefined,
       lines: this.lines().map(line => ({
         item_id:          line.item_id,
         purchase_quantity: line.purchase_quantity,
