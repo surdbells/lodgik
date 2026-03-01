@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
   ApiService, PageHeaderComponent, StatsCardComponent,
@@ -41,7 +42,7 @@ const BLANK_FORM = () => ({
 @Component({
   selector: 'app-inventory',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, StatsCardComponent,
+  imports: [FormsModule, RouterLink, PageHeaderComponent, StatsCardComponent,
             LoadingSpinnerComponent, EmptyStateComponent],
   template: `
 <ui-page-header
@@ -71,7 +72,15 @@ const BLANK_FORM = () => ({
 @if ((summary()?.low_stock_count ?? 0) > 0) {
   <div class="mx-6 mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2 text-sm text-amber-800">
     <span class="text-lg">⚠️</span>
-    <span><strong>{{ summary()!.low_stock_count }} item(s)</strong> are at or below reorder point and need restocking.</span>
+    <span class="flex-1"><strong>{{ summary()!.low_stock_count }} item(s)</strong> are at or below reorder point and need restocking.</span>
+    <button (click)="triggerLowStockNotify()" [disabled]="notifying()"
+      class="px-3 py-1.5 bg-amber-600 text-white text-xs rounded-lg hover:bg-amber-700 disabled:opacity-60 shrink-0">
+      {{ notifying() ? 'Notifying…' : '🔔 Notify Staff' }}
+    </button>
+    <a routerLink="/inventory/reports" queryParamsHandling="merge"
+      class="px-3 py-1.5 border border-amber-300 text-amber-800 text-xs rounded-lg hover:bg-amber-100 shrink-0">
+      View Report →
+    </a>
   </div>
 }
 
@@ -448,6 +457,22 @@ export class InventoryPage implements OnInit {
   });
 
   // ── Lifecycle ────────────────────────────────────────────────
+  notifying = signal(false);
+
+  triggerLowStockNotify(): void {
+    this.notifying.set(true);
+    const pid = this.propSvc.propertyId();
+    this.api.post('/inventory/reports/low-stock/notify', pid ? { property_id: pid } : {}).subscribe({
+      next: (r: any) => {
+        const n = r.data?.notified ?? 0;
+        const s = r.data?.skipped  ?? 0;
+        this.toast.show(n > 0 ? `Notified staff: ${n} low-stock item(s) (${s} already sent today)` : 'All alerts already sent today', n > 0 ? 'success' : 'info');
+        this.notifying.set(false);
+      },
+      error: () => { this.toast.show('Notification failed', 'error'); this.notifying.set(false); },
+    });
+  }
+
   ngOnInit(): void {
     Promise.all([
       this.loadCategories(),

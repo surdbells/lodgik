@@ -294,6 +294,12 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/pos/food-cost.page').then(m => m.FoodCostPage),
       },
 
+      // Inventory Reports hub
+      {
+        path: 'inventory/reports',
+        loadComponent: () => import('./pages/inventory/inventory-reports.page').then(m => m.InventoryReportsPage),
+      },
+
       {
         path: 'spa',
         loadComponent: () => import('./pages/spa/spa.page'),
