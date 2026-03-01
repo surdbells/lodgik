@@ -21,7 +21,7 @@ const BLANK_FORM = () => ({
   standalone: true,
   imports: [FormsModule, DecimalPipe, PageHeaderComponent],
   template: `
-    <ui-page-header title="Recipe Builder" subtitle="Link stock ingredients to POS menu items for automatic food-cost tracking">
+    <ui-page-header title="Recipe Builder" subtitle="Link stock ingredients to POS menu items for automatic food-cost tracking" [breadcrumbs]="['Inventory & Food Cost', 'Recipe Builder']">
       <button (click)="openModal()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">
         + Add Recipe
       </button>

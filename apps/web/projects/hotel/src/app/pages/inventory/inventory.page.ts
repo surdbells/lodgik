@@ -48,7 +48,7 @@ const BLANK_FORM = () => ({
 <ui-page-header
   title="Stock & Inventory"
   icon="package"
-  [breadcrumbs]="['F&B & Facilities', 'Inventory']"
+  [breadcrumbs]="['Inventory & Food Cost', 'Stock & Inventory']"
   subtitle="Item master, stock levels, and opening balances">
   <button (click)="openCreate()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">
     + Add Item

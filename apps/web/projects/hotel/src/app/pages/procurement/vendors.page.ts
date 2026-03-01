@@ -41,7 +41,7 @@ const BLANK_FORM = () => ({
 <ui-page-header
   title="Vendors"
   icon="building-2"
-  [breadcrumbs]="['Procurement', 'Vendors']"
+  [breadcrumbs]="['Inventory & Food Cost', 'Vendors']"
   subtitle="Manage your supplier directory">
   <button (click)="openModal()"
     class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700 transition-colors">

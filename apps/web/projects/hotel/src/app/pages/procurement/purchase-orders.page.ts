@@ -51,7 +51,7 @@ const blankLine = (): PoLine => ({
 <ui-page-header
   title="Purchase Orders"
   icon="file-text"
-  [breadcrumbs]="['Procurement', 'Purchase Orders']"
+  [breadcrumbs]="['Inventory & Food Cost', 'Purchase Orders']"
   subtitle="Create, send and track orders to vendors">
   <button (click)="openCreate()"
     class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700 transition-colors">

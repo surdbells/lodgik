@@ -58,8 +58,8 @@ final class InventoryReportService
             JOIN stock_locations sl ON sl.id = sb.location_id AND sl.tenant_id = sb.tenant_id
             LEFT JOIN stock_categories sc ON sc.id = si.category_id
             WHERE sb.tenant_id = :tid
-              AND si.is_active  = 1
-              AND sl.is_active  = 1
+              AND si.is_active  = TRUE
+              AND sl.is_active  = TRUE
         SQL;
 
         $params = ['tid' => $tenantId];
@@ -131,7 +131,7 @@ final class InventoryReportService
                 AND sm.type = 'issue'
                 AND sm.movement_date >= :cutoff
             WHERE sb.tenant_id = :tid
-              AND si.is_active = 1
+              AND si.is_active = TRUE
               AND sb.quantity_on_hand > 0
         SQL;
 
@@ -366,7 +366,7 @@ final class InventoryReportService
             FROM stock_balances sb
             JOIN stock_items    si ON si.id = sb.item_id    AND si.tenant_id = sb.tenant_id
             JOIN stock_locations sl ON sl.id = sb.location_id AND sl.tenant_id = sb.tenant_id
-            WHERE sb.tenant_id = :tid AND si.is_active = 1
+            WHERE sb.tenant_id = :tid AND si.is_active = TRUE
             GROUP BY sl.property_id
         SQL;
         $valRows = $conn->fetchAllAssociative($valSql, ['tid' => $tenantId]);

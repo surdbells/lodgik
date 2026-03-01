@@ -52,7 +52,7 @@ const blankLine = (): PrLine => ({
 <ui-page-header
   title="Purchase Requests"
   icon="clipboard-list"
-  [breadcrumbs]="['Procurement', 'Purchase Requests']"
+  [breadcrumbs]="['Inventory & Food Cost', 'Purchase Requests']"
   subtitle="Raise and approve purchase requisitions">
   <button (click)="openCreate()"
     class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700 transition-colors">

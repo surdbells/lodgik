@@ -345,7 +345,7 @@ final class RecipeService
             FROM pos_order_items oi
             JOIN pos_orders      po  ON po.id = oi.order_id
             JOIN pos_products    pp  ON pp.id = oi.product_id
-            JOIN recipes         r   ON r.product_id = pp.id AND r.tenant_id = pp.tenant_id AND r.is_active = 1
+            JOIN recipes         r   ON r.product_id = pp.id AND r.tenant_id = pp.tenant_id AND r.is_active = TRUE
             JOIN recipe_ingredients ri ON ri.recipe_id = r.id AND ri.tenant_id = r.tenant_id
             JOIN stock_items     si  ON si.id = ri.stock_item_id
             WHERE po.tenant_id = :tid

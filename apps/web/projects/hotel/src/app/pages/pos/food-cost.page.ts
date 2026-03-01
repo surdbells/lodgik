@@ -23,7 +23,7 @@ interface FoodCostReport {
   standalone: true,
   imports: [FormsModule, DecimalPipe, PageHeaderComponent],
   template: `
-    <ui-page-header title="Food Cost Dashboard" subtitle="Theoretical vs actual ingredient usage and food cost percentage by product">
+    <ui-page-header title="Food Cost Dashboard" subtitle="Theoretical vs actual ingredient usage and food cost percentage by product" [breadcrumbs]="['Inventory & Food Cost', 'Food Cost']">
     </ui-page-header>
 
     <!-- Filters -->

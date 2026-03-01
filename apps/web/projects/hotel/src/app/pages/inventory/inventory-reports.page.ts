@@ -14,7 +14,7 @@ interface Tab { key: ReportTab; label: string; icon: string; }
   standalone: true,
   imports: [FormsModule, DecimalPipe, DatePipe, PageHeaderComponent],
   template: `
-    <ui-page-header title="Inventory Reports" subtitle="Stock valuation, usage, alerts, and property comparison">
+    <ui-page-header title="Inventory Reports" subtitle="Stock valuation, usage, alerts, and property comparison" [breadcrumbs]="['Inventory & Food Cost', 'Inventory Reports']">
       <button (click)="exportCsv()" [disabled]="!reportData() || exporting()"
         class="px-4 py-2 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50 disabled:opacity-40">
         {{ exporting() ? 'Exporting…' : '↓ Export CSV' }}

@@ -90,8 +90,10 @@ import {
   BarChart2,
   Building2,
   ChefHat,
+  Layers,
   Percent,
   Settings2,
+  TrendingDown,
   Truck,
 } from 'lucide-angular';
 
@@ -171,8 +173,10 @@ export const LODGIK_ICONS = {
   BarChart2,
   Building2,
   ChefHat,
+  Layers,
   Percent,
   Settings2,
+  TrendingDown,
   Truck,
 };
 
