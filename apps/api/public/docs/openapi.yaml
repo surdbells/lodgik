@@ -208,6 +208,12 @@ tags:
   description: Platform usage metrics, quotas, and history
 - name: WhatsApp
   description: WhatsApp messaging via Termii — templates, OTP, message history
+- name: Inventory
+  description: Stock items, categories, UOMs, locations, movements (GRN/issue/transfer/adjustment/opening), stock balances, and 7-panel inventory reports with CSV export
+- name: Procurement
+  description: Vendor management, purchase requests with approval workflow, and purchase orders with receiving/GRN
+- name: Recipe
+  description: Recipe builder linking POS products to stock ingredients, food-cost calculation per product, and food-cost report across a date range
 paths:
   /analytics/adr-by-day:
     get:
@@ -10557,3 +10563,1072 @@ paths:
           $ref: '#/components/responses/Success'
         '422':
           $ref: '#/components/responses/ValidationError'
+
+  # ─────────────────────────────────────────────────────────────────
+  # INVENTORY MODULE
+  # ─────────────────────────────────────────────────────────────────
+
+  /api/inventory/summary:
+    get:
+      tags: [Inventory]
+      operationId: inventorySummary
+      summary: Dashboard summary
+      description: Returns total item count, total stock value (kobo), low-stock item count, and a breakdown by category.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/inventory/categories:
+    get:
+      tags: [Inventory]
+      operationId: listInventoryCategories
+      summary: List stock categories
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    post:
+      tags: [Inventory]
+      operationId: createInventoryCategory
+      summary: Create a stock category
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, property_id]
+              properties:
+                name: {type: string, example: Beverages}
+                property_id: {type: string, format: uuid}
+                description: {type: string}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /api/inventory/categories/{id}:
+    put:
+      tags: [Inventory]
+      operationId: updateInventoryCategory
+      summary: Update a stock category
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: {type: string}
+                description: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    delete:
+      tags: [Inventory]
+      operationId: deleteInventoryCategory
+      summary: Delete a stock category
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /api/inventory/uoms:
+    get:
+      tags: [Inventory]
+      operationId: listUoms
+      summary: List units of measure
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    post:
+      tags: [Inventory]
+      operationId: createUom
+      summary: Create a unit of measure
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, symbol, property_id]
+              properties:
+                name: {type: string, example: Kilogram}
+                symbol: {type: string, example: kg}
+                property_id: {type: string, format: uuid}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /api/inventory/uoms/{id}:
+    put:
+      tags: [Inventory]
+      operationId: updateUom
+      summary: Update unit of measure
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: {type: string}
+                symbol: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    delete:
+      tags: [Inventory]
+      operationId: deleteUom
+      summary: Delete unit of measure
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/locations:
+    get:
+      tags: [Inventory]
+      operationId: listStockLocations
+      summary: List stock locations
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    post:
+      tags: [Inventory]
+      operationId: createStockLocation
+      summary: Create a stock location
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, property_id]
+              properties:
+                name: {type: string, example: Main Bar}
+                property_id: {type: string, format: uuid}
+                description: {type: string}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+
+  /api/inventory/locations/{id}:
+    put:
+      tags: [Inventory]
+      operationId: updateStockLocation
+      summary: Update stock location
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: {type: string}
+                description: {type: string}
+                is_active: {type: boolean}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    delete:
+      tags: [Inventory]
+      operationId: deleteStockLocation
+      summary: Delete stock location
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/locations/{id}/stock:
+    get:
+      tags: [Inventory]
+      operationId: getLocationStock
+      summary: Current stock balances at a location
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/items:
+    get:
+      tags: [Inventory]
+      operationId: listStockItems
+      summary: List stock items
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: category_id, in: query, schema: {type: string, format: uuid}}
+        - {name: low_stock, in: query, schema: {type: boolean}, description: Filter to items below min threshold}
+        - {name: search, in: query, schema: {type: string}}
+        - {name: page, in: query, schema: {type: integer, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, default: 50}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    post:
+      tags: [Inventory]
+      operationId: createStockItem
+      summary: Create a stock item
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, sku, property_id, uom_id]
+              properties:
+                name: {type: string, example: Heineken Beer 33cl}
+                sku: {type: string, example: BEV-HEIN-33}
+                property_id: {type: string, format: uuid}
+                category_id: {type: string, format: uuid}
+                uom_id: {type: string, format: uuid}
+                location_id: {type: string, format: uuid}
+                min_quantity: {type: number, format: float, example: 24}
+                max_quantity: {type: number, format: float}
+                reorder_point: {type: number, format: float}
+                unit_cost: {type: integer, description: Cost in kobo}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /api/inventory/items/{id}:
+    get:
+      tags: [Inventory]
+      operationId: getStockItem
+      summary: Get stock item detail
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Inventory]
+      operationId: updateStockItem
+      summary: Update a stock item
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: {type: string}
+                min_quantity: {type: number}
+                max_quantity: {type: number}
+                unit_cost: {type: integer}
+                is_active: {type: boolean}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    delete:
+      tags: [Inventory]
+      operationId: deleteStockItem
+      summary: Soft-delete a stock item
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/items/{id}/balances:
+    get:
+      tags: [Inventory]
+      operationId: getItemBalances
+      summary: Current stock balance across all locations
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/movements:
+    get:
+      tags: [Inventory]
+      operationId: listStockMovements
+      summary: List stock movements
+      description: Full movement ledger with filtering. Returns paginated results sorted by movement_date DESC.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: type, in: query, schema: {type: string, enum: [opening, grn, issue, transfer, adjustment, pos_deduction]}}
+        - {name: item_id, in: query, schema: {type: string, format: uuid}}
+        - {name: location_id, in: query, schema: {type: string, format: uuid}}
+        - {name: date_from, in: query, schema: {type: string, format: date}}
+        - {name: date_to, in: query, schema: {type: string, format: date}}
+        - {name: page, in: query, schema: {type: integer, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, default: 50}}
+      responses:
+        '200': {$ref: '#/components/responses/PaginatedSuccess'}
+
+  /api/inventory/movements/{id}:
+    get:
+      tags: [Inventory]
+      operationId: getMovement
+      summary: Get movement detail with line items
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /api/inventory/movements/opening:
+    post:
+      tags: [Inventory]
+      operationId: createOpeningBalance
+      summary: Post opening stock balance
+      description: Sets the initial quantity for a stock item at a location. Only one opening movement is allowed per item per location.
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, location_id, items]
+              properties:
+                property_id: {type: string, format: uuid}
+                location_id: {type: string, format: uuid}
+                movement_date: {type: string, format: date}
+                notes: {type: string}
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [stock_item_id, quantity]
+                    properties:
+                      stock_item_id: {type: string, format: uuid}
+                      quantity: {type: number, format: float}
+                      unit_cost: {type: integer, description: Cost per unit in kobo}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /api/inventory/movements/grn:
+    post:
+      tags: [Inventory]
+      operationId: createGrn
+      summary: Receive goods (GRN)
+      description: Records goods received from a supplier. Optionally links to an approved Purchase Order. Increases stock quantities immediately.
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, location_id, items]
+              properties:
+                property_id: {type: string, format: uuid}
+                location_id: {type: string, format: uuid}
+                purchase_order_id: {type: string, format: uuid}
+                vendor_id: {type: string, format: uuid}
+                reference: {type: string, description: Supplier invoice or delivery note number}
+                movement_date: {type: string, format: date}
+                notes: {type: string}
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [stock_item_id, quantity]
+                    properties:
+                      stock_item_id: {type: string, format: uuid}
+                      quantity: {type: number, format: float}
+                      unit_cost: {type: integer}
+                      batch_number: {type: string}
+                      expiry_date: {type: string, format: date}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /api/inventory/movements/issue:
+    post:
+      tags: [Inventory]
+      operationId: createIssue
+      summary: Issue stock to a department
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, location_id, department, items]
+              properties:
+                property_id: {type: string, format: uuid}
+                location_id: {type: string, format: uuid}
+                department: {type: string, example: Kitchen}
+                movement_date: {type: string, format: date}
+                notes: {type: string}
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [stock_item_id, quantity]
+                    properties:
+                      stock_item_id: {type: string, format: uuid}
+                      quantity: {type: number, format: float}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+
+  /api/inventory/movements/transfer:
+    post:
+      tags: [Inventory]
+      operationId: createTransfer
+      summary: Transfer stock between locations
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, from_location_id, to_location_id, items]
+              properties:
+                property_id: {type: string, format: uuid}
+                from_location_id: {type: string, format: uuid}
+                to_location_id: {type: string, format: uuid}
+                movement_date: {type: string, format: date}
+                notes: {type: string}
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [stock_item_id, quantity]
+                    properties:
+                      stock_item_id: {type: string, format: uuid}
+                      quantity: {type: number, format: float}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+
+  /api/inventory/movements/adjustment:
+    post:
+      tags: [Inventory]
+      operationId: createAdjustment
+      summary: Adjust stock count
+      description: Corrects a discrepancy between system quantity and physical count. Use a positive quantity_change to increase stock, negative to decrease.
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, location_id, reason, items]
+              properties:
+                property_id: {type: string, format: uuid}
+                location_id: {type: string, format: uuid}
+                reason: {type: string, example: Cycle count — found shortage in Main Bar}
+                movement_date: {type: string, format: date}
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [stock_item_id, quantity_change]
+                    properties:
+                      stock_item_id: {type: string, format: uuid}
+                      quantity_change: {type: number, format: float, description: Positive to add, negative to reduce}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+
+  # ─── Inventory Reports ─────────────────────────────────────────
+
+  /api/inventory/reports/valuation:
+    get:
+      tags: [Inventory]
+      operationId: inventoryValuationReport
+      summary: Stock valuation report
+      description: Total stock value per item and category based on current balances and unit costs. Supports CSV download via Accept header.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: category_id, in: query, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/reports/slow-moving:
+    get:
+      tags: [Inventory]
+      operationId: slowMovingReport
+      summary: Slow-moving items report
+      description: Items that have not been issued or used in the last N days.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: days, in: query, schema: {type: integer, default: 90}, description: Look-back window in days}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/reports/expiry:
+    get:
+      tags: [Inventory]
+      operationId: expiryAlertsReport
+      summary: Expiry alerts report
+      description: Stock items expiring within N days.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: days, in: query, schema: {type: integer, default: 30}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/reports/shrinkage:
+    get:
+      tags: [Inventory]
+      operationId: shrinkageReport
+      summary: Shrinkage / variance report
+      description: Compares total received vs total issued plus current balance to surface unexplained stock loss.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: date_from, in: query, schema: {type: string, format: date}}
+        - {name: date_to, in: query, schema: {type: string, format: date}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/reports/usage:
+    get:
+      tags: [Inventory]
+      operationId: departmentUsageReport
+      summary: Department usage report
+      description: Total stock issued per department over a period.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: date_from, in: query, schema: {type: string, format: date}}
+        - {name: date_to, in: query, schema: {type: string, format: date}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/reports/property-comparison:
+    get:
+      tags: [Inventory]
+      operationId: propertyComparisonReport
+      summary: Cross-property inventory comparison
+      description: Stock levels, valuation, and movement summary compared across all properties in the tenant.
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/reports/low-stock:
+    get:
+      tags: [Inventory]
+      operationId: lowStockReport
+      summary: Low-stock items
+      description: All stock items currently below their minimum threshold.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/inventory/reports/low-stock/notify:
+    post:
+      tags: [Inventory]
+      operationId: triggerLowStockNotify
+      summary: Manually trigger low-stock notifications
+      description: Sends low-stock notifications to procurement staff for all items currently below threshold. Respects the 24-hour deduplication window.
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id]
+              properties:
+                property_id: {type: string, format: uuid}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  # ─────────────────────────────────────────────────────────────────
+  # PROCUREMENT MODULE
+  # ─────────────────────────────────────────────────────────────────
+
+  /api/procurement/vendors:
+    get:
+      tags: [Procurement]
+      operationId: listVendors
+      summary: List vendors
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: search, in: query, schema: {type: string}}
+        - {name: is_active, in: query, schema: {type: boolean}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    post:
+      tags: [Procurement]
+      operationId: createVendor
+      summary: Create a vendor
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, property_id]
+              properties:
+                name: {type: string}
+                property_id: {type: string, format: uuid}
+                contact_name: {type: string}
+                email: {type: string, format: email}
+                phone: {type: string}
+                address: {type: string}
+                payment_terms: {type: string, example: Net 30}
+                bank_name: {type: string}
+                account_number: {type: string}
+                account_name: {type: string}
+                tax_id: {type: string}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /api/procurement/vendors/{id}:
+    get:
+      tags: [Procurement]
+      operationId: getVendor
+      summary: Get vendor detail
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Procurement]
+      operationId: updateVendor
+      summary: Update vendor
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: {type: string}
+                contact_name: {type: string}
+                email: {type: string}
+                phone: {type: string}
+                payment_terms: {type: string}
+                is_active: {type: boolean}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    delete:
+      tags: [Procurement]
+      operationId: deleteVendor
+      summary: Deactivate vendor
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/procurement/purchase-requests:
+    get:
+      tags: [Procurement]
+      operationId: listPurchaseRequests
+      summary: List purchase requests
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: status, in: query, schema: {type: string, enum: [draft, submitted, approved, rejected, ordered]}}
+        - {name: date_from, in: query, schema: {type: string, format: date}}
+        - {name: date_to, in: query, schema: {type: string, format: date}}
+        - {name: page, in: query, schema: {type: integer, default: 1}}
+      responses:
+        '200': {$ref: '#/components/responses/PaginatedSuccess'}
+    post:
+      tags: [Procurement]
+      operationId: createPurchaseRequest
+      summary: Create a purchase request
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, items]
+              properties:
+                property_id: {type: string, format: uuid}
+                required_by: {type: string, format: date}
+                justification: {type: string}
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [stock_item_id, quantity_requested]
+                    properties:
+                      stock_item_id: {type: string, format: uuid}
+                      quantity_requested: {type: number}
+                      notes: {type: string}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /api/procurement/purchase-requests/{id}:
+    get:
+      tags: [Procurement]
+      operationId: getPurchaseRequest
+      summary: Get purchase request detail
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/procurement/purchase-requests/{id}/submit:
+    post:
+      tags: [Procurement]
+      operationId: submitPurchaseRequest
+      summary: Submit PR for approval
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/procurement/purchase-requests/{id}/approve:
+    post:
+      tags: [Procurement]
+      operationId: approvePurchaseRequest
+      summary: Approve a purchase request
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/procurement/purchase-requests/{id}/reject:
+    post:
+      tags: [Procurement]
+      operationId: rejectPurchaseRequest
+      summary: Reject a purchase request
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/procurement/purchase-orders:
+    get:
+      tags: [Procurement]
+      operationId: listPurchaseOrders
+      summary: List purchase orders
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: status, in: query, schema: {type: string, enum: [draft, submitted, acknowledged, partial, received, cancelled]}}
+        - {name: vendor_id, in: query, schema: {type: string, format: uuid}}
+        - {name: date_from, in: query, schema: {type: string, format: date}}
+        - {name: page, in: query, schema: {type: integer, default: 1}}
+      responses:
+        '200': {$ref: '#/components/responses/PaginatedSuccess'}
+    post:
+      tags: [Procurement]
+      operationId: createPurchaseOrder
+      summary: Create a purchase order
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, vendor_id, items]
+              properties:
+                property_id: {type: string, format: uuid}
+                vendor_id: {type: string, format: uuid}
+                purchase_request_id: {type: string, format: uuid}
+                expected_delivery_date: {type: string, format: date}
+                payment_terms: {type: string}
+                notes: {type: string}
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [stock_item_id, quantity, unit_price]
+                    properties:
+                      stock_item_id: {type: string, format: uuid}
+                      quantity: {type: number}
+                      unit_price: {type: integer, description: Price per unit in kobo}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+
+  /api/procurement/purchase-orders/{id}:
+    get:
+      tags: [Procurement]
+      operationId: getPurchaseOrder
+      summary: Get PO detail
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    put:
+      tags: [Procurement]
+      operationId: updatePurchaseOrder
+      summary: Update PO (only in draft status)
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expected_delivery_date: {type: string, format: date}
+                payment_terms: {type: string}
+                notes: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/procurement/purchase-orders/{id}/submit:
+    post:
+      tags: [Procurement]
+      operationId: submitPurchaseOrder
+      summary: Submit PO to vendor
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  /api/procurement/purchase-orders/{id}/receive:
+    post:
+      tags: [Procurement]
+      operationId: receivePurchaseOrder
+      summary: Mark PO as received (triggers GRN)
+      description: Records full receipt of the PO. Creates a GRN stock movement automatically. Use the /api/inventory/movements/grn endpoint for partial deliveries.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                location_id: {type: string, format: uuid}
+                notes: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+
+  # ─────────────────────────────────────────────────────────────────
+  # RECIPE & FOOD COST MODULE
+  # ─────────────────────────────────────────────────────────────────
+
+  /api/pos/recipes:
+    get:
+      tags: [Recipe]
+      operationId: listRecipes
+      summary: List recipes
+      description: Returns all active recipes for the tenant. Each recipe lists its ingredients with stock item references and quantities.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    post:
+      tags: [Recipe]
+      operationId: upsertRecipe
+      summary: Create or update a recipe
+      description: If a recipe already exists for the given product_id in this tenant, it is replaced entirely (upsert). Use this endpoint for both create and edit.
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, ingredients]
+              properties:
+                product_id: {type: string, format: uuid, description: POS product this recipe belongs to}
+                property_id: {type: string, format: uuid}
+                yield_quantity: {type: number, format: float, default: 1, description: How many servings this recipe produces}
+                yield_uom: {type: string, default: serving}
+                notes: {type: string}
+                ingredients:
+                  type: array
+                  description: Replaces all existing ingredient lines on upsert
+                  items:
+                    type: object
+                    required: [stock_item_id, quantity_per_yield, uom_symbol]
+                    properties:
+                      stock_item_id: {type: string, format: uuid}
+                      quantity_per_yield: {type: number, format: float}
+                      uom_symbol: {type: string, example: kg}
+                      notes: {type: string}
+                      sort_order: {type: integer, default: 0}
+      responses:
+        '201': {$ref: '#/components/responses/Created'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /api/pos/recipes/{id}:
+    get:
+      tags: [Recipe]
+      operationId: getRecipe
+      summary: Get recipe by ID
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    delete:
+      tags: [Recipe]
+      operationId: deleteRecipe
+      summary: Delete a recipe
+      description: Marks the recipe as inactive. Historical POS deductions are preserved in the movement ledger.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /api/pos/recipes/product/{product_id}:
+    get:
+      tags: [Recipe]
+      operationId: getRecipeByProduct
+      summary: Get recipe by POS product ID
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: product_id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /api/pos/recipes/food-cost/{product_id}:
+    get:
+      tags: [Recipe]
+      operationId: foodCostByProduct
+      summary: Theoretical food cost for a single product
+      description: |
+        Calculates the total ingredient cost for one serving based on the active recipe and current stock unit costs.
+        Returns: ingredient_cost (kobo), selling_price (kobo), food_cost_pct (%), and a per-ingredient breakdown.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: product_id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Food cost breakdown
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: object
+                    properties:
+                      product_id: {type: string}
+                      product_name: {type: string}
+                      selling_price: {type: integer, description: In kobo}
+                      ingredient_cost: {type: integer, description: Total cost of all ingredients in kobo}
+                      food_cost_pct: {type: number, description: ingredient_cost / selling_price x 100}
+                      ingredients:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            item_name: {type: string}
+                            quantity_per_yield: {type: number}
+                            uom: {type: string}
+                            unit_cost: {type: integer}
+                            line_cost: {type: integer}
+
+  /api/pos/food-cost-report:
+    get:
+      tags: [Recipe]
+      operationId: foodCostReport
+      summary: Food cost report across a date range
+      description: |
+        Compares theoretical vs actual food cost by product over the specified period.
+        Theoretical cost = recipe ingredient cost x quantity sold.
+        Actual cost = stock movements of type pos_deduction over the same period.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: property_id, in: query, schema: {type: string, format: uuid}}
+        - {name: date_from, in: query, schema: {type: string, format: date}, description: Defaults to start of current month}
+        - {name: date_to, in: query, schema: {type: string, format: date}, description: Defaults to today}
+      responses:
+        '200':
+          description: Food cost report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: object
+                    properties:
+                      period_from: {type: string, format: date}
+                      period_to: {type: string, format: date}
+                      total_revenue: {type: integer}
+                      total_theoretical_cost: {type: integer}
+                      total_actual_cost: {type: integer}
+                      overall_food_cost_pct: {type: number}
+                      products:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            product_name: {type: string}
+                            quantity_sold: {type: integer}
+                            revenue: {type: integer}
+                            theoretical_cost: {type: integer}
+                            actual_cost: {type: integer}
+                            variance: {type: integer}
+                            food_cost_pct: {type: number}
