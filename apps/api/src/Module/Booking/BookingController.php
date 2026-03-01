@@ -138,6 +138,40 @@ final class BookingController
         }
     }
 
+
+    /** POST /api/bookings/{id}/clear-front-desk */
+    public function clearFrontDesk(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $userId  = $request->getAttribute('auth.user_id');
+            $booking = $this->bookingService->clearFrontDesk($args['id'], $userId ?? 'unknown');
+            return $this->response->success($response, $this->serialize($booking), 'Front desk clearance recorded');
+        } catch (\RuntimeException | \InvalidArgumentException $e) {
+            return $this->response->validationError($response, ['error' => $e->getMessage()]);
+        }
+    }
+
+    /** POST /api/bookings/{id}/clear-security */
+    public function clearSecurity(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $userId  = $request->getAttribute('auth.user_id');
+            $booking = $this->bookingService->clearSecurity($args['id'], $userId ?? 'unknown');
+            return $this->response->success($response, $this->serialize($booking), 'Security clearance recorded');
+        } catch (\RuntimeException | \InvalidArgumentException $e) {
+            return $this->response->validationError($response, ['error' => $e->getMessage()]);
+        }
+    }
+
+    /** GET /api/bookings/overdue */
+    public function overdue(Request $request, Response $response): Response
+    {
+        $propertyId = $request->getQueryParams()['property_id'] ?? null;
+        $tenantId   = $request->getAttribute('auth.tenant_id');
+        $bookings   = $this->bookingService->getOverdue($propertyId ?? '', $tenantId);
+        return $this->response->success($response, array_map([$this, 'serialize'], $bookings));
+    }
+
     /** GET /api/bookings/today */
     public function today(Request $request, Response $response): Response
     {

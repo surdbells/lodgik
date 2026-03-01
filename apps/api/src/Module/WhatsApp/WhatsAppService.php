@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace Lodgik\Module\WhatsApp;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Lodgik\Entity\Guest;
 use Lodgik\Entity\WhatsAppMessage;
 use Lodgik\Entity\WhatsAppTemplate;
 use Psr\Log\LoggerInterface;
@@ -222,15 +223,34 @@ final class WhatsAppService
 
     public function onVisitorCodeCreated(string $propertyId, string $tenantId, array $visitor): void
     {
-        $phone = $visitor['visitor_phone'] ?? null;
-        if (!$phone) return;
-        $this->sendFromTemplate($propertyId, $tenantId, 'visitor_code', $phone, [
-            'visitor_name' => $visitor['visitor_name'] ?? 'Visitor',
-            'host_name' => $visitor['guest_name'] ?? 'Guest',
-            'code' => $visitor['code'] ?? '',
-            'hotel_name' => $visitor['hotel_name'] ?? 'Hotel',
-            'expires_at' => $visitor['expires_at'] ?? '',
-        ], $visitor['visitor_name'] ?? null);
+        // 1. Send access code to the VISITOR so they can present it at the gate
+        $visitorPhone = $visitor['visitor_phone'] ?? null;
+        if ($visitorPhone) {
+            $this->sendFromTemplate($propertyId, $tenantId, 'visitor_code', $visitorPhone, [
+                'visitor_name' => $visitor['visitor_name'] ?? 'Visitor',
+                'host_name'    => $visitor['guest_name']   ?? 'Guest',
+                'code'         => $visitor['code']          ?? '',
+                'hotel_name'   => $visitor['hotel_name']    ?? 'Hotel',
+                'expires_at'   => $visitor['expires_at']    ?? '',
+            ], $visitor['visitor_name'] ?? null);
+        }
+
+        // 2. Notify the RESIDENT GUEST that a visitor code has been created for their room
+        $guestPhone = $visitor['guest_phone'] ?? null;
+        if (!$guestPhone && !empty($visitor['guest_id'])) {
+            // Fetch guest phone from DB if not passed in the array
+            $guest      = $this->em->find(Guest::class, $visitor['guest_id']);
+            $guestPhone = $guest?->getPhone();
+        }
+        if ($guestPhone) {
+            $this->sendFromTemplate($propertyId, $tenantId, 'visitor_arrival', $guestPhone, [
+                'guest_name'   => $visitor['guest_name']    ?? 'Guest',
+                'visitor_name' => $visitor['visitor_name']  ?? 'Visitor',
+                'room_number'  => $visitor['room_number']   ?? '',
+                'hotel_name'   => $visitor['hotel_name']    ?? 'Hotel',
+                'expires_at'   => $visitor['expires_at']    ?? '',
+            ], $visitor['guest_name'] ?? null);
+        }
     }
 
     // ─── Fallback Templates ───────────────────────────────────
@@ -243,6 +263,7 @@ final class WhatsAppService
             'check_out_thanks' => "Thank you for staying at {$p('hotel_name')}, {$p('guest_name')}! We hope to welcome you again soon.",
             'payment_receipt' => "Payment of {$p('amount')} received. Ref: {$p('reference')}. Thank you, {$p('guest_name')}!",
             'visitor_code' => "Hi {$p('visitor_name')}, you have a gate pass from {$p('host_name')} at {$p('hotel_name')}.\nCode: {$p('code')}\nValid until: {$p('expires_at')}",
+            'visitor_arrival' => "Hi {$p('guest_name')}, your visitor {$p('visitor_name')} has been registered at {$p('hotel_name')} to visit Room {$p('room_number')} (valid until: {$p('expires_at')}). If this was not you, please contact the front desk immediately.",
             'reminder' => "Reminder: {$p('message')}",
             default => $params['message'] ?? 'Message from Lodgik Hotel',
         };

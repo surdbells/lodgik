@@ -21,6 +21,9 @@ return function (App $app): void {
         $group->post('/{id}/check-out', [BookingController::class, 'checkOut']);
         $group->post('/{id}/cancel', [BookingController::class, 'cancel']);
         $group->post('/{id}/no-show', [BookingController::class, 'noShow']);
+        $group->post('/{id}/clear-front-desk', [BookingController::class, 'clearFrontDesk']);
+        $group->post('/{id}/clear-security', [BookingController::class, 'clearSecurity']);
+        $group->get('/overdue', [BookingController::class, 'overdue']);
         $group->get('/{id}/status-history', [BookingController::class, 'statusHistory']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager', 'front_desk']))

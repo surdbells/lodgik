@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lodgik\Module\Booking;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Lodgik\Entity\AutoCheckoutLog;
 use Lodgik\Entity\Booking;
 use Lodgik\Entity\BookingAddon;
 use Lodgik\Entity\BookingStatusLog;
@@ -429,6 +430,98 @@ final class BookingService
     // ═══ Rate Preview ══════════════════════════════════════════
 
     /**
+
+    // ─── Fraud-prevention clearance ──────────────────────────────────────────
+
+    public function clearFrontDesk(string $bookingId, string $userId): Booking
+    {
+        $booking = $this->em->find(Booking::class, $bookingId);
+        if (!$booking) throw new \InvalidArgumentException('Booking not found');
+        $booking->clearFrontDesk($userId);
+        $this->em->flush();
+        $this->logger?->info("[Booking] Front-desk clearance: booking={$bookingId}, by={$userId}");
+        return $booking;
+    }
+
+    public function clearSecurity(string $bookingId, string $userId): Booking
+    {
+        $booking = $this->em->find(Booking::class, $bookingId);
+        if (!$booking) throw new \InvalidArgumentException('Booking not found');
+        $booking->clearSecurity($userId);
+        $this->em->flush();
+        $this->logger?->info("[Booking] Security clearance: booking={$bookingId}, by={$userId}");
+        return $booking;
+    }
+
+    /**
+     * Returns bookings that are checked-in but past their checkout date.
+     * Used by the NoonCheckoutCommand and FraudAutoCheckoutCommand.
+     *
+     * @return Booking[]
+     */
+    public function getOverdue(string $propertyId, string $tenantId): array
+    {
+        $now = new \DateTimeImmutable();
+        return $this->em->createQueryBuilder()
+            ->select('b')
+            ->from(Booking::class, 'b')
+            ->where('b.propertyId = :pid')
+            ->andWhere('b.tenantId  = :tid')
+            ->andWhere('b.status   = :status')
+            ->andWhere('b.checkOut < :now')
+            ->setParameter('pid',    $propertyId)
+            ->setParameter('tid',    $tenantId)
+            ->setParameter('status', \Lodgik\Enum\BookingStatus::CHECKED_IN)
+            ->setParameter('now',    $now)
+            ->orderBy('b.checkOut', 'ASC')
+            ->getQuery()->getResult();
+    }
+
+    /**
+     * Returns bookings where both front-desk AND security clearance are marked
+     * but the booking has not been formally checked out yet.
+     *
+     * @return Booking[]
+     */
+    public function getDualClearedPending(string $tenantId): array
+    {
+        return $this->em->createQueryBuilder()
+            ->select('b')
+            ->from(Booking::class, 'b')
+            ->where('b.tenantId       = :tid')
+            ->andWhere('b.status      = :status')
+            ->andWhere('b.frontDeskCleared = TRUE')
+            ->andWhere('b.securityCleared  = TRUE')
+            ->setParameter('tid',    $tenantId)
+            ->setParameter('status', \Lodgik\Enum\BookingStatus::CHECKED_IN)
+            ->getQuery()->getResult();
+    }
+
+    /**
+     * Writes an AutoCheckoutLog record. Called by the cron commands to
+     * maintain an immutable audit trail of system-initiated checkouts.
+     */
+    public function logAutoCheckout(
+        Booking $booking,
+        string  $reason,
+        int     $hoursOverdue = 0,
+    ): AutoCheckoutLog {
+        $log = new AutoCheckoutLog($booking->getId(), $booking->getPropertyId(), $booking->getTenantId(), $reason);
+        $log->setGuestId($booking->getGuestId());
+        $log->setRoomNumber($booking->getRoomId());    // will store room_id; controller can resolve name
+        $log->setBookingRef($booking->getBookingRef());
+        $log->setOriginalCheckoutDate($booking->getCheckOut());
+        $log->setHoursOverdue($hoursOverdue);
+        $log->setMetadata([
+            'front_desk_cleared' => $booking->isFrontDeskCleared(),
+            'security_cleared'   => $booking->isSecurityCleared(),
+            'auto_checked_out'   => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+        ]);
+        $this->em->persist($log);
+        // Caller is responsible for flush() after batch processing
+        return $log;
+    }
+
      * Preview rate calculation without creating a booking.
      *
      * @return array{rate: string, nights: int, hours: int|null, subtotal: string, discount: string, total: string}

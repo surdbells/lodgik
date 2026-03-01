@@ -3,10 +3,16 @@ declare(strict_types=1);
 namespace Lodgik\Module\Asset;
 use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Entity\{Asset, AssetCategory, ServiceEngineer, AssetIncident, PreventiveMaintenance, MaintenanceLog};
+use Lodgik\Module\Notification\NotificationService;
+use Psr\Log\LoggerInterface;
 
 final class AssetService
 {
-    public function __construct(private readonly EntityManagerInterface $em) {}
+    public function __construct(
+        private readonly EntityManagerInterface $em,
+        private readonly ?NotificationService $notifier = null,
+        private readonly ?LoggerInterface $logger = null,
+    ) {}
 
     // ─── Categories ───────────────────────────────────────────
     public function listCategories(string $tenantId): array { return array_map(fn($c) => $c->toArray(), $this->em->getRepository(AssetCategory::class)->findBy(['tenantId' => $tenantId], ['name' => 'ASC'])); }
@@ -98,7 +104,21 @@ final class AssetService
           if ($eng) $i->assign($eng->getId(), $eng->getName(), $asset->getBackupEngineerId());
       }
       $asset?->setStatus('under_repair');
-      $this->em->persist($i); $this->em->flush(); return $i; }
+      $this->em->persist($i); $this->em->flush();
+      // Emergency broadcast for FIRE and SECURITY events
+      if (in_array($type, ['FIRE_INCIDENT', 'SECURITY_BREACH'], true)) {
+          $emoji   = $type === 'FIRE_INCIDENT' ? '🔥' : '🚨';
+          $channel = strtolower($type);
+          $this->notifier?->broadcastAll(
+              $pid, $tid,
+              "{$emoji} " . ucwords(str_replace('_', ' ', $type)),
+              "URGENT: {$desc} — Location: " . ($x['location_description'] ?? 'Hotel premises'),
+              $channel,
+              ['incident_id' => $i->getId(), 'incident_type' => $type, 'priority' => $priority],
+          );
+          $this->logger?->warning("[Incident] Emergency broadcast fired: type={$type}, property={$pid}");
+      }
+      return $i; }
 
     public function assignIncident(string $id, string $engId, string $engName, ?string $backupId = null): AssetIncident
     { $i = $this->em->find(AssetIncident::class, $id); $i->assign($engId, $engName, $backupId); $this->em->flush(); return $i; }

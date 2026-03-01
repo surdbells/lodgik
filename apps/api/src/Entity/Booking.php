@@ -163,6 +163,49 @@ class Booking implements TenantAware
     public function getCorporateName(): ?string { return $this->corporateName; }
     public function setCorporateName(?string $v): void { $this->corporateName = $v; }
 
+
+    // ── Fraud-prevention clearance flags (Phase R1) ──────────────────────────
+    #[ORM\Column(name: 'front_desk_cleared', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $frontDeskCleared = false;
+
+    #[ORM\Column(name: 'security_cleared', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $securityCleared = false;
+
+    #[ORM\Column(name: 'front_desk_cleared_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $frontDeskClearedAt = null;
+
+    #[ORM\Column(name: 'security_cleared_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $securityClearedAt = null;
+
+    #[ORM\Column(name: 'front_desk_cleared_by', type: Types::STRING, length: 36, nullable: true)]
+    private ?string $frontDeskClearedBy = null;
+
+    #[ORM\Column(name: 'security_cleared_by', type: Types::STRING, length: 36, nullable: true)]
+    private ?string $securityClearedBy = null;
+
+    public function isFrontDeskCleared(): bool { return $this->frontDeskCleared; }
+    public function isSecurityCleared(): bool { return $this->securityCleared; }
+    public function getFrontDeskClearedAt(): ?\DateTimeImmutable { return $this->frontDeskClearedAt; }
+    public function getSecurityClearedAt(): ?\DateTimeImmutable { return $this->securityClearedAt; }
+
+    public function clearFrontDesk(string $userId): void
+    {
+        $this->frontDeskCleared   = true;
+        $this->frontDeskClearedBy = $userId;
+        $this->frontDeskClearedAt = new \DateTimeImmutable();
+    }
+
+    public function clearSecurity(string $userId): void
+    {
+        $this->securityCleared   = true;
+        $this->securityClearedBy = $userId;
+        $this->securityClearedAt = new \DateTimeImmutable();
+    }
+
+    public function isBothCleared(): bool
+    {
+        return $this->frontDeskCleared && $this->securityCleared;
+    }
     public function getNights(): int
     {
         $diff = $this->checkIn->diff($this->checkOut);

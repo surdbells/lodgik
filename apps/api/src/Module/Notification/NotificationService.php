@@ -102,6 +102,63 @@ final class NotificationService
         }
     }
 
+
+    // ─── Emergency Broadcast ────────────────────────────────────
+
+    /**
+     * Broadcast a high-priority push + in-app notification to ALL registered
+     * device tokens for a property. Used for FIRE_INCIDENT and SECURITY_BREACH.
+     *
+     * Every active staff token scoped to this tenant receives the notification.
+     * The notification is also persisted with recipient_id = 'broadcast' so
+     * it appears in the admin notification feed.
+     */
+    public function broadcastAll(
+        string $propertyId,
+        string $tenantId,
+        string $title,
+        string $body,
+        string $channel = 'emergency',
+        ?array $data    = null,
+    ): int {
+        // Persist a record visible to managers
+        $n = new Notification($propertyId, 'staff', 'broadcast', $channel, $title, $tenantId);
+        $n->setBody($body);
+        if ($data) $n->setData($data);
+        $this->em->persist($n);
+        $this->em->flush();
+
+        // Push to every active token for this tenant
+        $allTokens = $this->tokenRepo->findActiveForTenant($tenantId);
+        if (empty($allTokens)) {
+            $this->logger->warning("[Broadcast] No active tokens for tenant={$tenantId}");
+            return 0;
+        }
+
+        $fcmTokens = array_map(fn(DeviceToken $dt) => $dt->getToken(), $allTokens);
+
+        $sent = 0;
+        if ($this->fcm && $this->fcm->isEnabled()) {
+            $sent = $this->fcm->sendToTokens($fcmTokens, $title, $body, array_merge($data ?? [], [
+                'channel'     => $channel,
+                'property_id' => $propertyId,
+                'priority'    => 'high',
+            ]));
+        } else {
+            $sent = count($fcmTokens);
+            $this->logger->info("[Broadcast-dev] Would push to {$sent} tokens — title={$title}");
+        }
+
+        $this->logger->warning("[Broadcast] {$channel} sent to {$sent}/" . count($fcmTokens) . " tokens — property={$propertyId}");
+
+        foreach ($allTokens as $dt) {
+            $dt->markUsed();
+        }
+        $this->em->flush();
+
+        return $sent;
+    }
+
     // ─── FCM Push ─────────────────────────────────────────────
 
     private function sendPush(string $recipientId, string $title, ?string $body, ?array $data): void

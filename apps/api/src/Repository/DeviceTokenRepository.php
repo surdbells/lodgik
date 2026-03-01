@@ -30,6 +30,16 @@ final class DeviceTokenRepository extends BaseRepository
             ->getQuery()->getOneOrNullResult();
     }
 
+
+    /** @return DeviceToken[] — all active tokens for every user in a tenant (for broadcast) */
+    public function findActiveForTenant(string $tenantId): array
+    {
+        return $this->createQueryBuilder('dt')
+            ->where('dt.tenantId = :tid')
+            ->andWhere('dt.isActive = TRUE')
+            ->setParameter('tid', $tenantId)
+            ->getQuery()->getResult();
+    }
     public function deactivateForOwner(string $ownerId): void
     {
         $this->createQueryBuilder('dt')

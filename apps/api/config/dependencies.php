@@ -888,7 +888,9 @@ return function (ContainerBuilder $builder): void {
 
         // ─── Phase 8B: Asset Management ─────────────────────────
         \Lodgik\Module\Asset\AssetService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Asset\AssetService(
-            em: $c->get(EntityManagerInterface::class),
+            em:       $c->get(EntityManagerInterface::class),
+            notifier: $c->get(\Lodgik\Module\Notification\NotificationService::class),
+            logger:   $c->get(LoggerInterface::class),
         ),
         \Lodgik\Module\Asset\AssetController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Asset\AssetController(
             svc: $c->get(\Lodgik\Module\Asset\AssetService::class),
