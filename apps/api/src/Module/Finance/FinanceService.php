@@ -193,11 +193,11 @@ final class FinanceService
         // ── Discrepancies: bookings with balance > 0 on checkout ─────────────
         $discrepancies = [];
         if (!empty($folioIds)) {
-            // Find folios where outstanding_balance > 0 closed today
+            // Find folios where balance > 0 updated today (potential discrepancies)
             $outstandingFolios = $this->em->createQueryBuilder()
                 ->select('f')->from(Folio::class, 'f')
                 ->where('f.propertyId = :p')
-                ->andWhere('f.outstandingBalance > 0')
+                ->andWhere('f.balance > 0')
                 ->andWhere('f.updatedAt >= :ds')->andWhere('f.updatedAt <= :de')
                 ->setParameter('p', $pid)
                 ->setParameter('ds', $dayStart)->setParameter('de', $dayEnd)
@@ -206,7 +206,7 @@ final class FinanceService
                 $discrepancies[] = [
                     'folio_id'    => $folio->getId(),
                     'booking_id'  => $folio->getBookingId(),
-                    'balance'     => $folio->getOutstandingBalance(),
+                    'balance'     => $folio->getBalance(),
                     'description' => 'Outstanding balance at audit time',
                 ];
             }

@@ -1,0 +1,3417 @@
+openapi: 3.0.3
+
+info:
+  title: Lodgik Hotel Management API
+  version: 1.0.0
+  description: |
+    Enterprise hotel management platform API.
+    Base URL: https://api.lodgik.co/api
+
+    ## Authentication
+    All protected endpoints require a Bearer JWT token in the Authorization header.
+    Tokens are obtained via POST /api/auth/login.
+
+    ## Multi-Tenancy
+    Every request is scoped to the authenticated user's tenant.
+    The `tenant_id` is resolved from the JWT — never passed explicitly.
+
+    ## Response Envelope
+    All responses follow a consistent structure:
+    ```json
+    { "success": true, "data": {}, "message": "optional message" }
+    ```
+    Errors:
+    ```json
+    { "success": false, "message": "Human-readable error", "errors": {} }
+    ```
+
+    ## Monetary Values
+    All monetary fields are stored and returned in **kobo** (integer, 1 NGN = 100 kobo)
+    unless otherwise noted in the endpoint description.
+
+    ## Role Hierarchy
+    - `super_admin` — Lodgik platform administrator
+    - `property_admin` — Hotel owner / chain director
+    - `manager` — Property general manager
+    - `accountant` — Finance staff
+    - `front_desk` — Reception
+    - `housekeeping` — Housekeeping staff
+    - `kitchen` — Kitchen staff
+    - `bar` — Bar staff
+    - `security` — Security personnel
+    - `hr` — Human resources
+    - `engineer` / `maintenance` — Technical staff
+    - `concierge` — Guest services
+    - `gym_staff` — Gym staff
+    - `merchant_admin` / `merchant_agent` — Marketplace roles
+
+servers:
+  - url: https://api.lodgik.co/api
+    description: Production
+
+tags:
+  - name: Auth
+  - name: Rooms
+  - name: Amenities
+  - name: Bookings
+  - name: Folios
+  - name: Invoices
+  - name: Finance
+  - name: Night Audit
+  - name: Police Reports
+  - name: Analytics
+  - name: Dashboard
+  - name: POS
+  - name: Housekeeping
+  - name: Guest Services
+  - name: Chat
+  - name: Notifications
+  - name: Service Requests
+  - name: Room Controls
+  - name: IoT
+  - name: Security
+  - name: Gym
+  - name: Spa
+  - name: Loyalty
+  - name: OTA
+  - name: WhatsApp
+  - name: HR — Employees
+  - name: HR — Attendance
+  - name: HR — Leave
+  - name: HR — Payroll
+  - name: Assets
+  - name: Settings
+  - name: Audit Logs
+  - name: Admin — Merchants
+  - name: Staff
+  - name: Guests
+
+# ─────────────────────────────────────────────────────────────────
+# Reusable components
+# ─────────────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── Primitives ──────────────────────────────────────────────
+    UUID:
+      type: string
+      format: uuid
+      example: "3f9d8a1b-4c72-4e0f-a9b1-d3f8e2c70123"
+
+    Timestamp:
+      type: string
+      format: date-time
+      example: "2026-03-01T14:30:00Z"
+
+    Date:
+      type: string
+      format: date
+      example: "2026-03-01"
+
+    Kobo:
+      type: integer
+      description: Monetary amount in kobo (1 NGN = 100 kobo)
+      example: 150000
+
+    # ── Standard responses ───────────────────────────────────────
+    SuccessResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        data: {}
+
+    ErrorResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string, example: "Validation failed" }
+        errors:
+          type: object
+          additionalProperties: { type: string }
+
+    PaginatedMeta:
+      type: object
+      properties:
+        total: { type: integer }
+        page: { type: integer }
+        per_page: { type: integer }
+        last_page: { type: integer }
+
+    # ── Auth ─────────────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    AuthUser:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { type: string }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        property_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        token: { type: string, description: JWT bearer token }
+
+    # ── Room ─────────────────────────────────────────────────────
+    RoomType:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        property_id: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        base_rate: { $ref: '#/components/schemas/Kobo' }
+        hourly_rate: { $ref: '#/components/schemas/Kobo', nullable: true }
+        max_occupancy: { type: integer }
+        amenities: { type: array, items: { type: string } }
+        photos: { type: array, items: { type: string } }
+        is_active: { type: boolean }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        updated_at: { $ref: '#/components/schemas/Timestamp' }
+
+    Room:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        property_id: { $ref: '#/components/schemas/UUID' }
+        room_type_id: { $ref: '#/components/schemas/UUID' }
+        room_number: { type: string, example: "101" }
+        floor: { type: integer, nullable: true }
+        status: { type: string, enum: [available, occupied, maintenance, checkout, dirty, inspected] }
+        status_label: { type: string }
+        status_color: { type: string }
+        notes: { type: string, nullable: true }
+        amenities: { type: array, items: { type: string } }
+
+    Amenity:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        category: { type: string, nullable: true, example: "comfort" }
+        icon: { type: string, nullable: true, example: "wifi" }
+        is_active: { type: boolean }
+
+    # ── Booking ───────────────────────────────────────────────────
+    Booking:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        property_id: { $ref: '#/components/schemas/UUID' }
+        guest_id: { $ref: '#/components/schemas/UUID' }
+        room_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        booking_ref: { type: string, example: "BK-20260301-001" }
+        booking_type: { type: string, enum: [standard, hourly, group] }
+        status: { type: string, enum: [pending, confirmed, checked_in, checked_out, cancelled, no_show] }
+        check_in: { $ref: '#/components/schemas/Timestamp' }
+        check_out: { $ref: '#/components/schemas/Timestamp' }
+        adults: { type: integer }
+        children: { type: integer }
+        rate_per_night: { $ref: '#/components/schemas/Kobo' }
+        total_amount: { $ref: '#/components/schemas/Kobo' }
+        discount_amount: { $ref: '#/components/schemas/Kobo' }
+        source: { type: string, nullable: true, example: "direct" }
+        notes: { type: string, nullable: true }
+        checked_in_at: { $ref: '#/components/schemas/Timestamp', nullable: true }
+        checked_out_at: { $ref: '#/components/schemas/Timestamp', nullable: true }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+
+    # ── Folio ─────────────────────────────────────────────────────
+    Folio:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        booking_id: { $ref: '#/components/schemas/UUID' }
+        guest_id: { $ref: '#/components/schemas/UUID' }
+        folio_number: { type: string }
+        status: { type: string, enum: [open, closed, voided] }
+        total_charges: { $ref: '#/components/schemas/Kobo' }
+        total_payments: { $ref: '#/components/schemas/Kobo' }
+        total_adjustments: { $ref: '#/components/schemas/Kobo' }
+        balance: { $ref: '#/components/schemas/Kobo' }
+        closed_at: { $ref: '#/components/schemas/Timestamp', nullable: true }
+
+    # ── Night Audit ───────────────────────────────────────────────
+    NightAudit:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        property_id: { $ref: '#/components/schemas/UUID' }
+        audit_date: { $ref: '#/components/schemas/Date' }
+        status: { type: string, enum: [open, closed] }
+        total_rooms: { type: integer }
+        rooms_occupied: { type: integer }
+        rooms_available: { type: integer }
+        check_ins: { type: integer }
+        check_outs: { type: integer }
+        no_shows: { type: integer }
+        occupancy_rate: { type: number, format: float, example: 72.5 }
+        room_revenue: { $ref: '#/components/schemas/Kobo' }
+        fnb_revenue: { $ref: '#/components/schemas/Kobo' }
+        other_revenue: { $ref: '#/components/schemas/Kobo' }
+        total_revenue: { $ref: '#/components/schemas/Kobo' }
+        total_expenses: { $ref: '#/components/schemas/Kobo' }
+        outstanding_balance: { $ref: '#/components/schemas/Kobo' }
+        cash_collected: { $ref: '#/components/schemas/Kobo' }
+        card_collected: { $ref: '#/components/schemas/Kobo' }
+        transfer_collected: { $ref: '#/components/schemas/Kobo' }
+        adr: { type: number, format: float, description: Average Daily Rate }
+        revpar: { type: number, format: float, description: Revenue Per Available Room }
+        discrepancies: { type: array, nullable: true, items: { type: object } }
+        closed_by_name: { type: string, nullable: true }
+        closed_at: { $ref: '#/components/schemas/Timestamp', nullable: true }
+
+    # ── POS ───────────────────────────────────────────────────────
+    PosTable:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        property_id: { $ref: '#/components/schemas/UUID' }
+        number: { type: string, example: "T1" }
+        seats: { type: integer, example: 4 }
+        section: { type: string, enum: [restaurant, bar, poolside, terrace, private] }
+        status: { type: string, enum: [available, occupied, reserved, inactive] }
+        current_order_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        qr_code: { type: string, nullable: true }
+
+    PosCategory:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        type: { type: string, enum: [food, beverage, spirits, cocktails] }
+        sort_order: { type: integer }
+        is_active: { type: boolean }
+
+    PosProduct:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        category_id: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        price: { $ref: '#/components/schemas/Kobo' }
+        is_available: { type: boolean }
+        requires_kitchen: { type: boolean }
+        prep_time_minutes: { type: integer }
+
+    PosOrder:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        order_number: { type: string }
+        table_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        table_number: { type: string, nullable: true }
+        order_type: { type: string, enum: [dine_in, takeaway, room_service] }
+        status: { type: string, enum: [open, closed, cancelled] }
+        status_label: { type: string }
+        status_color: { type: string }
+        guest_name: { type: string, nullable: true }
+        booking_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        item_count: { type: integer }
+        total_amount: { $ref: '#/components/schemas/Kobo' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+
+    # ── Housekeeping ──────────────────────────────────────────────
+    HousekeepingTask:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        property_id: { $ref: '#/components/schemas/UUID' }
+        room_id: { $ref: '#/components/schemas/UUID' }
+        room_number: { type: string }
+        task_type: { type: string, enum: [checkout, stayover, deep_clean, turndown, inspection, maintenance] }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        status: { type: string, enum: [pending, assigned, in_progress, completed, inspected, cancelled] }
+        assigned_to: { $ref: '#/components/schemas/UUID', nullable: true }
+        assigned_name: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        checklist: { type: array, items: { type: object } }
+        due_at: { $ref: '#/components/schemas/Timestamp', nullable: true }
+        started_at: { $ref: '#/components/schemas/Timestamp', nullable: true }
+        completed_at: { $ref: '#/components/schemas/Timestamp', nullable: true }
+
+    # ── Police Report ─────────────────────────────────────────────
+    PoliceReport:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        property_id: { $ref: '#/components/schemas/UUID' }
+        booking_id: { $ref: '#/components/schemas/UUID' }
+        guest_id: { $ref: '#/components/schemas/UUID' }
+        guest_name: { type: string }
+        nationality: { type: string, nullable: true }
+        id_type: { type: string, nullable: true, enum: [passport, nin, drivers_license, voters_card] }
+        id_number: { type: string, nullable: true }
+        passport_number: { type: string, nullable: true }
+        nin: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        purpose_of_visit: { type: string, nullable: true }
+        arrival_date: { $ref: '#/components/schemas/Date' }
+        departure_date: { $ref: '#/components/schemas/Date', nullable: true }
+        room_number: { type: string, nullable: true }
+        accompanying_persons: { type: integer, default: 0 }
+        status: { type: string, enum: [pending, submitted] }
+        submitted_at: { $ref: '#/components/schemas/Timestamp', nullable: true }
+
+    # ── Analytics ─────────────────────────────────────────────────
+    AnalyticsParams:
+      type: object
+      properties:
+        property_id:
+          $ref: '#/components/schemas/UUID'
+        from:
+          $ref: '#/components/schemas/Date'
+        to:
+          $ref: '#/components/schemas/Date'
+
+security:
+  - bearerAuth: []
+
+# ─────────────────────────────────────────────────────────────────
+# Paths
+# ─────────────────────────────────────────────────────────────────
+paths:
+
+  # ══════════════════════════════════════════════════════
+  # AUTH
+  # ══════════════════════════════════════════════════════
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Staff login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+            example:
+              email: admin@lodgik.co
+              password: secret123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AuthUser' }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Invalidate current session token
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get authenticated user profile
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AuthUser' }
+
+  /auth/password:
+    put:
+      tags: [Auth]
+      summary: Change own password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string, format: password }
+                new_password: { type: string, format: password, minLength: 8 }
+      responses:
+        '200':
+          description: Password changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # ROOMS
+  # ══════════════════════════════════════════════════════
+  /room-types:
+    get:
+      tags: [Rooms]
+      summary: List room types for a property
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Room types list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/RoomType' }
+    post:
+      tags: [Rooms]
+      summary: Create room type
+      description: Roles — property_admin, manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, name, base_rate, max_occupancy]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                name: { type: string }
+                description: { type: string }
+                base_rate: { $ref: '#/components/schemas/Kobo' }
+                hourly_rate: { $ref: '#/components/schemas/Kobo' }
+                max_occupancy: { type: integer, minimum: 1 }
+                amenities: { type: array, items: { type: string } }
+      responses:
+        '201':
+          description: Room type created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/RoomType' }
+
+  /room-types/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { $ref: '#/components/schemas/UUID' }
+    put:
+      tags: [Rooms]
+      summary: Update room type
+      description: Roles — property_admin, manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                base_rate: { $ref: '#/components/schemas/Kobo' }
+                max_occupancy: { type: integer }
+                amenities: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/RoomType' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    delete:
+      tags: [Rooms]
+      summary: Delete room type (soft delete)
+      description: Roles — property_admin
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /rooms:
+    get:
+      tags: [Rooms]
+      summary: List rooms for a property
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: room_type_id
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Room list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Room' }
+    post:
+      tags: [Rooms]
+      summary: Create room
+      description: Roles — property_admin, manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, room_type_id, room_number]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                room_type_id: { $ref: '#/components/schemas/UUID' }
+                room_number: { type: string }
+                floor: { type: integer }
+                notes: { type: string }
+      responses:
+        '201':
+          description: Room created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Room' }
+
+  /rooms/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { $ref: '#/components/schemas/UUID' }
+    put:
+      tags: [Rooms]
+      summary: Update room
+      description: Roles — property_admin, manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                room_number: { type: string }
+                floor: { type: integer }
+                status: { type: string }
+                notes: { type: string }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Room' }
+    delete:
+      tags: [Rooms]
+      summary: Delete room
+      description: Roles — property_admin
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # AMENITIES
+  # ══════════════════════════════════════════════════════
+  /amenities:
+    get:
+      tags: [Amenities]
+      summary: List all amenities for tenant
+      parameters:
+        - in: query
+          name: category
+          schema: { type: string }
+          description: Filter by category (comfort, technology, dining, etc.)
+      responses:
+        '200':
+          description: Amenity list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Amenity' }
+    post:
+      tags: [Amenities]
+      summary: Create amenity
+      description: Roles — property_admin, manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, example: "Swimming Pool" }
+                category: { type: string, example: "recreation" }
+                icon: { type: string, example: "pool" }
+      responses:
+        '201':
+          description: Amenity created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Amenity' }
+
+  /amenities/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { $ref: '#/components/schemas/UUID' }
+    put:
+      tags: [Amenities]
+      summary: Update amenity
+      description: Roles — property_admin, manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                category: { type: string }
+                icon: { type: string }
+                is_active: { type: boolean }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Amenity' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    delete:
+      tags: [Amenities]
+      summary: Delete amenity
+      description: Roles — property_admin, manager
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # BOOKINGS
+  # ══════════════════════════════════════════════════════
+  /bookings:
+    get:
+      tags: [Bookings]
+      summary: List bookings
+      description: Roles — property_admin, manager, front_desk, accountant
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Booking list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Booking' }
+                      meta: { $ref: '#/components/schemas/PaginatedMeta' }
+    post:
+      tags: [Bookings]
+      summary: Create booking
+      description: Roles — property_admin, manager, front_desk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, guest_id, check_in, check_out, booking_type]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                guest_id: { $ref: '#/components/schemas/UUID' }
+                room_id: { $ref: '#/components/schemas/UUID' }
+                room_type_id: { $ref: '#/components/schemas/UUID' }
+                check_in: { $ref: '#/components/schemas/Timestamp' }
+                check_out: { $ref: '#/components/schemas/Timestamp' }
+                booking_type: { type: string, enum: [standard, hourly, group] }
+                adults: { type: integer, default: 1 }
+                children: { type: integer, default: 0 }
+                rate_per_night: { $ref: '#/components/schemas/Kobo' }
+                source: { type: string }
+                special_requests: { type: string }
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Booking' }
+        '409':
+          description: Room not available for requested dates
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /bookings/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { $ref: '#/components/schemas/UUID' }
+    get:
+      tags: [Bookings]
+      summary: Get booking detail
+      responses:
+        '200':
+          description: Booking
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Booking' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    put:
+      tags: [Bookings]
+      summary: Update booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                room_id: { $ref: '#/components/schemas/UUID' }
+                check_in: { $ref: '#/components/schemas/Timestamp' }
+                check_out: { $ref: '#/components/schemas/Timestamp' }
+                notes: { type: string }
+                special_requests: { type: string }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Booking' }
+
+  /bookings/{id}/check-in:
+    post:
+      tags: [Bookings]
+      summary: Check in guest
+      description: Roles — front_desk, manager. Sets booking status to checked_in and records timestamp.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                room_id: { $ref: '#/components/schemas/UUID', description: Override room if changed at check-in }
+      responses:
+        '200':
+          description: Checked in
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Booking' }
+        '409':
+          description: Booking not in confirmable state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /bookings/{id}/check-out:
+    post:
+      tags: [Bookings]
+      summary: Check out guest
+      description: Roles — front_desk, manager. Sets booking status to checked_out.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Checked out
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Booking' }
+
+  /bookings/{id}/cancel:
+    post:
+      tags: [Bookings]
+      summary: Cancel booking
+      description: Roles — property_admin, manager, front_desk
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # FOLIOS
+  # ══════════════════════════════════════════════════════
+  /folios:
+    get:
+      tags: [Folios]
+      summary: List folios for a property
+      description: Roles — property_admin, manager, front_desk, accountant
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: status
+          schema: { type: string, enum: [open, closed, voided] }
+      responses:
+        '200':
+          description: Folio list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Folio' }
+
+  /folios/by-booking/{bookingId}:
+    get:
+      tags: [Folios]
+      summary: Get folio for a booking
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Folio
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Folio' }
+
+  /folios/{id}/charges:
+    post:
+      tags: [Folios]
+      summary: Add charge to folio
+      description: Roles — property_admin, manager, front_desk, accountant
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category, description, amount]
+              properties:
+                category:
+                  type: string
+                  enum: [room, restaurant, bar, minibar, laundry, telephone, service, other]
+                description: { type: string }
+                amount: { $ref: '#/components/schemas/Kobo' }
+                quantity: { type: integer, default: 1 }
+                charge_date: { $ref: '#/components/schemas/Date' }
+      responses:
+        '201':
+          description: Charge added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /folios/{id}/payments:
+    post:
+      tags: [Folios]
+      summary: Record payment on folio
+      description: Roles — property_admin, manager, front_desk, accountant
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payment_method, amount, payment_date]
+              properties:
+                payment_method:
+                  type: string
+                  enum: [cash, pos_card, bank_transfer, loyalty_points]
+                amount: { $ref: '#/components/schemas/Kobo' }
+                payment_date: { $ref: '#/components/schemas/Date' }
+                transfer_reference: { type: string }
+                sender_name: { type: string }
+                notes: { type: string }
+      responses:
+        '201':
+          description: Payment recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /folios/{id}/close:
+    post:
+      tags: [Folios]
+      summary: Close folio
+      description: Roles — property_admin, manager, accountant
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Folio closed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # NIGHT AUDIT
+  # ══════════════════════════════════════════════════════
+  /night-audit:
+    get:
+      tags: [Night Audit]
+      summary: List audit records for a property
+      description: Roles — property_admin, manager, accountant
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: Audit list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/NightAudit' }
+
+  /night-audit/generate:
+    post:
+      tags: [Night Audit]
+      summary: Run night audit for today
+      description: |
+        Roles — property_admin, manager, accountant.
+        Computes full metrics: occupancy, check-ins/outs, revenue by category,
+        payment breakdowns, ADR, RevPAR, and outstanding balances.
+        Idempotent — if an open audit exists for today it is updated; otherwise a new record is created.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                audit_date:
+                  $ref: '#/components/schemas/Date'
+                  description: Defaults to today if omitted
+      responses:
+        '200':
+          description: Audit computed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/NightAudit' }
+
+  /night-audit/{id}/close:
+    post:
+      tags: [Night Audit]
+      summary: Close an open audit
+      description: Roles — property_admin, manager, accountant. Records closing staff name and timestamp.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Audit closed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/NightAudit' }
+        '409':
+          description: Audit is already closed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # POLICE REPORTS
+  # ══════════════════════════════════════════════════════
+  /police-reports:
+    get:
+      tags: [Police Reports]
+      summary: List police reports for a property
+      description: Roles — property_admin, manager, accountant, front_desk, security
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, submitted] }
+      responses:
+        '200':
+          description: Report list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/PoliceReport' }
+    post:
+      tags: [Police Reports]
+      summary: Create police report for a guest
+      description: Roles — property_admin, manager, front_desk. Report starts as status=pending.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, booking_id, guest_id, guest_name, arrival_date]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                booking_id: { $ref: '#/components/schemas/UUID' }
+                guest_id: { $ref: '#/components/schemas/UUID' }
+                guest_name: { type: string }
+                nationality: { type: string }
+                id_type: { type: string, enum: [passport, nin, drivers_license, voters_card] }
+                id_number: { type: string }
+                passport_number: { type: string }
+                nin: { type: string }
+                address: { type: string }
+                phone: { type: string }
+                purpose_of_visit: { type: string }
+                arrival_date: { $ref: '#/components/schemas/Date' }
+                departure_date: { $ref: '#/components/schemas/Date' }
+                room_number: { type: string }
+                accompanying_persons: { type: integer, default: 0 }
+      responses:
+        '201':
+          description: Report created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/PoliceReport' }
+
+  /police-reports/{id}/submit:
+    post:
+      tags: [Police Reports]
+      summary: Mark a police report as submitted
+      description: Roles — property_admin, manager. Sets status to submitted and records timestamp.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Report submitted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/PoliceReport' }
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # ANALYTICS
+  # ══════════════════════════════════════════════════════
+  /analytics/revpar:
+    get:
+      tags: [Analytics]
+      summary: RevPAR and ADR trend
+      description: |
+        Roles — property_admin, manager, accountant.
+        Data sourced from closed night audit records.
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: group_by
+          schema: { type: string, enum: [daily, monthly], default: daily }
+      responses:
+        '200':
+          description: RevPAR trend
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date: { type: string }
+                            revpar: { type: number }
+                            adr: { type: number }
+                            room_revenue: { $ref: '#/components/schemas/Kobo' }
+                            total_rooms: { type: integer }
+                            occupied: { type: integer }
+
+  /analytics/occupancy:
+    get:
+      tags: [Analytics]
+      summary: Occupancy rate trend
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: Occupancy trend
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date: { type: string }
+                            occupancy_rate: { type: number, example: 72.5 }
+                            rooms_occupied: { type: integer }
+                            total_rooms: { type: integer }
+
+  /analytics/revenue:
+    get:
+      tags: [Analytics]
+      summary: Revenue breakdown (room, F&B, other, total)
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: Revenue breakdown
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          room: { $ref: '#/components/schemas/Kobo' }
+                          fnb: { $ref: '#/components/schemas/Kobo' }
+                          other: { $ref: '#/components/schemas/Kobo' }
+                          total: { $ref: '#/components/schemas/Kobo' }
+
+  /analytics/booking-sources:
+    get:
+      tags: [Analytics]
+      summary: Booking source breakdown with percentages
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: Source breakdown
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            source: { type: string, example: "direct" }
+                            bookings: { type: integer }
+                            revenue: { $ref: '#/components/schemas/Kobo' }
+                            percentage: { type: number, example: 42.5 }
+
+  /analytics/top-rooms:
+    get:
+      tags: [Analytics]
+      summary: Top rooms ranked by revenue
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: Top rooms
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            room_number: { type: string }
+                            bookings: { type: integer }
+                            revenue: { $ref: '#/components/schemas/Kobo' }
+
+  /analytics/profit-loss:
+    get:
+      tags: [Analytics]
+      summary: Profit and loss summary
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: P&L summary
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          period:
+                            type: object
+                            properties:
+                              from: { type: string }
+                              to: { type: string }
+                          total_revenue: { $ref: '#/components/schemas/Kobo' }
+                          total_expenses: { $ref: '#/components/schemas/Kobo' }
+                          net_profit: { $ref: '#/components/schemas/Kobo' }
+                          revenue_breakdown:
+                            type: object
+                            properties:
+                              room: { $ref: '#/components/schemas/Kobo' }
+                              fnb: { $ref: '#/components/schemas/Kobo' }
+                              other: { $ref: '#/components/schemas/Kobo' }
+
+  /analytics/demographics:
+    get:
+      tags: [Analytics]
+      summary: Guest nationality and age group distribution
+      description: Sourced from police report records for the property.
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: Demographics
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          nationalities:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                nationality: { type: string }
+                                count: { type: integer }
+                          age_groups:
+                            type: array
+                            description: Currently empty — requires guest DOB capture
+                            items:
+                              type: object
+                              properties:
+                                group: { type: string }
+                                count: { type: integer }
+
+  /analytics/monthly-summary:
+    get:
+      tags: [Analytics]
+      summary: Monthly revenue summary (rolling months)
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: months
+          schema: { type: integer, default: 12, description: "Number of months to include (1, 3, or 12)" }
+      responses:
+        '200':
+          description: Monthly summary
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month: { type: string, example: "2026-03" }
+                            revenue: { $ref: '#/components/schemas/Kobo' }
+                            room_revenue: { $ref: '#/components/schemas/Kobo' }
+                            fnb_revenue: { $ref: '#/components/schemas/Kobo' }
+
+  /analytics/adr-by-day:
+    get:
+      tags: [Analytics]
+      summary: Average Daily Rate by day of week
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          required: true
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: ADR by day
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            day: { type: string, example: "Mon" }
+                            avg_adr: { type: number }
+                            count: { type: integer }
+
+  # ══════════════════════════════════════════════════════
+  # POS
+  # ══════════════════════════════════════════════════════
+  /pos/tables:
+    get:
+      tags: [POS]
+      summary: List tables for a property
+      description: Roles — property_admin, manager, bar, kitchen, front_desk
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Table list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/PosTable' }
+    post:
+      tags: [POS]
+      summary: Create table
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, number]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                number: { type: string, example: "T1" }
+                seats: { type: integer, default: 4 }
+                section:
+                  type: string
+                  enum: [restaurant, bar, poolside, terrace, private]
+                  default: restaurant
+      responses:
+        '201':
+          description: Table created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/PosTable' }
+
+  /pos/tables/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { $ref: '#/components/schemas/UUID' }
+    put:
+      tags: [POS]
+      summary: Update table
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                number: { type: string }
+                seats: { type: integer }
+                section: { type: string, enum: [restaurant, bar, poolside, terrace, private] }
+                status: { type: string, enum: [available, reserved, inactive] }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/PosTable' }
+        '404':
+          description: Table not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    delete:
+      tags: [POS]
+      summary: Delete table
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /pos/categories:
+    get:
+      tags: [POS]
+      summary: List menu categories
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Categories
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/PosCategory' }
+    post:
+      tags: [POS]
+      summary: Create menu category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, name]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                name: { type: string }
+                type: { type: string, enum: [food, beverage, spirits, cocktails] }
+                sort_order: { type: integer, default: 0 }
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/PosCategory' }
+
+  /pos/categories/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { $ref: '#/components/schemas/UUID' }
+    put:
+      tags: [POS]
+      summary: Update category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                type: { type: string }
+                sort_order: { type: integer }
+                is_active: { type: boolean }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/PosCategory' }
+    delete:
+      tags: [POS]
+      summary: Delete category
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /pos/products:
+    get:
+      tags: [POS]
+      summary: List menu products
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: category_id
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Product list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/PosProduct' }
+    post:
+      tags: [POS]
+      summary: Create menu product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, category_id, name, price]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                category_id: { $ref: '#/components/schemas/UUID' }
+                name: { type: string }
+                description: { type: string }
+                price: { $ref: '#/components/schemas/Kobo', description: Price in kobo }
+                requires_kitchen: { type: boolean, default: true }
+                prep_time_minutes: { type: integer, default: 15 }
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/PosProduct' }
+
+  /pos/products/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { $ref: '#/components/schemas/UUID' }
+    put:
+      tags: [POS]
+      summary: Update product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                price: { $ref: '#/components/schemas/Kobo' }
+                is_available: { type: boolean }
+                requires_kitchen: { type: boolean }
+                prep_time_minutes: { type: integer }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/PosProduct' }
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    delete:
+      tags: [POS]
+      summary: Delete product
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /pos/orders:
+    get:
+      tags: [POS]
+      summary: List orders
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: status
+          schema: { type: string, enum: [open, closed, cancelled] }
+      responses:
+        '200':
+          description: Orders
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/PosOrder' }
+    post:
+      tags: [POS]
+      summary: Create order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, order_type]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                table_id: { $ref: '#/components/schemas/UUID' }
+                order_type: { type: string, enum: [dine_in, takeaway, room_service] }
+                guest_name: { type: string }
+                booking_id: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/PosOrder' }
+
+  /pos/orders/{id}/items:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { $ref: '#/components/schemas/UUID' }
+    get:
+      tags: [POS]
+      summary: Get order with items
+      responses:
+        '200':
+          description: Order detail with line items
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          order: { $ref: '#/components/schemas/PosOrder' }
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id: { $ref: '#/components/schemas/UUID' }
+                                product_id: { $ref: '#/components/schemas/UUID' }
+                                product_name: { type: string }
+                                quantity: { type: integer }
+                                unit_price: { $ref: '#/components/schemas/Kobo' }
+                                line_total: { $ref: '#/components/schemas/Kobo' }
+                                status: { type: string, enum: [pending, preparing, ready, served] }
+    post:
+      tags: [POS]
+      summary: Add item to order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, quantity]
+              properties:
+                product_id: { $ref: '#/components/schemas/UUID' }
+                quantity: { type: integer, minimum: 1 }
+                notes: { type: string }
+      responses:
+        '201':
+          description: Item added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /pos/orders/{id}/close:
+    post:
+      tags: [POS]
+      summary: Close order (mark as paid)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Order closed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /pos/orders/{id}/cancel:
+    post:
+      tags: [POS]
+      summary: Cancel order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Order cancelled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /pos/orders/{id}/post-to-folio:
+    post:
+      tags: [POS]
+      summary: Post order total to guest folio
+      description: Requires booking_id on the order. Creates a folio charge with category=restaurant.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Posted to folio
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '422':
+          description: Order has no associated booking
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /pos/orders/{id}/items/{item_id}/status:
+    post:
+      tags: [POS]
+      summary: Update kitchen item status
+      description: Used by kitchen display. Transitions pending→preparing→ready.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: path
+          name: item_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [preparing, ready, served] }
+      responses:
+        '200':
+          description: Status updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /pos/kitchen/queue:
+    get:
+      tags: [POS]
+      summary: Kitchen display queue
+      description: Returns all open orders with pending/preparing items, grouped by order.
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Kitchen queue
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            order: { $ref: '#/components/schemas/PosOrder' }
+                            items:
+                              type: array
+                              items:
+                                type: object
+
+  # ══════════════════════════════════════════════════════
+  # HOUSEKEEPING
+  # ══════════════════════════════════════════════════════
+  /housekeeping/tasks:
+    get:
+      tags: [Housekeeping]
+      summary: List housekeeping tasks
+      description: Roles — property_admin, manager, housekeeping, front_desk
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: assigned_to
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: date
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: Task list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/HousekeepingTask' }
+    post:
+      tags: [Housekeeping]
+      summary: Create housekeeping task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, room_id, task_type]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                room_id: { $ref: '#/components/schemas/UUID' }
+                task_type: { type: string, enum: [checkout, stayover, deep_clean, turndown, inspection, maintenance] }
+                priority: { type: string, enum: [low, normal, high, urgent], default: normal }
+                notes: { type: string }
+                due_at: { $ref: '#/components/schemas/Timestamp' }
+                checklist: { type: array, items: { type: object } }
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/HousekeepingTask' }
+
+  /housekeeping/tasks/{id}/assign:
+    post:
+      tags: [Housekeeping]
+      summary: Assign task to staff member
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [staff_id]
+              properties:
+                staff_id: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Assigned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /housekeeping/tasks/{id}/start:
+    post:
+      tags: [Housekeeping]
+      summary: Mark task as in-progress
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Started
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /housekeeping/tasks/{id}/complete:
+    post:
+      tags: [Housekeeping]
+      summary: Mark task as complete
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: { type: string }
+                checklist: { type: array, items: { type: object } }
+      responses:
+        '200':
+          description: Completed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /housekeeping/stats/today:
+    get:
+      tags: [Housekeeping]
+      summary: Today's housekeeping statistics
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Stats
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          total: { type: integer }
+                          pending: { type: integer }
+                          in_progress: { type: integer }
+                          completed: { type: integer }
+                          inspected: { type: integer }
+
+  /housekeeping/lost-and-found:
+    get:
+      tags: [Housekeeping]
+      summary: List lost and found items
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Lost and found items
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [Housekeeping]
+      summary: Log a lost and found item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, item_name, found_by, location]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                item_name: { type: string }
+                description: { type: string }
+                found_by: { type: string, description: Staff name (up to 150 chars) }
+                location: { type: string }
+                room_id: { $ref: '#/components/schemas/UUID' }
+                photo_url: { type: string }
+      responses:
+        '201':
+          description: Item logged
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # SERVICE REQUESTS
+  # ══════════════════════════════════════════════════════
+  /service-requests:
+    get:
+      tags: [Service Requests]
+      summary: List service requests
+      description: Roles — property_admin, manager, front_desk, housekeeping, maintenance, concierge, engineer
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+      responses:
+        '200':
+          description: Request list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [Service Requests]
+      summary: Create service request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, booking_id, category, title]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                booking_id: { $ref: '#/components/schemas/UUID' }
+                category: { type: string, enum: [housekeeping, maintenance, room_service, concierge, amenity, complaint, other] }
+                title: { type: string }
+                description: { type: string }
+                priority: { type: string, enum: [low, normal, high, urgent] }
+      responses:
+        '201':
+          description: Request created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # CHAT
+  # ══════════════════════════════════════════════════════
+  /chat/messages:
+    post:
+      tags: [Chat]
+      summary: Send a chat message
+      description: Roles — property_admin, manager, front_desk, concierge, bar, kitchen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [booking_id, content]
+              properties:
+                booking_id: { $ref: '#/components/schemas/UUID' }
+                content: { type: string }
+                message_type: { type: string, enum: [text, image], default: text }
+      responses:
+        '201':
+          description: Message sent
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /chat/messages/{bookingId}:
+    get:
+      tags: [Chat]
+      summary: Get conversation messages for a booking
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Messages
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /chat/active:
+    get:
+      tags: [Chat]
+      summary: List all active guest conversations
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Active conversations
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # NOTIFICATIONS
+  # ══════════════════════════════════════════════════════
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications for current user
+      parameters:
+        - in: query
+          name: unread_only
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Notifications
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Get unread notification count
+      responses:
+        '200':
+          description: Count
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          count: { type: integer }
+
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      responses:
+        '200':
+          description: All marked read
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # SECURITY
+  # ══════════════════════════════════════════════════════
+  /security/visitor-codes:
+    get:
+      tags: [Security]
+      summary: List visitor access codes
+      description: Roles — property_admin, manager, security, front_desk
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Visitor codes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [Security]
+      summary: Generate visitor access code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, visitor_name, purpose, valid_from, valid_until]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                visitor_name: { type: string }
+                purpose: { type: string }
+                valid_from: { $ref: '#/components/schemas/Timestamp' }
+                valid_until: { $ref: '#/components/schemas/Timestamp' }
+                host_booking_id: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '201':
+          description: Code generated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /security/gate-passes:
+    get:
+      tags: [Security]
+      summary: List gate passes
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Gate passes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [Security]
+      summary: Create gate pass
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, visitor_name, purpose]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                visitor_name: { type: string }
+                purpose: { type: string }
+                vehicle_plate: { type: string }
+                host_name: { type: string }
+                host_room: { type: string }
+      responses:
+        '201':
+          description: Gate pass created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # LOYALTY
+  # ══════════════════════════════════════════════════════
+  /loyalty/guests/{guestId}/points:
+    get:
+      tags: [Loyalty]
+      summary: Get guest loyalty points balance
+      description: Roles — property_admin, manager, front_desk, concierge
+      parameters:
+        - in: path
+          name: guestId
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Points balance
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          guest_id: { $ref: '#/components/schemas/UUID' }
+                          points_balance: { type: integer }
+                          tier: { type: string }
+                          tier_name: { type: string }
+
+  /loyalty/points/earn:
+    post:
+      tags: [Loyalty]
+      summary: Award loyalty points to guest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [guest_id, booking_id, amount_spent]
+              properties:
+                guest_id: { $ref: '#/components/schemas/UUID' }
+                booking_id: { $ref: '#/components/schemas/UUID' }
+                amount_spent: { $ref: '#/components/schemas/Kobo' }
+                description: { type: string }
+      responses:
+        '200':
+          description: Points awarded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /loyalty/points/redeem:
+    post:
+      tags: [Loyalty]
+      summary: Redeem loyalty points
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [guest_id, points, booking_id]
+              properties:
+                guest_id: { $ref: '#/components/schemas/UUID' }
+                points: { type: integer, minimum: 1 }
+                booking_id: { $ref: '#/components/schemas/UUID' }
+                description: { type: string }
+      responses:
+        '200':
+          description: Points redeemed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '422':
+          description: Insufficient points
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # HR — EMPLOYEES
+  # ══════════════════════════════════════════════════════
+  /departments:
+    get:
+      tags: [HR — Employees]
+      summary: List departments
+      description: Roles — property_admin, manager, hr
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Departments
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [HR — Employees]
+      summary: Create department
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, name]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                name: { type: string }
+      responses:
+        '201':
+          description: Department created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /employees:
+    get:
+      tags: [HR — Employees]
+      summary: List employees
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: department_id
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: status
+          schema: { type: string, enum: [active, terminated] }
+      responses:
+        '200':
+          description: Employee list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [HR — Employees]
+      summary: Create employee record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, first_name, last_name, email, department_id, job_title]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                first_name: { type: string }
+                last_name: { type: string }
+                email: { type: string, format: email }
+                phone: { type: string }
+                department_id: { $ref: '#/components/schemas/UUID' }
+                job_title: { type: string }
+                employment_type: { type: string, enum: [full_time, part_time, contract] }
+                hire_date: { $ref: '#/components/schemas/Date' }
+                gross_salary: { $ref: '#/components/schemas/Kobo' }
+      responses:
+        '201':
+          description: Employee created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # HR — PAYROLL
+  # ══════════════════════════════════════════════════════
+  /payroll:
+    get:
+      tags: [HR — Payroll]
+      summary: List payroll runs
+      description: Roles — property_admin, hr
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Payroll list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [HR — Payroll]
+      summary: Create payroll run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, period_start, period_end]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                period_start: { $ref: '#/components/schemas/Date' }
+                period_end: { $ref: '#/components/schemas/Date' }
+      responses:
+        '201':
+          description: Payroll run created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # ASSETS
+  # ══════════════════════════════════════════════════════
+  /assets:
+    get:
+      tags: [Assets]
+      summary: List assets
+      description: Roles — property_admin, manager, engineer, maintenance
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: category_id
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        '200':
+          description: Asset list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [Assets]
+      summary: Create asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, name, category_id]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                name: { type: string }
+                category_id: { $ref: '#/components/schemas/UUID' }
+                serial_number: { type: string }
+                purchase_date: { $ref: '#/components/schemas/Date' }
+                purchase_cost: { $ref: '#/components/schemas/Kobo' }
+                location: { type: string }
+      responses:
+        '201':
+          description: Asset created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # AUDIT LOGS
+  # ══════════════════════════════════════════════════════
+  /admin/audit-logs:
+    get:
+      tags: [Audit Logs]
+      summary: List audit log entries
+      description: Roles — super_admin, property_admin, manager. Immutable record of all platform actions.
+      parameters:
+        - in: query
+          name: property_id
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: user_id
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: action
+          schema: { type: string }
+        - in: query
+          name: entity_type
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 50 }
+      responses:
+        '200':
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { $ref: '#/components/schemas/UUID' }
+                            user_id: { $ref: '#/components/schemas/UUID' }
+                            user_name: { type: string }
+                            action: { type: string }
+                            entity_type: { type: string }
+                            entity_id: { $ref: '#/components/schemas/UUID' }
+                            changes: { type: object }
+                            ip_address: { type: string }
+                            created_at: { $ref: '#/components/schemas/Timestamp' }
+                      meta: { $ref: '#/components/schemas/PaginatedMeta' }
+
+  /admin/audit-logs/stats:
+    get:
+      tags: [Audit Logs]
+      summary: Audit log statistics
+      parameters:
+        - in: query
+          name: property_id
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: from
+          schema: { $ref: '#/components/schemas/Date' }
+        - in: query
+          name: to
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: Stats
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # INVOICES
+  # ══════════════════════════════════════════════════════
+  /invoices:
+    get:
+      tags: [Invoices]
+      summary: List invoices
+      description: Roles — property_admin, manager, accountant
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, issued, paid, voided] }
+      responses:
+        '200':
+          description: Invoice list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /invoices/{id}:
+    get:
+      tags: [Invoices]
+      summary: Get invoice detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Invoice
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /invoices/{id}/void:
+    post:
+      tags: [Invoices]
+      summary: Void invoice
+      description: Roles — property_admin, manager, accountant
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Voided
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /invoices/{id}/email:
+    post:
+      tags: [Invoices]
+      summary: Email invoice to guest
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Sent
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # GYM
+  # ══════════════════════════════════════════════════════
+  /gym/members:
+    get:
+      tags: [Gym]
+      summary: List gym members
+      description: Roles — property_admin, manager, gym_staff, front_desk
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Members
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [Gym]
+      summary: Register gym member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, name, email, plan_id]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                name: { type: string }
+                email: { type: string, format: email }
+                phone: { type: string }
+                plan_id: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '201':
+          description: Member registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /gym/check-ins:
+    post:
+      tags: [Gym]
+      summary: Record gym check-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, member_id]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                member_id: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '201':
+          description: Checked in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # SPA
+  # ══════════════════════════════════════════════════════
+  /spa/services:
+    get:
+      tags: [Spa]
+      summary: List spa services
+      description: Roles — property_admin, manager, concierge, front_desk
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Services
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [Spa]
+      summary: Create spa service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, name, price, duration_minutes]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                name: { type: string }
+                description: { type: string }
+                price: { $ref: '#/components/schemas/Kobo' }
+                duration_minutes: { type: integer }
+      responses:
+        '201':
+          description: Service created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /spa/bookings:
+    get:
+      tags: [Spa]
+      summary: List spa appointments
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: date
+          schema: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200':
+          description: Appointments
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    post:
+      tags: [Spa]
+      summary: Book a spa appointment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [property_id, service_id, guest_name, scheduled_at]
+              properties:
+                property_id: { $ref: '#/components/schemas/UUID' }
+                service_id: { $ref: '#/components/schemas/UUID' }
+                booking_id: { $ref: '#/components/schemas/UUID' }
+                guest_name: { type: string }
+                scheduled_at: { $ref: '#/components/schemas/Timestamp' }
+                notes: { type: string }
+      responses:
+        '201':
+          description: Appointment booked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # IOT
+  # ══════════════════════════════════════════════════════
+  /iot/devices:
+    get:
+      tags: [IoT]
+      summary: List IoT devices
+      description: Roles — property_admin, manager, engineer
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Devices
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /iot/devices/{id}/control:
+    post:
+      tags: [IoT]
+      summary: Send control command to device
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [command]
+              properties:
+                command: { type: string, enum: [on, off, set_temperature, set_brightness, lock, unlock] }
+                value: { type: string, description: Parameter for commands that require a value (e.g. temperature in °C) }
+      responses:
+        '200':
+          description: Command sent
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # ROOM CONTROLS
+  # ══════════════════════════════════════════════════════
+  /room-controls/dnd:
+    post:
+      tags: [Room Controls]
+      summary: Set or clear Do Not Disturb for a room
+      description: Roles — property_admin, manager, housekeeping, front_desk, maintenance, concierge, engineer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [room_id, enabled]
+              properties:
+                room_id: { $ref: '#/components/schemas/UUID' }
+                enabled: { type: boolean }
+      responses:
+        '200':
+          description: DND updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /room-controls/make-up:
+    post:
+      tags: [Room Controls]
+      summary: Request room make-up (clean room) service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [room_id]
+              properties:
+                room_id: { $ref: '#/components/schemas/UUID' }
+                notes: { type: string }
+      responses:
+        '200':
+          description: Request logged
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /room-controls/status:
+    get:
+      tags: [Room Controls]
+      summary: Get DND/make-up status for all rooms
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Room control statuses
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # OTA
+  # ══════════════════════════════════════════════════════
+  /ota/channels:
+    get:
+      tags: [OTA]
+      summary: List OTA channel connections
+      description: Roles — property_admin, manager
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Channels
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /ota/reservations:
+    get:
+      tags: [OTA]
+      summary: List OTA reservations
+      parameters:
+        - in: query
+          name: property_id
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        '200':
+          description: Reservations
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # WHATSAPP
+  # ══════════════════════════════════════════════════════
+  /whatsapp/send:
+    post:
+      tags: [WhatsApp]
+      summary: Send WhatsApp message via Termii
+      description: Roles — property_admin, manager, front_desk, concierge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to, message]
+              properties:
+                to: { type: string, description: Phone number in international format }
+                message: { type: string }
+                template_id: { $ref: '#/components/schemas/UUID' }
+      responses:
+        '200':
+          description: Message queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # ADMIN — SETTINGS
+  # ══════════════════════════════════════════════════════
+  /admin/settings:
+    get:
+      tags: [Settings]
+      summary: Get platform settings
+      description: Roles — super_admin
+      responses:
+        '200':
+          description: Settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+    patch:
+      tags: [Settings]
+      summary: Update platform settings
+      description: Roles — super_admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: Partial settings object — only provided keys are updated
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  # ══════════════════════════════════════════════════════
+  # HEALTH CHECK
+  # ══════════════════════════════════════════════════════
+  /health:
+    get:
+      tags: [Auth]
+      summary: API health check
+      security: []
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  version: { type: string }
