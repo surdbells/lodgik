@@ -232,7 +232,7 @@ export class ProfilePage implements OnInit {
     });
   }
 
-  kycStatusVariant(): string {
+  kycStatusVariant(): 'success' | 'danger' | 'warning' | 'info' | 'neutral' | 'primary' {
     return ({ approved: 'success', rejected: 'danger', under_review: 'warning' } as any)[this.kyc().status] ?? 'neutral';
   }
 
