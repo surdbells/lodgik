@@ -6,3 +6,5 @@ export { ConfirmDialogComponent, ConfirmDialogService, ConfirmOptions } from './
 export { ToastContainerComponent } from './toast-container/toast-container.component';
 export { BadgeComponent } from './badge/badge.component';
 export { LoadingSpinnerComponent } from './loading-spinner/loading-spinner.component';
+export { FileUploadComponent, UploadedFile } from './file-upload/file-upload.component';
+export { DocPreviewComponent } from './doc-preview/doc-preview.component';

@@ -29,7 +29,7 @@ import { ApiService, TokenService, ToastService } from '@lodgik/shared';
             </div>
             <div class="flex items-center gap-3 text-white/80">
               <span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-sm">3</span>
-              <span class="text-sm">Track earnings & get paid monthly</span>
+              <span class="text-sm">Track earnings and get paid monthly</span>
             </div>
           </div>
         </div>
@@ -47,90 +47,134 @@ import { ApiService, TokenService, ToastService } from '@lodgik/shared';
             <!-- Step indicator -->
             <div class="flex items-center gap-2 mb-6">
               @for (s of [1, 2]; track s) {
-                <div class="flex-1 h-1.5 rounded-full transition-colors" [class]="step() >= s ? 'bg-sage-500' : 'bg-gray-200'"></div>
+                <div class="flex-1 h-1.5 rounded-full transition-colors"
+                     [class]="step() >= s ? 'bg-sage-500' : 'bg-gray-200'"></div>
               }
             </div>
+            <p class="text-xs text-gray-400 mb-4 -mt-3">Step {{ step() }} of 2</p>
 
-            @if (error()) { <div class="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{{ error() }}</div> }
+            @if (error()) {
+              <div class="bg-red-50 border border-red-100 text-red-600 text-sm p-3 rounded-lg mb-4">{{ error() }}</div>
+            }
 
+            <!-- ── Step 1: Personal Details ─────────────── -->
             @if (step() === 1) {
               <h2 class="text-xl font-bold text-gray-900 font-heading">Create Your Account</h2>
-              <p class="text-sm text-gray-500 mt-1 mb-6">Personal details & login credentials</p>
+              <p class="text-sm text-gray-500 mt-1 mb-6">Personal details and login credentials</p>
               <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                    <input [(ngModel)]="form.first_name" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all" placeholder="John">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      First Name <span class="text-red-400">*</span>
+                    </label>
+                    <input [(ngModel)]="form.first_name"
+                      class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all"
+                      placeholder="John">
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                    <input [(ngModel)]="form.last_name" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all" placeholder="Doe">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name <span class="text-red-400">*</span>
+                    </label>
+                    <input [(ngModel)]="form.last_name"
+                      class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all"
+                      placeholder="Doe">
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input type="email" [(ngModel)]="form.email" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all" placeholder="merchant&#64;example.com">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address <span class="text-red-400">*</span>
+                  </label>
+                  <input type="email" [(ngModel)]="form.email"
+                    class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all"
+                    placeholder="you@example.com">
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input [(ngModel)]="form.phone" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all" placeholder="+234...">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number <span class="text-red-400">*</span>
+                  </label>
+                  <input [(ngModel)]="form.phone" type="tel"
+                    class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all"
+                    placeholder="+2348012345678">
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <input type="password" [(ngModel)]="form.password" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all" placeholder="Minimum 8 characters">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Password <span class="text-red-400">*</span>
+                  </label>
+                  <input type="password" [(ngModel)]="form.password"
+                    class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all"
+                    placeholder="Minimum 8 characters">
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                  <input type="password" [(ngModel)]="confirmPassword" (keyup.enter)="nextStep()" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all" placeholder="Repeat password">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm Password <span class="text-red-400">*</span>
+                  </label>
+                  <input type="password" [(ngModel)]="confirmPassword" (keyup.enter)="nextStep()"
+                    class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all"
+                    placeholder="Repeat password">
                 </div>
                 <button (click)="nextStep()"
-                        class="w-full py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-sm"
-                        style="background: linear-gradient(135deg, #3a543a 0%, #5a825a 100%)">
-                  Continue
+                  class="w-full py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-sm"
+                  style="background: linear-gradient(135deg, #3a543a 0%, #5a825a 100%)">
+                  Continue →
                 </button>
               </div>
             }
 
+            <!-- ── Step 2: Business Details ─────────────── -->
             @if (step() === 2) {
               <h2 class="text-xl font-bold text-gray-900 font-heading">Business Details</h2>
               <p class="text-sm text-gray-500 mt-1 mb-6">Tell us about your business</p>
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Business / Trading Name <span class="text-red-400">*</span></label>
-                  <input [(ngModel)]="form.business_name" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all" placeholder="Your business name">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Business / Trading Name <span class="text-red-400">*</span>
+                  </label>
+                  <input [(ngModel)]="form.business_name"
+                    class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all"
+                    placeholder="Your business name">
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Registered Legal Name</label>
-                  <input [(ngModel)]="form.legal_name" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all" placeholder="Optional — defaults to business name">
+                  <input [(ngModel)]="form.legal_name"
+                    class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all"
+                    placeholder="Optional — defaults to business name">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                    <select [(ngModel)]="form.category" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category <span class="text-red-400">*</span></label>
+                    <select [(ngModel)]="form.category"
+                      class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all">
+                      <option value="">— Select —</option>
                       <option value="sales_agent">Sales Agent</option>
                       <option value="channel_partner">Channel Partner</option>
                       <option value="consultant">Consultant</option>
                     </select>
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                    <select [(ngModel)]="form.type" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Type <span class="text-red-400">*</span></label>
+                    <select [(ngModel)]="form.type"
+                      class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all">
                       <option value="individual">Individual</option>
                       <option value="company">Company</option>
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Operating Region</label>
-                  <input [(ngModel)]="form.operating_region" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all" placeholder="e.g. Lagos, Nigeria">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Operating Region <span class="text-red-400">*</span>
+                  </label>
+                  <input [(ngModel)]="form.operating_region"
+                    class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all"
+                    placeholder="e.g. Lagos, Nigeria">
                 </div>
-                <div class="flex gap-3">
-                  <button (click)="step.set(1)" class="px-4 py-3 text-sm text-gray-600 hover:text-gray-800 rounded-xl border border-gray-200 hover:bg-gray-50">
-                    Back
+                <div class="flex gap-3 pt-1">
+                  <button (click)="step.set(1)"
+                    class="px-4 py-3 text-sm text-gray-600 hover:text-gray-800 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+                    ← Back
                   </button>
                   <button (click)="submit()" [disabled]="loading()"
-                          class="flex-1 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
-                          style="background: linear-gradient(135deg, #3a543a 0%, #5a825a 100%)">
+                    class="flex-1 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                    style="background: linear-gradient(135deg, #3a543a 0%, #5a825a 100%)">
                     {{ loading() ? 'Creating account...' : 'Create Merchant Account' }}
                   </button>
                 </div>
@@ -138,7 +182,8 @@ import { ApiService, TokenService, ToastService } from '@lodgik/shared';
             }
 
             <p class="text-center text-sm text-gray-500 mt-6">
-              Already have an account? <a routerLink="/login" class="text-sage-600 hover:underline font-medium">Sign in</a>
+              Already have an account?
+              <a routerLink="/login" class="text-sage-600 hover:underline font-medium">Sign in</a>
             </p>
           </div>
         </div>
@@ -147,41 +192,68 @@ import { ApiService, TokenService, ToastService } from '@lodgik/shared';
   `,
 })
 export class RegisterPage {
-  private api = inject(ApiService);
+  private api   = inject(ApiService);
   private token = inject(TokenService);
   private toast = inject(ToastService);
   private router = inject(Router);
 
-  step = signal(1);
+  step    = signal(1);
   loading = signal(false);
-  error = signal('');
+  error   = signal('');
   confirmPassword = '';
 
   form: any = {
     first_name: '', last_name: '', email: '', phone: '', password: '',
-    business_name: '', legal_name: '', category: 'sales_agent', type: 'individual',
+    business_name: '', legal_name: '', category: '', type: 'individual',
     operating_region: '', settlement_currency: 'NGN',
   };
 
   nextStep(): void {
     this.error.set('');
-    if (!this.form.first_name || !this.form.last_name) { this.error.set('First and last name are required'); return; }
-    if (!this.form.email || !this.form.email.includes('@')) { this.error.set('A valid email is required'); return; }
-    if (!this.form.password || this.form.password.length < 8) { this.error.set('Password must be at least 8 characters'); return; }
-    if (this.form.password !== this.confirmPassword) { this.error.set('Passwords do not match'); return; }
+
+    if (!this.form.first_name?.trim() || !this.form.last_name?.trim()) {
+      this.error.set('First and last name are required.'); return;
+    }
+    if (!this.form.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email.trim())) {
+      this.error.set('A valid email address is required.'); return;
+    }
+    if (!this.form.phone?.trim()) {
+      this.error.set('Phone number is required.'); return;
+    }
+    if (!/^\+?[\d\s\-()]{7,20}$/.test(this.form.phone.trim())) {
+      this.error.set('Enter a valid phone number (e.g. +2348012345678).'); return;
+    }
+    if (!this.form.password || this.form.password.length < 8) {
+      this.error.set('Password must be at least 8 characters.'); return;
+    }
+    if (this.form.password !== this.confirmPassword) {
+      this.error.set('Passwords do not match.'); return;
+    }
+
     this.step.set(2);
   }
 
   submit(): void {
     this.error.set('');
-    if (!this.form.business_name) { this.error.set('Business name is required'); return; }
-    if (!this.form.legal_name) this.form.legal_name = this.form.business_name;
+
+    if (!this.form.business_name?.trim()) {
+      this.error.set('Business name is required.'); return;
+    }
+    if (!this.form.category) {
+      this.error.set('Please select a category.'); return;
+    }
+    if (!this.form.operating_region?.trim()) {
+      this.error.set('Operating region is required.'); return;
+    }
+
+    if (!this.form.legal_name?.trim()) {
+      this.form.legal_name = this.form.business_name;
+    }
 
     this.loading.set(true);
     this.api.post('/merchants/self-register', this.form).subscribe({
       next: (r: any) => {
         const data = r.data;
-        // Auto-login: store tokens + user
         if (data?.access_token) {
           this.token.setTokens(data.access_token, data.refresh_token);
           if (data.user) this.token.setUser(data.user);
@@ -192,8 +264,10 @@ export class RegisterPage {
       },
       error: (err: any) => {
         this.loading.set(false);
-        const msg = err?.error?.message || err?.error?.errors ? Object.values(err.error.errors).join(', ') : 'Registration failed';
-        this.error.set(typeof msg === 'string' ? msg : 'Registration failed');
+        const msg = err?.error?.message
+          || (err?.error?.errors ? Object.values(err.error.errors).join(', ') : null)
+          || 'Registration failed. Please try again.';
+        this.error.set(typeof msg === 'string' ? msg : 'Registration failed.');
       },
     });
   }

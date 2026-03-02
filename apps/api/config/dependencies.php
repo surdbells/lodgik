@@ -1027,5 +1027,9 @@ return function (ContainerBuilder $builder): void {
             settings: $c->get(\Lodgik\Module\Settings\SettingsService::class),
             mailer: $c->get(\Lodgik\Service\ZeptoMailService::class),
         ),
+        \Lodgik\Module\Upload\UploadController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Upload\UploadController(
+            storage:  $c->get(\Lodgik\Service\FileStorageService::class),
+            response: new \Lodgik\Response\JsonResponse(),
+        ),
     ]);
 };

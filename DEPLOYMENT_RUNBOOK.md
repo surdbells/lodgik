@@ -235,10 +235,10 @@ aaPanel → App Store → PHP 8.3 → Settings → Configuration:
 display_errors = Off
 log_errors = On
 error_log = /www/wwwlogs/php_errors.log
-memory_limit = 256M
-upload_max_filesize = 10M
-post_max_size = 12M
-max_execution_time = 60
+memory_limit = 512M
+upload_max_filesize = 512M
+post_max_size = 514M
+max_execution_time = 300
 expose_php = Off
 date.timezone = Africa/Lagos
 ```
@@ -409,8 +409,33 @@ server {
         deny all;
     }
 
-    # File upload limit
-    client_max_body_size 12M;
+    # ── Static file storage (local driver) ────────────────────────
+    # Files stored in STORAGE_PATH are served at /storage.
+    # Nginx serves them directly (fast, no PHP overhead).
+    # Remove or restrict this block when using STORAGE_DRIVER=s3
+    # (S3 files are served via pre-signed URLs, not through Nginx).
+    location /storage {
+        alias /www/wwwroot/lodgik/storage;
+        # Long cache: files use random hex names — content never changes.
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        # Deny directory listings
+        autoindex off;
+        # Allow common media types
+        types {
+            image/jpeg       jpg jpeg;
+            image/png        png;
+            image/webp       webp;
+            image/gif        gif;
+            application/pdf  pdf;
+            application/octet-stream  apk ipa exe dmg appimage deb rpm;
+            application/zip  zip;
+        }
+    }
+
+    # File upload limit — must cover binary uploads (APK/IPA/EXE up to 500 MB).
+    # Also set upload_max_filesize and post_max_size to 512M in php.ini (Section 5).
+    client_max_body_size 512M;
 
     # Logs
     access_log /www/wwwlogs/api.lodgik.co.log;
@@ -1693,8 +1718,14 @@ Build previous version with incremented `versionCode`, upload as new release. Fo
 | `APNS_KEY_ID` | ABC123 | iOS | APNs key identifier |
 | `APNS_TEAM_ID` | DEF456 | iOS | Apple Team ID |
 | `APNS_KEY_PATH` | /www/.../apns.p8 | iOS | Path to APNs auth key |
-| `STORAGE_DRIVER` | local | Yes | File storage driver |
-| `STORAGE_PATH` | /www/wwwroot/lodgik/storage | Yes | Upload storage path |
+| `STORAGE_DRIVER` | local | Yes | File storage driver: `local` or `s3` |
+| `STORAGE_PATH` | /www/wwwroot/lodgik/storage | local | Absolute path for local file storage |
+| `STORAGE_URL` | https://api.lodgik.co/storage | local | Public base URL Nginx serves storage from |
+| `AWS_S3_BUCKET` | lodgik-prod | s3 | S3 bucket name |
+| `AWS_S3_REGION` | ap-southeast-1 | s3 | AWS region |
+| `AWS_S3_KEY` | (IAM key) | s3 | AWS access key ID |
+| `AWS_S3_SECRET` | (IAM secret) | s3 | AWS secret access key |
+| `AWS_S3_PREFIX` | lodgik/production | s3 | Optional key prefix inside the bucket |
 | `BACKUP_STORAGE_PATH` | /www/backup/lodgik | Yes (cron) | Local directory for encrypted backups |
 | `BACKUP_ENCRYPTION_KEY` | (64-char hex) | Yes (cron) | AES-256-CBC key for backup encryption |
 | `BACKUP_RETENTION_DAYS` | 30 | No | Days to keep local backups (default: 30) |

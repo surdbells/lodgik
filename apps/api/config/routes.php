@@ -89,4 +89,7 @@ return function (App $app): void {
 
     // System job management (super_admin only)
     (require __DIR__ . '/../src/Module/System/routes.php')($app);
+
+    // ─── Generic File Upload ──────────────────────────────────
+    (require __DIR__ . '/../src/Module/Upload/routes.php')($app);
 };
