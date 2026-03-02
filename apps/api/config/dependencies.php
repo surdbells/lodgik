@@ -1029,7 +1029,6 @@ return function (ContainerBuilder $builder): void {
         ),
         \Lodgik\Module\Upload\UploadController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Upload\UploadController(
             storage:  $c->get(\Lodgik\Service\FileStorageService::class),
-            response: new \Lodgik\Util\JsonResponse(),
         ),
     ]);
 };

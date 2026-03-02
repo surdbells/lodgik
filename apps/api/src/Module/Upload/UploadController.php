@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Lodgik\Module\Upload;
 
-use Lodgik\Util\JsonResponse;
+
+use Lodgik\Helper\JsonResponse;
 use Lodgik\Service\FileStorageService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -90,7 +91,6 @@ final class UploadController
 
     public function __construct(
         private readonly FileStorageService $storage,
-        private readonly JsonResponse       $response,
     ) {}
 
     // ─────────────────────────────────────────────────────────────
@@ -127,13 +127,13 @@ final class UploadController
             $errors['context'] = 'Invalid context. Allowed: ' . implode(', ', self::MEDIA_CONTEXTS);
         }
         if ($errors !== []) {
-            return $this->response->validationError($res, $errors);
+            return JsonResponse::validationError($res, $errors);
         }
 
         // ── Detect MIME type ─────────────────────────────────────
         $mime = $this->detectMediaMime($base64);
         if ($mime === null) {
-            return $this->response->error(
+            return JsonResponse::error(
                 $res,
                 'Unsupported file type. Allowed: JPEG, PNG, WebP, GIF, PDF.',
                 422
@@ -147,10 +147,10 @@ final class UploadController
         }
         $decoded = base64_decode($raw, true);
         if ($decoded === false) {
-            return $this->response->error($res, 'Invalid base64 data', 422);
+            return JsonResponse::error($res, 'Invalid base64 data', 422);
         }
         if (strlen($decoded) > self::MEDIA_MAX_BYTES) {
-            return $this->response->error(
+            return JsonResponse::error(
                 $res,
                 'File too large. Maximum size for this endpoint is 10 MB.',
                 422
@@ -164,10 +164,10 @@ final class UploadController
         try {
             $result = $this->storage->storeBase64($base64, $context, $safeFilename);
         } catch (\Throwable $e) {
-            return $this->response->error($res, 'Storage error: ' . $e->getMessage(), 500);
+            return JsonResponse::error($res, 'Storage error: ' . $e->getMessage(), 500);
         }
 
-        return $this->response->success($res, [
+        return JsonResponse::ok($res, [
             'url'       => $result['url'],
             'path'      => $result['path'],
             'filename'  => $safeFilename,
@@ -207,7 +207,7 @@ final class UploadController
 
         // ── Validate context ─────────────────────────────────────
         if (!in_array($context, self::BINARY_CONTEXTS, true)) {
-            return $this->response->validationError($res, [
+            return JsonResponse::validationError($res, [
                 'context' => 'Invalid context. Allowed: ' . implode(', ', self::BINARY_CONTEXTS),
             ]);
         }
@@ -216,21 +216,21 @@ final class UploadController
         /** @var UploadedFileInterface|null $upload */
         $upload = $uploadedFiles['file'] ?? null;
         if ($upload === null) {
-            return $this->response->validationError($res, [
+            return JsonResponse::validationError($res, [
                 'file' => 'No file uploaded. Use multipart/form-data with field name "file".',
             ]);
         }
 
         if ($upload->getError() !== UPLOAD_ERR_OK) {
             $errMsg = $this->phpUploadError($upload->getError());
-            return $this->response->error($res, "Upload error: {$errMsg}", 422);
+            return JsonResponse::error($res, "Upload error: {$errMsg}", 422);
         }
 
         // ── Size check ────────────────────────────────────────────
         $size = $upload->getSize() ?? 0;
         if ($size > self::BINARY_MAX_BYTES) {
             $maxMb = self::BINARY_MAX_BYTES / 1024 / 1024;
-            return $this->response->error(
+            return JsonResponse::error(
                 $res,
                 "File too large. Maximum size for binary uploads is {$maxMb} MB.",
                 422
@@ -248,7 +248,7 @@ final class UploadController
             ?? null;
 
         if ($ext === null) {
-            return $this->response->error(
+            return JsonResponse::error(
                 $res,
                 'Unsupported binary type. Allowed: APK, IPA, EXE, DMG, PKG, AppImage, DEB, RPM, ZIP.',
                 422
@@ -268,15 +268,15 @@ final class UploadController
         try {
             $stream = $upload->getStream()->detach();
             if ($stream === null) {
-                return $this->response->error($res, 'Could not read uploaded file stream.', 500);
+                return JsonResponse::error($res, 'Could not read uploaded file stream.', 500);
             }
 
             $result = $this->storage->storeStream($stream, $context, $safeFilename);
         } catch (\Throwable $e) {
-            return $this->response->error($res, 'Storage error: ' . $e->getMessage(), 500);
+            return JsonResponse::error($res, 'Storage error: ' . $e->getMessage(), 500);
         }
 
-        return $this->response->success($res, [
+        return JsonResponse::ok($res, [
             'url'       => $result['url'],
             'path'      => $result['path'],
             'filename'  => $safeFilename,
