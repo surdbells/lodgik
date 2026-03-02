@@ -439,19 +439,133 @@ final class AdminService
 
     public function getAnalytics(int $days = 30): array
     {
+        $conn = $this->em->getConnection();
+        $since = (new \DateTimeImmutable("-{$days} days"))->format('Y-m-d');
+
+        // ── Base stats ───────────────────────────────────────
         $stats = $this->getDashboardStats();
         $totalBookings = (int) $this->em->createQuery("SELECT COUNT(b) FROM Lodgik\\Entity\\Booking b")->getSingleScalarResult();
-        $totalRooms = (int) $this->em->createQuery("SELECT COUNT(r) FROM Lodgik\\Entity\\Room r")->getSingleScalarResult();
+        $totalRooms    = (int) $this->em->createQuery("SELECT COUNT(r) FROM Lodgik\\Entity\\Room r")->getSingleScalarResult();
+        $activeUsers   = (int) $conn->fetchOne("SELECT COUNT(*) FROM users WHERE is_active = true");
+
+        // ── Growth trend (tenants + users per month) ─────────
+        $growthRows = $conn->fetchAllAssociative("
+            SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') as month,
+                   COUNT(*) as tenants
+            FROM tenants
+            WHERE created_at >= ?
+            GROUP BY DATE_TRUNC('month', created_at)
+            ORDER BY month
+        ", [$since . ' 00:00:00']);
+
+        $userGrowthRows = $conn->fetchAllAssociative("
+            SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') as month,
+                   COUNT(*) as users
+            FROM users
+            WHERE created_at >= ?
+            GROUP BY DATE_TRUNC('month', created_at)
+            ORDER BY month
+        ", [$since . ' 00:00:00']);
+
+        // Merge into single array keyed by month
+        $growthByMonth = [];
+        foreach ($growthRows as $r) {
+            $growthByMonth[$r['month']] = ['month' => $r['month'], 'tenants' => (int) $r['tenants'], 'users' => 0];
+        }
+        foreach ($userGrowthRows as $r) {
+            if (isset($growthByMonth[$r['month']])) {
+                $growthByMonth[$r['month']]['users'] = (int) $r['users'];
+            } else {
+                $growthByMonth[$r['month']] = ['month' => $r['month'], 'tenants' => 0, 'users' => (int) $r['users']];
+            }
+        }
+        ksort($growthByMonth);
+        $growthTrend = array_values($growthByMonth);
+
+        // ── Booking trend (bookings per month) ──────────────
+        $bookingTrend = [];
+        try {
+            $bookingRows = $conn->fetchAllAssociative("
+                SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') as month,
+                       COUNT(*) as count
+                FROM bookings
+                WHERE created_at >= ?
+                GROUP BY DATE_TRUNC('month', created_at)
+                ORDER BY month
+            ", [$since . ' 00:00:00']);
+            $bookingTrend = array_map(fn($r) => ['month' => $r['month'], 'count' => (int) $r['count']], $bookingRows);
+        } catch (\Throwable) {}
+
+        // ── Feature adoption (most enabled modules) ──────────
+        $featureAdoption = [];
+        try {
+            $tenants = $conn->fetchAllAssociative("SELECT enabled_modules FROM tenants WHERE is_active = true");
+            $moduleCounts = [];
+            foreach ($tenants as $t) {
+                $modules = json_decode($t['enabled_modules'] ?? '[]', true) ?: [];
+                foreach ($modules as $m) {
+                    $moduleCounts[$m] = ($moduleCounts[$m] ?? 0) + 1;
+                }
+            }
+            arsort($moduleCounts);
+            foreach (array_slice($moduleCounts, 0, 10, true) as $key => $count) {
+                $featureAdoption[] = ['module_key' => $key, 'name' => ucwords(str_replace('_', ' ', $key)), 'count' => $count];
+            }
+        } catch (\Throwable) {}
+
+        // ── Tenants by tier ───────────────────────────────────
+        $tenantsByTier = [];
+        try {
+            $tierRows = $conn->fetchAllAssociative("
+                SELECT sp.tier, COUNT(t.id) as count
+                FROM tenants t
+                LEFT JOIN subscription_plans sp ON t.subscription_plan_id = sp.id
+                WHERE t.is_active = true
+                GROUP BY sp.tier
+            ");
+            foreach ($tierRows as $r) {
+                $tenantsByTier[$r['tier'] ?? 'trial'] = (int) $r['count'];
+            }
+        } catch (\Throwable) {}
+
+        // ── Top tenants by usage ──────────────────────────────
+        $topTenants = [];
+        try {
+            $tenantRows = $conn->fetchAllAssociative("
+                SELECT t.id, t.name, t.subscription_status,
+                       sp.name as plan_name,
+                       (SELECT COUNT(*) FROM rooms r WHERE r.tenant_id = t.id) as rooms_used,
+                       (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id AND u.is_active = true) as staff_used,
+                       (SELECT COUNT(*) FROM bookings b WHERE b.tenant_id = t.id) as bookings_count
+                FROM tenants t
+                LEFT JOIN subscription_plans sp ON t.subscription_plan_id = sp.id
+                WHERE t.is_active = true
+                ORDER BY bookings_count DESC
+                LIMIT 10
+            ");
+            foreach ($tenantRows as $r) {
+                $topTenants[] = [
+                    'id'                  => $r['id'],
+                    'name'                => $r['name'],
+                    'subscription_status' => $r['subscription_status'],
+                    'plan_name'           => $r['plan_name'] ?? 'Free',
+                    'rooms_used'          => (int) $r['rooms_used'],
+                    'staff_used'          => (int) $r['staff_used'],
+                    'bookings_count'      => (int) $r['bookings_count'],
+                ];
+            }
+        } catch (\Throwable) {}
+
         return array_merge($stats, [
-            'total_bookings' => $totalBookings,
-            'total_rooms' => $totalRooms,
-            'mrr' => 0,
-            'growth_trend' => [],
-            'booking_trend' => [],
-            'feature_adoption' => [],
-            'revenue_by_plan' => [],
-            'tenants_by_tier' => [],
-            'top_tenants' => [],
+            'total_bookings'   => $totalBookings,
+            'total_rooms'      => $totalRooms,
+            'active_users'     => $activeUsers,
+            'growth_trend'     => $growthTrend,
+            'booking_trend'    => $bookingTrend,
+            'feature_adoption' => $featureAdoption,
+            'revenue_by_plan'  => $stats['revenue_by_plan'] ?? [],
+            'tenants_by_tier'  => $tenantsByTier,
+            'top_tenants'      => $topTenants,
         ]);
     }
 

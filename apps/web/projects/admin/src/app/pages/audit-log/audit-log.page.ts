@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, JsonPipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService } from '@lodgik/shared';
@@ -38,30 +38,41 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
     <!-- Filters -->
     <div class="bg-white rounded-xl border border-gray-100 p-4 shadow-card mb-4">
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <input [(ngModel)]="filters.search" placeholder="Search..." (keyup.enter)="load()"
-               class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
-        <select [(ngModel)]="filters.action" (change)="load()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+        <input [(ngModel)]="filters.search" placeholder="Search user, entity…" (keyup.enter)="load()"
+               class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 outline-none focus:bg-white">
+
+        <select [(ngModel)]="filters.action" (change)="load()"
+                class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 outline-none focus:bg-white">
           <option value="">All Actions</option>
-          @for (a of uniqueActions(); track a) { <option [value]="a">{{ a }}</option> }
-        </select>
-        <select [(ngModel)]="filters.entity_type" (change)="load()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
-          <option value="">All Entities</option>
-          @for (e of uniqueEntities(); track e) { <option [value]="e">{{ e }}</option> }
-        </select>
-        <select [(ngModel)]="filters.tenant_id" (change)="load()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
-          <option value="">All Tenants</option>
-          @for (t of stats().top_tenants || []; track t.tenant_id) {
-            <option [value]="t.tenant_id">{{ t.business_name || t.tenant_id }}</option>
+          @for (a of filterOptions().actions; track a) {
+            <option [value]="a">{{ a }}</option>
           }
         </select>
+
+        <select [(ngModel)]="filters.entity_type" (change)="load()"
+                class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 outline-none focus:bg-white">
+          <option value="">All Entities</option>
+          @for (e of filterOptions().entity_types; track e) {
+            <option [value]="e">{{ e }}</option>
+          }
+        </select>
+
+        <select [(ngModel)]="filters.tenant_id" (change)="load()"
+                class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 outline-none focus:bg-white">
+          <option value="">All Tenants</option>
+          @for (t of filterOptions().tenants; track t.tenant_id) {
+            <option [value]="t.tenant_id">{{ t.tenant_name || t.tenant_id }}</option>
+          }
+        </select>
+
         <input [(ngModel)]="filters.date_from" type="date" (change)="load()"
-               class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+               class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 outline-none focus:bg-white">
         <input [(ngModel)]="filters.date_to" type="date" (change)="load()"
-               class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+               class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 outline-none focus:bg-white">
       </div>
       <div class="flex items-center gap-2 mt-2">
-        <button (click)="load()" class="px-3 py-1.5 bg-sage-600 text-white text-xs rounded-lg">Apply</button>
-        <button (click)="clearFilters()" class="px-3 py-1.5 text-gray-500 text-xs border rounded-lg">Clear</button>
+        <button (click)="load()" class="px-3 py-1.5 bg-sage-600 text-white text-xs rounded-lg hover:bg-sage-700">Apply</button>
+        <button (click)="clearFilters()" class="px-3 py-1.5 text-gray-500 text-xs border rounded-lg hover:bg-gray-50">Clear</button>
         <span class="text-xs text-gray-400 ml-auto">{{ meta().total || 0 }} results</span>
       </div>
     </div>
@@ -69,7 +80,6 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
-      <!-- Audit Table -->
       <div class="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
@@ -90,11 +100,10 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
                   <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{{ log.created_at | date:'MMM d, HH:mm:ss' }}</td>
                   <td class="px-4 py-3">
                     <p class="text-sm font-medium text-gray-800">{{ log.user_name || '—' }}</p>
-                    <p class="text-[11px] text-gray-400 truncate max-w-[120px]">{{ log.tenant_id?.slice(0,8) }}</p>
+                    <p class="text-[11px] text-gray-400 truncate max-w-[120px]">{{ tenantLabel(log.tenant_id) }}</p>
                   </td>
                   <td class="px-4 py-3">
-                    <span class="px-2 py-0.5 rounded-full text-[11px] font-medium"
-                          [class]="actionClass(log.action)">{{ log.action }}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-medium" [class]="actionClass(log.action)">{{ log.action }}</span>
                   </td>
                   <td class="px-4 py-3">
                     <span class="text-xs text-gray-600">{{ log.entity_type }}</span>
@@ -138,15 +147,14 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
           </table>
         </div>
 
-        <!-- Pagination -->
         @if (meta().pages > 1) {
           <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
             <span class="text-xs text-gray-400">Page {{ meta().page }} of {{ meta().pages }}</span>
             <div class="flex gap-1">
               <button (click)="goPage(meta().page - 1)" [disabled]="meta().page <= 1"
-                      class="px-3 py-1 text-xs border rounded-lg disabled:opacity-50">Prev</button>
+                      class="px-3 py-1 text-xs border rounded-lg disabled:opacity-50 hover:bg-gray-50">Prev</button>
               <button (click)="goPage(meta().page + 1)" [disabled]="meta().page >= meta().pages"
-                      class="px-3 py-1 text-xs border rounded-lg disabled:opacity-50">Next</button>
+                      class="px-3 py-1 text-xs border rounded-lg disabled:opacity-50 hover:bg-gray-50">Next</button>
             </div>
           </div>
         }
@@ -155,48 +163,68 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService 
   `,
 })
 export class AdminAuditLogPage implements OnInit {
-  private api = inject(ApiService);
+  private api   = inject(ApiService);
   private toast = inject(ToastService);
 
-  loading = signal(true);
-  logs = signal<any[]>([]);
-  meta = signal<any>({});
-  stats = signal<any>({});
-  expandedId: string | null = null;
-
-  filters: any = { search: '', action: '', entity_type: '', tenant_id: '', date_from: '', date_to: '' };
-
-  uniqueActions = computed(() => {
-    const actions = (this.stats().top_actions || []).map((a: any) => a.action);
-    return [...new Set(actions)] as string[];
+  loading       = signal(true);
+  logs          = signal<any[]>([]);
+  meta          = signal<any>({ total: 0, page: 1, limit: 50, pages: 1 });
+  stats         = signal<any>({});
+  filterOptions = signal<{ actions: string[]; entity_types: string[]; tenants: any[] }>({
+    actions: [], entity_types: [], tenants: [],
   });
 
-  uniqueEntities = signal<string[]>(['Tenant', 'User', 'Booking', 'Room', 'Subscription', 'Invoice', 'Property']);
+  expandedId: string | null = null;
+
+  filters: any = {
+    search: '', action: '', entity_type: '',
+    tenant_id: '', date_from: '', date_to: '',
+  };
 
   ngOnInit(): void {
     this.loadStats();
+    this.loadFilters();
     this.load();
   }
 
   loadStats(): void {
-    this.api.get('/admin/audit-logs/stats').subscribe((r: any) => {
-      if (r?.success) this.stats.set(r.data);
+    this.api.get('/admin/audit-logs/stats').subscribe({
+      next: (r: any) => { if (r?.success) this.stats.set(r.data); },
+      error: () => {},
+    });
+  }
+
+  loadFilters(): void {
+    this.api.get('/admin/audit-logs/filters').subscribe({
+      next: (r: any) => {
+        if (r?.success) {
+          this.filterOptions.set({
+            actions:      r.data.actions      || [],
+            entity_types: r.data.entity_types || [],
+            tenants:      r.data.tenants      || [],
+          });
+        }
+      },
+      error: () => {},
     });
   }
 
   load(): void {
     this.loading.set(true);
     const params: any = { page: this.meta().page || 1, limit: 50 };
-    if (this.filters.search) params.search = this.filters.search;
-    if (this.filters.action) params.action = this.filters.action;
+    if (this.filters.search)      params.search      = this.filters.search;
+    if (this.filters.action)      params.action      = this.filters.action;
     if (this.filters.entity_type) params.entity_type = this.filters.entity_type;
-    if (this.filters.tenant_id) params.tenant_id = this.filters.tenant_id;
-    if (this.filters.date_from) params.date_from = this.filters.date_from;
-    if (this.filters.date_to) params.date_to = this.filters.date_to;
+    if (this.filters.tenant_id)   params.tenant_id   = this.filters.tenant_id;
+    if (this.filters.date_from)   params.date_from   = this.filters.date_from;
+    if (this.filters.date_to)     params.date_to     = this.filters.date_to;
 
     this.api.get('/admin/audit-logs', params).subscribe({
       next: (r: any) => {
-        if (r?.success) { this.logs.set(r.data.items || []); this.meta.set(r.data.meta || {}); }
+        if (r?.success) {
+          this.logs.set(r.data.items || []);
+          this.meta.set(r.data.meta || { total: 0, page: 1, limit: 50, pages: 1 });
+        }
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -204,13 +232,13 @@ export class AdminAuditLogPage implements OnInit {
   }
 
   goPage(page: number): void {
-    this.meta.update(m => ({ ...m, page }));
+    this.meta.update((m: any) => ({ ...m, page }));
     this.load();
   }
 
   clearFilters(): void {
     this.filters = { search: '', action: '', entity_type: '', tenant_id: '', date_from: '', date_to: '' };
-    this.meta.set({});
+    this.meta.set({ total: 0, page: 1, limit: 50, pages: 1 });
     this.load();
   }
 
@@ -218,32 +246,42 @@ export class AdminAuditLogPage implements OnInit {
     this.expandedId = this.expandedId === id ? null : id;
   }
 
+  tenantLabel(id: string | null): string {
+    if (!id) return '';
+    const t = this.filterOptions().tenants.find((t: any) => t.tenant_id === id);
+    return t?.tenant_name ?? id.slice(0, 8) + '…';
+  }
+
   exportCsv(): void {
     const params: any = { format: 'csv' };
-    if (this.filters.action) params.action = this.filters.action;
-    if (this.filters.tenant_id) params.tenant_id = this.filters.tenant_id;
-    if (this.filters.date_from) params.date_from = this.filters.date_from;
-    if (this.filters.date_to) params.date_to = this.filters.date_to;
+    if (this.filters.action)      params.action      = this.filters.action;
+    if (this.filters.entity_type) params.entity_type = this.filters.entity_type;
+    if (this.filters.tenant_id)   params.tenant_id   = this.filters.tenant_id;
+    if (this.filters.date_from)   params.date_from   = this.filters.date_from;
+    if (this.filters.date_to)     params.date_to     = this.filters.date_to;
 
-    const qs = Object.entries(params).map(([k, v]) => `${k}=${v}`).join('&');
-    // Use direct download via window
+    const qs = Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
     const token = localStorage.getItem('lodgik_access_token');
     fetch(`/api/admin/audit-logs?${qs}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.blob())
       .then(blob => {
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `audit-log-${new Date().toISOString().slice(0,10)}.csv`;
-        a.click(); URL.revokeObjectURL(url);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
         this.toast.success('CSV exported');
       })
       .catch(() => this.toast.error('Export failed'));
   }
 
   actionClass(action: string): string {
-    if (action.includes('delete') || action.includes('cancel') || action.includes('suspend')) return 'bg-red-50 text-red-700';
-    if (action.includes('create') || action.includes('register') || action.includes('invite')) return 'bg-emerald-50 text-emerald-700';
-    if (action.includes('update') || action.includes('activate') || action.includes('reset')) return 'bg-blue-50 text-blue-700';
-    if (action.includes('login') || action.includes('auth')) return 'bg-amber-50 text-amber-700';
+    const a = (action || '').toLowerCase();
+    if (a.includes('delete') || a.includes('cancel') || a.includes('suspend') || a.includes('reject')) return 'bg-red-50 text-red-700';
+    if (a.includes('create') || a.includes('register') || a.includes('invite') || a.includes('approve')) return 'bg-emerald-50 text-emerald-700';
+    if (a.includes('update') || a.includes('activate') || a.includes('reset') || a.includes('assign')) return 'bg-blue-50 text-blue-700';
+    if (a.includes('login') || a.includes('logout') || a.includes('auth')) return 'bg-amber-50 text-amber-700';
     return 'bg-gray-100 text-gray-600';
   }
 }

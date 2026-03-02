@@ -14,6 +14,7 @@ return function (App $app): void {
     $app->group('/api/admin/audit-logs', function (RouteCollectorProxy $g) {
         $g->get('', [AuditController::class, 'adminList']);
         $g->get('/stats', [AuditController::class, 'adminStats']);
+        $g->get('/filters', [AuditController::class, 'adminFilters']);
     })
         ->add(new RoleMiddleware(['super_admin']))
         ->add(AuthMiddleware::class);

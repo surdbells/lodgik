@@ -64,10 +64,10 @@ final class AuditController
         $conn = $this->em->getConnection();
 
         $today = (new \DateTimeImmutable())->format('Y-m-d');
-        $week = (new \DateTimeImmutable('-7 days'))->format('Y-m-d');
+        $week  = (new \DateTimeImmutable('-7 days'))->format('Y-m-d');
 
         $todayCount = (int) $conn->fetchOne("SELECT COUNT(*) FROM audit_logs WHERE created_at >= ?", [$today . ' 00:00:00']);
-        $weekCount = (int) $conn->fetchOne("SELECT COUNT(*) FROM audit_logs WHERE created_at >= ?", [$week . ' 00:00:00']);
+        $weekCount  = (int) $conn->fetchOne("SELECT COUNT(*) FROM audit_logs WHERE created_at >= ?", [$week . ' 00:00:00']);
         $totalCount = (int) $conn->fetchOne("SELECT COUNT(*) FROM audit_logs");
 
         // Top actions this week
@@ -76,21 +76,52 @@ final class AuditController
             [$week . ' 00:00:00']
         );
 
-        // Top tenants this week
+        // Top tenants this week — Tenant column is 'name' not 'business_name'
         $topTenants = $conn->fetchAllAssociative(
-            "SELECT a.tenant_id, t.business_name, COUNT(*) as count
+            "SELECT a.tenant_id, t.name as tenant_name, COUNT(*) as count
              FROM audit_logs a LEFT JOIN tenants t ON t.id = a.tenant_id
              WHERE a.created_at >= ? AND a.tenant_id IS NOT NULL
-             GROUP BY a.tenant_id, t.business_name ORDER BY count DESC LIMIT 10",
+             GROUP BY a.tenant_id, t.name ORDER BY count DESC LIMIT 10",
             [$week . ' 00:00:00']
         );
 
         return $this->response->success($response, [
-            'today' => $todayCount,
-            'this_week' => $weekCount,
-            'total' => $totalCount,
+            'today'       => $todayCount,
+            'this_week'   => $weekCount,
+            'total'       => $totalCount,
             'top_actions' => $topActions,
             'top_tenants' => $topTenants,
+        ]);
+    }
+
+    /**
+     * GET /api/admin/audit-logs/filters — Distinct values for filter dropdowns
+     * Returns: actions[], entity_types[], tenants[]
+     */
+    public function adminFilters(Request $request, Response $response): Response
+    {
+        $conn = $this->em->getConnection();
+
+        $actions = $conn->fetchFirstColumn(
+            "SELECT DISTINCT action FROM audit_logs ORDER BY action"
+        );
+
+        $entityTypes = $conn->fetchFirstColumn(
+            "SELECT DISTINCT entity_type FROM audit_logs ORDER BY entity_type"
+        );
+
+        $tenants = $conn->fetchAllAssociative(
+            "SELECT DISTINCT a.tenant_id, t.name as tenant_name
+             FROM audit_logs a
+             LEFT JOIN tenants t ON t.id = a.tenant_id
+             WHERE a.tenant_id IS NOT NULL
+             ORDER BY t.name"
+        );
+
+        return $this->response->success($response, [
+            'actions'      => array_values(array_filter($actions)),
+            'entity_types' => array_values(array_filter($entityTypes)),
+            'tenants'      => array_values(array_filter($tenants, fn($t) => $t['tenant_id'] !== null)),
         ]);
     }
 
