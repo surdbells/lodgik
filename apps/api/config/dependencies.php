@@ -632,6 +632,14 @@ return function (ContainerBuilder $builder): void {
             );
         },
 
+        // ─── Reports Module ───────────────────────────────────────
+        \Lodgik\Module\Report\ReportService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Report\ReportService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Report\ReportController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Report\ReportController(
+            reportService: $c->get(\Lodgik\Module\Report\ReportService::class),
+        ),
+
         // ─── Phase 2: Finance Module ──────────────────────────────
         FolioRepository::class => fn(ContainerInterface $c) => new FolioRepository($c->get(EntityManagerInterface::class)),
         FolioChargeRepository::class => fn(ContainerInterface $c) => new FolioChargeRepository($c->get(EntityManagerInterface::class)),
