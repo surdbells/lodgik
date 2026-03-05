@@ -210,7 +210,13 @@ export class PayrollPage implements OnInit {
 
   viewPeriod(id: string) {
     this.api.get(`/payroll/${id}`).subscribe({
-      next: (r: any) => { this.selectedPeriod.set(r.data?.period); this.payslips.set(r.data?.items || []); },
+      next: (r: any) => {
+        this.selectedPeriod.set(r.data?.period ?? r.data);
+        // Load payslips from dedicated endpoint
+        this.api.get<any>(`/payroll/${id}/payslips`).subscribe({
+          next: pr => this.payslips.set(pr.data ?? []),
+        });
+      },
     });
   }
 

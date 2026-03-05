@@ -21,6 +21,8 @@ return function (App $app): void {
         $g->post('/{id}/review', [PayrollController::class, 'review']);
         $g->post('/{id}/approve', [PayrollController::class, 'approve']);
         $g->post('/{id}/paid', [PayrollController::class, 'markPaid']);
+        // List payslips for a period
+        $g->get('/{id}/payslips', [PayrollController::class, 'listPayslips']);
     })->add(new RoleMiddleware(['property_admin', 'hr']))->add($featureGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     $app->group('/api/payslips', function (RouteCollectorProxy $g) {

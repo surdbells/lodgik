@@ -98,4 +98,16 @@ final class PayrollController
     {
         return JsonResponse::ok($res, array_map(fn($b) => $b->toArray(), $this->service->getTaxBrackets()));
     }
+    /** GET /api/payroll/{id}/payslips */
+    public function listPayslips(Request $req, Response $res, array $args): Response
+    {
+        $period = $this->service->getPeriod($args['id']);
+        if ($period === null) {
+            return JsonResponse::error($res, 'Payroll period not found', 404);
+        }
+        $items = $this->service->getPayslips($period->getId());
+        return JsonResponse::ok($res, array_map(fn($i) => $i->toArray(), $items));
+    }
+
+
 }

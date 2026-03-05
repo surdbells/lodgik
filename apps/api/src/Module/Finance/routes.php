@@ -4,10 +4,15 @@ use Lodgik\Module\Finance\FinanceController;
 use Lodgik\Middleware\RoleMiddleware;
 use Lodgik\Middleware\AuthMiddleware;
 use Lodgik\Middleware\TenantMiddleware;
+use Lodgik\Middleware\FeatureMiddleware;
+use Predis\Client as RedisClient;
 use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
+    $c = $app->getContainer();
+    $reviewGate = new FeatureMiddleware('performance_reviews', 'business', $c->get(RedisClient::class));
+
     // Expenses: accountant, manager, admin
     $app->group('/api/expenses', function (RouteCollectorProxy $g) {
         $g->get('/categories', [FinanceController::class, 'listCategories']);
@@ -40,7 +45,7 @@ return function (App $app): void {
         $g->post('', [FinanceController::class, 'createReview']);
         $g->post('/{id}/submit', [FinanceController::class, 'submitReview']);
         $g->post('/{id}/acknowledge', [FinanceController::class, 'acknowledgeReview']);
-    })->add(new RoleMiddleware(['property_admin', 'manager', 'hr']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
+    })->add(new RoleMiddleware(['property_admin', 'manager', 'hr']))->add($reviewGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Pricing Rules: manager, admin
     $app->group('/api/pricing-rules', function (RouteCollectorProxy $g) {

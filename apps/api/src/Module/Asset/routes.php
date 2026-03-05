@@ -1,11 +1,15 @@
 <?php
 declare(strict_types=1);
 use Lodgik\Module\Asset\AssetController;
-use Lodgik\Middleware\{RoleMiddleware, AuthMiddleware, TenantMiddleware};
+use Lodgik\Middleware\{RoleMiddleware, AuthMiddleware, TenantMiddleware, FeatureMiddleware};
+use Predis\Client as RedisClient;
 use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
+    $c = $app->getContainer();
+    $assetGate = new FeatureMiddleware('asset_management', 'professional', $c->get(RedisClient::class));
+
     // Asset categories + registry
     $app->group('/api/assets', function (RouteCollectorProxy $g) {
         $g->get('/categories', [AssetController::class, 'listCategories']);
@@ -17,7 +21,7 @@ return function (App $app): void {
         $g->post('', [AssetController::class, 'createAsset']);
         $g->put('/{id}', [AssetController::class, 'updateAsset']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'engineer', 'maintenance', 'housekeeping']))
-      ->add(TenantMiddleware::class)->add(AuthMiddleware::class);
+      ->add($assetGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Engineers directory
     $app->group('/api/engineers', function (RouteCollectorProxy $g) {
@@ -25,7 +29,7 @@ return function (App $app): void {
         $g->post('', [AssetController::class, 'createEngineer']);
         $g->put('/{id}', [AssetController::class, 'updateEngineer']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'engineer']))
-      ->add(TenantMiddleware::class)->add(AuthMiddleware::class);
+      ->add($assetGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Asset incidents
     $app->group('/api/asset-incidents', function (RouteCollectorProxy $g) {
@@ -38,7 +42,7 @@ return function (App $app): void {
         $g->post('/{id}/close', [AssetController::class, 'closeIncident']);
         $g->post('/{id}/escalate', [AssetController::class, 'escalateIncident']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'engineer', 'maintenance', 'security', 'housekeeping', 'front_desk']))
-      ->add(TenantMiddleware::class)->add(AuthMiddleware::class);
+      ->add($assetGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Preventive maintenance
     $app->group('/api/preventive-maintenance', function (RouteCollectorProxy $g) {
@@ -47,7 +51,7 @@ return function (App $app): void {
         $g->post('', [AssetController::class, 'createPM']);
         $g->post('/{id}/complete', [AssetController::class, 'completePM']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'engineer', 'maintenance']))
-      ->add(TenantMiddleware::class)->add(AuthMiddleware::class);
+      ->add($assetGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Maintenance logs + reports
     $app->group('/api/maintenance-logs', function (RouteCollectorProxy $g) {
@@ -55,5 +59,5 @@ return function (App $app): void {
         $g->post('', [AssetController::class, 'createLog']);
         $g->get('/cost-report', [AssetController::class, 'costReport']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'engineer', 'maintenance', 'accountant']))
-      ->add(TenantMiddleware::class)->add(AuthMiddleware::class);
+      ->add($assetGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 };

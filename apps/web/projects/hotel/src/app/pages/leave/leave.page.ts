@@ -81,8 +81,12 @@ import { AuthService } from '@lodgik/shared';
       <!-- Balances Tab -->
       @if (activeTab === 'Balances') {
         <div class="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden">
-          <div class="px-5 py-4 border-b border-gray-100">
+          <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="text-sm font-semibold text-gray-700">Leave Balances by Employee</h3>
+            <button (click)="showInitBalances = true"
+              class="px-3 py-1.5 text-xs font-medium bg-sage-600 text-white rounded-lg hover:bg-sage-700">
+              + Initialise Balances
+            </button>
           </div>
           <ui-loading [loading]="balancesLoading()"></ui-loading>
           @if (!balancesLoading()) {
@@ -124,6 +128,43 @@ import { AuthService } from '@lodgik/shared';
       }
     }
 
+    <!-- Init Leave Balances Dialog -->
+    @if (showInitBalances) {
+      <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" (click)="showInitBalances = false">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm" (click)="$event.stopPropagation()">
+          <h3 class="text-base font-semibold mb-4">Initialise Leave Balances</h3>
+          <p class="text-xs text-gray-500 mb-4">
+            Allocate leave entitlements for an employee for the selected year. This sets up their
+            annual leave balance based on leave type defaults.
+          </p>
+          <div class="space-y-3 mb-5">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Employee</label>
+              <select [(ngModel)]="initEmpId" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50">
+                <option value="">Select employee…</option>
+                @for (e of employees(); track e.id) {
+                  <option [value]="e.id">{{ e.full_name }} — {{ e.staff_id }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Year</label>
+              <input [(ngModel)]="initYear" type="number" [min]="2020" [max]="2030"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50">
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button (click)="showInitBalances = false"
+              class="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
+            <button (click)="initBalances()" [disabled]="!initEmpId"
+              class="flex-1 px-4 py-2 bg-sage-600 text-white rounded-xl text-sm hover:bg-sage-700 disabled:opacity-50">
+              Initialise
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- Submit Leave Request Dialog -->
     @if (showRequest) {
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" (click)="showRequest = false">
@@ -132,7 +173,7 @@ import { AuthService } from '@lodgik/shared';
           <div class="space-y-3">
             <select [(ngModel)]="reqForm.employee_id" class="border rounded-lg px-3 py-2 text-sm w-full">
               <option value="">Select Employee</option>
-              @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.full_name }}</option> }
+              @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.full_name }} — {{ e.staff_id }}</option> }
             </select>
             <select [(ngModel)]="reqForm.leave_type_id" class="border rounded-lg px-3 py-2 text-sm w-full">
               <option value="">Select Leave Type</option>
@@ -154,7 +195,8 @@ import { AuthService } from '@lodgik/shared';
   `,
 })
 export class LeavePage implements OnInit {
-  private api = inject(ApiService);
+  private api   = inject(ApiService);
+  private toast = inject(ToastService);
   private auth = inject(AuthService);
   private activeProperty = inject(ActivePropertyService);
 
@@ -162,7 +204,10 @@ export class LeavePage implements OnInit {
   balancesLoading = signal(false);
   pending = signal<any[]>([]);
   allRequests = signal<any[]>([]);
-  leaveTypes = signal<any[]>([]);
+  leaveTypes   = signal<any[]>([]);
+  showInitBalances = false;
+  initEmpId        = '';
+  initYear         = new Date().getFullYear();
   employees = signal<any[]>([]);
   balances = signal<any[]>([]);
   stats = signal({ approved: 0, rejected: 0 });
@@ -229,4 +274,22 @@ export class LeavePage implements OnInit {
       },
     });
   }
+  initBalances(): void {
+    if (!this.initEmpId) return;
+    this.api.post(`/leave-balances/${this.initEmpId}/init`, { year: this.initYear }).subscribe({
+      next: (r: any) => {
+        if (r.success) {
+          this.toast.success('Leave balances initialised');
+          this.showInitBalances = false;
+          this.initEmpId = '';
+          this.load();
+        }
+      },
+      error: (err: any) => {
+        this.toast.error(err?.error?.error?.message ?? 'Failed to initialise balances');
+      },
+    });
+  }
+
+
 }
