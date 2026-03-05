@@ -65,6 +65,10 @@ final class BookingService
     }
 
     public function getById(string $id): ?Booking
+    {
+        $b = $this->bookingRepo->find($id);
+        return ($b !== null && !$b->isDeleted()) ? $b : null;
+    }
 
     /** Resolve tenant slug for generating guest PWA deep-links. */
     public function getTenantSlug(string $tenantId): ?string
@@ -75,10 +79,6 @@ final class BookingService
         } catch (\Throwable) {
             return null;
         }
-    }
-    {
-        $b = $this->bookingRepo->find($id);
-        return ($b !== null && !$b->isDeleted()) ? $b : null;
     }
 
     /** @return Booking[] */
