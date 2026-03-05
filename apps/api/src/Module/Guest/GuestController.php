@@ -60,7 +60,7 @@ final class GuestController
             return $this->response->validationError($response, $errors);
         }
 
-        $tenantId = $request->getAttribute('tenant_id');
+        $tenantId = $request->getAttribute('auth.tenant_id');
         $guest = $this->guestService->create($dto, $tenantId);
 
         return $this->response->created($response, $this->serialize($guest));

@@ -263,7 +263,7 @@ final class GymController
     public function recordPayment(Request $req, Response $res): Response
     {
         $body = (array) ($req->getParsedBody() ?? []);
-        $body['tenant_id'] = $req->getAttribute('tenant_id');
+        $body['tenant_id'] = $req->getAttribute('auth.tenant_id');
         $body['property_id'] = $req->getAttribute('property_id');
         $payment = $this->service->recordPayment($body);
         return JsonResponse::created($res, $payment->toArray());

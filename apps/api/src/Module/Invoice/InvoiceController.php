@@ -81,7 +81,7 @@ final class InvoiceController
     /** GET /api/invoices/tax-config */
     public function taxConfig(Request $request, Response $response): Response
     {
-        $tenantId = $request->getAttribute('tenant_id');
+        $tenantId = $request->getAttribute('auth.tenant_id');
         $taxes = $this->invoiceService->getTaxConfig($tenantId);
         return $this->response->success($response, $taxes);
     }

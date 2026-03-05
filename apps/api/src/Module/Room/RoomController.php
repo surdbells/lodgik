@@ -70,7 +70,7 @@ final class RoomController
         }
 
         try {
-            $tenantId = $request->getAttribute('tenant_id');
+            $tenantId = $request->getAttribute('auth.tenant_id');
             $userId = $request->getAttribute('user_id');
             $roomType = $this->roomService->createRoomType($dto, $tenantId, $userId);
 
@@ -165,7 +165,7 @@ final class RoomController
         }
 
         try {
-            $tenantId = $request->getAttribute('tenant_id');
+            $tenantId = $request->getAttribute('auth.tenant_id');
             $userId = $request->getAttribute('user_id');
             $room = $this->roomService->createRoom($dto, $tenantId, $userId);
 
@@ -187,7 +187,7 @@ final class RoomController
         }
 
         try {
-            $tenantId = $request->getAttribute('tenant_id');
+            $tenantId = $request->getAttribute('auth.tenant_id');
             $userId = $request->getAttribute('user_id');
             $rooms = $this->roomService->bulkCreateRooms($dto, $tenantId, $userId);
 
@@ -352,7 +352,7 @@ final class RoomController
             return $this->response->validationError($response, ['name' => 'Name is required']);
         }
 
-        $tenantId = $request->getAttribute('tenant_id');
+        $tenantId = $request->getAttribute('auth.tenant_id');
         $amenity = $this->roomService->createAmenity($name, $tenantId, $body['category'] ?? null, $body['icon'] ?? null);
 
         return $this->response->created($response, [

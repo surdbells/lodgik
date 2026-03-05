@@ -103,7 +103,7 @@ final class DashboardController
             return $this->response->validationError($response, ['property_id' => 'Required']);
         }
 
-        $tenantId = $request->getAttribute('tenant_id');
+        $tenantId = $request->getAttribute('auth.tenant_id');
         $date = $body['date'] ?? null;
 
         try {

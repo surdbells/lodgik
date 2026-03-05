@@ -78,7 +78,7 @@ final class BookingController
         }
 
         try {
-            $tenantId = $request->getAttribute('tenant_id');
+            $tenantId = $request->getAttribute('auth.tenant_id');
             $userId = $request->getAttribute('user_id');
             $booking = $this->bookingService->create($dto, $tenantId, $userId);
 
