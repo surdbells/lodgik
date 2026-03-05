@@ -343,7 +343,7 @@ export class GuestCardsPage implements OnInit {
     this.confirm.confirm({
       title: 'Deactivate Card',
       message: `Deactivate card ${card.card_number}? The guest will lose access immediately.`,
-      confirmText: 'Deactivate',
+      confirmLabel: 'Deactivate',
       confirmClass: 'bg-red-600 hover:bg-red-700',
     }).then(confirmed => {
       if (!confirmed) return;

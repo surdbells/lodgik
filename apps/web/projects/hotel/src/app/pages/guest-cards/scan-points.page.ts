@@ -250,7 +250,7 @@ export class ScanPointsPage implements OnInit {
     this.confirm.confirm({
       title: 'Regenerate Device Key',
       message: `This will invalidate the current key for "${sp.name}". The physical scanner must be reconfigured. Continue?`,
-      confirmText: 'Regenerate',
+      confirmLabel: 'Regenerate',
       confirmClass: 'bg-amber-600 hover:bg-amber-700',
     }).then(confirmed => {
       if (!confirmed) return;
@@ -265,7 +265,7 @@ export class ScanPointsPage implements OnInit {
     this.confirm.confirm({
       title: 'Delete Scan Point',
       message: `Delete "${sp.name}"? This cannot be undone.`,
-      confirmText: 'Delete',
+      confirmLabel: 'Delete',
       confirmClass: 'bg-red-600 hover:bg-red-700',
     }).then(confirmed => {
       if (!confirmed) return;

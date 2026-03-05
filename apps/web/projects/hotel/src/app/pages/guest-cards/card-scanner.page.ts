@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
-import { NgClass } from '@angular/common';
+import { NgClass, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService, ToastService } from '@lodgik/shared';
@@ -9,7 +9,7 @@ type ScanContext = 'reception_lookup' | 'checkout' | 'security_exit' | 'facility
 @Component({
   selector: 'app-card-scanner',
   standalone: true,
-  imports: [NgClass, FormsModule, RouterLink],
+  imports: [NgClass, DatePipe, FormsModule, RouterLink],
   template: `
     <div class="min-h-screen bg-gray-950 text-white flex flex-col">
 

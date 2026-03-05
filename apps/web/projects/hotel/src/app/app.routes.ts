@@ -354,7 +354,7 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/guest-portal/guest-layout.component').then(m => m.GuestLayoutComponent),
     children: [
       { path: '', redirectTo: 'home', pathMatch: 'full' },
-      { path: 'login',    loadComponent: () => import('./pages/guest-portal/guest-login.page') },
+      { path: 'login',    loadComponent: () => import('./pages/guest-portal/guest-login.page').then(m => m.GuestLoginPage) },
       { path: 'home',     loadComponent: () => import('./pages/guest-portal/guest-home.page') },
       { path: 'folio',    loadComponent: () => import('./pages/guest-portal/guest-folio.page') },
       { path: 'services', loadComponent: () => import('./pages/guest-portal/guest-services.page') },

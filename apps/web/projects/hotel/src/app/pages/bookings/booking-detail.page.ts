@@ -620,62 +620,6 @@ export class BookingDetailPage implements OnInit {
     }
   }
 
-  // ── Guest Card ────────────────────────────────────────────────
-  loadActiveCard(): void {
-    this.api.get(`/cards?property_id=${this.booking()?.property_id ?? ''}&booking_id=${this.bookingId}&status=active&limit=1`).subscribe({
-      next: (r: any) => {
-        const items = r.data?.items ?? [];
-        this.activeCard.set(items.length ? items[0] : null);
-      },
-      error: () => { /* card system may not be set up yet */ },
-    });
-  }
-
-  issueGuestCard(): void {
-    this.issuingCard.set(true);
-    this.api.post('/cards/issue', { booking_id: this.bookingId }).subscribe({
-      next: (r: any) => {
-        this.activeCard.set(r.data);
-        this.issuingCard.set(false);
-        this.toast.success(`Card ${r.data.card_number} issued to guest`);
-      },
-      error: (e: any) => {
-        this.issuingCard.set(false);
-        this.toast.error(e?.error?.message ?? 'Failed to issue card — check card inventory');
-      },
-    });
-  }
-
-  openCardInfo(): void {
-    this.showCardModal.set(true);
-  }
-
-  deactivateCard(): void {
-    const card = this.activeCard();
-    if (!card) return;
-    this.api.post(`/cards/${card.id}/deactivate`, { reason: 'checkout' }).subscribe({
-      next: () => {
-        this.activeCard.set(null);
-        this.showCardModal.set(false);
-        this.toast.success('Card deactivated');
-      },
-      error: (e: any) => this.toast.error(e?.error?.message ?? 'Failed'),
-    });
-  }
-
-  reportCardLost(): void {
-    const card = this.activeCard();
-    if (!card) return;
-    this.api.post(`/cards/${card.id}/report-lost`, { notes: 'Reported lost at check-out' }).subscribe({
-      next: () => {
-        this.activeCard.set(null);
-        this.showCardModal.set(false);
-        this.toast.success('Card reported as lost');
-      },
-      error: (e: any) => this.toast.error(e?.error?.message ?? 'Failed'),
-    });
-  }
-
   // ── Status helpers ────────────────────────────────────────────
   statusLabel(status: string): string {
     return ({

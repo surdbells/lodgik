@@ -485,8 +485,8 @@ const TABS: Tab[] = [
                 [labels]="trendLabels()"
                 [series]="trendSeries()"
                 [height]="220"
-                [showGrid]="true"
-                [animate]="true">
+                [showArea]="true"
+                [smooth]="true">
               </chart-line>
             } @else {
               <p class="text-sm text-gray-300 text-center py-12">No trend data yet.</p>
@@ -500,8 +500,7 @@ const TABS: Tab[] = [
               <p class="text-xs text-gray-400 mb-3">Last 30 days</p>
               <chart-bar
                 [data]="propertyRevenueChart()"
-                [height]="220"
-                [showGrid]="true">
+                [height]="220">
               </chart-bar>
             </div>
           }
