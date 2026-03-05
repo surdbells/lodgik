@@ -319,12 +319,13 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/iot/iot.page'),
       },
       {
-        {
-          path: 'reports',
-          loadComponent: () => import('./pages/reports/reports.page').then(m => m.ReportsPage),
-        },
+        path: 'reports',
+        loadComponent: () => import('./pages/reports/reports.page').then(m => m.ReportsPage),
+      },
+      {
         path: 'audit-log',
         loadComponent: () => import('./pages/audit-log/audit-log.page').then(m => m.AuditLogPage),
+      },
 
       // ── Guest Card System ─────────────────────────────────────
       {
@@ -342,7 +343,6 @@ export const routes: Routes = [
       {
         path: 'guest-cards/scan-points',
         loadComponent: () => import('./pages/guest-cards/scan-points.page').then(m => m.ScanPointsPage),
-      },
       },
     ],
   },

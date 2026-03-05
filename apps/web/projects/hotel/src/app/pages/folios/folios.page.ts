@@ -84,6 +84,7 @@ export class FoliosPage implements OnInit {
           pending: 0,
           outstanding: open.reduce((s: number, f: any) => s + Math.max(0, +f.balance), 0),
           closedToday: data.filter((f: any) => f.status === 'closed' && f.closed_at?.startsWith(new Date().toISOString().slice(0, 10))).length,
+          collectedToday: data.filter((f: any) => f.status === 'closed' && f.closed_at?.startsWith(new Date().toISOString().slice(0, 10))).reduce((s: number, f: any) => s + Math.max(0, +f.total_charges), 0),
         });
       }
       this.loading.set(false);

@@ -1,12 +1,12 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, TitleCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Component({
   selector: 'app-guest-folio',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, TitleCasePipe, RouterLink],
   template: `
     <div class="px-4 py-6 max-w-md mx-auto">
       <div class="flex items-center gap-3 mb-5">

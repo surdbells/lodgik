@@ -147,21 +147,21 @@ const TABS: Tab[] = [
               <h3 class="text-sm font-semibold text-gray-800 mb-1">Occupancy Rate</h3>
               <p class="text-xs text-gray-400 mb-3">Live · {{ kpi().rooms?.occupied || kpi().occupied_rooms || 0 }}
                 of {{ kpi().rooms?.total || kpi().total_rooms || 0 }} rooms</p>
-              <app-gauge-chart
+              <chart-gauge
                 [value]="occupancyPct()"
                 [min]="0" [max]="100"
                 label="Occupied"
                 [height]="160">
-              </app-gauge-chart>
+              </chart-gauge>
             </div>
             <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-card lg:col-span-2">
               <h3 class="text-sm font-semibold text-gray-800 mb-1">Room Status</h3>
               <p class="text-xs text-gray-400 mb-3">Current distribution</p>
-              <app-donut-chart
+              <chart-donut
                 [data]="roomStatusData()"
                 [height]="180"
                 [showLegend]="true">
-              </app-donut-chart>
+              </chart-donut>
             </div>
           </div>
 
@@ -450,13 +450,13 @@ const TABS: Tab[] = [
               <h3 class="text-sm font-semibold text-gray-700 mb-1">Revenue by Booking Type</h3>
               <p class="text-xs text-gray-400 mb-3">Last 30 days</p>
               @if (revenueBreakdown().length) {
-                <app-donut-chart
+                <chart-donut
                   [data]="revenueBreakdown()"
                   [height]="180"
                   [showLegend]="true"
                   [centerLabel]="'Total'"
                   [centerValue]="'₦' + totalRevenue().toLocaleString()">
-                </app-donut-chart>
+                </chart-donut>
               } @else {
                 <p class="text-sm text-gray-300 text-center py-8">No revenue data for this period.</p>
               }
@@ -481,13 +481,13 @@ const TABS: Tab[] = [
             </div>
             <p class="text-xs text-gray-400 mb-3">Occupancy % · Rooms sold over {{ trendDays() }} days</p>
             @if (trends().length) {
-              <app-line-chart
+              <chart-line
                 [labels]="trendLabels()"
                 [series]="trendSeries()"
                 [height]="220"
                 [showGrid]="true"
                 [animate]="true">
-              </app-line-chart>
+              </chart-line>
             } @else {
               <p class="text-sm text-gray-300 text-center py-12">No trend data yet.</p>
             }
@@ -498,11 +498,11 @@ const TABS: Tab[] = [
             <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
               <h3 class="text-sm font-semibold text-gray-700 mb-1">Revenue by Property</h3>
               <p class="text-xs text-gray-400 mb-3">Last 30 days</p>
-              <app-bar-chart
+              <chart-bar
                 [data]="propertyRevenueChart()"
                 [height]="220"
                 [showGrid]="true">
-              </app-bar-chart>
+              </chart-bar>
             </div>
           }
 

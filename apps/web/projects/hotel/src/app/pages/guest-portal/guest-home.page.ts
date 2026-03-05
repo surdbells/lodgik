@@ -2,7 +2,7 @@ import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '@lodgik/shared';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpHeaders } from '@angular/common/http';
 
 @Component({
   selector: 'app-guest-home',
@@ -99,7 +99,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 })
 export default class GuestHomePage implements OnInit {
   private api = inject(ApiService);
-  private http = inject(HttpClient);
 
   session = signal<any | null>(null);
   folio   = signal<any | null>(null);
@@ -139,7 +138,8 @@ export default class GuestHomePage implements OnInit {
   private loadFolio(): void {
     const bookingId = this.session()?.booking?.id;
     if (!bookingId) { this.loading.set(false); return; }
-      next: r => { this.folio.set(r.data ?? null); this.loading.set(false); },
+    this.api.get('/guest/folio').subscribe({
+      next: (r: any) => { this.folio.set(r.data ?? null); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
   }
