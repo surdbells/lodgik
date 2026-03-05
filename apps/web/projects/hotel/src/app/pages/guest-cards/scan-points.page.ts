@@ -251,7 +251,7 @@ export class ScanPointsPage implements OnInit {
       title: 'Regenerate Device Key',
       message: `This will invalidate the current key for "${sp.name}". The physical scanner must be reconfigured. Continue?`,
       confirmLabel: 'Regenerate',
-      confirmClass: 'bg-amber-600 hover:bg-amber-700',
+      variant: 'warning',
     }).then(confirmed => {
       if (!confirmed) return;
       this.api.post(`/scan-points/${sp.id}/regenerate-key`, {}).subscribe({
@@ -266,7 +266,7 @@ export class ScanPointsPage implements OnInit {
       title: 'Delete Scan Point',
       message: `Delete "${sp.name}"? This cannot be undone.`,
       confirmLabel: 'Delete',
-      confirmClass: 'bg-red-600 hover:bg-red-700',
+      variant: 'danger',
     }).then(confirmed => {
       if (!confirmed) return;
       this.api.delete(`/scan-points/${sp.id}`).subscribe({

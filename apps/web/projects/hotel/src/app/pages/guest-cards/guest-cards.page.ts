@@ -344,7 +344,7 @@ export class GuestCardsPage implements OnInit {
       title: 'Deactivate Card',
       message: `Deactivate card ${card.card_number}? The guest will lose access immediately.`,
       confirmLabel: 'Deactivate',
-      confirmClass: 'bg-red-600 hover:bg-red-700',
+      variant: 'danger',
     }).then(confirmed => {
       if (!confirmed) return;
       this.api.post(`/cards/${card.id}/deactivate`, { reason: 'manual' }).subscribe({
