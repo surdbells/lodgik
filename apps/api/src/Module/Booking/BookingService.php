@@ -65,6 +65,17 @@ final class BookingService
     }
 
     public function getById(string $id): ?Booking
+
+    /** Resolve tenant slug for generating guest PWA deep-links. */
+    public function getTenantSlug(string $tenantId): ?string
+    {
+        try {
+            $tenant = $this->em->find(\Lodgik\Entity\Tenant::class, $tenantId);
+            return $tenant?->getSlug();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
     {
         $b = $this->bookingRepo->find($id);
         return ($b !== null && !$b->isDeleted()) ? $b : null;

@@ -10,15 +10,18 @@ use Lodgik\Util\JsonResponse;
 
 final class GuestAuthController
 {
-    public function __construct(private readonly GuestAuthService $service) {}
+    public function __construct(
+        private readonly GuestAuthService $service,
+        private readonly \Lodgik\Repository\TenantRepository $tenantRepo,
+    ) {}
 
     /** POST /guest-auth/otp/send — Send OTP to guest phone */
     public function sendOtp(Request $req, Response $res): Response
     {
         $d = (array) $req->getParsedBody();
         if (empty($d['phone'])) return JsonResponse::error($res, 'phone required', 422);
-        $tenantId = $d['tenant_id'] ?? $req->getAttribute('auth.tenant_id') ?? '';
-        if (empty($tenantId)) return JsonResponse::error($res, 'tenant_id required', 422);
+        $tenantId = $this->resolveTenantId($d) ?: ($req->getAttribute('auth.tenant_id') ?? '');
+        if (empty($tenantId)) return JsonResponse::error($res, 'tenant_id or tenant_slug required', 422);
         try {
             return JsonResponse::ok($res, $this->service->sendOtp($d['phone'], $tenantId));
         } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 422); }
@@ -29,7 +32,7 @@ final class GuestAuthController
     {
         $d = (array) $req->getParsedBody();
         foreach (['phone', 'otp'] as $f) { if (empty($d[$f])) return JsonResponse::error($res, "$f required", 422); }
-        $tenantId = $d['tenant_id'] ?? $req->getAttribute('auth.tenant_id') ?? '';
+        $tenantId = $this->resolveTenantId($d) ?: ($req->getAttribute('auth.tenant_id') ?? '');
         try {
             return JsonResponse::ok($res, $this->service->verifyOtp($d['phone'], $d['otp'], $tenantId), 'Login successful');
         } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 401); }
@@ -40,7 +43,7 @@ final class GuestAuthController
     {
         $d = (array) $req->getParsedBody();
         if (empty($d['code'])) return JsonResponse::error($res, 'code required', 422);
-        $tenantId = $d['tenant_id'] ?? $req->getAttribute('auth.tenant_id') ?? '';
+        $tenantId = $this->resolveTenantId($d) ?: ($req->getAttribute('auth.tenant_id') ?? '');
         try {
             return JsonResponse::ok($res, $this->service->loginWithAccessCode($d['code'], $tenantId), 'Login successful');
         } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 401); }
@@ -91,4 +94,23 @@ final class GuestAuthController
         $tablet = $this->service->registerTablet($d['property_id'], $d['room_id'], $d['name'], $req->getAttribute('auth.tenant_id'));
         return JsonResponse::ok($res, array_merge($tablet->toArray(), ['device_token' => $tablet->getDeviceToken()]), 'Tablet registered');
     }
+    /**
+     * Resolve a tenant_id from request body.
+     * Accepts either `tenant_id` (UUID) or `tenant_slug` (string slug).
+     * Returns empty string if neither is present or slug is not found.
+     */
+    private function resolveTenantId(array $body): string
+    {
+        // Direct UUID wins
+        if (!empty($body['tenant_id'])) {
+            return $body['tenant_id'];
+        }
+        // Resolve from slug
+        if (!empty($body['tenant_slug'])) {
+            $tenant = $this->tenantRepo->findBySlug($body['tenant_slug']);
+            return $tenant?->getId() ?? '';
+        }
+        return '';
+    }
+
 }

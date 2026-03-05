@@ -21,6 +21,7 @@ final class BookingController
         private readonly BookingService $bookingService,
         private readonly ResponseHelper $response,
         private readonly ?\Lodgik\Service\ZeptoMailService $mailService = null,
+        private readonly ?\Lodgik\Repository\GuestAccessCodeRepository $accessCodeRepo = null,
     ) {}
 
     /** GET /api/bookings */
@@ -233,6 +234,64 @@ final class BookingController
         } catch (\InvalidArgumentException $e) {
             return $this->response->validationError($response, ['error' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * GET /api/bookings/{id}/guest-access
+     *
+     * Returns the active guest access code + deep-link PWA URL for a booking.
+     * Called by staff after check-in to display / print the QR code.
+     *
+     * Response:
+     *   {
+     *     access_code: "123456",
+     *     pwa_url: "https://hotel.lodgik.co/guest?t=<slug>&c=123456",
+     *     qr_data: "https://hotel.lodgik.co/guest?t=<slug>&c=123456",
+     *     expires_at: "2026-03-10T12:00:00+00:00",
+     *     booking_ref: "BKG-XXXX"
+     *   }
+     */
+    public function guestAccess(Request $request, Response $response, array $args): Response
+    {
+        if (!$this->accessCodeRepo) {
+            return $this->response->error($response, 'Guest access not configured', 500);
+        }
+
+        $bookingId = $args['id'];
+
+        // Verify booking belongs to this tenant (TenantMiddleware scopes the query)
+        $booking = $this->bookingService->getById($bookingId);
+        if (!$booking) {
+            return $this->response->error($response, 'Booking not found', 404);
+        }
+
+        $ac = $this->accessCodeRepo->findActiveByBooking($bookingId);
+        if (!$ac) {
+            return $this->response->error($response, 'No active access code for this booking. Ensure the guest is checked in.', 404);
+        }
+
+        // Build the deep-link URL
+        // tenant_slug is resolved from the booking's tenant — use the request attribute
+        // set by TenantMiddleware (we query the tenant slug from DB via the tenant_id)
+        $hotelAppUrl = rtrim($_ENV['HOTEL_APP_URL'] ?? 'https://hotel.lodgik.co', '/');
+        $tenantId    = $request->getAttribute('auth.tenant_id');
+
+        // Resolve tenant slug (cached: the Doctrine entity manager has it in identity map)
+        $tenant = $this->bookingService->getTenantSlug($tenantId);
+        $slug   = $tenant ?? $tenantId; // fallback to UUID if slug unavailable
+
+        $pwaPart = "/guest?t={$slug}&c={$ac->getCode()}";
+        $deepLink = $hotelAppUrl . $pwaPart;
+
+        return $this->response->success($response, [
+            'access_code' => $ac->getCode(),
+            'pwa_url'     => $deepLink,
+            'qr_data'     => $deepLink,   // client renders this as QR
+            'expires_at'  => $ac->getExpiresAt()->format('c'),
+            'booking_ref' => $booking->getBookingRef(),
+            'guest_id'    => $booking->getGuestId(),
+            'room_id'     => $booking->getRoomId(),
+        ]);
     }
 
     // ─── Serializer ───────────────────────────────────────────

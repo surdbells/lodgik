@@ -23,6 +23,7 @@ return function (App $app): void {
 
         // ── Variable routes ───────────────────────────────────────────
         $group->get('/{id}', [BookingController::class, 'show']);
+        $group->get('/{id}/guest-access',   [BookingController::class, 'guestAccess']);
         $group->get('/{id}/status-history', [BookingController::class, 'statusHistory']);
         $group->post('/{id}/check-in', [BookingController::class, 'checkIn']);
         $group->post('/{id}/check-out', [BookingController::class, 'checkOut']);

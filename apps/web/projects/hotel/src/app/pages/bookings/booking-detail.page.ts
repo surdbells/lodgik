@@ -1,7 +1,13 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService } from '@lodgik/shared';
+import {
+  ApiService,
+  PageHeaderComponent,
+  LoadingSpinnerComponent,
+  ToastService,
+  ConfirmDialogService,
+} from '@lodgik/shared';
 
 @Component({
   selector: 'app-booking-detail',
@@ -16,10 +22,14 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
 
     @if (!loading() && booking()) {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Main Info -->
+
+        <!-- ── Main Info ─────────────────────────────────────── -->
         <div class="lg:col-span-2 space-y-6">
+
           <!-- Status Banner -->
-          <div class="rounded-lg p-4 flex items-center justify-between" [style.background-color]="booking()!.status_color + '15'" [style.border-left]="'4px solid ' + booking()!.status_color">
+          <div class="rounded-xl p-4 flex items-center justify-between"
+               [style.background-color]="booking()!.status_color + '15'"
+               [style.border-left]="'4px solid ' + booking()!.status_color">
             <div>
               <span class="text-xs font-medium text-gray-500">Status</span>
               <p class="text-lg font-bold" [style.color]="booking()!.status_color">{{ booking()!.status_label }}</p>
@@ -72,28 +82,57 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
           <!-- Actions -->
           <div class="flex flex-wrap gap-3">
             @if (booking()!.status === 'confirmed') {
-              <button (click)="doCheckIn()" class="px-5 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700">Check In Guest</button>
-              <button (click)="doCancel()" class="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">Cancel Booking</button>
-              <button (click)="doNoShow()" class="px-5 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700">Mark No-Show</button>
+              <button (click)="doCheckIn()"
+                class="px-5 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+                ✓ Check In Guest
+              </button>
+              <button (click)="doCancel()"
+                class="px-5 py-2.5 bg-red-50 text-red-600 border border-red-200 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors">
+                Cancel Booking
+              </button>
+              <button (click)="doNoShow()"
+                class="px-5 py-2.5 bg-gray-50 text-gray-600 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors">
+                Mark No-Show
+              </button>
             }
             @if (booking()!.status === 'checked_in') {
-              <button (click)="doCheckOut()" class="px-5 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">Check Out Guest</button>
+              <button (click)="doCheckOut()"
+                class="px-5 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700 transition-colors">
+                Check Out Guest
+              </button>
+              <!-- Show guest access / QR button for checked-in bookings -->
+              <button (click)="openGuestAccess()"
+                class="px-5 py-2.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-sm font-medium rounded-lg
+                       hover:bg-indigo-100 transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/>
+                  <path stroke-linecap="round" stroke-width="2" d="M14 14h3m0 0v3m0-3h4m-4 4v3"/>
+                </svg>
+                Guest PWA Access
+              </button>
             }
             @if (booking()!.status === 'pending') {
-              <button (click)="doCancel()" class="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">Cancel Booking</button>
+              <button (click)="doCancel()"
+                class="px-5 py-2.5 bg-red-50 text-red-600 border border-red-200 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors">
+                Cancel Booking
+              </button>
             }
           </div>
 
           <!-- Folio & Invoice Links -->
           @if (booking()!.status === 'checked_in' || booking()!.status === 'checked_out') {
-            <div class="flex gap-3 mt-4">
+            <div class="flex gap-3">
               @if (folioId()) {
-                <a [routerLink]="['/folios', folioId()]" class="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100">
+                <a [routerLink]="['/folios', folioId()]"
+                  class="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100 transition-colors">
                   📂 View Folio
                 </a>
               }
               @if (invoiceId()) {
-                <a [routerLink]="['/invoices', invoiceId()]" class="flex items-center gap-2 px-4 py-2 bg-sage-50 border border-sage-200 text-sage-700 text-sm font-medium rounded-lg hover:bg-sage-100">
+                <a [routerLink]="['/invoices', invoiceId()]"
+                  class="flex items-center gap-2 px-4 py-2 bg-sage-50 border border-sage-200 text-sage-700 text-sm font-medium rounded-lg hover:bg-sage-100 transition-colors">
                   📄 View Invoice
                 </a>
               }
@@ -101,21 +140,19 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
           }
         </div>
 
-        <!-- Timeline Sidebar -->
-        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
+        <!-- ── Timeline Sidebar ───────────────────────────────── -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 self-start">
           <h3 class="text-sm font-semibold text-gray-700 mb-4">Timeline</h3>
           <div class="space-y-0">
             @for (log of statusHistory(); track log.id) {
               <div class="flex gap-3 pb-4 relative">
-                <!-- Vertical line -->
                 @if (!$last) {
                   <div class="absolute left-[7px] top-5 bottom-0 w-px bg-gray-200"></div>
                 }
-                <div class="w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 z-10 bg-white" [style.border-color]="statusColor(log.new_status)"></div>
+                <div class="w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 z-10 bg-white"
+                     [style.border-color]="statusColor(log.new_status)"></div>
                 <div class="min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-medium">{{ statusLabel(log.new_status) }}</span>
-                  </div>
+                  <span class="text-sm font-medium">{{ statusLabel(log.new_status) }}</span>
                   <p class="text-xs text-gray-400 mt-0.5">{{ log.created_at | date:'medium' }}</p>
                   @if (log.notes) {
                     <p class="text-xs text-gray-500 mt-1">{{ log.notes }}</p>
@@ -124,11 +161,10 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
               </div>
             }
             @if (statusHistory().length === 0) {
-              <p class="text-gray-400 text-sm">No status changes recorded</p>
+              <p class="text-gray-400 text-sm">No status changes recorded.</p>
             }
           </div>
 
-          <!-- Timestamps -->
           <div class="mt-6 pt-4 border-t border-gray-100 space-y-2 text-xs text-gray-400">
             <div class="flex justify-between"><span>Created</span><span>{{ booking()!.created_at | date:'short' }}</span></div>
             @if (booking()!.checked_in_at) {
@@ -139,30 +175,151 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
             }
           </div>
         </div>
+
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════
+         GUEST ACCESS MODAL
+         Shown after check-in — staff sees code + QR to hand to guest.
+         ══════════════════════════════════════════════════════════ -->
+    @if (showAccessModal()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4"
+           (click)="closeAccessModal()">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+             (click)="$event.stopPropagation()">
+
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 pt-6 pb-5 text-white">
+            <div class="flex items-center justify-between mb-1">
+              <h2 class="text-lg font-bold">Guest PWA Access</h2>
+              <button (click)="closeAccessModal()"
+                class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <p class="text-indigo-200 text-xs">{{ booking()!.booking_ref }} · Room {{ booking()!.room_number || '—' }}</p>
+          </div>
+
+          <div class="p-6">
+
+            @if (loadingAccess()) {
+              <div class="flex flex-col items-center py-8 gap-3">
+                <div class="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm text-gray-400">Loading access code…</p>
+              </div>
+            } @else if (accessError()) {
+              <div class="text-center py-6">
+                <p class="text-3xl mb-3">⚠️</p>
+                <p class="text-sm font-medium text-gray-700 mb-1">{{ accessError() }}</p>
+                <p class="text-xs text-gray-400 mb-4">Make sure the guest is fully checked in before requesting the QR code.</p>
+                <button (click)="loadGuestAccess()"
+                  class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
+                  Retry
+                </button>
+              </div>
+            } @else if (accessData()) {
+
+              <!-- QR Code canvas -->
+              <div class="flex flex-col items-center mb-5">
+                <div class="bg-white border-2 border-gray-100 rounded-2xl p-4 shadow-inner inline-block">
+                  <canvas #qrCanvas width="200" height="200"></canvas>
+                </div>
+                <p class="text-xs text-gray-400 mt-2">Scan to open guest portal</p>
+              </div>
+
+              <!-- Access Code display -->
+              <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-center mb-4">
+                <p class="text-xs text-indigo-500 font-medium mb-1 uppercase tracking-wide">Access Code</p>
+                <p class="text-4xl font-black tracking-[0.35em] text-indigo-700 font-mono">
+                  {{ accessData()!.access_code }}
+                </p>
+                <p class="text-[11px] text-indigo-400 mt-1">
+                  Expires {{ accessData()!.expires_at | date:'MMM d, y h:mm a' }}
+                </p>
+              </div>
+
+              <!-- PWA URL copy row -->
+              <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 mb-5">
+                <p class="text-[11px] text-gray-500 flex-1 truncate font-mono">{{ accessData()!.pwa_url }}</p>
+                <button (click)="copyUrl()"
+                  class="flex-shrink-0 px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-medium
+                         text-gray-600 hover:bg-gray-100 transition-colors">
+                  {{ copied() ? '✓ Copied' : 'Copy' }}
+                </button>
+              </div>
+
+              <!-- Instructions for staff -->
+              <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-5">
+                <p class="text-xs font-semibold text-amber-800 mb-1.5">How to give guest access:</p>
+                <ol class="text-xs text-amber-700 space-y-1 list-decimal list-inside">
+                  <li>Show or print this QR code for the guest to scan</li>
+                  <li>Or give the 6-digit code — guest enters it at the hotel portal</li>
+                  <li>The code is valid until check-out date</li>
+                </ol>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="flex gap-2">
+                <button (click)="printAccess()"
+                  class="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700
+                         hover:bg-gray-50 flex items-center justify-center gap-1.5 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                  </svg>
+                  Print
+                </button>
+                <button (click)="closeAccessModal()"
+                  class="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold
+                         hover:bg-indigo-700 transition-colors">
+                  Done
+                </button>
+              </div>
+
+            }
+          </div>
+        </div>
       </div>
     }
   `,
 })
 export class BookingDetailPage implements OnInit {
-  private api = inject(ApiService);
-  private route = inject(ActivatedRoute);
-  private toast = inject(ToastService);
+  @ViewChild('qrCanvas') qrCanvasRef?: ElementRef<HTMLCanvasElement>;
+
+  private api     = inject(ApiService);
+  private route   = inject(ActivatedRoute);
+  private toast   = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
 
-  loading = signal(true);
-  booking = signal<any>(null);
+  // ── Core state ──────────────────────────────────────────────
+  loading       = signal(true);
+  booking       = signal<any>(null);
   statusHistory = signal<any[]>([]);
-  folioId = signal<string>('');
-  invoiceId = signal<string>('');
+  folioId       = signal('');
+  invoiceId     = signal('');
+
+  // ── Guest Access modal state ─────────────────────────────────
+  showAccessModal = signal(false);
+  loadingAccess   = signal(false);
+  accessError     = signal<string | null>(null);
+  accessData      = signal<any | null>(null);
+  copied          = signal(false);
 
   private bookingId = '';
 
+  // ── Lifecycle ─────────────────────────────────────────────────
   ngOnInit(): void {
     this.bookingId = this.route.snapshot.paramMap.get('id') ?? '';
     if (this.bookingId) this.loadBooking();
   }
 
   loadBooking(): void {
+    this.loading.set(true);
     this.api.get(`/bookings/${this.bookingId}`).subscribe(r => {
       if (r.success) {
         this.booking.set(r.data);
@@ -188,39 +345,225 @@ export class BookingDetailPage implements OnInit {
     });
   }
 
-  statusLabel(status: string): string {
-    return { pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked In', checked_out: 'Checked Out', cancelled: 'Cancelled', no_show: 'No Show' }[status] ?? status;
-  }
-
-  statusColor(status: string): string {
-    return { pending: '#f59e0b', confirmed: '#3b82f6', checked_in: '#22c55e', checked_out: '#6b7280', cancelled: '#ef4444', no_show: '#dc2626' }[status] ?? '#6b7280';
-  }
-
+  // ── Booking actions ───────────────────────────────────────────
   async doCheckIn(): Promise<void> {
     const ok = await this.confirm.confirm({ title: 'Check In', message: 'Check in this guest?', variant: 'info' });
-    if (ok) this.api.post(`/bookings/${this.bookingId}/check-in`).subscribe(r => {
-      if (r.success) { this.toast.success('Guest checked in!'); this.loadBooking(); } else this.toast.error(r.message || 'Failed');
+    if (!ok) return;
+
+    this.api.post(`/bookings/${this.bookingId}/check-in`).subscribe(r => {
+      if (r.success) {
+        this.toast.success('Guest checked in!');
+        this.loadBooking();
+        // Automatically open guest access modal after check-in
+        setTimeout(() => this.openGuestAccess(), 400);
+      } else {
+        this.toast.error(r.message || 'Check-in failed');
+      }
     });
   }
 
   async doCheckOut(): Promise<void> {
     const ok = await this.confirm.confirm({ title: 'Check Out', message: 'Check out this guest?', variant: 'info' });
-    if (ok) this.api.post(`/bookings/${this.bookingId}/check-out`).subscribe(r => {
-      if (r.success) { this.toast.success('Guest checked out!'); this.loadBooking(); } else this.toast.error(r.message || 'Failed');
+    if (!ok) return;
+    this.api.post(`/bookings/${this.bookingId}/check-out`).subscribe(r => {
+      if (r.success) { this.toast.success('Guest checked out!'); this.loadBooking(); }
+      else this.toast.error(r.message || 'Failed');
     });
   }
 
   async doCancel(): Promise<void> {
     const ok = await this.confirm.confirm({ title: 'Cancel Booking', message: 'Cancel this booking?', variant: 'warning' });
-    if (ok) this.api.post(`/bookings/${this.bookingId}/cancel`).subscribe(r => {
-      if (r.success) { this.toast.success('Booking cancelled'); this.loadBooking(); } else this.toast.error(r.message || 'Failed');
+    if (!ok) return;
+    this.api.post(`/bookings/${this.bookingId}/cancel`).subscribe(r => {
+      if (r.success) { this.toast.success('Booking cancelled'); this.loadBooking(); }
+      else this.toast.error(r.message || 'Failed');
     });
   }
 
   async doNoShow(): Promise<void> {
     const ok = await this.confirm.confirm({ title: 'No Show', message: 'Mark this booking as no-show?', variant: 'warning' });
-    if (ok) this.api.post(`/bookings/${this.bookingId}/no-show`).subscribe(r => {
-      if (r.success) { this.toast.success('Marked as no-show'); this.loadBooking(); } else this.toast.error(r.message || 'Failed');
+    if (!ok) return;
+    this.api.post(`/bookings/${this.bookingId}/no-show`).subscribe(r => {
+      if (r.success) { this.toast.success('Marked as no-show'); this.loadBooking(); }
+      else this.toast.error(r.message || 'Failed');
     });
+  }
+
+  // ── Guest Access modal ────────────────────────────────────────
+  openGuestAccess(): void {
+    this.showAccessModal.set(true);
+    this.accessData.set(null);
+    this.accessError.set(null);
+    this.loadGuestAccess();
+  }
+
+  closeAccessModal(): void {
+    this.showAccessModal.set(false);
+  }
+
+  loadGuestAccess(): void {
+    this.loadingAccess.set(true);
+    this.accessError.set(null);
+
+    this.api.get(`/bookings/${this.bookingId}/guest-access`).subscribe({
+      next: (r: any) => {
+        if (r.success) {
+          this.accessData.set(r.data);
+          // Render QR code after the canvas is in the DOM
+          setTimeout(() => this.renderQr(r.data.qr_data), 50);
+        } else {
+          this.accessError.set(r.message ?? 'Could not load guest access code.');
+        }
+        this.loadingAccess.set(false);
+      },
+      error: () => {
+        this.accessError.set('Failed to load guest access. Please retry.');
+        this.loadingAccess.set(false);
+      },
+    });
+  }
+
+  copyUrl(): void {
+    const url = this.accessData()?.pwa_url;
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(() => {
+      this.copied.set(true);
+      this.toast.success('Link copied to clipboard');
+      setTimeout(() => this.copied.set(false), 2500);
+    });
+  }
+
+  printAccess(): void {
+    const data = this.accessData();
+    if (!data) return;
+
+    const win = window.open('', '_blank', 'width=480,height=560');
+    if (!win) { this.toast.error('Pop-up blocked — allow pop-ups to print'); return; }
+
+    // Get the QR canvas image
+    const canvas = this.qrCanvasRef?.nativeElement;
+    const qrImg  = canvas ? canvas.toDataURL('image/png') : '';
+    const b      = this.booking();
+
+    win.document.write(`
+      <!DOCTYPE html><html><head>
+      <title>Guest Access — ${b?.booking_ref ?? ''}</title>
+      <style>
+        body { font-family: -apple-system, sans-serif; text-align: center; padding: 32px; color: #111; }
+        .logo { font-size: 28px; font-weight: 900; letter-spacing: -1px; color: #3a543a; margin-bottom: 4px; }
+        .ref  { font-size: 13px; color: #888; margin-bottom: 24px; }
+        .qr   { border: 2px solid #e5e7eb; border-radius: 16px; padding: 16px; display: inline-block; margin-bottom: 20px; }
+        .code { font-size: 48px; font-weight: 900; letter-spacing: 8px; font-family: monospace;
+                color: #3730a3; background: #eef2ff; border-radius: 12px; padding: 12px 24px; margin-bottom: 8px; }
+        .exp  { font-size: 11px; color: #aaa; margin-bottom: 20px; }
+        .url  { font-size: 11px; color: #6b7280; word-break: break-all; margin-bottom: 24px; }
+        .how  { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 12px 16px;
+                text-align: left; font-size: 12px; color: #92400e; max-width: 320px; margin: 0 auto; }
+        .how li { margin-bottom: 4px; }
+        @media print { .no-print { display: none; } }
+      </style>
+      </head><body>
+      <div class="logo">Lodgik</div>
+      <div class="ref">Booking ${b?.booking_ref ?? ''} · Room ${b?.room_number ?? '—'}</div>
+      ${qrImg ? `<div class="qr"><img src="${qrImg}" width="180" height="180" alt="QR Code"/></div><br>` : ''}
+      <div style="font-size:13px;color:#888;margin-bottom:8px;">Or enter your access code:</div>
+      <div class="code">${data.access_code}</div>
+      <div class="exp">Valid until ${new Date(data.expires_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+      <div class="url">Open at: <strong>${data.pwa_url}</strong></div>
+      <div class="how">
+        <strong>How to access:</strong>
+        <ol><li>Scan the QR code above with your phone camera</li>
+        <li>Or visit the URL and enter your 6-digit code</li>
+        <li>View your bill, request services, and chat with staff</li></ol>
+      </div>
+      <br>
+      <button class="no-print" onclick="window.print()" style="padding:8px 20px;background:#3730a3;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;">Print</button>
+      </body></html>
+    `);
+    win.document.close();
+    win.focus();
+  }
+
+  // ── QR Code renderer (pure canvas — no external library) ──────
+  private renderQr(data: string): void {
+    const canvas = this.qrCanvasRef?.nativeElement;
+    if (!canvas) return;
+
+    // Use the QRCode API if available in window, otherwise draw a placeholder
+    // We load qrcode.js via a dynamic script tag
+    if (typeof (window as any).QRCode !== 'undefined') {
+      this.drawQr(canvas, data);
+    } else {
+      this.loadQrScript(() => this.drawQr(canvas, data));
+    }
+  }
+
+  private loadQrScript(callback: () => void): void {
+    if (document.getElementById('qrcode-script')) { callback(); return; }
+    const s = document.createElement('script');
+    s.id  = 'qrcode-script';
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload = callback;
+    document.head.appendChild(s);
+  }
+
+  private drawQr(canvas: HTMLCanvasElement, data: string): void {
+    try {
+      // qrcode.js renders into a div, then we copy to canvas
+      const tmp = document.createElement('div');
+      tmp.style.visibility = 'hidden';
+      tmp.style.position   = 'absolute';
+      document.body.appendChild(tmp);
+
+      new (window as any).QRCode(tmp, {
+        text:         data,
+        width:        200,
+        height:       200,
+        colorDark:    '#1e1b4b',
+        colorLight:   '#ffffff',
+        correctLevel: (window as any).QRCode.CorrectLevel.M,
+      });
+
+      // Copy the generated image onto our canvas
+      setTimeout(() => {
+        const img = tmp.querySelector('img') as HTMLImageElement | null;
+        if (img && img.complete) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) { ctx.drawImage(img, 0, 0, 200, 200); }
+        } else if (img) {
+          img.onload = () => {
+            const ctx = canvas.getContext('2d');
+            if (ctx) { ctx.drawImage(img, 0, 0, 200, 200); }
+          };
+        }
+        document.body.removeChild(tmp);
+      }, 100);
+    } catch (e) {
+      // Fallback: draw a basic placeholder with the code text
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = '#f0f0f0';
+      ctx.fillRect(0, 0, 200, 200);
+      ctx.fillStyle = '#1e1b4b';
+      ctx.font = 'bold 12px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('QR unavailable', 100, 100);
+      ctx.fillText('Use code below', 100, 120);
+    }
+  }
+
+  // ── Status helpers ────────────────────────────────────────────
+  statusLabel(status: string): string {
+    return ({
+      pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked In',
+      checked_out: 'Checked Out', cancelled: 'Cancelled', no_show: 'No Show',
+    } as Record<string, string>)[status] ?? status;
+  }
+
+  statusColor(status: string): string {
+    return ({
+      pending: '#f59e0b', confirmed: '#3b82f6', checked_in: '#22c55e',
+      checked_out: '#6b7280', cancelled: '#ef4444', no_show: '#dc2626',
+    } as Record<string, string>)[status] ?? '#6b7280';
   }
 }

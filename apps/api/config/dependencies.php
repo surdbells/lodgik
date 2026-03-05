@@ -607,9 +607,10 @@ return function (ContainerBuilder $builder): void {
 
         BookingController::class => function (ContainerInterface $c): BookingController {
             return new BookingController(
-                bookingService: $c->get(BookingService::class),
-                response: $c->get(ResponseHelper::class),
-                mailService: $c->get(\Lodgik\Service\ZeptoMailService::class),
+                bookingService:  $c->get(BookingService::class),
+                response:        $c->get(ResponseHelper::class),
+                mailService:     $c->get(\Lodgik\Service\ZeptoMailService::class),
+                accessCodeRepo:  $c->get(GuestAccessCodeRepository::class),
             );
         },
 
@@ -775,7 +776,8 @@ return function (ContainerBuilder $builder): void {
             logger: $c->get(LoggerInterface::class),
         ),
         GuestAuthController::class => fn(ContainerInterface $c) => new GuestAuthController(
-            service: $c->get(GuestAuthService::class),
+            service:    $c->get(GuestAuthService::class),
+            tenantRepo: $c->get(TenantRepository::class),
         ),
 
         ServiceRequestService::class => fn(ContainerInterface $c) => new ServiceRequestService(
