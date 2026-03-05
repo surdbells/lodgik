@@ -315,6 +315,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/iot/iot.page'),
       },
       {
+        {
+          path: 'reports',
+          loadComponent: () => import('./pages/reports/reports.page').then(m => m.ReportsPage),
+        },
         path: 'audit-log',
         loadComponent: () => import('./pages/audit-log/audit-log.page').then(m => m.AuditLogPage),
       },
