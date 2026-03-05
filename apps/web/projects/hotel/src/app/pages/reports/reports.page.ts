@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import {
   ApiService,
@@ -23,6 +24,8 @@ interface ReportDef {
   /** Params this report uses — shown in the filter bar */
   params: ('date' | 'date_range' | 'guest_id')[];
   hasPage: boolean;
+  featureKey: string;
+  featureTier: string;
 }
 
 const REPORTS: ReportDef[] = [
@@ -398,7 +401,7 @@ function statusClass(val: string): string {
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [FormsModule, DatePipe, DecimalPipe, PageHeaderComponent, LoadingSpinnerComponent],
+  imports: [FormsModule, DatePipe, DecimalPipe, RouterLink, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header
       title="Reports"
@@ -418,10 +421,10 @@ function statusClass(val: string): string {
     <div class="flex gap-5">
       <!-- Sidebar -->
       <aside class="w-56 flex-shrink-0">
-        @for (group of groups; track group) {
+        @for (group of groups(); track group) {
           <div class="mb-4">
             <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 px-3 mb-1">{{ group }}</p>
-            @for (r of availableReportsByGroup(group); track r.key) {
+            @for (r of reportsByGroup(group); track r.key) {
               <button
                 (click)="selectReport(r)"
                 class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
@@ -433,12 +436,15 @@ function statusClass(val: string): string {
               </button>
             }
             @for (r of lockedReportsByGroup(group); track r.key) {
-              <div class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 opacity-50 cursor-not-allowed"
-                   [title]="'Requires ' + r.featureTier + ' plan'">
+              <button (click)="selectLockedReport(r)"
+                class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
+                [class]="lockedReportKey() === r.key
+                  ? 'bg-amber-50 border border-amber-200 text-amber-800'
+                  : 'text-gray-400 hover:bg-gray-50'">
                 <span class="text-base leading-none">🔒</span>
-                <span class="text-gray-400">{{ r.label }}</span>
-                <span class="ml-auto text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{{ r.featureTier }}</span>
-              </div>
+                <span>{{ r.label }}</span>
+                <span class="ml-auto text-[10px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full font-medium">{{ r.featureTier }}</span>
+              </button>
             }
           </div>
         }
@@ -467,6 +473,32 @@ function statusClass(val: string): string {
               </div>
             }
           </div>
+        }
+
+        <!-- Upgrade prompt for locked reports -->
+        @if (lockedReportKey(); as lockedKey) {
+          @if (!activeReport()) {
+            @if (lockedReportDef(); as locked) {
+              <div class="bg-white rounded-2xl border border-amber-200 shadow-card p-8 text-center max-w-md mx-auto mt-8">
+                <div class="text-5xl mb-4">🔒</div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">{{ locked.icon }} {{ locked.label }}</h3>
+                <p class="text-sm text-gray-500 mb-1">This report requires the <strong class="text-amber-700">{{ locked.featureTier }}</strong> plan.</p>
+                <p class="text-xs text-gray-400 mb-6">Upgrade your plan to unlock this and all other {{ locked.featureTier }} reports.</p>
+                <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-6 text-left">
+                  <p class="text-xs font-semibold text-amber-800 mb-2">This report includes:</p>
+                  <div class="flex flex-wrap gap-1">
+                    @for (col of locked.columns; track col.key) {
+                      <span class="text-[11px] bg-white border border-amber-200 text-amber-700 px-2 py-0.5 rounded-full">{{ col.label }}</span>
+                    }
+                  </div>
+                </div>
+                <a routerLink="/settings/subscription"
+                  class="inline-block px-6 py-2.5 bg-amber-500 text-white font-semibold text-sm rounded-xl hover:bg-amber-600 transition-colors">
+                  Upgrade Plan →
+                </a>
+              </div>
+            }
+          }
         }
 
         <!-- Report viewer -->
@@ -514,9 +546,20 @@ function statusClass(val: string): string {
                     class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 outline-none w-48">
                 </div>
               }
+              <!-- Quick presets -->
+              @if (report.params.includes('date_range')) {
+                <div class="flex gap-1 self-end">
+                  @for (preset of datePresets; track preset.label) {
+                    <button (click)="applyPreset(preset)"
+                      class="px-2.5 py-2 border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 hover:border-sage-200 transition-colors whitespace-nowrap">
+                      {{ preset.label }}
+                    </button>
+                  }
+                </div>
+              }
               <button (click)="runReport()"
                 [disabled]="loading()"
-                class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700 disabled:opacity-50">
+                class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700 disabled:opacity-50 self-end">
                 Run Report
               </button>
             </div>
@@ -645,6 +688,7 @@ export class ReportsPage implements OnInit {
 
   loading         = signal(false);
   activeReportKey = signal<string | null>(null);
+  lockedReportKey = signal<string | null>(null);
   reportData      = signal<any | null>(null);
 
   // Filter state
@@ -654,10 +698,14 @@ export class ReportsPage implements OnInit {
   filterGuestId  = '';
   currentPage    = 1;
 
-  private propertyId = '';
+  // propertyId is always read live: this.activeProperty.propertyId()
 
   activeReport = computed(() =>
     REPORTS.find(r => r.key === this.activeReportKey()) ?? null,
+  );
+
+  lockedReportDef = computed(() =>
+    REPORTS.find(r => r.key === this.lockedReportKey()) ?? null,
   );
 
   summaryEntries = computed((): { key: string; label: string; value: string }[] => {
@@ -677,7 +725,7 @@ export class ReportsPage implements OnInit {
   });
 
   ngOnInit(): void {
-    this.propertyId = this.activeProperty.propertyId();
+    // propertyId is always read live from activeProperty signal
   }
 
   reportsByGroup(group: string): ReportDef[] {
@@ -688,22 +736,63 @@ export class ReportsPage implements OnInit {
     return this.lockedReports().filter(r => r.group === group);
   }
 
+  readonly datePresets = [
+    { label: 'Today',       days: 0,  unit: 'day'   },
+    { label: 'This Week',   days: 7,  unit: 'week'  },
+    { label: 'This Month',  days: 30, unit: 'month' },
+    { label: 'Last Month',  days: 60, unit: 'lmonth'},
+    { label: 'This Year',   days: 365,unit: 'year'  },
+  ];
+
+  applyPreset(preset: { label: string; days: number; unit: string }): void {
+    const now   = new Date();
+    const today = now.toISOString().slice(0, 10);
+    if (preset.unit === 'day') {
+      this.filterDateFrom = today;
+      this.filterDateTo   = today;
+    } else if (preset.unit === 'week') {
+      const mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + 1);
+      this.filterDateFrom = mon.toISOString().slice(0, 10);
+      this.filterDateTo   = today;
+    } else if (preset.unit === 'month') {
+      this.filterDateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+      this.filterDateTo   = today;
+    } else if (preset.unit === 'lmonth') {
+      const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const le = new Date(now.getFullYear(), now.getMonth(), 0);
+      this.filterDateFrom = lm.toISOString().slice(0, 10);
+      this.filterDateTo   = le.toISOString().slice(0, 10);
+    } else if (preset.unit === 'year') {
+      this.filterDateFrom = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
+      this.filterDateTo   = today;
+    }
+    this.runReport();
+  }
+
   selectReport(r: ReportDef): void {
     if (!this.availableReports().some(a => a.key === r.key)) return; // guard: locked
+    this.lockedReportKey.set(null);
     this.activeReportKey.set(r.key);
     this.reportData.set(null);
     this.currentPage = 1;
     this.runReport();
   }
 
+  selectLockedReport(r: ReportDef): void {
+    this.activeReportKey.set(null);
+    this.reportData.set(null);
+    this.lockedReportKey.set(r.key);
+  }
+
   runReport(page = 1): void {
     const report = this.activeReport();
-    if (!report || !this.propertyId) return;
+    const propertyId = this.activeProperty.propertyId();
+    if (!report || !propertyId) return;
 
     this.loading.set(true);
     this.currentPage = page;
 
-    const params: any = { property_id: this.propertyId, page, limit: 50 };
+    const params: any = { property_id: propertyId, page, limit: 50 };
 
     if (report.params.includes('date'))        params.date      = this.filterDate;
     if (report.params.includes('date_range')) {
@@ -736,9 +825,10 @@ export class ReportsPage implements OnInit {
 
   exportCsv(): void {
     const report = this.activeReport();
-    if (!report || !this.propertyId) return;
+    const propertyId = this.activeProperty.propertyId();
+    if (!report || !propertyId) return;
 
-    const params: any = { property_id: this.propertyId, format: 'csv' };
+    const params: any = { property_id: propertyId, format: 'csv' };
     if (report.params.includes('date'))        params.date      = this.filterDate;
     if (report.params.includes('date_range')) {
       params.date_from = this.filterDateFrom;

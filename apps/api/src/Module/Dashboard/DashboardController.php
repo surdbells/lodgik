@@ -127,4 +127,37 @@ final class DashboardController
             return $this->response->validationError($response, ['error' => $e->getMessage()]);
         }
     }
+    /** GET /api/dashboard/housekeeping-summary */
+    public function housekeepingSummary(Request $request, Response $response): Response
+    {
+        $propertyId = $request->getQueryParams()['property_id'] ?? null;
+        if (!$propertyId) {
+            return $this->response->validationError($response, ['property_id' => 'Required']);
+        }
+        $data = $this->dashboardService->getHousekeepingSummary($propertyId);
+        return $this->response->success($response, $data);
+    }
+
+    /** GET /api/dashboard/service-requests-summary */
+    public function serviceRequestsSummary(Request $request, Response $response): Response
+    {
+        $propertyId = $request->getQueryParams()['property_id'] ?? null;
+        if (!$propertyId) {
+            return $this->response->validationError($response, ['property_id' => 'Required']);
+        }
+        $data = $this->dashboardService->getServiceRequestsSummary($propertyId);
+        return $this->response->success($response, $data);
+    }
+
+    /** GET /api/dashboard/folio-summary */
+    public function folioSummary(Request $request, Response $response): Response
+    {
+        $propertyId = $request->getQueryParams()['property_id'] ?? null;
+        if (!$propertyId) {
+            return $this->response->validationError($response, ['property_id' => 'Required']);
+        }
+        $data = $this->dashboardService->getFolioSummary($propertyId);
+        return $this->response->success($response, $data);
+    }
+
 }

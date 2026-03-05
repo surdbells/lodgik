@@ -14,6 +14,14 @@ use Lodgik\Enum\RoomStatus;
 use Lodgik\Repository\BookingRepository;
 use Lodgik\Repository\DailySnapshotRepository;
 use Lodgik\Repository\RoomRepository;
+use Lodgik\Entity\Folio;
+use Lodgik\Entity\FolioPayment;
+use Lodgik\Entity\HousekeepingTask;
+use Lodgik\Entity\ServiceRequest;
+use Lodgik\Enum\FolioStatus;
+use Lodgik\Enum\HousekeepingTaskStatus;
+use Lodgik\Enum\PaymentStatus;
+use Lodgik\Enum\ServiceRequestStatus;
 use Psr\Log\LoggerInterface;
 
 final class DashboardService
@@ -484,4 +492,242 @@ final class DashboardService
             'today_revenue' => 0, 'occupancy_rate' => 0, 'adr' => 0, 'revpar' => 0,
         ];
     }
+    // ────────────────────────────────────────────────────────────
+    // Dashboard summary sub-endpoints
+    // ────────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/dashboard/housekeeping-summary
+     *
+     * Today's housekeeping snapshot:
+     *   - dirty/clean room counts (from Room status)
+     *   - today's task breakdown (pending, in-progress, completed, needs-rework)
+     *   - completion rate %
+     *
+     * Feature tier: basic_analytics (all plans)
+     */
+    public function getHousekeepingSummary(string $propertyId): array
+    {
+        // Room status breakdown
+        $roomCounts     = $this->roomRepo->countByStatus($propertyId);
+        $dirtyRooms     = ($roomCounts[RoomStatus::VACANT_DIRTY->value]   ?? 0)
+                        + ($roomCounts[RoomStatus::MAINTENANCE->value]     ?? 0);
+        $cleanRooms     = ($roomCounts[RoomStatus::VACANT_CLEAN->value]   ?? 0);
+        $occupiedRooms  = ($roomCounts[RoomStatus::OCCUPIED->value]        ?? 0);
+        $outOfOrder     = ($roomCounts[RoomStatus::OUT_OF_ORDER->value]    ?? 0);
+        $totalRooms     = array_sum($roomCounts);
+
+        // Today's tasks
+        $todayStart = (new \DateTimeImmutable('today'))->format('Y-m-d 00:00:00');
+        $todayEnd   = (new \DateTimeImmutable('today'))->format('Y-m-d 23:59:59');
+
+        $rows = $this->em->createQueryBuilder()
+            ->select('t.status, COUNT(t.id) as cnt')
+            ->from(HousekeepingTask::class, 't')
+            ->where('t.propertyId = :pid')
+            ->andWhere('t.createdAt BETWEEN :s AND :e')
+            ->groupBy('t.status')
+            ->setParameter('pid', $propertyId)
+            ->setParameter('s', $todayStart)
+            ->setParameter('e', $todayEnd)
+            ->getQuery()
+            ->getArrayResult();
+
+        $taskMap = [];
+        $totalTasks = 0;
+        foreach ($rows as $row) {
+            $statusVal = $row['status'] instanceof HousekeepingTaskStatus
+                ? $row['status']->value
+                : $row['status'];
+            $taskMap[$statusVal] = (int) $row['cnt'];
+            $totalTasks += (int) $row['cnt'];
+        }
+
+        $completedTasks = ($taskMap[HousekeepingTaskStatus::COMPLETED->value]  ?? 0)
+                        + ($taskMap[HousekeepingTaskStatus::INSPECTED->value]   ?? 0);
+        $pendingTasks   =  $taskMap[HousekeepingTaskStatus::PENDING->value]    ?? 0;
+        $assignedTasks  =  $taskMap[HousekeepingTaskStatus::ASSIGNED->value]   ?? 0;
+        $inProgressTasks=  $taskMap[HousekeepingTaskStatus::IN_PROGRESS->value]?? 0;
+        $reworkTasks    =  $taskMap[HousekeepingTaskStatus::NEEDS_REWORK->value]?? 0;
+        $completionRate = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100, 1) : 0;
+
+        return [
+            'rooms' => [
+                'total'       => $totalRooms,
+                'dirty'       => $dirtyRooms,
+                'clean'       => $cleanRooms,
+                'occupied'    => $occupiedRooms,
+                'out_of_order'=> $outOfOrder,
+            ],
+            'tasks_today' => [
+                'total'       => $totalTasks,
+                'pending'     => $pendingTasks,
+                'assigned'    => $assignedTasks,
+                'in_progress' => $inProgressTasks,
+                'completed'   => $completedTasks,
+                'needs_rework'=> $reworkTasks,
+                'completion_rate' => $completionRate,
+            ],
+        ];
+    }
+
+    /**
+     * GET /api/dashboard/service-requests-summary
+     *
+     * Open/active service requests for the property:
+     *   - counts by status
+     *   - breakdown by category (top 5)
+     *   - avg response time today (minutes from created → acknowledged)
+     *
+     * Feature tier: basic_analytics (all plans)
+     */
+    public function getServiceRequestsSummary(string $propertyId): array
+    {
+        // Status counts (all non-cancelled)
+        $statusRows = $this->em->createQueryBuilder()
+            ->select('sr.status, COUNT(sr.id) as cnt')
+            ->from(ServiceRequest::class, 'sr')
+            ->where('sr.propertyId = :pid')
+            ->andWhere('sr.status != :cancelled')
+            ->groupBy('sr.status')
+            ->setParameter('pid', $propertyId)
+            ->setParameter('cancelled', ServiceRequestStatus::CANCELLED->value)
+            ->getQuery()
+            ->getArrayResult();
+
+        $statusMap = [];
+        $total = 0;
+        foreach ($statusRows as $row) {
+            $s = $row['status'] instanceof ServiceRequestStatus
+                ? $row['status']->value
+                : $row['status'];
+            $statusMap[$s] = (int) $row['cnt'];
+            $total += (int) $row['cnt'];
+        }
+
+        // Category breakdown (today's requests)
+        $todayStart = (new \DateTimeImmutable('today'))->format('Y-m-d 00:00:00');
+        $todayEnd   = (new \DateTimeImmutable('today'))->format('Y-m-d 23:59:59');
+
+        $catRows = $this->em->createQueryBuilder()
+            ->select('sr.category, COUNT(sr.id) as cnt')
+            ->from(ServiceRequest::class, 'sr')
+            ->where('sr.propertyId = :pid')
+            ->andWhere('sr.createdAt BETWEEN :s AND :e')
+            ->groupBy('sr.category')
+            ->orderBy('cnt', 'DESC')
+            ->setMaxResults(5)
+            ->setParameter('pid', $propertyId)
+            ->setParameter('s', $todayStart)
+            ->setParameter('e', $todayEnd)
+            ->getQuery()
+            ->getArrayResult();
+
+        $byCategory = array_map(fn(array $r) => [
+            'category' => $r['category'] instanceof \Lodgik\Enum\ServiceRequestCategory
+                ? $r['category']->value
+                : $r['category'],
+            'count' => (int) $r['cnt'],
+        ], $catRows);
+
+        $todayTotal = array_sum(array_column($byCategory, 'count'));
+
+        return [
+            'total'        => $total,
+            'pending'      => $statusMap[ServiceRequestStatus::PENDING->value]      ?? 0,
+            'acknowledged' => $statusMap[ServiceRequestStatus::ACKNOWLEDGED->value] ?? 0,
+            'in_progress'  => $statusMap[ServiceRequestStatus::IN_PROGRESS->value]  ?? 0,
+            'completed'    => $statusMap[ServiceRequestStatus::COMPLETED->value]    ?? 0,
+            'today_total'  => $todayTotal,
+            'by_category'  => $byCategory,
+        ];
+    }
+
+    /**
+     * GET /api/dashboard/folio-summary
+     *
+     * Financial snapshot for the property:
+     *   - collections today (confirmed payments, payment date = today)
+     *   - outstanding balance (sum of open folio balances > 0)
+     *   - pending payments (FolioPayments with status = pending)
+     *   - open folios count
+     *
+     * Feature tier: advanced_analytics (business+)
+     */
+    public function getFolioSummary(string $propertyId): array
+    {
+        $todayStart = (new \DateTimeImmutable('today'))->format('Y-m-d 00:00:00');
+        $todayEnd   = (new \DateTimeImmutable('today'))->format('Y-m-d 23:59:59');
+
+        // Collections today — confirmed payments recorded today
+        $collectedToday = (float) $this->em->createQueryBuilder()
+            ->select('COALESCE(SUM(fp.amount), 0)')
+            ->from(FolioPayment::class, 'fp')
+            ->join(Folio::class, 'f', 'WITH', 'fp.folioId = f.id')
+            ->where('f.propertyId = :pid')
+            ->andWhere('fp.status = :confirmed')
+            ->andWhere('fp.paymentDate BETWEEN :s AND :e')
+            ->setParameter('pid',       $propertyId)
+            ->setParameter('confirmed', PaymentStatus::CONFIRMED->value)
+            ->setParameter('s',         $todayStart)
+            ->setParameter('e',         $todayEnd)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Outstanding balance across all open folios with balance > 0
+        $outstandingBalance = (float) $this->em->createQueryBuilder()
+            ->select('COALESCE(SUM(f.balance), 0)')
+            ->from(Folio::class, 'f')
+            ->where('f.propertyId = :pid')
+            ->andWhere('f.status = :open')
+            ->andWhere('f.balance > 0')
+            ->setParameter('pid',  $propertyId)
+            ->setParameter('open', FolioStatus::OPEN->value)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Pending payments (awaiting staff confirmation)
+        $pendingPayments = (int) $this->em->createQueryBuilder()
+            ->select('COUNT(fp.id)')
+            ->from(FolioPayment::class, 'fp')
+            ->join(Folio::class, 'f', 'WITH', 'fp.folioId = f.id')
+            ->where('f.propertyId = :pid')
+            ->andWhere('fp.status = :pending')
+            ->setParameter('pid',     $propertyId)
+            ->setParameter('pending', PaymentStatus::PENDING->value)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Pending payment value
+        $pendingAmount = (float) $this->em->createQueryBuilder()
+            ->select('COALESCE(SUM(fp.amount), 0)')
+            ->from(FolioPayment::class, 'fp')
+            ->join(Folio::class, 'f', 'WITH', 'fp.folioId = f.id')
+            ->where('f.propertyId = :pid')
+            ->andWhere('fp.status = :pending')
+            ->setParameter('pid',     $propertyId)
+            ->setParameter('pending', PaymentStatus::PENDING->value)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Open folio count
+        $openFolios = (int) $this->em->createQueryBuilder()
+            ->select('COUNT(f.id)')
+            ->from(Folio::class, 'f')
+            ->where('f.propertyId = :pid')
+            ->andWhere('f.status = :open')
+            ->setParameter('pid',  $propertyId)
+            ->setParameter('open', FolioStatus::OPEN->value)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return [
+            'collected_today'     => number_format($collectedToday,     2, '.', ''),
+            'outstanding_balance' => number_format($outstandingBalance, 2, '.', ''),
+            'pending_payments'    => $pendingPayments,
+            'pending_amount'      => number_format($pendingAmount,      2, '.', ''),
+            'open_folios'         => $openFolios,
+        ];
+    }
+
 }
