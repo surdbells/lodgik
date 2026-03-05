@@ -112,6 +112,18 @@ import {
                 </svg>
                 Guest PWA Access
               </button>
+              <!-- Guest Card actions -->
+              @if (!activeCard()) {
+                <button (click)="issueGuestCard()" [disabled]="issuingCard()"
+                  class="px-5 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-medium rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-2 disabled:opacity-50">
+                  💳 {{ issuingCard() ? 'Issuing...' : 'Issue Guest Card' }}
+                </button>
+              } @else {
+                <button (click)="openCardInfo()"
+                  class="px-5 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2">
+                  💳 {{ activeCard()!.card_number }}
+                </button>
+              }
             }
             @if (booking()!.status === 'pending') {
               <button (click)="doCancel()"
@@ -286,6 +298,56 @@ import {
         </div>
       </div>
     }
+
+    <!-- ── Guest Card Info Modal ──────────────────────────────── -->
+    @if (showCardModal() && activeCard()) {
+      <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-gray-900">Guest Card</h2>
+              <p class="text-sm text-gray-500">RFID/QR dual-interface card</p>
+            </div>
+            <button (click)="showCardModal.set(false)" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          </div>
+          <div class="p-6 space-y-4">
+            <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl p-5 text-white">
+              <p class="text-xs text-emerald-200 mb-1">CARD NUMBER</p>
+              <p class="text-2xl font-bold font-mono tracking-wider">{{ activeCard()!.card_number }}</p>
+              <p class="text-xs text-emerald-200 mt-2 mb-0.5">CARD UID</p>
+              <p class="font-mono text-sm">{{ activeCard()!.card_uid }}</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-gray-50 rounded-xl p-3">
+                <p class="text-xs text-gray-400 mb-0.5">Status</p>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium text-white inline-block"
+                      [style.background-color]="activeCard()!.status_color">
+                  {{ activeCard()!.status_label }}
+                </span>
+              </div>
+              <div class="bg-gray-50 rounded-xl p-3">
+                <p class="text-xs text-gray-400 mb-0.5">Issued At</p>
+                <p class="text-sm font-medium text-gray-700">{{ activeCard()!.issued_at | date:'dd MMM, HH:mm' }}</p>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <a [routerLink]="['/guest-cards/events']" [queryParams]="{guest_id: booking()?.guest_id}"
+                class="flex-1 text-center py-2.5 border border-gray-200 text-sm rounded-xl hover:bg-gray-50 text-gray-700">
+                View History
+              </a>
+              <button (click)="reportCardLost()"
+                class="flex-1 py-2.5 border border-amber-200 text-amber-700 text-sm rounded-xl hover:bg-amber-50">
+                Report Lost
+              </button>
+              <button (click)="deactivateCard()"
+                class="flex-1 py-2.5 bg-red-600 text-white text-sm rounded-xl hover:bg-red-700">
+                Deactivate
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class BookingDetailPage implements OnInit {
@@ -310,6 +372,11 @@ export class BookingDetailPage implements OnInit {
   accessData      = signal<any | null>(null);
   copied          = signal(false);
 
+  // Guest card state
+  activeCard      = signal<any | null>(null);
+  showCardModal   = signal(false);
+  issuingCard     = signal(false);
+
   private bookingId = '';
 
   // ── Lifecycle ─────────────────────────────────────────────────
@@ -325,6 +392,7 @@ export class BookingDetailPage implements OnInit {
         this.booking.set(r.data);
         this.loadHistory();
         this.loadFolioAndInvoice();
+        this.loadActiveCard();
       }
       this.loading.set(false);
     });
@@ -552,6 +620,62 @@ export class BookingDetailPage implements OnInit {
     }
   }
 
+  // ── Guest Card ────────────────────────────────────────────────
+  loadActiveCard(): void {
+    this.api.get(`/cards?property_id=${this.booking()?.property_id ?? ''}&booking_id=${this.bookingId}&status=active&limit=1`).subscribe({
+      next: (r: any) => {
+        const items = r.data?.items ?? [];
+        this.activeCard.set(items.length ? items[0] : null);
+      },
+      error: () => { /* card system may not be set up yet */ },
+    });
+  }
+
+  issueGuestCard(): void {
+    this.issuingCard.set(true);
+    this.api.post('/cards/issue', { booking_id: this.bookingId }).subscribe({
+      next: (r: any) => {
+        this.activeCard.set(r.data);
+        this.issuingCard.set(false);
+        this.toast.success(`Card ${r.data.card_number} issued to guest`);
+      },
+      error: (e: any) => {
+        this.issuingCard.set(false);
+        this.toast.error(e?.error?.message ?? 'Failed to issue card — check card inventory');
+      },
+    });
+  }
+
+  openCardInfo(): void {
+    this.showCardModal.set(true);
+  }
+
+  deactivateCard(): void {
+    const card = this.activeCard();
+    if (!card) return;
+    this.api.post(`/cards/${card.id}/deactivate`, { reason: 'checkout' }).subscribe({
+      next: () => {
+        this.activeCard.set(null);
+        this.showCardModal.set(false);
+        this.toast.success('Card deactivated');
+      },
+      error: (e: any) => this.toast.error(e?.error?.message ?? 'Failed'),
+    });
+  }
+
+  reportCardLost(): void {
+    const card = this.activeCard();
+    if (!card) return;
+    this.api.post(`/cards/${card.id}/report-lost`, { notes: 'Reported lost at check-out' }).subscribe({
+      next: () => {
+        this.activeCard.set(null);
+        this.showCardModal.set(false);
+        this.toast.success('Card reported as lost');
+      },
+      error: (e: any) => this.toast.error(e?.error?.message ?? 'Failed'),
+    });
+  }
+
   // ── Status helpers ────────────────────────────────────────────
   statusLabel(status: string): string {
     return ({
@@ -566,4 +690,63 @@ export class BookingDetailPage implements OnInit {
       checked_out: '#6b7280', cancelled: '#ef4444', no_show: '#dc2626',
     } as Record<string, string>)[status] ?? '#6b7280';
   }
+
+  // ── Guest Card Methods ────────────────────────────────────────
+  loadActiveCard(): void {
+    if (!this.bookingId) return;
+    this.api.get(`/cards?booking_id=${this.bookingId}&status=active&limit=1`).subscribe({
+      next: (r: any) => {
+        const items = r.data?.items ?? [];
+        this.activeCard.set(items.length ? items[0] : null);
+      },
+      error: () => {},
+    });
+  }
+
+  issueGuestCard(): void {
+    if (this.issuingCard()) return;
+    this.issuingCard.set(true);
+    this.api.post('/cards/issue', { booking_id: this.bookingId }).subscribe({
+      next: (r: any) => {
+        this.activeCard.set(r.data);
+        this.toast.success(`Card ${r.data.card_number} issued to guest`);
+        this.issuingCard.set(false);
+      },
+      error: (e: any) => {
+        this.toast.error(e?.error?.message ?? 'No available cards in inventory');
+        this.issuingCard.set(false);
+      },
+    });
+  }
+
+  openCardInfo(): void {
+    this.showCardModal.set(true);
+  }
+
+  reportCardLost(): void {
+    const card = this.activeCard();
+    if (!card) return;
+    this.api.post(`/cards/${card.id}/report-lost`, { notes: 'Reported at reception' }).subscribe({
+      next: () => {
+        this.toast.success('Card reported as lost');
+        this.showCardModal.set(false);
+        this.loadActiveCard();
+      },
+      error: (e: any) => this.toast.error(e?.error?.message ?? 'Failed'),
+    });
+  }
+
+  deactivateCard(): void {
+    const card = this.activeCard();
+    if (!card) return;
+    this.api.post(`/cards/${card.id}/deactivate`, { reason: 'manual' }).subscribe({
+      next: () => {
+        this.toast.success('Card deactivated');
+        this.showCardModal.set(false);
+        this.activeCard.set(null);
+      },
+      error: (e: any) => this.toast.error(e?.error?.message ?? 'Failed'),
+    });
+  }
+
 }

@@ -325,6 +325,24 @@ export const routes: Routes = [
         },
         path: 'audit-log',
         loadComponent: () => import('./pages/audit-log/audit-log.page').then(m => m.AuditLogPage),
+
+      // ── Guest Card System ─────────────────────────────────────
+      {
+        path: 'guest-cards',
+        loadComponent: () => import('./pages/guest-cards/guest-cards.page').then(m => m.GuestCardsPage),
+      },
+      {
+        path: 'guest-cards/scanner',
+        loadComponent: () => import('./pages/guest-cards/card-scanner.page').then(m => m.CardScannerPage),
+      },
+      {
+        path: 'guest-cards/events',
+        loadComponent: () => import('./pages/guest-cards/card-events.page').then(m => m.CardEventsPage),
+      },
+      {
+        path: 'guest-cards/scan-points',
+        loadComponent: () => import('./pages/guest-cards/scan-points.page').then(m => m.ScanPointsPage),
+      },
       },
     ],
   },

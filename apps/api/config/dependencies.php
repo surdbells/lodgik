@@ -1045,5 +1045,34 @@ return function (ContainerBuilder $builder): void {
         \Lodgik\Module\Upload\UploadController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Upload\UploadController(
             storage:  $c->get(\Lodgik\Service\FileStorageService::class),
         ),
+
+        // ── Guest Card System (Phases A–D) ────────────────────────
+        \Lodgik\Repository\GuestCardRepository::class => fn(ContainerInterface $c) => new \Lodgik\Repository\GuestCardRepository(
+            $c->get(EntityManagerInterface::class)
+        ),
+        \Lodgik\Repository\GuestCardEventRepository::class => fn(ContainerInterface $c) => new \Lodgik\Repository\GuestCardEventRepository(
+            $c->get(EntityManagerInterface::class)
+        ),
+        \Lodgik\Repository\CardScanPointRepository::class => fn(ContainerInterface $c) => new \Lodgik\Repository\CardScanPointRepository(
+            $c->get(EntityManagerInterface::class)
+        ),
+        \Lodgik\Module\GuestCard\GuestCardService::class => fn(ContainerInterface $c) => new \Lodgik\Module\GuestCard\GuestCardService(
+            em:            $c->get(EntityManagerInterface::class),
+            cardRepo:      $c->get(\Lodgik\Repository\GuestCardRepository::class),
+            eventRepo:     $c->get(\Lodgik\Repository\GuestCardEventRepository::class),
+            scanPointRepo: $c->get(\Lodgik\Repository\CardScanPointRepository::class),
+            bookingRepo:   $c->get(\Lodgik\Repository\BookingRepository::class),
+            guestRepo:     $c->get(\Lodgik\Repository\GuestRepository::class),
+            folioRepo:     $c->get(\Lodgik\Repository\FolioRepository::class),
+            folioService:  $c->get(\Lodgik\Module\Folio\FolioService::class),
+            logger:        $c->get(\Psr\Log\LoggerInterface::class),
+        ),
+        \Lodgik\Module\GuestCard\GuestCardController::class => fn(ContainerInterface $c) => new \Lodgik\Module\GuestCard\GuestCardController(
+            cardService:   $c->get(\Lodgik\Module\GuestCard\GuestCardService::class),
+            cardRepo:      $c->get(\Lodgik\Repository\GuestCardRepository::class),
+            eventRepo:     $c->get(\Lodgik\Repository\GuestCardEventRepository::class),
+            scanPointRepo: $c->get(\Lodgik\Repository\CardScanPointRepository::class),
+            response:      $c->get(\Lodgik\Helper\ResponseHelper::class),
+        ),
     ]);
 };

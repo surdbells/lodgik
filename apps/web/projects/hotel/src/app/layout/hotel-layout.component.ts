@@ -249,6 +249,10 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Loyalty', icon: 'gift', route: '/loyalty', requiredModule: 'loyalty_program' },
         { label: 'Guest Preferences', icon: 'heart', route: '/guest-preferences' },
         { label: 'Security', icon: 'shield', route: '/security', requiredModule: 'security_incidents' },
+        { label: 'Guest Cards', icon: 'credit-card', route: '/guest-cards', requiredModule: 'guest_access_codes' },
+        { label: 'Card Scanner', icon: 'scan', route: '/guest-cards/scanner', requiredModule: 'guest_access_codes' },
+        { label: 'Card Events', icon: 'activity', route: '/guest-cards/events', requiredModule: 'guest_access_codes' },
+        { label: 'Scan Points', icon: 'radio', route: '/guest-cards/scan-points', requiredModule: 'guest_access_codes' },
       ],
     },
     {

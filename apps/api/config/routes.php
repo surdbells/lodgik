@@ -91,6 +91,9 @@ return function (App $app): void {
     (require __DIR__ . '/../src/Module/Inventory/routes.php')($app);
     (require __DIR__ . '/../src/Module/Procurement/routes.php')($app);
 
+    // ── Guest Card System (Phases A–D) ────────────────────────────
+    (require __DIR__ . '/../src/Module/GuestCard/routes.php')($app);
+
     // System job management (super_admin only)
     (require __DIR__ . '/../src/Module/System/routes.php')($app);
 
