@@ -395,7 +395,228 @@ final class ReportController
         return JsonResponse::ok($res, $data);
     }
 
+
     // ─────────────────────────────────────────────────────────────
+    // 13. GET /api/reports/cancellations
+    //     ?property_id= &date_from= &date_to= &page= &limit=
+    // ─────────────────────────────────────────────────────────────
+
+    public function cancellations(Request $req, Response $res): Response
+    {
+        $q   = $req->getQueryParams();
+        $tid = $req->getAttribute('auth.tenant_id');
+        $pid = $q['property_id'] ?? null;
+
+        if (!$pid) {
+            return JsonResponse::error($res, 'property_id is required', 400);
+        }
+
+        $dateFrom = $q['date_from'] ?? date('Y-m-01');
+        $dateTo   = $q['date_to']   ?? date('Y-m-d');
+        $page     = max(1, (int) ($q['page']  ?? 1));
+        $limit    = min(200, max(10, (int) ($q['limit'] ?? 50)));
+
+        $data = $this->reportService->getCancellations($tid, $pid, $dateFrom, $dateTo, $page, $limit);
+
+        if (($q['format'] ?? '') === 'csv') {
+            return $this->csv($res, $data['items'], [
+                'booking_ref', 'guest_name', 'guest_email', 'guest_phone',
+                'room_number', 'room_type', 'booking_type',
+                'check_in', 'check_out', 'total_amount', 'source', 'cancelled_at',
+            ], "cancellations-{$dateFrom}-{$dateTo}");
+        }
+
+        return JsonResponse::ok($res, $data);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 14. GET /api/reports/walk-ins
+    //     ?property_id= &date_from= &date_to= &page= &limit=
+    // ─────────────────────────────────────────────────────────────
+
+    public function walkIns(Request $req, Response $res): Response
+    {
+        $q   = $req->getQueryParams();
+        $tid = $req->getAttribute('auth.tenant_id');
+        $pid = $q['property_id'] ?? null;
+
+        if (!$pid) {
+            return JsonResponse::error($res, 'property_id is required', 400);
+        }
+
+        $dateFrom = $q['date_from'] ?? date('Y-m-d');
+        $dateTo   = $q['date_to']   ?? date('Y-m-d');
+        $page     = max(1, (int) ($q['page']  ?? 1));
+        $limit    = min(200, max(10, (int) ($q['limit'] ?? 50)));
+
+        $data = $this->reportService->getWalkIns($tid, $pid, $dateFrom, $dateTo, $page, $limit);
+
+        if (($q['format'] ?? '') === 'csv') {
+            return $this->csv($res, $data['items'], [
+                'booking_ref', 'guest_name', 'guest_email', 'guest_phone', 'guest_nationality',
+                'room_number', 'room_type', 'check_in', 'check_out',
+                'adults', 'children', 'total_amount', 'status',
+            ], "walk-ins-{$dateFrom}-{$dateTo}");
+        }
+
+        return JsonResponse::ok($res, $data);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 15. GET /api/reports/revenue-by-room-type
+    //     ?property_id= &date_from= &date_to=
+    // ─────────────────────────────────────────────────────────────
+
+    public function revenueByRoomType(Request $req, Response $res): Response
+    {
+        $q   = $req->getQueryParams();
+        $tid = $req->getAttribute('auth.tenant_id');
+        $pid = $q['property_id'] ?? null;
+
+        if (!$pid) {
+            return JsonResponse::error($res, 'property_id is required', 400);
+        }
+
+        $dateFrom = $q['date_from'] ?? date('Y-m-01');
+        $dateTo   = $q['date_to']   ?? date('Y-m-d');
+
+        $data = $this->reportService->getRevenueByRoomType($tid, $pid, $dateFrom, $dateTo);
+
+        if (($q['format'] ?? '') === 'csv') {
+            return $this->csv($res, $data['items'], [
+                'room_type', 'bookings_count', 'room_revenue',
+                'ancillary_revenue', 'total_revenue', 'revenue_pct',
+            ], "revenue-by-room-type-{$dateFrom}-{$dateTo}");
+        }
+
+        return JsonResponse::ok($res, $data);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 16. GET /api/reports/tax
+    //     ?property_id= &date_from= &date_to= &page= &limit=
+    // ─────────────────────────────────────────────────────────────
+
+    public function taxReport(Request $req, Response $res): Response
+    {
+        $q   = $req->getQueryParams();
+        $tid = $req->getAttribute('auth.tenant_id');
+        $pid = $q['property_id'] ?? null;
+
+        if (!$pid) {
+            return JsonResponse::error($res, 'property_id is required', 400);
+        }
+
+        $dateFrom = $q['date_from'] ?? date('Y-m-01');
+        $dateTo   = $q['date_to']   ?? date('Y-m-d');
+        $page     = max(1, (int) ($q['page']  ?? 1));
+        $limit    = min(500, max(10, (int) ($q['limit'] ?? 100)));
+
+        $data = $this->reportService->getTaxReport($tid, $pid, $dateFrom, $dateTo, $page, $limit);
+
+        if (($q['format'] ?? '') === 'csv') {
+            return $this->csv($res, $data['items'], [
+                'invoice_date', 'invoice_number', 'booking_ref', 'guest_name',
+                'subtotal', 'tax_total', 'discount_total', 'grand_total',
+                'amount_paid', 'status',
+            ], "tax-report-{$dateFrom}-{$dateTo}");
+        }
+
+        return JsonResponse::ok($res, $data);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 17. GET /api/reports/daily-manager
+    //     ?property_id= &date= (default today)
+    // ─────────────────────────────────────────────────────────────
+
+    public function dailyManager(Request $req, Response $res): Response
+    {
+        $q   = $req->getQueryParams();
+        $tid = $req->getAttribute('auth.tenant_id');
+        $pid = $q['property_id'] ?? null;
+
+        if (!$pid) {
+            return JsonResponse::error($res, 'property_id is required', 400);
+        }
+
+        $date = $q['date'] ?? date('Y-m-d');
+        $data = $this->reportService->getDailyManagerReport($tid, $pid, $date);
+
+        if (($q['format'] ?? '') === 'csv') {
+            return $this->csv($res, $data['items'], [
+                'section', 'metric', 'value',
+            ], "daily-manager-report-{$date}");
+        }
+
+        return JsonResponse::ok($res, $data);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 18. GET /api/reports/monthly-revenue
+    //     ?property_id= &date_from= &date_to=
+    // ─────────────────────────────────────────────────────────────
+
+    public function monthlyRevenue(Request $req, Response $res): Response
+    {
+        $q   = $req->getQueryParams();
+        $tid = $req->getAttribute('auth.tenant_id');
+        $pid = $q['property_id'] ?? null;
+
+        if (!$pid) {
+            return JsonResponse::error($res, 'property_id is required', 400);
+        }
+
+        // Default: current year
+        $dateFrom = $q['date_from'] ?? date('Y-01-01');
+        $dateTo   = $q['date_to']   ?? date('Y-m-d');
+
+        $data = $this->reportService->getMonthlyRevenue($tid, $pid, $dateFrom, $dateTo);
+
+        if (($q['format'] ?? '') === 'csv') {
+            return $this->csv($res, $data['items'], [
+                'month', 'month_label', 'room', 'bar', 'restaurant',
+                'service', 'laundry', 'other', 'total', 'bookings_count',
+            ], "monthly-revenue-{$dateFrom}-{$dateTo}");
+        }
+
+        return JsonResponse::ok($res, $data);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 19. GET /api/reports/pos-sales
+    //     ?property_id= &date_from= &date_to= &page= &limit=
+    // ─────────────────────────────────────────────────────────────
+
+    public function posSales(Request $req, Response $res): Response
+    {
+        $q   = $req->getQueryParams();
+        $tid = $req->getAttribute('auth.tenant_id');
+        $pid = $q['property_id'] ?? null;
+
+        if (!$pid) {
+            return JsonResponse::error($res, 'property_id is required', 400);
+        }
+
+        $dateFrom = $q['date_from'] ?? date('Y-m-d');
+        $dateTo   = $q['date_to']   ?? date('Y-m-d');
+        $page     = max(1, (int) ($q['page']  ?? 1));
+        $limit    = min(500, max(10, (int) ($q['limit'] ?? 100)));
+
+        $data = $this->reportService->getPosSales($tid, $pid, $dateFrom, $dateTo, $page, $limit);
+
+        if (($q['format'] ?? '') === 'csv') {
+            return $this->csv($res, $data['items'], [
+                'paid_at', 'order_number', 'order_type', 'table_number',
+                'guest_name', 'room_number', 'item_count',
+                'subtotal_naira', 'total_naira', 'payment_method', 'served_by_name',
+            ], "pos-sales-{$dateFrom}-{$dateTo}");
+        }
+
+        return JsonResponse::ok($res, $data);
+    }
+
+        // ─────────────────────────────────────────────────────────────
     // Private: CSV stream helper
     // ─────────────────────────────────────────────────────────────
 

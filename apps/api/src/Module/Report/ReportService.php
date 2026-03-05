@@ -1000,4 +1000,691 @@ final class ReportService
             'generated_at' => date('c'),
         ];
     }
+    // ─────────────────────────────────────────────────────────────
+    // 13. CANCELLATIONS REPORT
+    // Bookings with status = cancelled for a date range (on check_in date)
+    // ─────────────────────────────────────────────────────────────
+
+    public function getCancellations(
+        string $tenantId,
+        string $propertyId,
+        string $dateFrom,
+        string $dateTo,
+        int    $page  = 1,
+        int    $limit = 50,
+    ): array {
+        $offset = ($page - 1) * $limit;
+
+        $items = $this->conn->fetchAllAssociative("
+            SELECT
+                b.id,
+                b.booking_ref,
+                b.booking_type,
+                b.check_in,
+                b.check_out,
+                b.adults,
+                b.children,
+                b.total_amount,
+                b.source,
+                b.notes,
+                b.created_at,
+                b.updated_at                              AS cancelled_at,
+                CONCAT(g.first_name, ' ', g.last_name)   AS guest_name,
+                g.email                                   AS guest_email,
+                g.phone                                   AS guest_phone,
+                r.room_number,
+                rt.name                                   AS room_type
+            FROM bookings b
+            JOIN guests  g  ON g.id  = b.guest_id
+            LEFT JOIN rooms     r  ON r.id  = b.room_id
+            LEFT JOIN room_types rt ON rt.id = r.room_type_id
+            WHERE b.tenant_id   = :tid
+              AND b.property_id = :pid
+              AND b.status      = 'cancelled'
+              AND DATE(b.check_in) BETWEEN :date_from AND :date_to
+              AND b.deleted_at IS NULL
+            ORDER BY b.updated_at DESC
+            LIMIT :limit OFFSET :offset
+        ", [
+            'tid' => $tenantId, 'pid' => $propertyId,
+            'date_from' => $dateFrom, 'date_to' => $dateTo,
+            'limit' => $limit, 'offset' => $offset,
+        ]);
+
+        $total = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM bookings
+             WHERE tenant_id = :tid AND property_id = :pid
+               AND status = 'cancelled'
+               AND DATE(check_in) BETWEEN :date_from AND :date_to
+               AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId,
+             'date_from' => $dateFrom, 'date_to' => $dateTo],
+        );
+
+        $lostRevenue = (float) $this->conn->fetchOne(
+            "SELECT COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0)
+             FROM bookings
+             WHERE tenant_id = :tid AND property_id = :pid
+               AND status = 'cancelled'
+               AND DATE(check_in) BETWEEN :date_from AND :date_to
+               AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId,
+             'date_from' => $dateFrom, 'date_to' => $dateTo],
+        );
+
+        $summary = [
+            'period_from'  => $dateFrom,
+            'period_to'    => $dateTo,
+            'total'        => $total,
+            'lost_revenue' => number_format($lostRevenue, 2, '.', ''),
+        ];
+
+        return $this->paginate($items, $total, $page, $limit, $summary);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 14. WALK-INS REPORT
+    // Bookings where booking_type = walk_in, date range on check_in
+    // ─────────────────────────────────────────────────────────────
+
+    public function getWalkIns(
+        string $tenantId,
+        string $propertyId,
+        string $dateFrom,
+        string $dateTo,
+        int    $page  = 1,
+        int    $limit = 50,
+    ): array {
+        $offset = ($page - 1) * $limit;
+
+        $items = $this->conn->fetchAllAssociative("
+            SELECT
+                b.id,
+                b.booking_ref,
+                b.status,
+                b.booking_type,
+                b.check_in,
+                b.check_out,
+                b.adults,
+                b.children,
+                b.total_amount,
+                b.checked_in_at,
+                b.checked_out_at,
+                CONCAT(g.first_name, ' ', g.last_name)   AS guest_name,
+                g.email                                   AS guest_email,
+                g.phone                                   AS guest_phone,
+                g.nationality                             AS guest_nationality,
+                r.room_number,
+                rt.name                                   AS room_type
+            FROM bookings b
+            JOIN guests  g  ON g.id  = b.guest_id
+            LEFT JOIN rooms     r  ON r.id  = b.room_id
+            LEFT JOIN room_types rt ON rt.id = r.room_type_id
+            WHERE b.tenant_id    = :tid
+              AND b.property_id  = :pid
+              AND b.booking_type = 'walk_in'
+              AND DATE(b.check_in) BETWEEN :date_from AND :date_to
+              AND b.deleted_at IS NULL
+            ORDER BY b.check_in DESC
+            LIMIT :limit OFFSET :offset
+        ", [
+            'tid' => $tenantId, 'pid' => $propertyId,
+            'date_from' => $dateFrom, 'date_to' => $dateTo,
+            'limit' => $limit, 'offset' => $offset,
+        ]);
+
+        $total = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM bookings
+             WHERE tenant_id = :tid AND property_id = :pid
+               AND booking_type = 'walk_in'
+               AND DATE(check_in) BETWEEN :date_from AND :date_to
+               AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId,
+             'date_from' => $dateFrom, 'date_to' => $dateTo],
+        );
+
+        $totalRevenue = (float) $this->conn->fetchOne(
+            "SELECT COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0)
+             FROM bookings
+             WHERE tenant_id = :tid AND property_id = :pid
+               AND booking_type = 'walk_in'
+               AND DATE(check_in) BETWEEN :date_from AND :date_to
+               AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId,
+             'date_from' => $dateFrom, 'date_to' => $dateTo],
+        );
+
+        $summary = [
+            'period_from'   => $dateFrom,
+            'period_to'     => $dateTo,
+            'total'         => $total,
+            'total_revenue' => number_format($totalRevenue, 2, '.', ''),
+        ];
+
+        return $this->paginate($items, $total, $page, $limit, $summary);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 15. REVENUE BY ROOM TYPE
+    // Folio charges aggregated by room type for a date range
+    // ─────────────────────────────────────────────────────────────
+
+    public function getRevenueByRoomType(
+        string $tenantId,
+        string $propertyId,
+        string $dateFrom,
+        string $dateTo,
+    ): array {
+        // Per-room-type revenue breakdown from folio_charges
+        $rows = $this->conn->fetchAllAssociative("
+            SELECT
+                rt.name                                             AS room_type,
+                COUNT(DISTINCT b.id)                               AS bookings_count,
+                SUM(CASE WHEN fc.category = 'room'
+                    THEN CAST(fc.line_total AS NUMERIC) ELSE 0 END) AS room_revenue,
+                SUM(CASE WHEN fc.category != 'room'
+                    THEN CAST(fc.line_total AS NUMERIC) ELSE 0 END) AS ancillary_revenue,
+                SUM(CAST(fc.line_total AS NUMERIC))                 AS total_revenue
+            FROM folio_charges fc
+            JOIN folios   f  ON f.id  = fc.folio_id
+            JOIN bookings b  ON b.id  = f.booking_id
+            LEFT JOIN rooms     r  ON r.id  = b.room_id
+            LEFT JOIN room_types rt ON rt.id = r.room_type_id
+            WHERE f.tenant_id   = :tid
+              AND f.property_id = :pid
+              AND fc.charge_date BETWEEN :date_from AND :date_to
+              AND fc.is_voided   = false
+            GROUP BY rt.name
+            ORDER BY total_revenue DESC
+        ", [
+            'tid' => $tenantId, 'pid' => $propertyId,
+            'date_from' => $dateFrom, 'date_to' => $dateTo,
+        ]);
+
+        // Format decimals
+        $items = array_map(function ($r) {
+            return [
+                'room_type'         => $r['room_type'] ?? 'Unassigned',
+                'bookings_count'    => (int)   $r['bookings_count'],
+                'room_revenue'      => number_format((float) $r['room_revenue'],    2, '.', ''),
+                'ancillary_revenue' => number_format((float) $r['ancillary_revenue'], 2, '.', ''),
+                'total_revenue'     => number_format((float) $r['total_revenue'],   2, '.', ''),
+            ];
+        }, $rows);
+
+        $grandTotal = array_sum(array_map(fn($r) => (float) $r['total_revenue'], $items));
+
+        // Add percentage column after grand total is known
+        $items = array_map(function ($r) use ($grandTotal) {
+            $r['revenue_pct'] = $grandTotal > 0
+                ? round((float) $r['total_revenue'] / $grandTotal * 100, 1)
+                : 0;
+            return $r;
+        }, $items);
+
+        $summary = [
+            'period_from'        => $dateFrom,
+            'period_to'          => $dateTo,
+            'total_revenue'      => number_format($grandTotal, 2, '.', ''),
+            'room_types_count'   => count($items),
+            'total_bookings'     => (int) array_sum(array_column($items, 'bookings_count')),
+        ];
+
+        return [
+            'items'        => $items,
+            'summary'      => $summary,
+            'meta'         => ['total' => count($items), 'page' => 1, 'limit' => count($items), 'pages' => 1],
+            'generated_at' => date('c'),
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 16. TAX / VAT REPORT
+    // Invoices with tax breakdown, aggregated by day
+    // ─────────────────────────────────────────────────────────────
+
+    public function getTaxReport(
+        string $tenantId,
+        string $propertyId,
+        string $dateFrom,
+        string $dateTo,
+        int    $page  = 1,
+        int    $limit = 100,
+    ): array {
+        $offset = ($page - 1) * $limit;
+
+        // Per-invoice rows for CSV / table
+        $items = $this->conn->fetchAllAssociative("
+            SELECT
+                i.invoice_number,
+                i.invoice_date,
+                i.status,
+                i.subtotal,
+                i.tax_total,
+                i.discount_total,
+                i.grand_total,
+                i.amount_paid,
+                i.guest_name,
+                b.booking_ref
+            FROM invoices i
+            LEFT JOIN bookings b ON b.id = i.booking_id
+            WHERE i.tenant_id   = :tid
+              AND i.property_id = :pid
+              AND i.invoice_date BETWEEN :date_from AND :date_to
+              AND i.status      != 'void'
+            ORDER BY i.invoice_date DESC
+            LIMIT :limit OFFSET :offset
+        ", [
+            'tid' => $tenantId, 'pid' => $propertyId,
+            'date_from' => $dateFrom, 'date_to' => $dateTo,
+            'limit' => $limit, 'offset' => $offset,
+        ]);
+
+        $total = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM invoices
+             WHERE tenant_id = :tid AND property_id = :pid
+               AND invoice_date BETWEEN :date_from AND :date_to
+               AND status != 'void'",
+            ['tid' => $tenantId, 'pid' => $propertyId,
+             'date_from' => $dateFrom, 'date_to' => $dateTo],
+        );
+
+        // Aggregate totals for summary
+        $totals = $this->conn->fetchAssociative("
+            SELECT
+                COALESCE(SUM(CAST(subtotal      AS NUMERIC)), 0) AS total_subtotal,
+                COALESCE(SUM(CAST(tax_total     AS NUMERIC)), 0) AS total_tax,
+                COALESCE(SUM(CAST(grand_total   AS NUMERIC)), 0) AS total_grand,
+                COALESCE(SUM(CAST(discount_total AS NUMERIC)), 0) AS total_discount
+            FROM invoices
+            WHERE tenant_id = :tid AND property_id = :pid
+              AND invoice_date BETWEEN :date_from AND :date_to
+              AND status != 'void'
+        ", ['tid' => $tenantId, 'pid' => $propertyId,
+            'date_from' => $dateFrom, 'date_to' => $dateTo]);
+
+        $summary = [
+            'period_from'     => $dateFrom,
+            'period_to'       => $dateTo,
+            'invoice_count'   => $total,
+            'total_subtotal'  => number_format((float) ($totals['total_subtotal']  ?? 0), 2, '.', ''),
+            'total_tax'       => number_format((float) ($totals['total_tax']       ?? 0), 2, '.', ''),
+            'total_discount'  => number_format((float) ($totals['total_discount']  ?? 0), 2, '.', ''),
+            'total_grand'     => number_format((float) ($totals['total_grand']     ?? 0), 2, '.', ''),
+        ];
+
+        return $this->paginate($items, $total, $page, $limit, $summary);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 17. DAILY MANAGER'S REPORT
+    // Comprehensive single-date summary across all operations
+    // Returns a structured summary object (items[] = each KPI section)
+    // ─────────────────────────────────────────────────────────────
+
+    public function getDailyManagerReport(
+        string $tenantId,
+        string $propertyId,
+        string $date,
+    ): array {
+        // ── Rooms ──
+        $totalRooms   = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM rooms WHERE tenant_id = :tid AND property_id = :pid
+              AND is_active = true AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId],
+        );
+        $roomCounts   = $this->conn->fetchAllAssociative(
+            "SELECT status, COUNT(*) AS cnt FROM rooms
+             WHERE tenant_id = :tid AND property_id = :pid AND is_active = true AND deleted_at IS NULL
+             GROUP BY status",
+            ['tid' => $tenantId, 'pid' => $propertyId],
+        );
+        $roomByStatus = [];
+        foreach ($roomCounts as $r) { $roomByStatus[$r['status']] = (int) $r['cnt']; }
+
+        // ── Bookings activity ──
+        $arrivals  = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM bookings WHERE tenant_id = :tid AND property_id = :pid
+              AND DATE(check_in) = :date AND status IN ('confirmed','checked_in') AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId, 'date' => $date],
+        );
+        $departures = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM bookings WHERE tenant_id = :tid AND property_id = :pid
+              AND DATE(check_out) = :date AND status IN ('checked_in','checked_out') AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId, 'date' => $date],
+        );
+        $inHouse = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM bookings WHERE tenant_id = :tid AND property_id = :pid
+              AND status = 'checked_in' AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId],
+        );
+        $newBookings = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM bookings WHERE tenant_id = :tid AND property_id = :pid
+              AND DATE(created_at) = :date AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId, 'date' => $date],
+        );
+        $noShows = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM bookings WHERE tenant_id = :tid AND property_id = :pid
+              AND status = 'no_show' AND DATE(check_in) = :date AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId, 'date' => $date],
+        );
+        $cancellations = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM bookings WHERE tenant_id = :tid AND property_id = :pid
+              AND status = 'cancelled' AND DATE(updated_at) = :date AND deleted_at IS NULL",
+            ['tid' => $tenantId, 'pid' => $propertyId, 'date' => $date],
+        );
+
+        // ── Revenue (from folio_charges) ──
+        $revenueRows = $this->conn->fetchAllAssociative("
+            SELECT fc.category, SUM(CAST(fc.line_total AS NUMERIC)) AS amount
+            FROM folio_charges fc
+            JOIN folios f ON f.id = fc.folio_id
+            WHERE f.tenant_id = :tid AND f.property_id = :pid
+              AND fc.charge_date = :date AND fc.is_voided = false
+            GROUP BY fc.category
+        ", ['tid' => $tenantId, 'pid' => $propertyId, 'date' => $date]);
+
+        $revenue = ['room' => 0.0, 'bar' => 0.0, 'restaurant' => 0.0,
+                    'service' => 0.0, 'laundry' => 0.0, 'minibar' => 0.0, 'other' => 0.0];
+        foreach ($revenueRows as $r) {
+            $cat = $r['category'];
+            if (array_key_exists($cat, $revenue)) {
+                $revenue[$cat] = (float) $r['amount'];
+            } else {
+                $revenue['other'] += (float) $r['amount'];
+            }
+        }
+        $totalRevenue = array_sum($revenue);
+
+        // ── Payments ──
+        $paymentRows = $this->conn->fetchAllAssociative("
+            SELECT fp.payment_method, COUNT(*) AS cnt, SUM(CAST(fp.amount AS NUMERIC)) AS total
+            FROM folio_payments fp
+            JOIN folios f ON f.id = fp.folio_id
+            WHERE f.tenant_id = :tid AND f.property_id = :pid
+              AND fp.payment_date = :date AND fp.status = 'confirmed'
+            GROUP BY fp.payment_method
+        ", ['tid' => $tenantId, 'pid' => $propertyId, 'date' => $date]);
+
+        $payments = [];
+        $totalPayments = 0.0;
+        foreach ($paymentRows as $r) {
+            $payments[$r['payment_method']] = ['count' => (int) $r['cnt'], 'total' => (float) $r['total']];
+            $totalPayments += (float) $r['total'];
+        }
+
+        // ── Housekeeping ──
+        $hkRows = $this->conn->fetchAllAssociative(
+            "SELECT status, COUNT(*) AS cnt FROM housekeeping_tasks
+             WHERE tenant_id = :tid AND property_id = :pid AND DATE(created_at) = :date
+             GROUP BY status",
+            ['tid' => $tenantId, 'pid' => $propertyId, 'date' => $date],
+        );
+        $hkByStatus = [];
+        foreach ($hkRows as $r) { $hkByStatus[$r['status']] = (int) $r['cnt']; }
+
+        // ── Outstanding balances ──
+        $outstanding = (float) $this->conn->fetchOne(
+            "SELECT COALESCE(SUM(CAST(balance AS NUMERIC)), 0) FROM folios
+             WHERE tenant_id = :tid AND property_id = :pid
+               AND CAST(balance AS NUMERIC) > 0 AND status != 'void'",
+            ['tid' => $tenantId, 'pid' => $propertyId],
+        );
+
+        // ── Occupancy ──
+        $occupiedRooms = $roomByStatus['occupied'] ?? 0;
+        $occupancyPct  = $totalRooms > 0 ? round($occupiedRooms / $totalRooms * 100, 1) : 0;
+        $adr           = $occupiedRooms > 0 ? round($revenue['room'] / $occupiedRooms, 2) : 0;
+        $revpar        = $totalRooms > 0 ? round($revenue['room'] / $totalRooms, 2) : 0;
+
+        $items = [
+            [
+                'section'     => 'Rooms',
+                'metric'      => 'Total Rooms',
+                'value'       => (string) $totalRooms,
+            ],
+            ['section' => 'Rooms', 'metric' => 'Occupied',    'value' => (string) ($roomByStatus['occupied']     ?? 0)],
+            ['section' => 'Rooms', 'metric' => 'Vacant Clean', 'value' => (string) ($roomByStatus['vacant_clean'] ?? 0)],
+            ['section' => 'Rooms', 'metric' => 'Vacant Dirty', 'value' => (string) ($roomByStatus['vacant_dirty'] ?? 0)],
+            ['section' => 'Rooms', 'metric' => 'Out of Order', 'value' => (string) ($roomByStatus['out_of_order'] ?? 0)],
+            ['section' => 'Rooms', 'metric' => 'Occupancy %',  'value' => $occupancyPct . '%'],
+            ['section' => 'Rooms', 'metric' => 'ADR',          'value' => '₦' . number_format($adr, 2)],
+            ['section' => 'Rooms', 'metric' => 'RevPAR',       'value' => '₦' . number_format($revpar, 2)],
+
+            ['section' => 'Bookings', 'metric' => 'Arrivals',     'value' => (string) $arrivals],
+            ['section' => 'Bookings', 'metric' => 'Departures',   'value' => (string) $departures],
+            ['section' => 'Bookings', 'metric' => 'In-House',     'value' => (string) $inHouse],
+            ['section' => 'Bookings', 'metric' => 'New Bookings', 'value' => (string) $newBookings],
+            ['section' => 'Bookings', 'metric' => 'No-Shows',     'value' => (string) $noShows],
+            ['section' => 'Bookings', 'metric' => 'Cancellations','value' => (string) $cancellations],
+
+            ['section' => 'Revenue',  'metric' => 'Room',        'value' => '₦' . number_format($revenue['room'], 2)],
+            ['section' => 'Revenue',  'metric' => 'Bar',         'value' => '₦' . number_format($revenue['bar'], 2)],
+            ['section' => 'Revenue',  'metric' => 'Restaurant',  'value' => '₦' . number_format($revenue['restaurant'], 2)],
+            ['section' => 'Revenue',  'metric' => 'Service',     'value' => '₦' . number_format($revenue['service'], 2)],
+            ['section' => 'Revenue',  'metric' => 'Laundry',     'value' => '₦' . number_format($revenue['laundry'], 2)],
+            ['section' => 'Revenue',  'metric' => 'Other',       'value' => '₦' . number_format($revenue['other'], 2)],
+            ['section' => 'Revenue',  'metric' => 'Total Revenue','value' => '₦' . number_format($totalRevenue, 2)],
+
+            ['section' => 'Payments', 'metric' => 'Cash',          'value' => '₦' . number_format($payments['cash']['total'] ?? 0, 2)],
+            ['section' => 'Payments', 'metric' => 'Bank Transfer',  'value' => '₦' . number_format($payments['bank_transfer']['total'] ?? 0, 2)],
+            ['section' => 'Payments', 'metric' => 'POS Card',       'value' => '₦' . number_format($payments['pos_card']['total'] ?? 0, 2)],
+            ['section' => 'Payments', 'metric' => 'Total Collected','value' => '₦' . number_format($totalPayments, 2)],
+            ['section' => 'Payments', 'metric' => 'Outstanding',    'value' => '₦' . number_format($outstanding, 2)],
+
+            ['section' => 'Housekeeping', 'metric' => 'Pending',     'value' => (string) ($hkByStatus['pending']      ?? 0)],
+            ['section' => 'Housekeeping', 'metric' => 'In Progress', 'value' => (string) ($hkByStatus['in_progress']  ?? 0)],
+            ['section' => 'Housekeeping', 'metric' => 'Completed',   'value' => (string) ($hkByStatus['completed']    ?? 0)],
+            ['section' => 'Housekeeping', 'metric' => 'Inspected',   'value' => (string) ($hkByStatus['inspected']    ?? 0)],
+        ];
+
+        $summary = [
+            'date'          => $date,
+            'total_revenue' => number_format($totalRevenue, 2, '.', ''),
+            'occupancy_pct' => $occupancyPct,
+            'arrivals'      => $arrivals,
+            'departures'    => $departures,
+        ];
+
+        return [
+            'items'        => $items,
+            'summary'      => $summary,
+            'meta'         => ['total' => count($items), 'page' => 1, 'limit' => count($items), 'pages' => 1],
+            'generated_at' => date('c'),
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 18. MONTHLY REVENUE SUMMARY
+    // Revenue aggregated by month for a date range
+    // ─────────────────────────────────────────────────────────────
+
+    public function getMonthlyRevenue(
+        string $tenantId,
+        string $propertyId,
+        string $dateFrom,
+        string $dateTo,
+    ): array {
+        $rows = $this->conn->fetchAllAssociative("
+            SELECT
+                TO_CHAR(gs.month, 'YYYY-MM')                       AS month,
+                TO_CHAR(gs.month, 'Mon YYYY')                      AS month_label,
+                COALESCE(SUM(CASE WHEN fc.category = 'room'
+                    THEN CAST(fc.line_total AS NUMERIC) ELSE 0 END), 0) AS room,
+                COALESCE(SUM(CASE WHEN fc.category = 'bar'
+                    THEN CAST(fc.line_total AS NUMERIC) ELSE 0 END), 0) AS bar,
+                COALESCE(SUM(CASE WHEN fc.category = 'restaurant'
+                    THEN CAST(fc.line_total AS NUMERIC) ELSE 0 END), 0) AS restaurant,
+                COALESCE(SUM(CASE WHEN fc.category = 'service'
+                    THEN CAST(fc.line_total AS NUMERIC) ELSE 0 END), 0) AS service,
+                COALESCE(SUM(CASE WHEN fc.category = 'laundry'
+                    THEN CAST(fc.line_total AS NUMERIC) ELSE 0 END), 0) AS laundry,
+                COALESCE(SUM(CASE WHEN fc.category NOT IN ('room','bar','restaurant','service','laundry','minibar')
+                    THEN CAST(fc.line_total AS NUMERIC) ELSE 0 END), 0) AS other,
+                COALESCE(SUM(CAST(fc.line_total AS NUMERIC)), 0)    AS total,
+                COUNT(DISTINCT b.id)                                AS bookings_count
+            FROM generate_series(
+                DATE_TRUNC('month', :date_from::date),
+                DATE_TRUNC('month', :date_to::date),
+                '1 month'::interval
+            ) AS gs(month)
+            LEFT JOIN folio_charges fc ON
+                DATE_TRUNC('month', fc.charge_date::timestamp) = gs.month
+                AND fc.is_voided = false
+            LEFT JOIN folios   f  ON f.id  = fc.folio_id
+                AND f.tenant_id = :tid AND f.property_id = :pid
+            LEFT JOIN bookings b  ON b.id  = f.booking_id
+            GROUP BY gs.month
+            ORDER BY gs.month ASC
+        ", [
+            'tid'       => $tenantId,
+            'pid'       => $propertyId,
+            'date_from' => $dateFrom,
+            'date_to'   => $dateTo,
+        ]);
+
+        $items = array_map(function ($r) {
+            return [
+                'month'          => $r['month'],
+                'month_label'    => $r['month_label'],
+                'room'           => number_format((float) $r['room'],        2, '.', ''),
+                'bar'            => number_format((float) $r['bar'],         2, '.', ''),
+                'restaurant'     => number_format((float) $r['restaurant'],  2, '.', ''),
+                'service'        => number_format((float) $r['service'],     2, '.', ''),
+                'laundry'        => number_format((float) $r['laundry'],     2, '.', ''),
+                'other'          => number_format((float) $r['other'],       2, '.', ''),
+                'total'          => number_format((float) $r['total'],       2, '.', ''),
+                'bookings_count' => (int) $r['bookings_count'],
+            ];
+        }, $rows);
+
+        $grandTotal = array_sum(array_map(fn($r) => (float) $r['total'], $items));
+
+        $summary = [
+            'period_from'   => $dateFrom,
+            'period_to'     => $dateTo,
+            'months_count'  => count($items),
+            'total_revenue' => number_format($grandTotal, 2, '.', ''),
+            'avg_monthly'   => count($items) > 0
+                ? number_format($grandTotal / count($items), 2, '.', '')
+                : '0.00',
+        ];
+
+        return [
+            'items'        => $items,
+            'summary'      => $summary,
+            'meta'         => ['total' => count($items), 'page' => 1, 'limit' => count($items), 'pages' => 1],
+            'generated_at' => date('c'),
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 19. POS SALES REPORT
+    // POS orders (status = paid) for a date range.
+    // POS amounts are stored in kobo; divide by 100 for naira.
+    // ─────────────────────────────────────────────────────────────
+
+    public function getPosSales(
+        string  $tenantId,
+        string  $propertyId,
+        string  $dateFrom,
+        string  $dateTo,
+        int     $page  = 1,
+        int     $limit = 100,
+    ): array {
+        $offset = ($page - 1) * $limit;
+
+        $items = $this->conn->fetchAllAssociative("
+            SELECT
+                po.id,
+                po.order_number,
+                po.order_type,
+                po.table_number,
+                po.guest_name,
+                po.room_number,
+                po.item_count,
+                ROUND(CAST(po.subtotal      AS NUMERIC) / 100, 2) AS subtotal_naira,
+                ROUND(CAST(po.total_amount  AS NUMERIC) / 100, 2) AS total_naira,
+                po.payment_method,
+                po.served_by_name,
+                po.paid_at,
+                po.created_at
+            FROM pos_orders po
+            WHERE po.tenant_id   = :tid
+              AND po.property_id = :pid
+              AND po.status      = 'paid'
+              AND DATE(po.paid_at) BETWEEN :date_from AND :date_to
+            ORDER BY po.paid_at DESC
+            LIMIT :limit OFFSET :offset
+        ", [
+            'tid' => $tenantId, 'pid' => $propertyId,
+            'date_from' => $dateFrom, 'date_to' => $dateTo,
+            'limit' => $limit, 'offset' => $offset,
+        ]);
+
+        $total = (int) $this->conn->fetchOne(
+            "SELECT COUNT(*) FROM pos_orders
+             WHERE tenant_id = :tid AND property_id = :pid
+               AND status = 'paid'
+               AND DATE(paid_at) BETWEEN :date_from AND :date_to",
+            ['tid' => $tenantId, 'pid' => $propertyId,
+             'date_from' => $dateFrom, 'date_to' => $dateTo],
+        );
+
+        // Totals by payment method + order type
+        $methodRows = $this->conn->fetchAllAssociative("
+            SELECT
+                payment_method,
+                COUNT(*)                                        AS count,
+                ROUND(SUM(CAST(total_amount AS NUMERIC)) / 100, 2) AS total_naira
+            FROM pos_orders
+            WHERE tenant_id = :tid AND property_id = :pid
+              AND status = 'paid'
+              AND DATE(paid_at) BETWEEN :date_from AND :date_to
+            GROUP BY payment_method
+        ", ['tid' => $tenantId, 'pid' => $propertyId,
+            'date_from' => $dateFrom, 'date_to' => $dateTo]);
+
+        $byMethod  = [];
+        $grandNaira = 0.0;
+        foreach ($methodRows as $m) {
+            $byMethod[$m['payment_method'] ?? 'unknown'] = [
+                'count' => (int) $m['count'],
+                'total' => number_format((float) $m['total_naira'], 2, '.', ''),
+            ];
+            $grandNaira += (float) $m['total_naira'];
+        }
+
+        $topItems = $this->conn->fetchAllAssociative("
+            SELECT
+                poi.product_name,
+                SUM(poi.quantity)                                AS qty_sold,
+                ROUND(SUM(CAST(poi.line_total AS NUMERIC)) / 100, 2) AS revenue_naira
+            FROM pos_order_items poi
+            JOIN pos_orders po ON po.id = poi.order_id
+            WHERE po.tenant_id   = :tid
+              AND po.property_id = :pid
+              AND po.status      = 'paid'
+              AND DATE(po.paid_at) BETWEEN :date_from AND :date_to
+            GROUP BY poi.product_name
+            ORDER BY revenue_naira DESC
+            LIMIT 10
+        ", ['tid' => $tenantId, 'pid' => $propertyId,
+            'date_from' => $dateFrom, 'date_to' => $dateTo]);
+
+        $summary = [
+            'period_from'   => $dateFrom,
+            'period_to'     => $dateTo,
+            'total_orders'  => $total,
+            'total_revenue' => number_format($grandNaira, 2, '.', ''),
+            'cash'          => $byMethod['cash']          ?? ['count' => 0, 'total' => '0.00'],
+            'bank_transfer' => $byMethod['bank_transfer'] ?? ['count' => 0, 'total' => '0.00'],
+            'pos_card'      => $byMethod['pos_card']      ?? ['count' => 0, 'total' => '0.00'],
+            'room_charge'   => $byMethod['room_charge']   ?? ['count' => 0, 'total' => '0.00'],
+            'top_items'     => $topItems,
+        ];
+
+        return $this->paginate($items, $total, $page, $limit, $summary);
+    }
+
 }

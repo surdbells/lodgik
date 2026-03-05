@@ -224,9 +224,122 @@ const REPORTS: ReportDef[] = [
     ],
     params: ['date_range', 'guest_id'], hasPage: true,
   },
+  // ── Cancellations & Walk-ins ──
+  {
+    key: 'cancellations', label: 'Cancellations', icon: '🚫', group: 'Bookings',
+    endpoint: '/reports/cancellations',
+    columns: [
+      { key: 'booking_ref', label: 'Ref' },
+      { key: 'guest_name', label: 'Guest' },
+      { key: 'guest_phone', label: 'Phone' },
+      { key: 'room_number', label: 'Room' },
+      { key: 'room_type', label: 'Type' },
+      { key: 'booking_type', label: 'Booking Type' },
+      { key: 'check_in', label: 'Check-in', date: true },
+      { key: 'check_out', label: 'Check-out', date: true },
+      { key: 'total_amount', label: 'Lost Revenue', currency: true },
+      { key: 'source', label: 'Source' },
+      { key: 'cancelled_at', label: 'Cancelled', date: true },
+    ],
+    params: ['date_range'], hasPage: true,
+  },
+  {
+    key: 'walk-ins', label: 'Walk-ins', icon: '🚶', group: 'Bookings',
+    endpoint: '/reports/walk-ins',
+    columns: [
+      { key: 'booking_ref', label: 'Ref' },
+      { key: 'guest_name', label: 'Guest' },
+      { key: 'guest_phone', label: 'Phone' },
+      { key: 'guest_nationality', label: 'Nationality' },
+      { key: 'room_number', label: 'Room' },
+      { key: 'room_type', label: 'Type' },
+      { key: 'check_in', label: 'Check-in', date: true },
+      { key: 'check_out', label: 'Check-out', date: true },
+      { key: 'adults', label: 'Adults' },
+      { key: 'total_amount', label: 'Amount', currency: true },
+      { key: 'status', label: 'Status' },
+    ],
+    params: ['date_range'], hasPage: true,
+  },
+  // ── Financial (additional) ──
+  {
+    key: 'revenue-by-room-type', label: 'Revenue by Room Type', icon: '🏷️', group: 'Financial',
+    endpoint: '/reports/revenue-by-room-type',
+    columns: [
+      { key: 'room_type', label: 'Room Type' },
+      { key: 'bookings_count', label: 'Bookings' },
+      { key: 'room_revenue', label: 'Room Revenue', currency: true },
+      { key: 'ancillary_revenue', label: 'Ancillary', currency: true },
+      { key: 'total_revenue', label: 'Total Revenue', currency: true },
+      { key: 'revenue_pct', label: '% of Total' },
+    ],
+    params: ['date_range'], hasPage: false,
+  },
+  {
+    key: 'tax', label: 'Tax / VAT Report', icon: '🧾', group: 'Financial',
+    endpoint: '/reports/tax',
+    columns: [
+      { key: 'invoice_date', label: 'Date', date: true },
+      { key: 'invoice_number', label: 'Invoice #' },
+      { key: 'booking_ref', label: 'Booking' },
+      { key: 'guest_name', label: 'Guest' },
+      { key: 'subtotal', label: 'Subtotal', currency: true },
+      { key: 'tax_total', label: 'Tax (VAT)', currency: true },
+      { key: 'discount_total', label: 'Discount', currency: true },
+      { key: 'grand_total', label: 'Grand Total', currency: true },
+      { key: 'amount_paid', label: 'Paid', currency: true },
+      { key: 'status', label: 'Status' },
+    ],
+    params: ['date_range'], hasPage: true,
+  },
+  {
+    key: 'monthly-revenue', label: 'Monthly Revenue', icon: '📅', group: 'Financial',
+    endpoint: '/reports/monthly-revenue',
+    columns: [
+      { key: 'month_label', label: 'Month' },
+      { key: 'room', label: 'Room', currency: true },
+      { key: 'bar', label: 'Bar', currency: true },
+      { key: 'restaurant', label: 'Restaurant', currency: true },
+      { key: 'service', label: 'Service', currency: true },
+      { key: 'laundry', label: 'Laundry', currency: true },
+      { key: 'other', label: 'Other', currency: true },
+      { key: 'total', label: 'Total', currency: true },
+      { key: 'bookings_count', label: 'Bookings' },
+    ],
+    params: ['date_range'], hasPage: false,
+  },
+  // ── Management ──
+  {
+    key: 'daily-manager', label: "Daily Manager's Report", icon: '📋', group: 'Management',
+    endpoint: '/reports/daily-manager',
+    columns: [
+      { key: 'section', label: 'Section' },
+      { key: 'metric', label: 'Metric' },
+      { key: 'value', label: 'Value' },
+    ],
+    params: ['date'], hasPage: false,
+  },
+  // ── POS ──
+  {
+    key: 'pos-sales', label: 'POS Sales', icon: '🍽️', group: 'POS',
+    endpoint: '/reports/pos-sales',
+    columns: [
+      { key: 'paid_at', label: 'Time', date: true },
+      { key: 'order_number', label: 'Order #' },
+      { key: 'order_type', label: 'Type' },
+      { key: 'table_number', label: 'Table' },
+      { key: 'guest_name', label: 'Guest' },
+      { key: 'room_number', label: 'Room' },
+      { key: 'item_count', label: 'Items' },
+      { key: 'total_naira', label: 'Total', currency: true },
+      { key: 'payment_method', label: 'Payment' },
+      { key: 'served_by_name', label: 'Served By' },
+    ],
+    params: ['date_range'], hasPage: true,
+  },
 ];
 
-const GROUPS = ['Front Office', 'Rooms', 'Financial', 'Housekeeping', 'Guest'];
+const GROUPS = ['Front Office', 'Rooms', 'Financial', 'Housekeeping', 'Guest', 'Bookings', 'Management', 'POS'];
 
 // ─── Status badge styles ───────────────────────────────────────────────────────
 

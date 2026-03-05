@@ -30,6 +30,21 @@ return function (App $app): void {
         // Housekeeping
         $g->get('/housekeeping-status', [ReportController::class, 'housekeepingStatus']);
 
+        // Cancellations & Walk-ins
+        $g->get('/cancellations',        [ReportController::class, 'cancellations']);
+        $g->get('/walk-ins',             [ReportController::class, 'walkIns']);
+
+        // Financial (additional)
+        $g->get('/revenue-by-room-type', [ReportController::class, 'revenueByRoomType']);
+        $g->get('/tax',                  [ReportController::class, 'taxReport']);
+        $g->get('/monthly-revenue',      [ReportController::class, 'monthlyRevenue']);
+
+        // Management
+        $g->get('/daily-manager',        [ReportController::class, 'dailyManager']);
+
+        // POS
+        $g->get('/pos-sales',            [ReportController::class, 'posSales']);
+
         // Guest
         $g->get('/guest-history',       [ReportController::class, 'guestHistory']);
     })
