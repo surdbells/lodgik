@@ -6,6 +6,7 @@ namespace Lodgik\Module\Invoice;
 
 use Lodgik\Helper\PaginationHelper;
 use Lodgik\Helper\ResponseHelper;
+use Lodgik\Repository\FolioRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -13,6 +14,7 @@ final class InvoiceController
 {
     public function __construct(
         private readonly InvoiceService $invoiceService,
+        private readonly FolioRepository $folioRepo,
         private readonly ResponseHelper $response,
     ) {}
 
@@ -75,6 +77,48 @@ final class InvoiceController
             return $this->response->success($response, $invoice->toArray(), 'Invoice marked as paid');
         } catch (\RuntimeException $e) {
             return $this->response->error($response, $e->getMessage(), 422);
+        }
+    }
+
+
+    /**
+     * POST /api/invoices
+     * Body: { folio_id: string }
+     * Generates an invoice from a closed folio.
+     * Returns 409 if invoice already exists for that folio.
+     */
+    public function generate(Request $request, Response $response): Response
+    {
+        $body     = (array) ($request->getParsedBody() ?? []);
+        $folioId  = $body['folio_id'] ?? null;
+        $tenantId = $request->getAttribute('auth.tenant_id');
+
+        if (!$folioId) {
+            return $this->response->error($response, 'folio_id is required', 400);
+        }
+
+        /** @var \Lodgik\Entity\Folio|null $folio */
+        $folio = $this->folioRepo->find($folioId);
+
+        if ($folio === null) {
+            return $this->response->error($response, 'Folio not found', 404);
+        }
+
+        if ($folio->getTenantId() !== $tenantId) {
+            return $this->response->error($response, 'Access denied', 403);
+        }
+
+        if (!in_array($folio->getStatus(), ['closed', 'settled'], true)) {
+            return $this->response->error($response, 'Invoice can only be generated from a closed folio', 422);
+        }
+
+        try {
+            $invoice = $this->invoiceService->generateFromFolio($folio);
+            $detail  = $this->invoiceService->getDetail($invoice->getId());
+            return $this->response->success($response, $detail, 'Invoice generated', 201);
+        } catch (\RuntimeException $e) {
+            // Invoice already exists
+            return $this->response->error($response, $e->getMessage(), 409);
         }
     }
 

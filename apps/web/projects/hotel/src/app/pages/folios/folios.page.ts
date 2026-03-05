@@ -18,8 +18,8 @@ import { AuthService } from '@lodgik/shared';
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <ui-stats-card label="Open Folios" [value]="stats().open" icon="folder-open"></ui-stats-card>
         <ui-stats-card label="Pending Payments" [value]="stats().pending" icon="clock"></ui-stats-card>
-        <ui-stats-card label="Total Outstanding" [value]="'₦' + stats().outstanding.toLocaleString()" icon="hand-coins"></ui-stats-card>
-        <ui-stats-card label="Closed Today" [value]="stats().closedToday" icon="circle-check"></ui-stats-card>
+        <ui-stats-card label="Outstanding Balance" [value]="'₦' + stats().outstanding.toLocaleString('en-NG', {minimumFractionDigits:0})" icon="hand-coins"></ui-stats-card>
+        <ui-stats-card label="Collected Today" [value]="'₦' + stats().collectedToday.toLocaleString('en-NG', {minimumFractionDigits:0})" icon="circle-check"></ui-stats-card>
       </div>
 
       <!-- Filter -->
@@ -44,7 +44,7 @@ export class FoliosPage implements OnInit {
 
   loading = signal(true);
   folios = signal<any[]>([]);
-  stats = signal({ open: 0, pending: 0, outstanding: 0, closedToday: 0 });
+  stats = signal({ open: 0, pending: 0, outstanding: 0, closedToday: 0, collectedToday: 0 });
   filterStatus = '';
   propertyId = '';
 
@@ -92,6 +92,21 @@ export class FoliosPage implements OnInit {
     // Get pending payments count
     this.api.get('/folios/pending-payments', { property_id: this.propertyId }).subscribe(r => {
       if (r.success) this.stats.update(s => ({ ...s, pending: (r.data ?? []).length }));
+    });
+
+    // Collected today — from daily-revenue report (advanced_analytics gate handles 403 gracefully)
+    const today = new Date().toISOString().slice(0, 10);
+    this.api.get<any>('/reports/daily-revenue', {
+      property_id: this.propertyId, date: today,
+    }).subscribe({
+      next: r => {
+        if (r.success && r.data?.summary) {
+          const s = r.data.summary;
+          const total = (+s.cash_total || 0) + (+s.bank_transfer_total || 0) + (+s.pos_card_total || 0);
+          this.stats.update(st => ({ ...st, collectedToday: total }));
+        }
+      },
+      error: () => { /* advanced_analytics may not be enabled — silently skip */ },
     });
   }
 }

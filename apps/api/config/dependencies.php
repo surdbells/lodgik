@@ -680,6 +680,7 @@ return function (ContainerBuilder $builder): void {
 
         InvoiceController::class => fn(ContainerInterface $c) => new InvoiceController(
             invoiceService: $c->get(InvoiceService::class),
+            folioRepo: $c->get(FolioRepository::class),
             response: $c->get(ResponseHelper::class),
         ),
 

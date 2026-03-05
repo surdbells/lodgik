@@ -131,7 +131,18 @@ import { AuthService } from '@lodgik/shared';
             </div>
           }
           @if (folio()!.status === 'closed') {
-            <a [routerLink]="['/invoices']" [queryParams]="{booking_id: folio()!.booking_id}" class="block text-center px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">View Invoice</a>
+            @if (existingInvoiceId()) {
+              <a [routerLink]="['/invoices', existingInvoiceId()]"
+                 class="block text-center px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">
+                📄 View Invoice
+              </a>
+            } @else {
+              <button (click)="generateInvoice()"
+                [disabled]="generatingInvoice()"
+                class="block w-full text-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                {{ generatingInvoice() ? 'Generating…' : '🧾 Generate Invoice' }}
+              </button>
+            }
           }
         </div>
       </div>
@@ -210,6 +221,9 @@ import { AuthService } from '@lodgik/shared';
 })
 export class FolioDetailPage implements OnInit {
   private api = inject(ApiService);
+
+  existingInvoiceId  = signal<string | null>(null);
+  generatingInvoice  = signal(false);
   private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
@@ -234,6 +248,7 @@ export class FolioDetailPage implements OnInit {
   private folioId = '';
 
   ngOnInit(): void {
+    // Loaded after folio is fetched — see load()
     this.folioId = this.route.snapshot.paramMap.get('id') ?? '';
     if (this.folioId) this.loadFolio();
     this.loadBankAccount();
@@ -241,6 +256,7 @@ export class FolioDetailPage implements OnInit {
 
   loadFolio(): void {
     this.api.get(`/folios/${this.folioId}`).subscribe(r => {
+      if (r.success) { this.checkExistingInvoice(r.data.booking_id); }
       if (r.success) {
         this.folio.set(r.data.folio);
         this.charges.set(r.data.charges ?? []);
@@ -322,4 +338,33 @@ export class FolioDetailPage implements OnInit {
       if (r.success) { this.toast.success('Folio voided'); this.loadFolio(); } else this.toast.error(r.message || 'Failed');
     });
   }
+  checkExistingInvoice(bookingId: string): void {
+    if (!bookingId) return;
+    this.api.get<any>(`/invoices/by-booking/${bookingId}`).subscribe({
+      next: r => { if (r.success && r.data?.id) this.existingInvoiceId.set(r.data.id); },
+      error: () => { /* no invoice yet — normal */ },
+    });
+  }
+
+  generateInvoice(): void {
+    const folioId = this.folio()?.id;
+    if (!folioId) return;
+    this.generatingInvoice.set(true);
+    this.api.post<any>('/invoices', { folio_id: folioId }).subscribe({
+      next: r => {
+        this.generatingInvoice.set(false);
+        if (r.success) {
+          this.existingInvoiceId.set(r.data.id);
+          this.toast.success('Invoice generated');
+        }
+      },
+      error: err => {
+        this.generatingInvoice.set(false);
+        const msg = err?.error?.error?.message ?? 'Failed to generate invoice';
+        this.toast.error(msg);
+      },
+    });
+  }
+
+
 }

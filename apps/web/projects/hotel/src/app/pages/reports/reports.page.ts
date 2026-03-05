@@ -7,6 +7,7 @@ import {
   LoadingSpinnerComponent,
   ToastService,
   ActivePropertyService,
+  FeatureService,
 } from '@lodgik/shared';
 
 // ─── Report definitions ───────────────────────────────────────────────────────
@@ -43,6 +44,8 @@ const REPORTS: ReportDef[] = [
       { key: 'status', label: 'Status' },
     ],
     params: ['date'], hasPage: true,
+    featureKey: 'basic_analytics',
+    featureTier: 'All plans',
   },
   {
     key: 'departures', label: 'Daily Departures', icon: '🛫', group: 'Front Office',
@@ -60,6 +63,8 @@ const REPORTS: ReportDef[] = [
       { key: 'status', label: 'Status' },
     ],
     params: ['date'], hasPage: true,
+    featureKey: 'basic_analytics',
+    featureTier: 'All plans',
   },
   {
     key: 'in-house', label: 'In-House Guests', icon: '🏨', group: 'Front Office',
@@ -78,6 +83,8 @@ const REPORTS: ReportDef[] = [
       { key: 'outstanding_balance', label: 'Balance', currency: true },
     ],
     params: [], hasPage: true,
+    featureKey: 'basic_analytics',
+    featureTier: 'All plans',
   },
   {
     key: 'no-shows', label: 'No-Shows', icon: '❌', group: 'Front Office',
@@ -93,6 +100,8 @@ const REPORTS: ReportDef[] = [
       { key: 'source', label: 'Source' },
     ],
     params: ['date_range'], hasPage: true,
+    featureKey: 'basic_analytics',
+    featureTier: 'All plans',
   },
   // ── Room ──
   {
@@ -107,6 +116,8 @@ const REPORTS: ReportDef[] = [
       { key: 'notes', label: 'Notes' },
     ],
     params: [], hasPage: false,
+    featureKey: 'basic_analytics',
+    featureTier: 'All plans',
   },
   {
     key: 'room-availability', label: 'Room Availability', icon: '✅', group: 'Rooms',
@@ -120,6 +131,8 @@ const REPORTS: ReportDef[] = [
       { key: 'max_occupancy', label: 'Max Occ.' },
     ],
     params: ['date_range'], hasPage: false,
+    featureKey: 'basic_analytics',
+    featureTier: 'All plans',
   },
   {
     key: 'occupancy', label: 'Occupancy Report', icon: '📊', group: 'Rooms',
@@ -134,6 +147,8 @@ const REPORTS: ReportDef[] = [
       { key: 'revpar', label: 'RevPAR', currency: true },
     ],
     params: ['date_range'], hasPage: false,
+    featureKey: 'advanced_analytics',
+    featureTier: 'Business+',
   },
   // ── Financial ──
   {
@@ -151,6 +166,8 @@ const REPORTS: ReportDef[] = [
       { key: 'payments_received', label: 'Payments', currency: true },
     ],
     params: ['date_range'], hasPage: false,
+    featureKey: 'advanced_analytics',
+    featureTier: 'Business+',
   },
   {
     key: 'payment-collection', label: 'Payment Collection', icon: '💳', group: 'Financial',
@@ -167,6 +184,8 @@ const REPORTS: ReportDef[] = [
       { key: 'transfer_reference', label: 'Reference' },
     ],
     params: ['date_range'], hasPage: true,
+    featureKey: 'advanced_analytics',
+    featureTier: 'Business+',
   },
   {
     key: 'outstanding-balances', label: 'Outstanding Balances', icon: '⚠️', group: 'Financial',
@@ -185,6 +204,8 @@ const REPORTS: ReportDef[] = [
       { key: 'booking_status', label: 'Status' },
     ],
     params: [], hasPage: true,
+    featureKey: 'advanced_analytics',
+    featureTier: 'Business+',
   },
   // ── Housekeeping ──
   {
@@ -202,6 +223,8 @@ const REPORTS: ReportDef[] = [
       { key: 'notes', label: 'Notes' },
     ],
     params: ['date'], hasPage: false,
+    featureKey: 'custom_reports',
+    featureTier: 'Enterprise',
   },
   // ── Guest ──
   {
@@ -223,6 +246,8 @@ const REPORTS: ReportDef[] = [
       { key: 'status', label: 'Status' },
     ],
     params: ['date_range', 'guest_id'], hasPage: true,
+    featureKey: 'custom_reports',
+    featureTier: 'Enterprise',
   },
   // ── Cancellations & Walk-ins ──
   {
@@ -242,6 +267,8 @@ const REPORTS: ReportDef[] = [
       { key: 'cancelled_at', label: 'Cancelled', date: true },
     ],
     params: ['date_range'], hasPage: true,
+    featureKey: 'custom_reports',
+    featureTier: 'Enterprise',
   },
   {
     key: 'walk-ins', label: 'Walk-ins', icon: '🚶', group: 'Bookings',
@@ -260,6 +287,8 @@ const REPORTS: ReportDef[] = [
       { key: 'status', label: 'Status' },
     ],
     params: ['date_range'], hasPage: true,
+    featureKey: 'custom_reports',
+    featureTier: 'Enterprise',
   },
   // ── Financial (additional) ──
   {
@@ -274,6 +303,8 @@ const REPORTS: ReportDef[] = [
       { key: 'revenue_pct', label: '% of Total' },
     ],
     params: ['date_range'], hasPage: false,
+    featureKey: 'advanced_analytics',
+    featureTier: 'Business+',
   },
   {
     key: 'tax', label: 'Tax / VAT Report', icon: '🧾', group: 'Financial',
@@ -291,6 +322,8 @@ const REPORTS: ReportDef[] = [
       { key: 'status', label: 'Status' },
     ],
     params: ['date_range'], hasPage: true,
+    featureKey: 'custom_reports',
+    featureTier: 'Enterprise',
   },
   {
     key: 'monthly-revenue', label: 'Monthly Revenue', icon: '📅', group: 'Financial',
@@ -307,6 +340,8 @@ const REPORTS: ReportDef[] = [
       { key: 'bookings_count', label: 'Bookings' },
     ],
     params: ['date_range'], hasPage: false,
+    featureKey: 'advanced_analytics',
+    featureTier: 'Business+',
   },
   // ── Management ──
   {
@@ -318,6 +353,8 @@ const REPORTS: ReportDef[] = [
       { key: 'value', label: 'Value' },
     ],
     params: ['date'], hasPage: false,
+    featureKey: 'advanced_analytics',
+    featureTier: 'Business+',
   },
   // ── POS ──
   {
@@ -336,6 +373,8 @@ const REPORTS: ReportDef[] = [
       { key: 'served_by_name', label: 'Served By' },
     ],
     params: ['date_range'], hasPage: true,
+    featureKey: 'custom_reports',
+    featureTier: 'Enterprise',
   },
 ];
 
@@ -382,7 +421,7 @@ function statusClass(val: string): string {
         @for (group of groups; track group) {
           <div class="mb-4">
             <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 px-3 mb-1">{{ group }}</p>
-            @for (r of reportsByGroup(group); track r.key) {
+            @for (r of availableReportsByGroup(group); track r.key) {
               <button
                 (click)="selectReport(r)"
                 class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
@@ -393,6 +432,14 @@ function statusClass(val: string): string {
                 {{ r.label }}
               </button>
             }
+            @for (r of lockedReportsByGroup(group); track r.key) {
+              <div class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 opacity-50 cursor-not-allowed"
+                   [title]="'Requires ' + r.featureTier + ' plan'">
+                <span class="text-base leading-none">🔒</span>
+                <span class="text-gray-400">{{ r.label }}</span>
+                <span class="ml-auto text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{{ r.featureTier }}</span>
+              </div>
+            }
           </div>
         }
       </aside>
@@ -402,7 +449,7 @@ function statusClass(val: string): string {
         <!-- Landing: report cards -->
         @if (!activeReport()) {
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            @for (r of allReports; track r.key) {
+            @for (r of availableReports(); track r.key) {
               <button
                 (click)="selectReport(r)"
                 class="bg-white rounded-xl border border-gray-100 shadow-card p-5 text-left hover:border-sage-200 hover:shadow-md transition-all group">
@@ -410,6 +457,14 @@ function statusClass(val: string): string {
                 <p class="text-sm font-semibold text-gray-800 group-hover:text-sage-700">{{ r.label }}</p>
                 <p class="text-xs text-gray-400 mt-0.5">{{ r.group }}</p>
               </button>
+            }
+            @for (r of lockedReports(); track r.key) {
+              <div class="bg-gray-50 rounded-xl border border-dashed border-gray-200 p-5 text-left opacity-60 cursor-not-allowed">
+                <div class="text-3xl mb-3 grayscale">🔒</div>
+                <p class="text-sm font-semibold text-gray-500">{{ r.label }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ r.group }}</p>
+                <span class="inline-block mt-2 text-[10px] font-medium bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Requires {{ r.featureTier }}</span>
+              </div>
             }
           </div>
         }
@@ -566,8 +621,26 @@ export class ReportsPage implements OnInit {
   private api            = inject(ApiService);
   private toast          = inject(ToastService);
   private activeProperty = inject(ActivePropertyService);
+  private featureService = inject(FeatureService);
 
-  readonly groups     = GROUPS;
+  /** Reports the current tenant is allowed to access based on their plan. */
+  readonly availableReports = computed(() => {
+    const enabled = this.featureService.enabledModules();
+    return REPORTS.filter(r => enabled.includes(r.featureKey));
+  });
+
+  /** Reports locked for the current tenant, grouped for the upgrade UI. */
+  readonly lockedReports = computed(() => {
+    const enabled = this.featureService.enabledModules();
+    return REPORTS.filter(r => !enabled.includes(r.featureKey));
+  });
+
+
+  readonly groups = computed(() =>
+    GROUPS.filter(g =>
+      REPORTS.some(r => r.group === g)
+    )
+  );
   readonly allReports = REPORTS;
 
   loading         = signal(false);
@@ -608,10 +681,15 @@ export class ReportsPage implements OnInit {
   }
 
   reportsByGroup(group: string): ReportDef[] {
-    return REPORTS.filter(r => r.group === group);
+    return this.availableReports().filter(r => r.group === group);
+  }
+
+  lockedReportsByGroup(group: string): ReportDef[] {
+    return this.lockedReports().filter(r => r.group === group);
   }
 
   selectReport(r: ReportDef): void {
+    if (!this.availableReports().some(a => a.key === r.key)) return; // guard: locked
     this.activeReportKey.set(r.key);
     this.reportData.set(null);
     this.currentPage = 1;
