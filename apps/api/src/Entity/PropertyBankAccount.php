@@ -77,4 +77,19 @@ class PropertyBankAccount implements TenantAware
 
     public function isActive(): bool { return $this->isActive; }
     public function setIsActive(bool $active): void { $this->isActive = $active; }
+    public function toArray(): array
+    {
+        return [
+            'id'             => $this->getId(),
+            'property_id'    => $this->propertyId,
+            'bank_name'      => $this->bankName,
+            'account_number' => $this->accountNumber,
+            'account_name'   => $this->accountName,
+            'bank_code'      => $this->bankCode,
+            'is_primary'     => $this->isPrimary,
+            'is_active'      => $this->isActive,
+        ];
+    }
+
+
 }

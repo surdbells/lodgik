@@ -184,6 +184,10 @@ export const routes: Routes = [
         path: 'guest-services',
         loadComponent: () => import('./pages/guest-services/guest-services.page').then(m => m.GuestServicesPage),
       },
+      {
+        path: 'service-requests',
+        loadComponent: () => import('./pages/guest-services/service-requests.page').then(m => m.ServiceRequestsPage),
+      },
       // ─── Phase 8A ─────────────────────────
       {
         path: 'expenses',
@@ -325,4 +329,18 @@ export const routes: Routes = [
     ],
   },
   { path: '**', redirectTo: '' },
+
+  // ── Guest PWA — separate layout with dark theme ───────────────
+  {
+    path: 'guest',
+    loadComponent: () => import('./pages/guest-portal/guest-layout.component').then(m => m.GuestLayoutComponent),
+    children: [
+      { path: '', redirectTo: 'home', pathMatch: 'full' },
+      { path: 'login',    loadComponent: () => import('./pages/guest-portal/guest-login.page') },
+      { path: 'home',     loadComponent: () => import('./pages/guest-portal/guest-home.page') },
+      { path: 'folio',    loadComponent: () => import('./pages/guest-portal/guest-folio.page') },
+      { path: 'services', loadComponent: () => import('./pages/guest-portal/guest-services.page') },
+      { path: 'chat',     loadComponent: () => import('./pages/guest-portal/guest-chat.page') },
+    ],
+  },
 ];

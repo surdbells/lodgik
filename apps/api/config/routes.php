@@ -40,6 +40,7 @@ return function (App $app): void {
 
     // ─── Phase 4: Guest Experience ────────────────────────────
     (require __DIR__ . '/../src/Module/GuestAuth/routes.php')($app);
+    (require __DIR__ . '/../src/Module/GuestPortal/routes.php')($app);
     (require __DIR__ . '/../src/Module/ServiceRequest/routes.php')($app);
     (require __DIR__ . '/../src/Module/Chat/routes.php')($app);
     (require __DIR__ . '/../src/Module/Notification/routes.php')($app);

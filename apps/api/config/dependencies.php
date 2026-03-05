@@ -561,6 +561,10 @@ return function (ContainerBuilder $builder): void {
         },
 
         // ─── Phase 1: Booking Module ──────────────────────────────
+        PropertyBankAccountRepository::class => fn(ContainerInterface $c) => new PropertyBankAccountRepository(
+            $c->get(EntityManagerInterface::class),
+        ),
+
         BookingRepository::class => function (ContainerInterface $c): BookingRepository {
             return new BookingRepository($c->get(EntityManagerInterface::class));
         },
