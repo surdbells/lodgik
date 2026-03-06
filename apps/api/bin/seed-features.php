@@ -40,7 +40,7 @@ $modules = [
     // Operations (8)
     ['service_requests',       'Service Requests',               'operations', 'starter',      true,  [],                                           'room_service', 10],
     ['staff_tasks',            'Staff Task Management',          'operations', 'starter',      true,  [],                                           'task',         11],
-    ['guest_access_codes',     'Guest Access Codes',             'operations', 'professional', false, ['booking_engine'],                           'vpn_key',      12],
+    ['guest_access_codes',     'Guest Cards & Access',           'operations', 'professional', false, ['booking_engine'],                           'credit-card',  12],
     ['stay_extensions',        'Stay Extensions',                'operations', 'professional', false, ['booking_engine'],                           'schedule',     13],
     ['housekeeping',           'Housekeeping Management',        'operations', 'professional', false, ['room_management'],                         'cleaning',     14],
     ['inventory_management',   'Inventory Management',           'operations', 'professional', false, [],                                           'inventory',    15],
