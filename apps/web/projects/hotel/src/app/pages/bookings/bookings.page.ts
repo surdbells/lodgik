@@ -19,6 +19,9 @@ import { AuthService } from '@lodgik/shared';
           <button (click)="viewMode.set('calendar'); loadCalendar()" class="px-3 py-2 text-sm font-medium transition-colors border-l border-gray-200"
             [class.bg-sage-600]="viewMode()==='calendar'" [class.text-white]="viewMode()==='calendar'"
             [class.bg-white]="viewMode()!=='calendar'" [class.text-gray-500]="viewMode()!=='calendar'">📅 Calendar</button>
+          <button (click)="viewMode.set('gantt'); loadCalendar()" class="px-3 py-2 text-sm font-medium transition-colors border-l border-gray-200"
+            [class.bg-sage-600]="viewMode()==='gantt'" [class.text-white]="viewMode()==='gantt'"
+            [class.bg-white]="viewMode()!=='gantt'" [class.text-gray-500]="viewMode()!=='gantt'">📊 Gantt</button>
         </div>
         <a routerLink="/bookings/new" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Booking</a>
       </div>
@@ -155,6 +158,72 @@ import { AuthService } from '@lodgik/shared';
 
     }
 
+    <!-- Gantt View -->
+    @if (viewMode() === 'gantt') {
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <!-- Gantt header: navigation + date range -->
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+          <button (click)="prevMonth()" class="p-1.5 hover:bg-gray-100 rounded-lg text-gray-600">‹</button>
+          <h2 class="text-base font-semibold text-gray-800">{{ calendarMonth() | date:'MMMM yyyy' }}</h2>
+          <button (click)="nextMonth()" class="p-1.5 hover:bg-gray-100 rounded-lg text-gray-600">›</button>
+        </div>
+
+        <ui-loading [loading]="calendarLoading()"></ui-loading>
+
+        @if (!calendarLoading()) {
+          <div class="overflow-x-auto">
+            <!-- Day columns header -->
+            <div class="flex" style="min-width: max-content">
+              <div class="w-36 shrink-0 border-r border-gray-100 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-500 uppercase">Room</div>
+              @for (day of ganttDays(); track day.date) {
+                <div class="w-8 shrink-0 border-r border-gray-50 px-0.5 py-2 text-center"
+                  [class.bg-blue-50]="day.isToday">
+                  <p class="text-[10px] text-gray-400">{{ day.label }}</p>
+                  <p class="text-xs font-semibold" [class.text-blue-600]="day.isToday" [class.text-gray-700]="!day.isToday">{{ day.day }}</p>
+                </div>
+              }
+            </div>
+
+            <!-- Room rows -->
+            @for (row of ganttRows(); track row.room_id) {
+              <div class="flex border-t border-gray-50 hover:bg-gray-50/50" style="min-width: max-content">
+                <!-- Room label -->
+                <div class="w-36 shrink-0 border-r border-gray-100 px-3 py-2">
+                  <p class="text-xs font-semibold text-gray-800 truncate">{{ row.room_number }}</p>
+                  <p class="text-[10px] text-gray-400 truncate">{{ row.room_type }}</p>
+                </div>
+                <!-- Day cells -->
+                @for (day of ganttDays(); track day.date) {
+                  @let booking = row.bookingByDate[day.date];
+                  <div class="w-8 h-10 shrink-0 border-r border-gray-50 relative"
+                    [class.bg-blue-50]="day.isToday">
+                    @if (booking && booking.isStart) {
+                      <div class="absolute inset-y-1 left-0.5 rounded-sm cursor-pointer z-10 flex items-center px-1"
+                        [style.background-color]="statusColor(booking.status)"
+                        [style.width.px]="booking.spanDays * 32 - 4"
+                        (click)="viewCalendarBooking(booking)"
+                        [title]="booking.guest_name + ' · ' + booking.booking_ref">
+                        <span class="text-[9px] text-white font-medium truncate">{{ booking.guest_name }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Legend -->
+          <div class="flex gap-4 px-5 py-3 border-t border-gray-100 text-xs text-gray-500">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-amber-400 inline-block"></span> Pending</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-blue-500 inline-block"></span> Confirmed</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-emerald-500 inline-block"></span> Checked In</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-gray-400 inline-block"></span> Checked Out</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-red-400 inline-block"></span> Cancelled</span>
+          </div>
+        }
+      </div>
+    }
+
     <!-- Booking Detail Modal -->
     @if (showDetail && detail) {
       <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showDetail = false">
@@ -211,11 +280,69 @@ export class BookingsPage implements OnInit {
   roomTypes = signal<any[]>([]);
   guestResults = signal<any[]>([]);
   todayStats = signal<any>({ check_ins: 0, check_outs: 0, in_house: 0, upcoming: 0 });
-  viewMode = signal<'list' | 'calendar'>('list');
+  viewMode = signal<'list' | 'calendar' | 'gantt'>('list');
   calendarLoading = signal(false);
   calendarMonth = signal<Date>(new Date());
   calendarBookings = signal<any[]>([]);
   calendarCells = computed(() => this.buildCells());
+
+  ganttDays = computed(() => {
+    const d = this.calendarMonth();
+    const year = d.getFullYear(), month = d.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const days: any[] = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+      const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === i;
+      days.push({ date, day: i, label: ['Su','Mo','Tu','We','Th','Fr','Sa'][new Date(year, month, i).getDay()], isToday });
+    }
+    return days;
+  });
+
+  ganttRows = computed(() => {
+    const bookings = this.calendarBookings();
+    const days = this.ganttDays();
+    // Group unique rooms from bookings
+    const roomMap = new Map<string, any>();
+    for (const b of bookings) {
+      if (b.room_id && !roomMap.has(b.room_id)) {
+        roomMap.set(b.room_id, { room_id: b.room_id, room_number: b.room_number ?? b.room_id, room_type: b.room_type_name ?? '' });
+      }
+    }
+    return Array.from(roomMap.values()).map(room => {
+      const bookingByDate: Record<string, any> = {};
+      const roomBookings = bookings.filter(b => b.room_id === room.room_id);
+      for (const b of roomBookings) {
+        const ciDate = b.check_in?.split('T')[0];
+        const coDate = b.check_out?.split('T')[0];
+        if (!ciDate || !coDate) continue;
+        // Count how many days within this month this booking spans
+        let spanDays = 0;
+        let started = false;
+        for (const day of days) {
+          if (day.date >= ciDate && day.date < coDate) {
+            spanDays++;
+            if (!started) {
+              bookingByDate[day.date] = { ...b, isStart: true, spanDays: 0 };
+              started = true;
+            } else {
+              bookingByDate[day.date] = { ...b, isStart: false };
+            }
+          }
+        }
+        // Update spanDays on the start cell
+        if (started && ciDate >= days[0]?.date) {
+          bookingByDate[ciDate].spanDays = spanDays;
+        } else if (started) {
+          // booking started before this month — update first visible day
+          const firstVisible = days.find(d => d.date >= ciDate && d.date < coDate);
+          if (firstVisible) bookingByDate[firstVisible.date] = { ...b, isStart: true, spanDays };
+        }
+      }
+      return { ...room, bookingByDate };
+    });
+  });
   page = 1;
   statusFilter = '';
   showNew = false;

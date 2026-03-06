@@ -1,8 +1,8 @@
-import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { NgClass, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ApiService, ToastService } from '@lodgik/shared';
+import { ApiService, ToastService, ActivePropertyService } from '@lodgik/shared';
 
 type ScanContext = 'reception_lookup' | 'checkout' | 'security_exit' | 'facility_access' | 'pos_charge';
 
@@ -19,10 +19,17 @@ type ScanContext = 'reception_lookup' | 'checkout' | 'security_exit' | 'facility
           <span class="text-2xl">💳</span>
           <div>
             <h1 class="font-bold text-white">Card Scanner</h1>
-            <p class="text-xs text-gray-400">{{ scanPointName() || 'No scan point selected' }}</p>
+            <p class="text-xs text-gray-400">{{ selectedScanPointName() || 'No scan point selected' }}</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
+          <!-- Scan point selector -->
+          <select [(ngModel)]="scanPointId" (change)="onScanPointChange()" class="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2">
+            <option value="">— Select Scan Point —</option>
+            @for (sp of scanPoints(); track sp.id) {
+              <option [value]="sp.id">{{ sp.name }}</option>
+            }
+          </select>
           <!-- Context selector -->
           <select [(ngModel)]="context" class="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2">
             <option value="reception_lookup">🔍 Reception Lookup</option>
@@ -198,6 +205,7 @@ type ScanContext = 'reception_lookup' | 'checkout' | 'security_exit' | 'facility
 export class CardScannerPage implements OnInit, OnDestroy {
   private api   = inject(ApiService);
   private toast = inject(ToastService);
+  private activeProperty = inject(ActivePropertyService);
 
   cardUid      = '';
   context: ScanContext = 'reception_lookup';
@@ -209,14 +217,38 @@ export class CardScannerPage implements OnInit, OnDestroy {
   scanning     = signal(false);
   lastResult   = signal<any>(null);
   scanTime     = signal('');
-  scanPointName = signal('');
+  scanPoints   = signal<any[]>([]);
   recentScans  = signal<any[]>([]);
+
+  selectedScanPointName = computed(() => {
+    const sp = this.scanPoints().find(s => s.id === this.scanPointId);
+    return sp ? sp.name : '';
+  });
 
   private autoScanTimer: any = null;
 
   ngOnInit(): void {
-    this.propertyId  = localStorage.getItem('selectedPropertyId') ?? '';
+    this.propertyId = this.activeProperty.propertyId();
     this.scanPointId = localStorage.getItem('selectedScanPointId') ?? '';
+    if (this.propertyId) this.loadScanPoints();
+  }
+
+  loadScanPoints(): void {
+    this.api.get(`/scan-points?property_id=${this.propertyId}&limit=100`).subscribe({
+      next: (r: any) => {
+        this.scanPoints.set(r.data?.items ?? r.data ?? []);
+        // If we had a stored scanPointId, keep it; otherwise pick the first
+        if (!this.scanPointId && this.scanPoints().length) {
+          this.scanPointId = this.scanPoints()[0].id;
+          localStorage.setItem('selectedScanPointId', this.scanPointId);
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  onScanPointChange(): void {
+    localStorage.setItem('selectedScanPointId', this.scanPointId);
   }
 
   ngOnDestroy(): void {

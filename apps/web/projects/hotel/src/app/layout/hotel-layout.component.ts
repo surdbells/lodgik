@@ -289,7 +289,7 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Pricing Rules', icon: 'trending-up', route: '/pricing-rules', requiredModule: 'dynamic_pricing' },
         { label: 'Group Bookings', icon: 'users', route: '/group-bookings' },
         { label: 'Analytics', icon: 'chart-bar', route: '/analytics', requiredModule: 'basic_analytics' },
-        { label: 'Reports', icon: 'file-bar-chart', route: '/reports', requiredModule: 'basic_analytics' },
+        { label: 'Reports', icon: 'file-chart-column', route: '/reports', requiredModule: 'basic_analytics' },
         { label: 'Police Reports', icon: 'shield-alert', route: '/police-reports' },
       ],
     },

@@ -8,6 +8,7 @@ import {
   LoadingSpinnerComponent,
   ToastService,
   ConfirmDialogService,
+  ActivePropertyService,
 } from '@lodgik/shared';
 
 const TYPE_LABELS: Record<string, { label: string; icon: string; color: string }> = {
@@ -31,8 +32,11 @@ const TYPE_LABELS: Record<string, { label: string; icon: string; color: string }
     </ui-page-header>
 
     <div class="mb-4">
-      <input [(ngModel)]="propertyId" (change)="load()" placeholder="Property ID"
-        class="border rounded-lg px-3 py-2 text-sm w-56">
+      <select [(ngModel)]="propertyId" (change)="load()" class="border rounded-lg px-3 py-2 text-sm w-56">
+        @for (p of activeProperty.properties(); track p.id) {
+          <option [value]="p.id">{{ p.name }}</option>
+        }
+      </select>
     </div>
 
     <ui-loading [loading]="loading()"></ui-loading>
@@ -175,6 +179,7 @@ export class ScanPointsPage implements OnInit {
   private api     = inject(ApiService);
   private toast   = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
+  readonly activeProperty = inject(ActivePropertyService);
 
   scanPoints = signal<any[]>([]);
   loading    = signal(false);
@@ -190,7 +195,7 @@ export class ScanPointsPage implements OnInit {
   typeInfo(type: string) { return TYPE_LABELS[type] ?? { label: type, icon: '📡', color: '#6b7280' }; }
 
   ngOnInit(): void {
-    this.propertyId = localStorage.getItem('selectedPropertyId') ?? '';
+    this.propertyId = this.activeProperty.propertyId();
     if (this.propertyId) this.load();
   }
 
