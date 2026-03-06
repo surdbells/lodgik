@@ -8,6 +8,7 @@ import {
   LoadingSpinnerComponent,
   ToastService,
   ConfirmDialogService,
+  ActivePropertyService,
 } from '@lodgik/shared';
 
 @Component({
@@ -35,7 +36,11 @@ import {
 
     <!-- Filters -->
     <div class="bg-white rounded-xl border border-gray-100 p-4 mb-4 flex flex-wrap gap-3 items-center">
-      <input [(ngModel)]="propertyId" placeholder="Property ID" class="border rounded-lg px-3 py-2 text-sm w-56" (change)="load()">
+      <select [(ngModel)]="propertyId" class="border rounded-lg px-3 py-2 text-sm w-56" (change)="load()">
+        @for (p of activeProperty.properties(); track p.id) {
+          <option [value]="p.id">{{ p.name }}</option>
+        }
+      </select>
       <select [(ngModel)]="statusFilter" (change)="load()" class="border rounded-lg px-3 py-2 text-sm">
         <option value="">All Statuses</option>
         <option value="available">Available</option>
@@ -204,6 +209,7 @@ export class GuestCardsPage implements OnInit {
   private api     = inject(ApiService);
   private toast   = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
+  readonly activeProperty = inject(ActivePropertyService);
 
   cards    = signal<any[]>([]);
   total    = signal(0);
@@ -246,9 +252,8 @@ export class GuestCardsPage implements OnInit {
   });
 
   ngOnInit(): void {
-    // Property id may come from query param or user context
-    const stored = localStorage.getItem('selectedPropertyId');
-    if (stored) { this.propertyId = stored; this.load(); }
+    this.propertyId = this.activeProperty.propertyId();
+    if (this.propertyId) this.load();
   }
 
   load(): void {

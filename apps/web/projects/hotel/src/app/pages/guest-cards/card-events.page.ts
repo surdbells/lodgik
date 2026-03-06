@@ -7,6 +7,7 @@ import {
   PageHeaderComponent,
   LoadingSpinnerComponent,
   ToastService,
+  ActivePropertyService,
 } from '@lodgik/shared';
 
 @Component({
@@ -25,7 +26,11 @@ import {
     <div class="bg-white rounded-xl border border-gray-100 p-4 mb-4 flex flex-wrap gap-3 items-end">
       <div>
         <label class="text-xs text-gray-500 block mb-1">Property</label>
-        <input [(ngModel)]="propertyId" placeholder="Property ID" class="border rounded-lg px-3 py-2 text-sm w-48">
+        <select [(ngModel)]="propertyId" class="border rounded-lg px-3 py-2 text-sm w-48" (change)="load()">
+          @for (p of activeProperty.properties(); track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+        </select>
       </div>
       <div>
         <label class="text-xs text-gray-500 block mb-1">Event Type</label>
@@ -163,6 +168,7 @@ export class CardEventsPage implements OnInit {
   private api   = inject(ApiService);
   private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
+  readonly activeProperty = inject(ActivePropertyService);
 
   events   = signal<any[]>([]);
   total    = signal(0);
@@ -178,7 +184,7 @@ export class CardEventsPage implements OnInit {
   dateTo              = '';
 
   ngOnInit(): void {
-    this.propertyId = localStorage.getItem('selectedPropertyId') ?? '';
+    this.propertyId = this.activeProperty.propertyId();
     const guestId  = this.route.snapshot.queryParamMap.get('guest_id');
     if (guestId) this.loadGuestTimeline(guestId);
     else if (this.propertyId) this.load();
