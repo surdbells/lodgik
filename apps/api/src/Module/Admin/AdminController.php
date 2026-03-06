@@ -301,7 +301,7 @@ final class AdminController
     public function createAppRelease(Request $request, Response $response): Response
     {
         $body = (array) ($request->getParsedBody() ?? []);
-        $release = $this->adminService->createAppRelease($body, $request->getAttribute('user_id'));
+        $release = $this->adminService->createAppRelease($body, $request->getAttribute('auth.user_id'));
         return $this->response->success($response, $release->toArray(), 201);
     }
 

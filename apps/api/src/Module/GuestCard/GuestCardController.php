@@ -72,7 +72,7 @@ final class GuestCardController
         try {
             $body      = (array) ($request->getParsedBody() ?? []);
             $tenantId  = $request->getAttribute('auth.tenant_id');
-            $userId    = $request->getAttribute('user_id');
+            $userId    = $request->getAttribute('auth.user_id');
 
             $bookingId = $body['booking_id'] ?? null;
             if (!$bookingId) return $this->response->error($response, 'booking_id is required', 400);
@@ -95,7 +95,7 @@ final class GuestCardController
         try {
             $body     = (array) ($request->getParsedBody() ?? []);
             $tenantId = $request->getAttribute('auth.tenant_id');
-            $userId   = $request->getAttribute('user_id');
+            $userId   = $request->getAttribute('auth.user_id');
 
             $cardUid = trim($body['card_uid'] ?? '');
             $context = trim($body['context']  ?? '');
@@ -126,7 +126,7 @@ final class GuestCardController
     {
         try {
             $tenantId = $request->getAttribute('auth.tenant_id');
-            $userId   = $request->getAttribute('user_id');
+            $userId   = $request->getAttribute('auth.user_id');
             $cardUid  = $args['cardUid'] ?? '';
 
             if (!$cardUid) return $this->response->error($response, 'card_uid is required', 400);
@@ -149,7 +149,7 @@ final class GuestCardController
         try {
             $body     = (array) ($request->getParsedBody() ?? []);
             $tenantId = $request->getAttribute('auth.tenant_id');
-            $userId   = $request->getAttribute('user_id');
+            $userId   = $request->getAttribute('auth.user_id');
 
             $result = $this->cardService->reportLost(
                 $args['id'],
@@ -170,7 +170,7 @@ final class GuestCardController
         try {
             $body     = (array) ($request->getParsedBody() ?? []);
             $tenantId = $request->getAttribute('auth.tenant_id');
-            $userId   = $request->getAttribute('user_id');
+            $userId   = $request->getAttribute('auth.user_id');
 
             $card = $this->cardService->deactivate(
                 $args['id'],

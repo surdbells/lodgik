@@ -237,7 +237,7 @@ import { AuthService } from '@lodgik/shared';
           </div>
           <div class="grid grid-cols-2 gap-3 text-sm">
             <div><span class="text-gray-400">Type</span><p class="font-medium">{{ detail.booking_type_label }}</p></div>
-            <div><span class="text-gray-400">Room</span><p class="font-medium">{{ detail.room_id || 'Unassigned' }}</p></div>
+            <div><span class="text-gray-400">Room</span><p class="font-medium">{{ getRoomNumber(detail.room_id) }}</p></div>
             <div><span class="text-gray-400">Check-in</span><p class="font-medium">{{ detail.check_in | date:'medium' }}</p></div>
             <div><span class="text-gray-400">Check-out</span><p class="font-medium">{{ detail.check_out | date:'medium' }}</p></div>
             <div><span class="text-gray-400">Guests</span><p class="font-medium">{{ detail.adults }} adults, {{ detail.children }} children</p></div>
@@ -303,11 +303,24 @@ export class BookingsPage implements OnInit {
   ganttRows = computed(() => {
     const bookings = this.calendarBookings();
     const days = this.ganttDays();
-    // Group unique rooms from bookings
+    const allRooms = this.availableRooms();
+
+    // Build a lookup map from the fully-loaded rooms list (has room_number, room_type_name)
+    const roomLookup = new Map<string, any>();
+    for (const r of allRooms) {
+      roomLookup.set(r.id, r);
+    }
+
+    // Group unique rooms from bookings; resolve name from roomLookup
     const roomMap = new Map<string, any>();
     for (const b of bookings) {
       if (b.room_id && !roomMap.has(b.room_id)) {
-        roomMap.set(b.room_id, { room_id: b.room_id, room_number: b.room_number ?? b.room_id, room_type: b.room_type_name ?? '' });
+        const roomData = roomLookup.get(b.room_id);
+        roomMap.set(b.room_id, {
+          room_id: b.room_id,
+          room_number: roomData?.room_number ?? b.room_number ?? '—',
+          room_type: roomData?.room_type_name ?? b.room_type_name ?? '',
+        });
       }
     }
     return Array.from(roomMap.values()).map(room => {
@@ -456,6 +469,11 @@ export class BookingsPage implements OnInit {
 
   getRoomTypeName(id: string): string {
     return this.roomTypes().find((rt: any) => rt.id === id)?.name ?? '—';
+  }
+
+  getRoomNumber(roomId: string): string {
+    if (!roomId) return 'Unassigned';
+    return this.availableRooms().find((r: any) => r.id === roomId)?.room_number ?? roomId;
   }
 
   createBooking(): void {

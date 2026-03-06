@@ -71,7 +71,7 @@ final class RoomController
 
         try {
             $tenantId = $request->getAttribute('auth.tenant_id');
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $roomType = $this->roomService->createRoomType($dto, $tenantId, $userId);
 
             return $this->response->created($response, $this->serializeRoomType($roomType));
@@ -92,7 +92,7 @@ final class RoomController
         }
 
         try {
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $roomType = $this->roomService->updateRoomType($args['id'], $dto, $userId);
 
             return $this->response->success($response, $this->serializeRoomType($roomType));
@@ -105,7 +105,7 @@ final class RoomController
     public function deleteRoomType(Request $request, Response $response, array $args): Response
     {
         try {
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $this->roomService->deleteRoomType($args['id'], $userId);
 
             return $this->response->success($response, null, 'Room type deleted');
@@ -166,7 +166,7 @@ final class RoomController
 
         try {
             $tenantId = $request->getAttribute('auth.tenant_id');
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $room = $this->roomService->createRoom($dto, $tenantId, $userId);
 
             return $this->response->created($response, $this->serializeRoom($room));
@@ -188,7 +188,7 @@ final class RoomController
 
         try {
             $tenantId = $request->getAttribute('auth.tenant_id');
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $rooms = $this->roomService->bulkCreateRooms($dto, $tenantId, $userId);
 
             $items = array_map(fn(Room $r) => $this->serializeRoom($r), $rooms);
@@ -214,7 +214,7 @@ final class RoomController
         }
 
         try {
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $room = $this->roomService->updateRoom($args['id'], $dto, $userId);
 
             return $this->response->success($response, $this->serializeRoom($room));
@@ -227,7 +227,7 @@ final class RoomController
     public function deleteRoom(Request $request, Response $response, array $args): Response
     {
         try {
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $this->roomService->deleteRoom($args['id'], $userId);
 
             return $this->response->success($response, null, 'Room deleted');
@@ -250,7 +250,7 @@ final class RoomController
         }
 
         try {
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $newStatus = RoomStatus::from($statusValue);
             $room = $this->roomService->changeStatus($args['id'], $newStatus, $userId, $notes);
 

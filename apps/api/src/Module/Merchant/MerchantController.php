@@ -28,7 +28,7 @@ final class MerchantController
     public function register(Request $req, Response $res): Response
     {
         $body = (array) ($req->getParsedBody() ?? []);
-        $body['user_id'] = $req->getAttribute('user_id');
+        $body['user_id'] = $req->getAttribute('auth.user_id');
         $merchant = $this->service->registerMerchant($body);
         return JsonResponse::created($res, $merchant->toArray());
     }
@@ -176,7 +176,7 @@ final class MerchantController
     public function reviewKyc(Request $req, Response $res, array $args): Response
     {
         $body = (array) ($req->getParsedBody() ?? []);
-        $kyc = $this->service->reviewKyc($args['id'], $body['status'], $body['reason'] ?? null, $req->getAttribute('user_id'));
+        $kyc = $this->service->reviewKyc($args['id'], $body['status'], $body['reason'] ?? null, $req->getAttribute('auth.user_id'));
         return JsonResponse::ok($res, $kyc->toArray());
     }
 
@@ -209,7 +209,7 @@ final class MerchantController
 
     public function approveBank(Request $req, Response $res, array $args): Response
     {
-        $bank = $this->service->approveBankAccount($args['bank_id'], $req->getAttribute('user_id'));
+        $bank = $this->service->approveBankAccount($args['bank_id'], $req->getAttribute('auth.user_id'));
         return JsonResponse::ok($res, $bank->toArray());
     }
 
@@ -400,7 +400,7 @@ final class MerchantController
     public function createResource(Request $req, Response $res): Response
     {
         $body = (array) ($req->getParsedBody() ?? []);
-        $r = $this->service->createResource($body, $req->getAttribute('user_id'));
+        $r = $this->service->createResource($body, $req->getAttribute('auth.user_id'));
         return JsonResponse::created($res, $r->toArray());
     }
 

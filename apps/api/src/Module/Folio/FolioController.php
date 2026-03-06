@@ -47,7 +47,7 @@ final class FolioController
     public function addCharge(Request $request, Response $response, array $args): Response
     {
         $body = $request->getParsedBody() ?? [];
-        $userId = $request->getAttribute('user_id');
+        $userId = $request->getAttribute('auth.user_id');
         try {
             $charge = $this->folioService->addCharge(
                 $args['id'], $body['category'] ?? 'other', $body['description'] ?? '', $body['amount'] ?? '0', (int)($body['quantity'] ?? 1), $userId, $body['notes'] ?? null,
@@ -62,7 +62,7 @@ final class FolioController
     public function recordPayment(Request $request, Response $response, array $args): Response
     {
         $body = $request->getParsedBody() ?? [];
-        $userId = $request->getAttribute('user_id');
+        $userId = $request->getAttribute('auth.user_id');
         try {
             $payment = $this->folioService->recordPayment(
                 $args['id'], $body['payment_method'] ?? 'cash', $body['amount'] ?? '0',
@@ -78,7 +78,7 @@ final class FolioController
     /** POST /api/folios/payments/{paymentId}/confirm */
     public function confirmPayment(Request $request, Response $response, array $args): Response
     {
-        $userId = $request->getAttribute('user_id');
+        $userId = $request->getAttribute('auth.user_id');
         try {
             $payment = $this->folioService->confirmPayment($args['paymentId'], $userId);
             return $this->response->success($response, $payment->toArray(), 'Payment confirmed');
@@ -91,7 +91,7 @@ final class FolioController
     public function rejectPayment(Request $request, Response $response, array $args): Response
     {
         $body = $request->getParsedBody() ?? [];
-        $userId = $request->getAttribute('user_id');
+        $userId = $request->getAttribute('auth.user_id');
         try {
             $payment = $this->folioService->rejectPayment($args['paymentId'], $body['reason'] ?? null, $userId);
             return $this->response->success($response, $payment->toArray(), 'Payment rejected');
@@ -104,7 +104,7 @@ final class FolioController
     public function addAdjustment(Request $request, Response $response, array $args): Response
     {
         $body = $request->getParsedBody() ?? [];
-        $userId = $request->getAttribute('user_id');
+        $userId = $request->getAttribute('auth.user_id');
         try {
             $adj = $this->folioService->addAdjustment(
                 $args['id'], $body['type'] ?? 'discount', $body['description'] ?? '', $body['amount'] ?? '0', $userId, $body['reason'] ?? null,
@@ -118,7 +118,7 @@ final class FolioController
     /** POST /api/folios/{id}/close */
     public function close(Request $request, Response $response, array $args): Response
     {
-        $userId = $request->getAttribute('user_id');
+        $userId = $request->getAttribute('auth.user_id');
         try {
             $folio = $this->folioService->close($args['id'], $userId);
             return $this->response->success($response, $folio->toArray(), 'Folio closed');
@@ -130,7 +130,7 @@ final class FolioController
     /** POST /api/folios/{id}/void */
     public function void(Request $request, Response $response, array $args): Response
     {
-        $userId = $request->getAttribute('user_id');
+        $userId = $request->getAttribute('auth.user_id');
         try {
             $folio = $this->folioService->voidFolio($args['id'], $userId);
             return $this->response->success($response, $folio->toArray(), 'Folio voided');

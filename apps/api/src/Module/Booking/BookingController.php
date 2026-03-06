@@ -80,7 +80,7 @@ final class BookingController
 
         try {
             $tenantId = $request->getAttribute('auth.tenant_id');
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->create($dto, $tenantId, $userId);
 
             return $this->response->created($response, $this->serialize($booking));
@@ -94,7 +94,7 @@ final class BookingController
     {
         $body = (array) ($request->getParsedBody() ?? []);
         try {
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->checkIn($args['id'], $body['room_id'] ?? null, $userId);
             return $this->response->success($response, $this->serialize($booking), 'Guest checked in');
         } catch (\RuntimeException | \InvalidArgumentException $e) {
@@ -106,7 +106,7 @@ final class BookingController
     public function checkOut(Request $request, Response $response, array $args): Response
     {
         try {
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->checkOut($args['id'], $userId);
             return $this->response->success($response, $this->serialize($booking), 'Guest checked out');
         } catch (\RuntimeException | \InvalidArgumentException $e) {
@@ -119,7 +119,7 @@ final class BookingController
     {
         $body = (array) ($request->getParsedBody() ?? []);
         try {
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->cancel($args['id'], $body['reason'] ?? null, $userId);
             return $this->response->success($response, $this->serialize($booking), 'Booking cancelled');
         } catch (\RuntimeException | \InvalidArgumentException $e) {
@@ -131,7 +131,7 @@ final class BookingController
     public function noShow(Request $request, Response $response, array $args): Response
     {
         try {
-            $userId = $request->getAttribute('user_id');
+            $userId = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->noShow($args['id'], $userId);
             return $this->response->success($response, $this->serialize($booking), 'Booking marked as no-show');
         } catch (\RuntimeException | \InvalidArgumentException $e) {
