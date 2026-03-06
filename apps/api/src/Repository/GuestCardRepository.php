@@ -76,7 +76,7 @@ final class GuestCardRepository extends BaseRepository
             $qb->andWhere('c.status = :status')->setParameter('status', $status);
         }
 
-        return $this->paginate($qb, $page, $limit);
+        return $this->paginate($qb, $page, $limit, 'c');
     }
 
     /** Check whether a card UID already exists globally (across all tenants) */

@@ -58,6 +58,11 @@ import {
   Wifi,
   Handshake,
 
+  // ─── Guest Cards ──────────────────────
+  ScanLine,
+  Activity,
+  Radio,
+
   // ─── System ───────────────────────────
   Building,
   Puzzle,
@@ -153,6 +158,9 @@ export const LODGIK_ICONS = {
   Settings,
   Bell,
   LogOut,
+  ScanLine,
+  Activity,
+  Radio,
   ChevronLeft,
   ChevronDown,
   ChevronRight,
