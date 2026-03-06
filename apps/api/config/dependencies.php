@@ -257,6 +257,8 @@ return function (ContainerBuilder $builder): void {
             return new TenantMiddleware(
                 em: $c->get(EntityManagerInterface::class),
                 tenantListener: $c->get(TenantListener::class),
+                featureService: $c->get(FeatureService::class),
+                redis: $c->get(RedisClient::class),
             );
         },
 
@@ -406,6 +408,7 @@ return function (ContainerBuilder $builder): void {
             return new FeatureService(
                 em: $c->get(EntityManagerInterface::class),
                 tenantRepo: $c->get(TenantRepository::class),
+                redis: $c->get(RedisClient::class),
             );
         },
 

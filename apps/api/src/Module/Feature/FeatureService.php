@@ -10,6 +10,7 @@ use Lodgik\Entity\Tenant;
 use Lodgik\Entity\TenantFeatureModule;
 use Lodgik\Entity\SubscriptionPlan;
 use Lodgik\Repository\TenantRepository;
+use Predis\Client as RedisClient;
 
 final class FeatureService
 {
@@ -19,6 +20,7 @@ final class FeatureService
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly TenantRepository $tenantRepo,
+        private readonly RedisClient $redis,
     ) {}
 
     // ─── Module Registry ───────────────────────────────────────
@@ -161,6 +163,8 @@ final class FeatureService
 
         $this->em->flush();
 
+        $this->bustCache($tenantId);
+
         return $added;
     }
 
@@ -223,6 +227,8 @@ final class FeatureService
         }
 
         $this->em->flush();
+
+        $this->bustCache($tenantId);
 
         return $removed;
     }
@@ -378,5 +384,19 @@ final class FeatureService
     {
         $order = self::TIER_ORDER;
         return ($order[$tenantTier] ?? 0) >= ($order[$minTier] ?? 0);
+    }
+
+    /**
+     * Invalidate the Redis feature cache for a tenant.
+     * Called after any enable/disable operation so TenantMiddleware
+     * recomputes the effective module list on the next request.
+     */
+    private function bustCache(string $tenantId): void
+    {
+        try {
+            $this->redis->del(["tenant:{$tenantId}:features"]);
+        } catch (\Throwable) {
+            // Non-critical
+        }
     }
 }
