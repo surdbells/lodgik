@@ -78,7 +78,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                 </div>
               </div>
               <div class="flex items-center gap-3">
-                <ui-badge [variant]="g.status === 'confirmed' ? 'success' : g.status === 'cancelled' ? 'error' : 'warning'">
+                <ui-badge [variant]="g.status === 'confirmed' ? 'success' : g.status === 'cancelled' ? 'danger' : 'warning'">
                   {{ g.status }}
                 </ui-badge>
                 @if (g.status === 'tentative') {
@@ -240,7 +240,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
     }
   `,
 })
-export class GroupBookingsPage implements OnInit {
+export default class GroupBookingsPage implements OnInit {
   private api  = inject(ApiService);
   private toast = inject(ToastService);
 

@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { FormsModule, DecimalPipe } from '@angular/forms';
-import { DecimalPipe as NgDecimalPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { DatePipe, DecimalPipe, TitleCasePipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, BadgeComponent } from '@lodgik/shared';
 
 interface Consumable { id: string; name: string; unit: string; expected_per_room: string; reorder_threshold: string; notes?: string; is_active: boolean; }
@@ -10,7 +10,7 @@ interface Discrepancy  { id: string; consumable_name: string; period_start: stri
 @Component({
   selector: 'app-housekeeping-consumables',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, NgDecimalPipe],
+  imports: [FormsModule, DatePipe, DecimalPipe, TitleCasePipe, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
   template: `
     <ui-page-header title="Consumables" icon="inventory_2"
       [breadcrumbs]="['Housekeeping','Consumables']"
@@ -237,7 +237,7 @@ interface Discrepancy  { id: string; consumable_name: string; period_start: stri
                     {{ d.rooms_serviced }} rooms serviced
                   </p>
                 </div>
-                <ui-badge [variant]="d.resolved ? 'success' : 'error'">
+                <ui-badge [variant]="d.resolved ? 'success' : 'danger'">
                   {{ d.resolved ? 'Resolved' : 'Flagged' }}
                 </ui-badge>
               </div>
@@ -420,6 +420,6 @@ export class HousekeepingConsumablesPage implements OnInit {
   }
 
   reqStatusVariant(status: string): string {
-    return { pending: 'warning', storekeeper_approved: 'info', admin_approved: 'info', fulfilled: 'success', rejected: 'error' }[status] ?? 'neutral';
+    return ({ pending: 'warning', storekeeper_approved: 'info', admin_approved: 'info', fulfilled: 'success', rejected: 'danger' } as Record<string, 'success'|'danger'|'warning'|'info'|'neutral'|'primary'>)[status] ?? 'neutral';
   }
 }
