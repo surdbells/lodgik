@@ -5,6 +5,9 @@ import { LoginComponent } from './pages/login.component';
 import { SecurityNotificationsComponent } from './pages/notifications.component';
 import { SecurityDashboardComponent } from './pages/security-dashboard.component';
 import { GateVerifyComponent } from './pages/gate-verify.component';
+import { GateCardComponent } from './pages/gate-card.component';
+import { SecurityExitComponent } from './pages/security-exit.component';
+import { DiscrepanciesComponent } from './pages/discrepancies.component';
 import { MovementComponent } from './pages/movement.component';
 import { VisitorsComponent } from './pages/visitors.component';
 import { IncidentReportComponent } from './pages/incident-report.component';
@@ -13,15 +16,18 @@ import { MusterComponent } from './pages/muster.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
-  { path: 'login', component: LoginComponent },
-  { path: 'notifications', component: SecurityNotificationsComponent },
-  { path: 'dashboard', component: SecurityDashboardComponent },
-  { path: 'gate-verify', component: GateVerifyComponent },
-  { path: 'movement', component: MovementComponent },
-  { path: 'visitors', component: VisitorsComponent },
+  { path: 'login',           component: LoginComponent },
+  { path: 'notifications',   component: SecurityNotificationsComponent },
+  { path: 'dashboard',       component: SecurityDashboardComponent },
+  { path: 'gate-verify',     component: GateVerifyComponent },
+  { path: 'gate-card',       component: GateCardComponent },
+  { path: 'security-exit',   component: SecurityExitComponent },
+  { path: 'discrepancies',   component: DiscrepanciesComponent },
+  { path: 'movement',        component: MovementComponent },
+  { path: 'visitors',        component: VisitorsComponent },
   { path: 'incident-report', component: IncidentReportComponent },
   { path: 'checkout-verify', component: CheckoutVerifyComponent },
-  { path: 'muster', component: MusterComponent },
+  { path: 'muster',          component: MusterComponent },
 ];
 
 @NgModule({

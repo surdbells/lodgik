@@ -16,6 +16,20 @@ export class SecurityApiService {
   }
   get propertyId(): string { return ApplicationSettings.getString(PID_KEY, ''); }
 
+  // Guest Cards
+  lookupCard(query: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/cards/lookup?q=${encodeURIComponent(query)}&property_id=${this.propertyId}`, { headers: this.h() });
+  }
+  gateIssueCard(data: { card_id: string; plate_number?: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/cards/gate-issue`, { ...data, property_id: this.propertyId }, { headers: this.h() });
+  }
+  securityExit(cardId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/cards/security-exit`, { card_id: cardId, property_id: this.propertyId }, { headers: this.h() });
+  }
+  getCheckoutDiscrepancies(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/security/checkout-discrepancies?property_id=${this.propertyId}`, { headers: this.h() });
+  }
+
   // Gate Passes
   getGatePasses(status?: string): Observable<any> { let url = `${this.baseUrl}/security/gate-passes?property_id=${this.propertyId}`; if (status) url += `&status=${status}`; return this.http.get(url, { headers: this.h() }); }
   approveGatePass(id: string): Observable<any> { return this.http.post(`${this.baseUrl}/security/gate-passes/${id}/approve`, {}, { headers: this.h() }); }
