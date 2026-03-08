@@ -77,6 +77,39 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
             </select></div>
           <div><label class="block text-xs text-gray-500 mb-1">Reference #</label>
             <input [(ngModel)]="form.reference" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50" placeholder="Receipt number"></div>
+
+          <!-- Phase 5: Vendor type for market/walk-in purchases -->
+          <div class="col-span-full mt-2 pt-3 border-t border-gray-100">
+            <label class="block text-xs font-medium text-gray-500 mb-2">Purchase Type</label>
+            <div class="flex gap-2">
+              @for (vt of vendorTypes; track vt.value) {
+                <button type="button" (click)="form.vendor_type = vt.value"
+                  class="px-3 py-1.5 text-xs rounded-lg border transition-colors"
+                  [class.bg-sage-600]="form.vendor_type === vt.value"
+                  [class.text-white]="form.vendor_type === vt.value"
+                  [class.border-sage-600]="form.vendor_type === vt.value"
+                  [class.text-gray-600]="form.vendor_type !== vt.value"
+                  [class.border-gray-200]="form.vendor_type !== vt.value">
+                  {{ vt.label }}
+                </button>
+              }
+            </div>
+            @if (form.vendor_type === 'market' || form.vendor_type === 'petty_cash') {
+              <div class="mt-3 p-3 bg-amber-50 border border-amber-100 rounded-lg space-y-2">
+                <p class="text-xs text-amber-700 font-medium">⚠️ Market/petty-cash purchases require a receipt or signed note.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Market Vendor Name *</label>
+                    <input [(ngModel)]="form.market_vendor_name" placeholder="e.g. Balogun Market Trader" class="w-full px-3 py-2 border rounded-lg text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Signed Note URL (if no receipt)</label>
+                    <input [(ngModel)]="form.signed_note_url" placeholder="https://…" class="w-full px-3 py-2 border rounded-lg text-sm">
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
           <div class="md:col-span-3"><label class="block text-xs text-gray-500 mb-1">Description</label>
             <textarea [(ngModel)]="form.description" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50" placeholder="What was purchased and why"></textarea></div>
         </div>
@@ -95,6 +128,30 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
         <ui-stats-card label="Approved" [value]="approvedCt()" icon="circle-check"></ui-stats-card>
         <ui-stats-card label="This Month" [value]="'₦' + monthAmt().toLocaleString()" icon="trending-up"></ui-stats-card>
       </div>
+
+      <!-- Phase 5: Pending second-approval alert queue -->
+      @if (pendingSecondApproval().length > 0) {
+        <div class="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <p class="text-xs font-semibold text-amber-800 mb-3">⚠️ {{ pendingSecondApproval().length }} market/petty-cash purchase(s) awaiting admin second approval</p>
+          <div class="space-y-2">
+            @for (e of pendingSecondApproval(); track e.id) {
+              <div class="flex items-center justify-between bg-white border border-amber-100 rounded-lg px-3 py-2">
+                <div>
+                  <p class="text-xs font-medium text-gray-800">{{ e.description }}</p>
+                  <p class="text-xs text-gray-500">₦{{ fmtAmt(e.amount) }} · {{ e.market_vendor_name || e.vendor || 'Unknown vendor' }} · {{ e.expense_date }}</p>
+                  @if (e.spending_limit_breach) {
+                    <p class="text-xs text-red-600 font-medium mt-0.5">🚨 Exceeds spending limit</p>
+                  }
+                </div>
+                <button (click)="secondApprove(e.id)" class="ml-4 px-3 py-1.5 bg-amber-600 text-white text-xs rounded-lg hover:bg-amber-700">
+                  Second Approve
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       <div class="flex gap-2 mb-4">
         @for (f of statusFilters; track f.value) {
           <button (click)="filterStatus = f.value; loadExpenses()" [class]="filterStatus === f.value ? 'px-3 py-1.5 bg-sage-600 text-white rounded-full text-xs font-medium' : 'px-3 py-1.5 border border-gray-300 text-gray-500 rounded-full text-xs'">{{ f.label }}</button>
@@ -117,7 +174,14 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                 <td class="px-4 py-3 whitespace-nowrap">{{ e.expense_date }}</td>
                 <td class="px-4 py-3">{{ e.category_name }}</td>
                 <td class="px-4 py-3 max-w-[200px] truncate">{{ e.description }}</td>
-                <td class="px-4 py-3">{{ e.vendor || '—' }}</td>
+                <td class="px-4 py-3">
+                  {{ e.market_vendor_name || e.vendor || '—' }}
+                  @if (e.vendor_type === 'market') { <span class="ml-1 text-xs text-amber-600">🛒</span> }
+                  @if (e.vendor_type === 'petty_cash') { <span class="ml-1 text-xs text-blue-600">💵</span> }
+                  @if (e.second_approval_required && !e.second_approver_id) {
+                    <span class="block text-xs text-red-500 mt-0.5">Needs 2nd approval</span>
+                  }
+                </td>
                 <td class="px-4 py-3 text-right font-semibold">₦{{ fmtAmt(e.amount) }}</td>
                 <td class="px-4 py-3 text-center"><span class="px-2 py-1 rounded-full text-xs font-medium" [class]="stCls(e.status)">{{ e.status }}</span></td>
                 <td class="px-4 py-3 text-center whitespace-nowrap">
@@ -144,13 +208,24 @@ export default class ExpensesPage implements OnInit {
 
   loading = signal(true); expenses = signal<any[]>([]); categories = signal<any[]>([]); vendors = signal<string[]>([]);
   totalAmt = signal(0); monthAmt = signal(0); pendingCt = signal(0); approvedCt = signal(0);
+  pendingSecondApproval = signal<any[]>([]);
   showForm = false; showCatMgmt = false; showVendorMgmt = false; filterStatus = '';
   newCatName = ''; newVendor = '';
-  form: any = { category_id: '', category_name: '', amount: '', expense_date: new Date().toISOString().split('T')[0], vendor: '', vendorOther: '', description: '', payment_method: 'cash', reference: '' };
+  form: any = {
+    category_id: '', category_name: '', amount: '', expense_date: new Date().toISOString().split('T')[0],
+    vendor: '', vendorOther: '', description: '', payment_method: 'cash', reference: '',
+    // Phase 5: Market purchase fields
+    vendor_type: 'registered', market_vendor_name: '', signed_note_url: '',
+  };
   statusFilters = [{ label: 'All', value: '' }, { label: 'Pending', value: 'pending' }, { label: 'Approved', value: 'approved' }, { label: 'Paid', value: 'paid' }];
+  vendorTypes = [
+    { value: 'registered', label: '🏪 Registered Vendor' },
+    { value: 'market',     label: '🛒 Market / Walk-in' },
+    { value: 'petty_cash', label: '💵 Petty Cash' },
+  ];
   get pid(): string { return this.activeProperty.propertyId(); }
 
-  ngOnInit(): void { this.loadCategories(); this.loadVendors(); this.loadExpenses(); }
+  ngOnInit(): void { this.loadCategories(); this.loadVendors(); this.loadExpenses(); this.loadPendingSecondApproval(); }
 
   loadExpenses(): void {
     this.loading.set(true);
@@ -184,8 +259,48 @@ export default class ExpensesPage implements OnInit {
     if (!this.form.category_id || !this.form.amount || !this.form.description) { this.toast.error('Category, amount, description required'); return; }
     const vendor = this.form.vendor === '__other' ? this.form.vendorOther : this.form.vendor;
     if (vendor && !this.vendors().includes(vendor)) { this.vendors.update(v => [...v, vendor]); this.saveVendors(); }
-    this.api.post('/expenses', { property_id: this.pid, category_id: this.form.category_id, category_name: this.form.category_name, description: this.form.description, amount: String(Math.round(+this.form.amount * 100)), expense_date: this.form.expense_date, vendor, payment_method: this.form.payment_method, reference: this.form.reference || undefined }).subscribe((r: any) => {
-      if (r.success) { this.toast.success('Expense submitted'); this.showForm = false; this.form = { category_id: '', category_name: '', amount: '', expense_date: new Date().toISOString().split('T')[0], vendor: '', vendorOther: '', description: '', payment_method: 'cash', reference: '' }; this.loadExpenses(); } else this.toast.error(r.message);
+
+    // Phase 5: require receipt OR signed note for market purchases
+    const isMarket = this.form.vendor_type === 'market' || this.form.vendor_type === 'petty_cash';
+    if (isMarket && !this.form.receipt_url && !this.form.signed_note_url) {
+      this.toast.error('A receipt URL or signed note URL is required for market/petty cash purchases');
+      return;
+    }
+
+    const payload: any = {
+      property_id: this.pid, category_id: this.form.category_id, category_name: this.form.category_name,
+      description: this.form.description, amount: String(Math.round(+this.form.amount * 100)),
+      expense_date: this.form.expense_date, vendor, payment_method: this.form.payment_method,
+      reference: this.form.reference || undefined,
+      // Phase 5 fields
+      vendor_type: this.form.vendor_type,
+    };
+    if (this.form.market_vendor_name) payload.market_vendor_name = this.form.market_vendor_name;
+    if (this.form.signed_note_url)    payload.signed_note_url    = this.form.signed_note_url;
+
+    this.api.post('/expenses', payload).subscribe((r: any) => {
+      if (r.success) {
+        this.toast.success('Expense submitted');
+        this.showForm = false;
+        this.form = {
+          category_id: '', category_name: '', amount: '', expense_date: new Date().toISOString().split('T')[0],
+          vendor: '', vendorOther: '', description: '', payment_method: 'cash', reference: '',
+          vendor_type: 'registered', market_vendor_name: '', signed_note_url: '',
+        };
+        this.loadExpenses();
+        this.loadPendingSecondApproval();
+      } else this.toast.error(r.message);
+    });
+  }
+  loadPendingSecondApproval(): void {
+    this.api.get('/expenses/pending-second-approval', { property_id: this.pid }).subscribe((r: any) => {
+      this.pendingSecondApproval.set(r?.data || []);
+    });
+  }
+  secondApprove(id: string): void {
+    this.api.post(`/expenses/${id}/second-approve`, { approver_name: 'Admin' }).subscribe((r: any) => {
+      if (r?.success) { this.toast.success('Second approval recorded'); this.loadExpenses(); this.loadPendingSecondApproval(); }
+      else this.toast.error(r?.message || 'Failed');
     });
   }
   doSubmit(id: string): void { this.api.post(`/expenses/${id}/submit`, {}).subscribe(() => { this.toast.success('Submitted'); this.loadExpenses(); }); }

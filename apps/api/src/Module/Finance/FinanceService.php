@@ -28,14 +28,61 @@ final class FinanceService
       return array_map(fn($e) => $e->toArray(), $qb->getQuery()->getResult()); }
 
     public function createExpense(string $pid, string $catId, string $catName, string $desc, string $amt, string $date, string $by, string $byName, string $tid, array $x = []): Expense
-    { $e = new Expense($pid, $catId, $catName, $desc, $amt, new \DateTimeImmutable($date), $by, $byName, $tid);
-      if (!empty($x['vendor'])) $e->setVendor($x['vendor']); if (!empty($x['receipt_url'])) $e->setReceiptUrl($x['receipt_url']); if (!empty($x['notes'])) $e->setNotes($x['notes']);
-      if ($x['auto_submit'] ?? false) $e->submit(); $this->em->persist($e); $this->em->flush(); return $e; }
+    {
+        $e = new Expense($pid, $catId, $catName, $desc, $amt, new \DateTimeImmutable($date), $by, $byName, $tid);
+        if (!empty($x['vendor']))      $e->setVendor($x['vendor']);
+        if (!empty($x['receipt_url'])) $e->setReceiptUrl($x['receipt_url']);
+        if (!empty($x['notes']))       $e->setNotes($x['notes']);
+        if ($x['auto_submit'] ?? false) $e->submit();
+
+        // Phase 5: Market/walk-in purchase fields
+        $vendorType = $x['vendor_type'] ?? 'registered';
+        $e->setVendorType($vendorType);
+        if (!empty($x['market_vendor_name'])) $e->setMarketVendorName($x['market_vendor_name']);
+        if (!empty($x['signed_note_url']))    $e->setSignedNoteUrl($x['signed_note_url']);
+
+        if ($vendorType === 'market' || $vendorType === 'petty_cash') {
+            $property = $this->em->find(\Lodgik\Entity\Property::class, $pid);
+            if ($property !== null) {
+                $limitKobo = (int) $property->getSetting('market_purchase_spending_limit_kobo', 0);
+                if ($limitKobo > 0 && (int)$amt > $limitKobo) { $e->setSpendingLimitBreach(true); }
+                $requireDual = (bool) $property->getSetting('market_purchase_require_dual_approval', false);
+                $e->setSecondApprovalRequired($requireDual);
+            }
+        }
+
+        $this->em->persist($e);
+        $this->em->flush();
+        return $e;
+    }
 
     public function submitExpense(string $id): Expense { $e = $this->em->find(Expense::class, $id); $e->submit(); $this->em->flush(); return $e; }
     public function approveExpense(string $id, string $uid, string $name): Expense { $e = $this->em->find(Expense::class, $id); $e->approve($uid, $name); $this->em->flush(); return $e; }
     public function rejectExpense(string $id, string $uid, string $name, ?string $reason = null): Expense { $e = $this->em->find(Expense::class, $id); $e->reject($uid, $name, $reason); $this->em->flush(); return $e; }
     public function markExpensePaid(string $id, string $method, ?string $ref = null): Expense { $e = $this->em->find(Expense::class, $id); $e->markPaid($method, $ref); $this->em->flush(); return $e; }
+
+    /** Phase 5: Admin second-approval for market purchases */
+    public function secondApproveExpense(string $id, string $uid, string $name): Expense
+    {
+        $e = $this->em->find(Expense::class, $id);
+        if ($e === null) throw new \RuntimeException('Expense not found');
+        $e->secondApprove($uid, $name);
+        $this->em->flush();
+        return $e;
+    }
+
+    public function listPendingSecondApproval(string $propertyId): array
+    {
+        return array_map(fn($e) => $e->toArray(), $this->em->createQueryBuilder()
+            ->select('e')->from(Expense::class, 'e')
+            ->where('e.propertyId = :pid')->setParameter('pid', $propertyId)
+            ->andWhere('e.secondApprovalRequired = true')
+            ->andWhere('e.secondApprovedAt IS NULL')
+            ->andWhere('e.status = :s')->setParameter('s', 'approved')
+            ->orderBy('e.createdAt', 'DESC')
+            ->getQuery()->getResult()
+        );
+    }
 
     public function listNightAudits(string $pid, int $limit = 30): array { return array_map(fn($a) => $a->toArray(), $this->em->getRepository(NightAudit::class)->findBy(['propertyId' => $pid], ['auditDate' => 'DESC'], $limit)); }
     public function generateNightAudit(string $pid, string $date, string $tid): NightAudit

@@ -22,6 +22,23 @@ final class FinanceController
     public function rejectExpense(Request $req, Response $res, array $args): Response { $d = $this->body($req); return $this->json($res, ['success' => true, 'data' => $this->svc->rejectExpense($args['id'], $req->getAttribute('auth.user_id'), $d['approver_name'] ?? '', $d['reason'] ?? null)->toArray()]); }
     public function markExpensePaid(Request $req, Response $res, array $args): Response { $d = $this->body($req); return $this->json($res, ['success' => true, 'data' => $this->svc->markExpensePaid($args['id'], $d['payment_method'] ?? 'cash', $d['reference'] ?? null)->toArray()]); }
 
+    // Phase 5: Market/walk-in purchase actions
+    public function secondApproveExpense(Request $req, Response $res, array $args): Response
+    {
+        $d = $this->body($req);
+        try {
+            $e = $this->svc->secondApproveExpense($args['id'], $req->getAttribute('auth.user_id'), $d['approver_name'] ?? 'Admin');
+            return $this->json($res, ['success' => true, 'data' => $e->toArray()]);
+        } catch (\DomainException $ex) {
+            return $this->json($res, ['success' => false, 'message' => $ex->getMessage()], 422);
+        }
+    }
+    public function pendingSecondApproval(Request $req, Response $res): Response
+    {
+        $pid = $req->getQueryParams()['property_id'] ?? $req->getAttribute('auth.property_id') ?? '';
+        return $this->json($res, ['success' => true, 'data' => $this->svc->listPendingSecondApproval($pid)]);
+    }
+
     // Night Audit
     public function listAudits(Request $req, Response $res): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->listNightAudits($req->getQueryParams()['property_id'] ?? '')]); }
     public function generateAudit(Request $req, Response $res): Response { $d = $this->body($req); $pid = $d['property_id'] ?? $req->getQueryParams()['property_id'] ?? $req->getAttribute('auth.property_id') ?? ''; if (!$pid) return $this->json($res, ['success' => false, 'message' => 'property_id is required'], 422); return $this->json($res, ['success' => true, 'data' => $this->svc->generateNightAudit($pid, $d['date'] ?? date('Y-m-d'), $req->getAttribute('auth.tenant_id'))->toArray()], 201); }

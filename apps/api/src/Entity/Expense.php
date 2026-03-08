@@ -54,6 +54,48 @@ class Expense implements TenantAware
     #[ORM\Column(name: 'reference_number', type: Types::STRING, length: 50, nullable: true)]
     private ?string $referenceNumber = null;
 
+    // ── Phase 5: Walk-in / Market Purchase fields ─────────────────────
+
+    /**
+     * 'registered' = existing vendor module entry (default)
+     * 'market'     = walk-in / informal market vendor
+     * 'petty_cash' = small petty cash expense
+     */
+    #[ORM\Column(name: 'vendor_type', type: Types::STRING, length: 15, options: ['default' => 'registered'])]
+    private string $vendorType = 'registered';
+
+    /** Free-text vendor name used when vendor_type = 'market' */
+    #[ORM\Column(name: 'market_vendor_name', type: Types::STRING, length: 200, nullable: true)]
+    private ?string $marketVendorName = null;
+
+    /**
+     * URL of a photographed/scanned signed note (purchaser + manager signatures).
+     * Accepted in place of a formal receipt for market purchases.
+     */
+    #[ORM\Column(name: 'signed_note_url', type: Types::STRING, length: 500, nullable: true)]
+    private ?string $signedNoteUrl = null;
+
+    /** Second approver (admin) for dual-approval flow */
+    #[ORM\Column(name: 'second_approver_id', type: Types::STRING, length: 36, nullable: true)]
+    private ?string $secondApproverId = null;
+
+    #[ORM\Column(name: 'second_approver_name', type: Types::STRING, length: 150, nullable: true)]
+    private ?string $secondApproverName = null;
+
+    #[ORM\Column(name: 'second_approved_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $secondApprovedAt = null;
+
+    /**
+     * Copied from property setting at submission time so approval flow
+     * doesn't change if the setting changes later.
+     */
+    #[ORM\Column(name: 'second_approval_required', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $secondApprovalRequired = false;
+
+    /** True if the submitted amount exceeds the property's spending limit */
+    #[ORM\Column(name: 'spending_limit_breach', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $spendingLimitBreach = false;
+
     public function __construct(string $propertyId, string $categoryId, string $categoryName, string $description, string $amount, \DateTimeImmutable $expenseDate, string $submittedBy, string $submittedByName, string $tenantId)
     {
         $this->generateId(); $this->propertyId = $propertyId; $this->categoryId = $categoryId; $this->categoryName = $categoryName;
@@ -77,6 +119,48 @@ class Expense implements TenantAware
     public function setPaymentMethod(?string $v): void { $this->paymentMethod = $v; }
     public function setReferenceNumber(?string $v): void { $this->referenceNumber = $v; }
 
+    // ── Phase 5 accessors ─────────────────────────────────────────────
+    public function getVendorType(): string { return $this->vendorType; }
+    public function setVendorType(string $v): void { $this->vendorType = $v; }
+    public function getMarketVendorName(): ?string { return $this->marketVendorName; }
+    public function setMarketVendorName(?string $v): void { $this->marketVendorName = $v; }
+    public function getSignedNoteUrl(): ?string { return $this->signedNoteUrl; }
+    public function setSignedNoteUrl(?string $v): void { $this->signedNoteUrl = $v; }
+    public function getSecondApproverId(): ?string { return $this->secondApproverId; }
+    public function getSecondApproverName(): ?string { return $this->secondApproverName; }
+    public function getSecondApprovedAt(): ?\DateTimeImmutable { return $this->secondApprovedAt; }
+    public function isSecondApprovalRequired(): bool { return $this->secondApprovalRequired; }
+    public function setSecondApprovalRequired(bool $v): void { $this->secondApprovalRequired = $v; }
+    public function isSpendingLimitBreach(): bool { return $this->spendingLimitBreach; }
+    public function setSpendingLimitBreach(bool $v): void { $this->spendingLimitBreach = $v; }
+
+    /**
+     * Admin second-approval for market/walk-in purchases.
+     * Can only be called after first-approval (status = 'approved').
+     */
+    public function secondApprove(string $userId, string $name): void
+    {
+        if ($this->status !== 'approved') {
+            throw new \DomainException('First approval must be completed before admin second-approval');
+        }
+        if (!$this->secondApprovalRequired) {
+            throw new \DomainException('Second approval is not required for this expense');
+        }
+        $this->secondApproverId   = $userId;
+        $this->secondApproverName = $name;
+        $this->secondApprovedAt   = new \DateTimeImmutable();
+        // Status stays 'approved' — second approval is an additional sign-off,
+        // not a separate status. Readiness for payment is determined by
+        // secondApprovalRequired && secondApprovedAt !== null.
+    }
+
+    public function isFullyApproved(): bool
+    {
+        if ($this->status !== 'approved') return false;
+        if ($this->secondApprovalRequired) return $this->secondApprovedAt !== null;
+        return true;
+    }
+
     public function submit(): void { $this->status = 'submitted'; }
     public function approve(string $userId, string $name): void { $this->status = 'approved'; $this->approvedBy = $userId; $this->approvedByName = $name; }
     public function reject(string $userId, string $name, ?string $reason = null): void { $this->status = 'rejected'; $this->approvedBy = $userId; $this->approvedByName = $name; $this->rejectionReason = $reason; }
@@ -93,6 +177,15 @@ class Expense implements TenantAware
             'rejection_reason' => $this->rejectionReason, 'notes' => $this->notes,
             'payment_method' => $this->paymentMethod, 'reference_number' => $this->referenceNumber,
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
+            // Phase 5: Market/walk-in purchase fields
+            'vendor_type'              => $this->vendorType,
+            'market_vendor_name'       => $this->marketVendorName,
+            'signed_note_url'          => $this->signedNoteUrl,
+            'second_approver_name'     => $this->secondApproverName,
+            'second_approved_at'       => $this->secondApprovedAt?->format('c'),
+            'second_approval_required' => $this->secondApprovalRequired,
+            'spending_limit_breach'    => $this->spendingLimitBreach,
+            'is_fully_approved'        => $this->isFullyApproved(),
         ];
     }
 }
