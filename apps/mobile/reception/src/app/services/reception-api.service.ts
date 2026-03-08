@@ -110,6 +110,42 @@ export class ReceptionApiService {
     return this.http.get(`${this.baseUrl}/folios/booking/${bookingId}`, { headers: this.h() });
   }
 
+  addFolioCharge(folioId: string, data: { description: string; amount_kobo: number; category: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/folios/${folioId}/charges`, data, { headers: this.h() });
+  }
+
+  recordFolioPayment(folioId: string, data: {
+    amount_kobo: number;
+    payment_method: 'cash' | 'bank_transfer' | 'pos_card';
+    reference?: string;
+    notes?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/folios/${folioId}/payments`, data, { headers: this.h() });
+  }
+
+  // ─── Guest Cards (Pending at Gate) ────────────────────────
+  getPendingGateCards(): Observable<any> {
+    return this.http.get(
+      `${this.baseUrl}/cards?property_id=${this.propertyId}&status=pending_at_gate`,
+      { headers: this.h() }
+    );
+  }
+
+  linkCardToBooking(cardId: string, bookingId: string): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}/cards/${cardId}/link-booking`,
+      { booking_id: bookingId, property_id: this.propertyId },
+      { headers: this.h() }
+    );
+  }
+
+  getActiveBookingsByGuest(search: string): Observable<any> {
+    return this.http.get(
+      `${this.baseUrl}/bookings?property_id=${this.propertyId}&status=checked_in&search=${encodeURIComponent(search)}`,
+      { headers: this.h() }
+    );
+  }
+
   // ─── Notifications ────────────────────────────────────────
   getNotifications(): Observable<any> {
     return this.http.get(`${this.baseUrl}/notifications?property_id=${this.propertyId}&limit=50`, { headers: this.h() });

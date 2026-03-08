@@ -15,6 +15,7 @@ const routes: Routes = [
   { path: 'folio/:bookingId', loadComponent: () => import('./pages/folio.component').then(m => m.ReceptionFolioComponent) },
   { path: 'notifications', loadComponent: () => import('./pages/notifications.component').then(m => m.ReceptionNotificationsComponent) },
   { path: 'guests', loadComponent: () => import('./pages/guest-list.component').then(m => m.GuestListComponent) },
+  { path: 'pending-cards', loadComponent: () => import('./pages/pending-cards.component').then(m => m.PendingCardsComponent) },
 ];
 
 @NgModule({ imports: [NativeScriptRouterModule.forRoot(routes)], exports: [NativeScriptRouterModule] })
