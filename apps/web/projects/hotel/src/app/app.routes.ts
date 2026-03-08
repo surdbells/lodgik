@@ -157,6 +157,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/housekeeping/housekeeping.page').then(m => m.HousekeepingPage),
       },
       {
+        path: 'housekeeping/consumables',
+        loadComponent: () => import('./pages/housekeeping/housekeeping-consumables.page').then(m => m.HousekeepingConsumablesPage),
+      },
+      {
         path: 'chat',
         loadComponent: () => import('./pages/chat/chat.page').then(m => m.ChatPage),
       },

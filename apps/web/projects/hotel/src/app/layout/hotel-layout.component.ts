@@ -237,6 +237,7 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Room Types', icon: 'tag', route: '/room-types' },
         { label: 'Guests', icon: 'user-round', route: '/guests' },
         { label: 'Housekeeping', icon: 'spray-can', route: '/housekeeping', requiredModule: 'housekeeping' },
+        { label: 'Consumables', icon: 'inventory_2', route: '/housekeeping/consumables', requiredModule: 'housekeeping' },
         { label: 'Room Controls', icon: 'sliders-horizontal', route: '/room-controls', requiredModule: 'guest_access_codes' },
       ],
     },

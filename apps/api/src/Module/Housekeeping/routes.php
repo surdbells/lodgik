@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use Lodgik\Module\Housekeeping\HousekeepingController;
+use Lodgik\Module\Housekeeping\ConsumableController;
 use Lodgik\Middleware\RoleMiddleware;
 use Lodgik\Middleware\AuthMiddleware;
 use Lodgik\Middleware\TenantMiddleware;
@@ -24,4 +25,27 @@ return function (App $app): void {
         ->add(new RoleMiddleware(['property_admin', 'manager', 'housekeeping', 'front_desk']))
         ->add(TenantMiddleware::class)
         ->add(AuthMiddleware::class);
+
+    // Phase 4: Housekeeping Consumables
+    $app->group('/api/housekeeping/consumables', function (RouteCollectorProxy $g) {
+        $g->get('',       [ConsumableController::class, 'listConsumables']);
+        $g->post('',      [ConsumableController::class, 'createConsumable']);
+        $g->patch('/{id}',[ConsumableController::class, 'updateConsumable']);
+        $g->delete('/{id}',[ConsumableController::class, 'deleteConsumable']);
+    })->add(new RoleMiddleware(['property_admin', 'manager']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
+
+    $app->group('/api/housekeeping/store-requests', function (RouteCollectorProxy $g) {
+        $g->get('',                            [ConsumableController::class, 'listRequests']);
+        $g->post('',                           [ConsumableController::class, 'createRequest']);
+        $g->post('/{id}/storekeeper-approve',  [ConsumableController::class, 'storekeeperApprove']);
+        $g->post('/{id}/admin-approve',        [ConsumableController::class, 'adminApprove']);
+        $g->post('/{id}/reject',               [ConsumableController::class, 'reject']);
+        $g->post('/{id}/fulfill',              [ConsumableController::class, 'fulfill']);
+    })->add(new RoleMiddleware(['property_admin', 'manager', 'housekeeping']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
+
+    $app->group('/api/housekeeping/discrepancies', function (RouteCollectorProxy $g) {
+        $g->get('',              [ConsumableController::class, 'listDiscrepancies']);
+        $g->post('/run-check',   [ConsumableController::class, 'runDiscrepancyCheck']);
+        $g->post('/{id}/resolve',[ConsumableController::class, 'resolveDiscrepancy']);
+    })->add(new RoleMiddleware(['property_admin', 'manager']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 };
