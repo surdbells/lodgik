@@ -1,11 +1,12 @@
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TitleCasePipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, StatsCardComponent, AuthService, ActivePropertyService, ToastService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-security',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, StatsCardComponent],
+  imports: [FormsModule, TitleCasePipe, PageHeaderComponent, StatsCardComponent],
   template: `
     <ui-page-header title="Security & Gate Pass" icon="shield" [breadcrumbs]="['Operations', 'Security']"
       subtitle="Visitor management, gate passes, and guest movement tracking">
@@ -18,6 +19,12 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, AuthService, Activ
         }
         @if (activeTab === 'codes') {
           <button (click)="openCreateCode()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ Visitor Code</button>
+        }
+        @if (activeTab === 'gate_card') {
+          <span class="text-xs text-gray-400">Search card by number, UID, or type to filter</span>
+        }
+        @if (activeTab === 'exit') {
+          <span class="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">Scan card or enter card number/UID to process exit</span>
         }
       </div>
     </ui-page-header>
@@ -308,6 +315,197 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, AuthService, Activ
         }
       </div>
     }
+
+    <!-- ── Gate Card Issue Tab ────────────────────────────── -->
+    @if (activeTab === 'gate_card') {
+      <div class="space-y-4">
+        <!-- Search bar — supports RFID scanner input -->
+        <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Search Card (number, UID, or RFID scan)</label>
+          <input [(ngModel)]="cardSearch" (ngModelChange)="searchCards()"
+            placeholder="Type card number / UID, or connect RFID scanner for auto-input..."
+            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono bg-gray-50 focus:outline-none focus:border-sage-400"
+            id="rfid-input" autocomplete="off">
+          <p class="text-xs text-gray-400 mt-1">If a USB RFID scanner is connected it will populate this field automatically on card tap.</p>
+        </div>
+
+        <!-- Card results -->
+        @if (cardResults().length > 0) {
+          <div class="space-y-2">
+            @for (card of cardResults(); track card.id) {
+              <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-mono font-bold text-sage-700">{{ card.card_number }}</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full" [class]="card.status === 'active' ? 'bg-green-100 text-green-700' : card.status === 'pending_gate' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'">
+                        {{ card.status }}
+                      </span>
+                      @if (card.card_uid) { <span class="text-xs text-gray-400 font-mono">UID: {{ card.card_uid }}</span> }
+                    </div>
+                    @if (card.guest_name) { <p class="text-sm text-gray-700 mt-1">{{ card.guest_name }}</p> }
+                    @if (card.room_number) { <p class="text-xs text-gray-400">Room {{ card.room_number }}</p> }
+                    @if (card.plate_number) { <p class="text-xs text-gray-500 mt-0.5">🚗 {{ card.plate_number }}</p> }
+                  </div>
+                  @if (card.status === 'available') {
+                    <button (click)="openGateIssueModal(card)"
+                      class="shrink-0 px-3 py-1.5 bg-sage-600 text-white text-xs font-medium rounded-lg hover:bg-sage-700">
+                      Issue at Gate
+                    </button>
+                  }
+                  @if (card.status === 'pending_gate') {
+                    <span class="shrink-0 text-xs text-amber-600 bg-amber-50 px-2 py-1.5 rounded-lg">Issued — awaiting booking link</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (cardSearch.length > 0) {
+          <div class="text-center py-8 text-gray-400">
+            <div class="text-3xl mb-2">🃏</div>
+            <p class="text-sm">No cards found for "{{ cardSearch }}"</p>
+          </div>
+        } @else {
+          <div class="text-center py-8 text-gray-400">
+            <div class="text-3xl mb-2">🃏</div>
+            <p class="text-sm">Search for a card to issue at the gate</p>
+          </div>
+        }
+      </div>
+
+      <!-- Gate Issue Modal -->
+      @if (showGateIssueModal) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <h3 class="text-sm font-semibold text-gray-800 mb-4">Issue Card at Gate — {{ gateIssueCard?.card_number }}</h3>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Guest Name *</label>
+                <input [(ngModel)]="gateIssueForm.guest_name" placeholder="Full name" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Phone Number *</label>
+                <input [(ngModel)]="gateIssueForm.phone" placeholder="08xxxxxxxxxx" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Vehicle Plate Number (optional)</label>
+                <input [(ngModel)]="gateIssueForm.plate_number" placeholder="e.g. ABC-123-DE" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono uppercase">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Booking Reference (optional)</label>
+                <input [(ngModel)]="gateIssueForm.booking_ref" placeholder="BK-..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Notes (optional)</label>
+                <input [(ngModel)]="gateIssueForm.notes" placeholder="Additional notes" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+              </div>
+            </div>
+            <div class="flex gap-2 mt-5">
+              <button (click)="submitGateIssue()" [disabled]="savingGateIssue"
+                class="flex-1 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700 disabled:opacity-50">
+                {{ savingGateIssue ? 'Issuing...' : 'Issue Card' }}
+              </button>
+              <button (click)="showGateIssueModal = false" class="px-4 py-2 border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50">Cancel</button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ── Exit Checkout Tab ──────────────────────────────── -->
+    @if (activeTab === 'exit') {
+      <div class="space-y-4">
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Scan / Enter Card Number or UID</label>
+          <div class="flex gap-2">
+            <input [(ngModel)]="exitCardSearch"
+              placeholder="Card number, UID, or RFID scan..."
+              class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono bg-gray-50"
+              id="exit-rfid-input" autocomplete="off"
+              (keydown.enter)="lookupCardForExit()">
+            <button (click)="lookupCardForExit()" class="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700">
+              Look Up
+            </button>
+          </div>
+        </div>
+
+        @if (exitCardFound()) {
+          <div class="bg-white border-2 rounded-xl p-5 shadow-sm" [class.border-green-300]="exitCardFound()?.status === 'active'" [class.border-red-300]="exitCardFound()?.status !== 'active'">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="font-mono font-bold text-lg text-gray-800">{{ exitCardFound()?.card_number }}</p>
+                <p class="text-sm text-gray-700 mt-1">{{ exitCardFound()?.guest_name || '—' }}</p>
+                @if (exitCardFound()?.room_number) { <p class="text-xs text-gray-400">Room {{ exitCardFound()?.room_number }}</p> }
+                @if (exitCardFound()?.plate_number) { <p class="text-xs text-gray-500 mt-0.5">🚗 {{ exitCardFound()?.plate_number }}</p> }
+                <p class="text-xs text-gray-400 mt-1">Status: <span class="font-medium">{{ exitCardFound()?.status }}</span></p>
+              </div>
+              <div class="text-right">
+                @if (exitCardFound()?.status === 'active' || exitCardFound()?.status === 'pending_gate') {
+                  <button (click)="processExit()" [disabled]="processingExit"
+                    class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50">
+                    {{ processingExit ? 'Processing...' : '🚪 Confirm Exit' }}
+                  </button>
+                } @else {
+                  <span class="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-lg">{{ exitCardFound()?.status === 'revoked' ? 'Already revoked' : 'Cannot process' }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── Discrepancy Report Tab ─────────────────────────── -->
+    @if (activeTab === 'discrepancy') {
+      <div class="space-y-4">
+        <div class="flex items-center gap-3 mb-2">
+          <select [(ngModel)]="discrepancyFilter" (ngModelChange)="loadDiscrepancies()"
+            class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white">
+            <option value="">All Types</option>
+            <option value="missing_security_exit">Missing Security Exit</option>
+            <option value="missing_receptionist_checkout">Missing Receptionist Checkout</option>
+            <option value="gap_exceeded">Gap Exceeded Threshold</option>
+          </select>
+          <button (click)="loadDiscrepancies()" class="px-3 py-2 border border-gray-200 text-sm rounded-lg hover:bg-gray-50">↻ Refresh</button>
+        </div>
+
+        @if (discrepancies().length === 0) {
+          <div class="text-center py-12 text-gray-400">
+            <div class="text-3xl mb-2">✅</div>
+            <p class="text-sm font-medium">No discrepancies found</p>
+          </div>
+        }
+        @for (d of discrepancies(); track d.id) {
+          <div class="bg-white border rounded-xl p-4 shadow-sm" [class.border-red-300]="d.severity === 'high'" [class.border-amber-300]="d.severity === 'medium'" [class.border-gray-200]="d.severity === 'low'">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-semibold text-gray-800">{{ d.guest_name || 'Unknown Guest' }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                    [class.bg-red-100]="d.severity === 'high'" [class.text-red-700]="d.severity === 'high'"
+                    [class.bg-amber-100]="d.severity === 'medium'" [class.text-amber-700]="d.severity === 'medium'"
+                    [class.bg-gray-100]="d.severity === 'low'" [class.text-gray-600]="d.severity === 'low'">
+                    {{ d.discrepancy_type | titlecase }}
+                  </span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Card: {{ d.card_number }} · Room: {{ d.room_number || '—' }}</p>
+                @if (d.receptionist_checkout_at) { <p class="text-xs text-gray-500 mt-0.5">Receptionist checkout: {{ formatTime(d.receptionist_checkout_at) }}</p> }
+                @if (d.security_exit_at) { <p class="text-xs text-gray-500 mt-0.5">Security exit: {{ formatTime(d.security_exit_at) }}</p> }
+                @if (d.gap_minutes != null) {
+                  <p class="text-xs font-medium mt-1"
+                    [class.text-red-600]="d.gap_minutes > d.threshold_minutes"
+                    [class.text-green-600]="d.gap_minutes <= d.threshold_minutes">
+                    Gap: {{ d.gap_minutes }} min (threshold: {{ d.threshold_minutes }} min)
+                    {{ d.gap_minutes > d.threshold_minutes ? '⚠️ Exceeded' : '✅ Within threshold' }}
+                  </p>
+                }
+              </div>
+              <p class="text-xs text-gray-400 shrink-0">{{ formatTime(d.created_at) }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    }
   `,
 })
 export class SecurityPage implements OnInit, OnDestroy {
@@ -342,6 +540,9 @@ export class SecurityPage implements OnInit, OnDestroy {
     { key: 'movements', label: '🚶 Movements' },
     { key: 'onpremise', label: '🟢 On Premise' },
     { key: 'codes', label: '🔑 Visitor Codes' },
+    { key: 'gate_card', label: '🃏 Gate Card Issue' },
+    { key: 'exit', label: '🚪 Exit Checkout' },
+    { key: 'discrepancy', label: '⚠️ Discrepancies' },
   ];
   passFilters = [
     { label: 'All', value: '' },
@@ -359,6 +560,9 @@ export class SecurityPage implements OnInit, OnDestroy {
 
   onTabChange() {
     if (this.activeTab === 'codes') this.loadCodes();
+    if (this.activeTab === 'discrepancy') this.loadDiscrepancies();
+    if (this.activeTab === 'gate_card') { this.cardSearch = ''; this.cardResults.set([]); }
+    if (this.activeTab === 'exit') { this.exitCardSearch = ''; this.exitCardFound.set(null); }
   }
 
   load() {
@@ -507,6 +711,109 @@ export class SecurityPage implements OnInit, OnDestroy {
       next: (r: any) => { if (r.success) { this.toast.success('Code revoked'); this.loadCodes(); } else { this.toast.error(r.message || 'Failed'); } },
       error: () => this.toast.error('Failed to revoke code'),
     });
+  }
+
+  // ── Gate Card Issue ─────────────────────────────────────
+  cardSearch        = '';
+  cardResults       = signal<any[]>([]);
+  cardSearchTimer: any;
+
+  showGateIssueModal = false;
+  savingGateIssue    = false;
+  gateIssueCard: any = null;
+  gateIssueForm = { guest_name: '', phone: '', plate_number: '', booking_ref: '', notes: '' };
+
+  searchCards(): void {
+    clearTimeout(this.cardSearchTimer);
+    if (this.cardSearch.trim().length < 2) { this.cardResults.set([]); return; }
+    this.cardSearchTimer = setTimeout(() => {
+      const pid = this.activeProperty.propertyId();
+      this.api.get(`/cards?property_id=${pid}&search=${encodeURIComponent(this.cardSearch.trim())}&status=available&status=pending_gate&limit=20`)
+        .subscribe({ next: (r: any) => { if (r.success) this.cardResults.set(r.data ?? []); } });
+    }, 300);
+  }
+
+  openGateIssueModal(card: any): void {
+    this.gateIssueCard = card;
+    this.gateIssueForm = { guest_name: '', phone: '', plate_number: '', booking_ref: '', notes: '' };
+    this.showGateIssueModal = true;
+  }
+
+  submitGateIssue(): void {
+    if (!this.gateIssueForm.guest_name.trim()) { this.toast.error('Guest name is required'); return; }
+    if (!this.gateIssueForm.phone.trim()) { this.toast.error('Phone number is required'); return; }
+    this.savingGateIssue = true;
+    const payload: any = {
+      card_id:      this.gateIssueCard.id,
+      property_id:  this.activeProperty.propertyId(),
+      guest_name:   this.gateIssueForm.guest_name.trim(),
+      phone:        this.gateIssueForm.phone.trim(),
+    };
+    if (this.gateIssueForm.plate_number) payload.plate_number  = this.gateIssueForm.plate_number.trim().toUpperCase();
+    if (this.gateIssueForm.booking_ref)  payload.booking_ref   = this.gateIssueForm.booking_ref.trim();
+    if (this.gateIssueForm.notes)        payload.notes         = this.gateIssueForm.notes.trim();
+
+    this.api.post('/cards/gate-issue', payload).subscribe({
+      next: (r: any) => {
+        this.savingGateIssue = false;
+        if (r.success) {
+          this.toast.success('Card issued at gate — status: Pending Gate Pool');
+          this.showGateIssueModal = false;
+          this.searchCards();
+        } else {
+          this.toast.error(r.message || 'Failed to issue card');
+        }
+      },
+      error: () => { this.savingGateIssue = false; this.toast.error('Failed to issue card'); },
+    });
+  }
+
+  // ── Exit Checkout ────────────────────────────────────────
+  exitCardSearch  = '';
+  exitCardFound   = signal<any>(null);
+  processingExit  = false;
+
+  lookupCardForExit(): void {
+    if (!this.exitCardSearch.trim()) return;
+    const pid = this.activeProperty.propertyId();
+    this.api.get(`/cards/lookup?property_id=${pid}&q=${encodeURIComponent(this.exitCardSearch.trim())}`)
+      .subscribe({ next: (r: any) => {
+        if (r.success && r.data) this.exitCardFound.set(r.data);
+        else { this.exitCardFound.set(null); this.toast.error('Card not found'); }
+      }});
+  }
+
+  processExit(): void {
+    if (!this.exitCardFound()) return;
+    this.processingExit = true;
+    this.api.post('/cards/security-exit', {
+      card_id:     this.exitCardFound()!.id,
+      property_id: this.activeProperty.propertyId(),
+    }).subscribe({
+      next: (r: any) => {
+        this.processingExit = false;
+        if (r.success) {
+          this.toast.success('Exit processed — card revoked');
+          this.exitCardFound.set(null);
+          this.exitCardSearch = '';
+          this.loadDiscrepancies();
+        } else {
+          this.toast.error(r.message || 'Failed to process exit');
+        }
+      },
+      error: () => { this.processingExit = false; this.toast.error('Failed to process exit'); },
+    });
+  }
+
+  // ── Discrepancy Report ───────────────────────────────────
+  discrepancies       = signal<any[]>([]);
+  discrepancyFilter   = '';
+
+  loadDiscrepancies(): void {
+    const pid = this.activeProperty.propertyId();
+    let url = `/security/checkout-discrepancies?property_id=${pid}`;
+    if (this.discrepancyFilter) url += `&type=${this.discrepancyFilter}`;
+    this.api.get(url).subscribe({ next: (r: any) => { if (r.success) this.discrepancies.set(r.data ?? []); } });
   }
 
   // Helpers

@@ -130,6 +130,47 @@ final class GuestCardService
      * Called by: POST /api/cards/security-issue
      * Roles: security, front_desk, receptionist, manager, property_admin
      */
+    /**
+     * Issue a card at the security gate by card_id (from search results).
+     * Accepts guest name, phone, plate number — no booking needed yet.
+     * Transitions card: AVAILABLE → PENDING_CHECKIN.
+     */
+    public function gateIssueCardById(
+        string  $cardId,
+        string  $propertyId,
+        string  $issuedBy,
+        string  $tenantId,
+        string  $guestName,
+        string  $phone,
+        ?string $plateNumber = null,
+        ?string $bookingRef  = null,
+        ?string $notes       = null,
+    ): GuestCard {
+        $card = $this->cardRepo->find($cardId);
+        if (!$card) throw new \DomainException('Card not found.');
+
+        if ($card->getStatus() !== GuestCardStatus::AVAILABLE) {
+            throw new \DomainException(
+                "Card {$card->getCardNumber()} cannot be issued at gate — status: {$card->getStatus()->label()}."
+            );
+        }
+        if ($card->getPropertyId() !== $propertyId) {
+            throw new \DomainException('Card does not belong to this property.');
+        }
+
+        $card->issueAtGate($issuedBy, $plateNumber, $guestName, $phone);
+        if ($notes) $card->setNotes($notes);
+        $this->em->flush();
+
+        $this->logEvent(
+            $card, GuestCardEventType::ISSUED, $tenantId, $propertyId,
+            ['method' => 'security_gate', 'guest_name' => $guestName, 'phone' => $phone, 'plate' => $plateNumber, 'booking_ref' => $bookingRef],
+            scannedBy: $issuedBy,
+        );
+
+        return $card;
+    }
+
     public function securityIssueCard(
         string  $propertyId,
         string  $cardUid,
@@ -724,5 +765,155 @@ final class GuestCardService
             'status'  => $folio->getStatus()->value,
             'balance' => $folio->getBalance(),
         ];
+    }
+
+    // ── Security Exit (processes guest leaving the premises) ──────
+
+    /**
+     * Security confirms a guest has exited the premises.
+     * Revokes the card, logs the event, and triggers discrepancy check.
+     */
+    public function securityProcessExit(
+        string $cardId,
+        string $propertyId,
+        string $tenantId,
+        string $processedBy,
+    ): GuestCard {
+        $card = $this->cardRepo->find($cardId);
+        if (!$card) throw new \DomainException('Card not found.');
+        if ($card->getPropertyId() !== $propertyId) throw new \DomainException('Card does not belong to this property.');
+
+        $allowedStatuses = [GuestCardStatus::ACTIVE, GuestCardStatus::PENDING_CHECKIN, GuestCardStatus::ISSUED];
+        if (!in_array($card->getStatus(), $allowedStatuses, true)) {
+            throw new \DomainException("Cannot process exit — card status: {$card->getStatus()->label()}.");
+        }
+
+        $now = new \DateTimeImmutable();
+        $card->setSecurityExitAt($now);
+        $card->deactivate($processedBy, 'Security exit — premises cleared');
+
+        $this->em->flush();
+
+        $this->logEvent(
+            $card, GuestCardEventType::SECURITY_EXIT, $tenantId, $propertyId,
+            ['processed_by' => $processedBy, 'method' => 'security_tablet'],
+            scannedBy: $processedBy,
+        );
+
+        // Trigger discrepancy check
+        $this->checkoutDiscrepancyCheck($card, $tenantId, $propertyId);
+
+        return $card;
+    }
+
+    /**
+     * Called by booking checkout — records the receptionist checkout time on the card.
+     * Triggers discrepancy check if security exit already happened (or deferred if not yet).
+     */
+    public function recordReceptionistCheckout(GuestCard $card, string $tenantId, string $propertyId): void
+    {
+        $card->setReceptionistCheckoutAt(new \DateTimeImmutable());
+        $this->em->flush();
+        $this->checkoutDiscrepancyCheck($card, $tenantId, $propertyId);
+    }
+
+    /**
+     * Look up a card by card_number or card_uid from a query string.
+     * Used by the exit checkout search box.
+     */
+    public function lookupByQuery(string $propertyId, string $q): ?array
+    {
+        $q = trim($q);
+        if (strlen($q) < 2) return null;
+
+        // Try card_number first, then card_uid
+        $card = $this->cardRepo->findOneBy(['cardNumber' => $q, 'propertyId' => $propertyId])
+             ?? $this->cardRepo->findOneBy(['cardUid' => $q, 'propertyId' => $propertyId]);
+
+        if (!$card) return null;
+        return $this->serializeCard($card);
+    }
+
+    /**
+     * Get discrepancy report for a property.
+     */
+    public function getDiscrepancies(string $propertyId, ?string $type = null, int $page = 1, int $limit = 30): array
+    {
+        $conn = $this->em->getConnection();
+        $sql  = "SELECT * FROM checkout_discrepancies WHERE property_id = :pid";
+        $params = ['pid' => $propertyId];
+        if ($type) { $sql .= " AND discrepancy_type = :type"; $params['type'] = $type; }
+        $sql .= " ORDER BY created_at DESC LIMIT :lim OFFSET :off";
+        $params['lim'] = $limit;
+        $params['off'] = ($page - 1) * $limit;
+        return $conn->fetchAllAssociative($sql, $params);
+    }
+
+    // ── Private: Discrepancy check ────────────────────────────────
+
+    private function checkoutDiscrepancyCheck(GuestCard $card, string $tenantId, string $propertyId): void
+    {
+        $receptionAt  = $card->getReceptionistCheckoutAt();
+        $securityAt   = $card->getSecurityExitAt();
+
+        // Load property threshold setting
+        $threshold = 30; // default
+        try {
+            $conn      = $this->em->getConnection();
+            $settings  = $conn->fetchOne("SELECT settings FROM properties WHERE id = :id", ['id' => $propertyId]);
+            if ($settings) {
+                $s = json_decode($settings, true);
+                $threshold = (int) ($s['checkout_discrepancy_threshold_minutes'] ?? 30);
+            }
+        } catch (\Throwable) {}
+
+        $discrepancyType = null;
+        $gapMinutes      = null;
+        $severity        = 'medium';
+
+        if ($receptionAt && !$securityAt) {
+            // Receptionist checked out but no security exit within threshold
+            $minsElapsed = (int) round((time() - $receptionAt->getTimestamp()) / 60);
+            if ($minsElapsed >= $threshold) {
+                $discrepancyType = 'missing_security_exit';
+                $gapMinutes      = $minsElapsed;
+                $severity        = 'high';
+            }
+        } elseif ($securityAt && !$receptionAt) {
+            // Security exited but receptionist never checked out
+            $discrepancyType = 'missing_receptionist_checkout';
+            $severity        = 'medium';
+        } elseif ($receptionAt && $securityAt) {
+            // Both happened — check gap
+            $gapMinutes = (int) round(abs($securityAt->getTimestamp() - $receptionAt->getTimestamp()) / 60);
+            if ($gapMinutes > $threshold) {
+                $discrepancyType = 'gap_exceeded';
+                $severity        = $gapMinutes > ($threshold * 2) ? 'high' : 'medium';
+            }
+        }
+
+        if (!$discrepancyType) return;
+
+        // Insert discrepancy record
+        try {
+            $conn = $this->em->getConnection();
+            $conn->insert('checkout_discrepancies', [
+                'id'                         => \Lodgik\Helper\UuidHelper::generate(),
+                'tenant_id'                  => $tenantId,
+                'property_id'                => $propertyId,
+                'guest_card_id'              => $card->getId(),
+                'card_number'                => $card->getCardNumber(),
+                'guest_name'                 => $card->getGateGuestName(),
+                'discrepancy_type'           => $discrepancyType,
+                'receptionist_checkout_at'   => $receptionAt?->format('c'),
+                'security_exit_at'           => $securityAt?->format('c'),
+                'gap_minutes'                => $gapMinutes,
+                'threshold_minutes'          => $threshold,
+                'severity'                   => $severity,
+                'created_at'                 => (new \DateTimeImmutable())->format('c'),
+            ]);
+        } catch (\Throwable $e) {
+            $this->logger->warning("Failed to write checkout discrepancy: {$e->getMessage()}");
+        }
     }
 }

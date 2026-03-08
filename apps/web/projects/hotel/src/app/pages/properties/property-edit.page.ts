@@ -117,13 +117,11 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
           <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 lg:col-span-2">
             <div class="flex items-center gap-2 mb-4">
               <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
               <h3 class="text-sm font-semibold text-gray-700">Operational Settings</h3>
             </div>
-
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
               <!-- Timing -->
@@ -131,17 +129,17 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Timing</p>
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1">Grace Period (minutes)</label>
-                  <input type="number" min="0" max="240" [(ngModel)]="settings.grace_period_minutes"
-                    placeholder="30"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-sage-400">
+                  <input type="number" min="0" max="240" [(ngModel)]="settings.grace_period_minutes" placeholder="30" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                   <p class="text-xs text-gray-400 mt-1">Time after checkout before late fees apply</p>
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1">Late Checkout Fee (₦)</label>
-                  <input type="number" min="0" step="100" [(ngModel)]="settings.late_checkout_fee_display"
-                    placeholder="5000"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-sage-400">
-                  <p class="text-xs text-gray-400 mt-1">Stored in kobo internally</p>
+                  <input type="number" min="0" step="100" [(ngModel)]="settings.late_checkout_fee_display" placeholder="5000" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Checkout Discrepancy Threshold (minutes)</label>
+                  <input type="number" min="5" max="240" [(ngModel)]="settings.checkout_discrepancy_threshold_minutes" placeholder="30" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+                  <p class="text-xs text-gray-400 mt-1">Max gap between receptionist &amp; security checkout</p>
                 </div>
               </div>
 
@@ -150,53 +148,105 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">WiFi</p>
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1">WiFi SSID</label>
-                  <input [(ngModel)]="settings.wifi_ssid"
-                    placeholder="HotelGuest_5G"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-sage-400">
+                  <input [(ngModel)]="settings.wifi_ssid" placeholder="HotelGuest_5G" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1">WiFi Password</label>
-                  <input [(ngModel)]="settings.wifi_password"
-                    placeholder="password123"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-sage-400">
+                  <input [(ngModel)]="settings.wifi_password" placeholder="password123" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                   <p class="text-xs text-gray-400 mt-1">Shown to guests on their access page</p>
                 </div>
               </div>
 
-              <!-- Security & Controls -->
+              <!-- Security Controls -->
               <div class="space-y-3">
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Security Controls</p>
-
-                <!-- Card Enforcement -->
                 <div class="p-3 border border-gray-200 rounded-lg">
                   <div class="flex items-center justify-between">
                     <div class="flex-1 min-w-0 mr-3">
                       <p class="text-sm font-medium text-gray-700">Guest Card Enforcement</p>
-                      <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">
-                        Require an active RFID guest card before check-in is allowed. Security staff issue cards at the gate; reception links them to bookings.
-                      </p>
+                      <p class="text-xs text-gray-400 mt-0.5">Require an active RFID guest card before check-in is allowed.</p>
                     </div>
                     <button type="button" (click)="settings.card_enforcement_enabled = !settings.card_enforcement_enabled"
-                      class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent
-                             transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2"
-                      [class.bg-sage-600]="settings.card_enforcement_enabled"
-                      [class.bg-gray-200]="!settings.card_enforcement_enabled"
-                      [attr.aria-checked]="settings.card_enforcement_enabled">
-                      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform
-                                   ring-0 transition duration-200 ease-in-out"
-                            [class.translate-x-5]="settings.card_enforcement_enabled"
-                            [class.translate-x-0]="!settings.card_enforcement_enabled">
-                      </span>
+                      class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+                      [class.bg-sage-600]="settings.card_enforcement_enabled" [class.bg-gray-200]="!settings.card_enforcement_enabled">
+                      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition duration-200"
+                        [class.translate-x-5]="settings.card_enforcement_enabled" [class.translate-x-0]="!settings.card_enforcement_enabled"></span>
                     </button>
                   </div>
                   @if (settings.card_enforcement_enabled) {
-                    <div class="mt-2 flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 rounded px-2 py-1.5">
-                      <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                      </svg>
-                      Enabled — check-in will be blocked until a guest card is attached
-                    </div>
+                    <p class="mt-2 text-xs text-amber-600 bg-amber-50 rounded px-2 py-1.5">⚠️ Check-in blocked until a guest card is attached</p>
                   }
+                </div>
+                <div class="p-3 border border-gray-200 rounded-lg">
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0 mr-3">
+                      <p class="text-sm font-medium text-gray-700">Require Payment Receipt</p>
+                      <p class="text-xs text-gray-400 mt-0.5">Require photo receipt before a payment can be submitted</p>
+                    </div>
+                    <button type="button" (click)="settings.require_payment_receipt = !settings.require_payment_receipt"
+                      class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+                      [class.bg-sage-600]="settings.require_payment_receipt" [class.bg-gray-200]="!settings.require_payment_receipt">
+                      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition duration-200"
+                        [class.translate-x-5]="settings.require_payment_receipt" [class.translate-x-0]="!settings.require_payment_receipt"></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Finance Controls -->
+              <div class="space-y-3">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Finance Controls</p>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Market Purchase Spending Limit (₦)</label>
+                  <input type="number" min="0" step="500" [(ngModel)]="settings.market_purchase_spending_limit_display" placeholder="0 = no limit" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+                  <p class="text-xs text-gray-400 mt-1">Above this amount triggers 2nd admin approval (0 = disabled)</p>
+                </div>
+                <div class="p-3 border border-gray-200 rounded-lg">
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0 mr-3">
+                      <p class="text-sm font-medium text-gray-700">Dual Approval for Market Purchases</p>
+                      <p class="text-xs text-gray-400 mt-0.5">All market/petty-cash purchases require admin second approval</p>
+                    </div>
+                    <button type="button" (click)="settings.market_purchase_require_dual_approval = !settings.market_purchase_require_dual_approval"
+                      class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+                      [class.bg-sage-600]="settings.market_purchase_require_dual_approval" [class.bg-gray-200]="!settings.market_purchase_require_dual_approval">
+                      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition duration-200"
+                        [class.translate-x-5]="settings.market_purchase_require_dual_approval" [class.translate-x-0]="!settings.market_purchase_require_dual_approval"></span>
+                    </button>
+                  </div>
+                </div>
+                <div class="p-3 border border-gray-200 rounded-lg">
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0 mr-3">
+                      <p class="text-sm font-medium text-gray-700">Require Receipt / Signed Note</p>
+                      <p class="text-xs text-gray-400 mt-0.5">Market &amp; petty-cash expenses must attach receipt or signed note</p>
+                    </div>
+                    <button type="button" (click)="settings.market_purchase_require_receipt_or_note = !settings.market_purchase_require_receipt_or_note"
+                      class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+                      [class.bg-sage-600]="settings.market_purchase_require_receipt_or_note" [class.bg-gray-200]="!settings.market_purchase_require_receipt_or_note">
+                      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition duration-200"
+                        [class.translate-x-5]="settings.market_purchase_require_receipt_or_note" [class.translate-x-0]="!settings.market_purchase_require_receipt_or_note"></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Housekeeping Controls -->
+              <div class="space-y-3">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Housekeeping Controls</p>
+                <div class="p-3 border border-gray-200 rounded-lg">
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0 mr-3">
+                      <p class="text-sm font-medium text-gray-700">Admin Approval for Consumables</p>
+                      <p class="text-xs text-gray-400 mt-0.5">Store requests require admin approval in addition to storekeeper</p>
+                    </div>
+                    <button type="button" (click)="settings.require_admin_approval_for_consumables = !settings.require_admin_approval_for_consumables"
+                      class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+                      [class.bg-sage-600]="settings.require_admin_approval_for_consumables" [class.bg-gray-200]="!settings.require_admin_approval_for_consumables">
+                      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition duration-200"
+                        [class.translate-x-5]="settings.require_admin_approval_for_consumables" [class.translate-x-0]="!settings.require_admin_approval_for_consumables"></span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -204,8 +254,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
 
             <div class="mt-5 pt-4 border-t border-gray-100 flex items-center gap-3">
               <button (click)="saveSettings()" [disabled]="savingSettings()"
-                class="px-5 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700
-                       disabled:opacity-50 transition-colors flex items-center gap-2">
+                class="px-5 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700 disabled:opacity-50 transition-colors flex items-center gap-2">
                 @if (savingSettings()) {
                   <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -219,13 +268,12 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                   <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                   </svg>
-                  Saved
+                  Settings saved
                 </span>
               }
             </div>
           </div>
         }
-
       </div>
 
       <!-- Save basic info -->
@@ -256,13 +304,19 @@ export class PropertyEditPage implements OnInit {
 
   /** Operational settings — maps directly to PATCH /api/properties/{id}/settings keys */
   settings: any = {
-    grace_period_minutes:       30,
-    late_checkout_fee_display:  0,     // UI value in ₦; converted to kobo on save
-    checkout_time:              '12:00',
-    checkin_time:               '14:00',
-    wifi_ssid:                  '',
-    wifi_password:              '',
-    card_enforcement_enabled:   false,
+    grace_period_minutes:                       30,
+    late_checkout_fee_display:                  0,
+    checkout_discrepancy_threshold_minutes:     30,
+    checkout_time:                              '12:00',
+    checkin_time:                               '14:00',
+    wifi_ssid:                                  '',
+    wifi_password:                              '',
+    card_enforcement_enabled:                   false,
+    require_payment_receipt:                    false,
+    market_purchase_spending_limit_display:     0,
+    market_purchase_require_dual_approval:      false,
+    market_purchase_require_receipt_or_note:    false,
+    require_admin_approval_for_consumables:     false,
   };
 
   ngOnInit(): void {
@@ -282,18 +336,21 @@ export class PropertyEditPage implements OnInit {
           is_active: d.is_active,
         };
 
-        // Hydrate settings from the property's JSONB settings object
         const s = d.settings ?? {};
         this.settings = {
-          grace_period_minutes:      s.grace_period_minutes      ?? 30,
-          late_checkout_fee_display: s.late_checkout_fee_kobo != null
-            ? Math.round(s.late_checkout_fee_kobo / 100)
-            : 0,
-          checkout_time:             s.checkout_time             ?? '12:00',
-          checkin_time:              s.checkin_time              ?? '14:00',
-          wifi_ssid:                 s.wifi_ssid                 ?? '',
-          wifi_password:             s.wifi_password             ?? '',
-          card_enforcement_enabled:  s.card_enforcement_enabled  ?? false,
+          grace_period_minutes:                    s.grace_period_minutes                    ?? 30,
+          late_checkout_fee_display:               s.late_checkout_fee_kobo != null ? Math.round(s.late_checkout_fee_kobo / 100) : 0,
+          checkout_discrepancy_threshold_minutes:  s.checkout_discrepancy_threshold_minutes  ?? 30,
+          checkout_time:                           s.checkout_time                           ?? '12:00',
+          checkin_time:                            s.checkin_time                            ?? '14:00',
+          wifi_ssid:                               s.wifi_ssid                               ?? '',
+          wifi_password:                           s.wifi_password                           ?? '',
+          card_enforcement_enabled:                s.card_enforcement_enabled                ?? false,
+          require_payment_receipt:                 s.require_payment_receipt                 ?? false,
+          market_purchase_spending_limit_display:  s.market_purchase_spending_limit_kobo != null ? Math.round(s.market_purchase_spending_limit_kobo / 100) : 0,
+          market_purchase_require_dual_approval:   s.market_purchase_require_dual_approval   ?? false,
+          market_purchase_require_receipt_or_note: s.market_purchase_require_receipt_or_note ?? false,
+          require_admin_approval_for_consumables:  s.require_admin_approval_for_consumables  ?? false,
         };
 
         this.loadBankAccounts();
@@ -323,13 +380,19 @@ export class PropertyEditPage implements OnInit {
     this.settingsSaved.set(false);
 
     const payload: Record<string, unknown> = {
-      grace_period_minutes:      Number(this.settings.grace_period_minutes) || 0,
-      late_checkout_fee_kobo:    Math.round((Number(this.settings.late_checkout_fee_display) || 0) * 100),
-      checkout_time:             this.settings.checkout_time,
-      checkin_time:              this.settings.checkin_time,
-      wifi_ssid:                 this.settings.wifi_ssid   || null,
-      wifi_password:             this.settings.wifi_password || null,
-      card_enforcement_enabled:  !!this.settings.card_enforcement_enabled,
+      grace_period_minutes:                    Number(this.settings.grace_period_minutes) || 0,
+      late_checkout_fee_kobo:                  Math.round((Number(this.settings.late_checkout_fee_display) || 0) * 100),
+      checkout_discrepancy_threshold_minutes:  Number(this.settings.checkout_discrepancy_threshold_minutes) || 30,
+      checkout_time:                           this.settings.checkout_time,
+      checkin_time:                            this.settings.checkin_time,
+      wifi_ssid:                               this.settings.wifi_ssid   || null,
+      wifi_password:                           this.settings.wifi_password || null,
+      card_enforcement_enabled:                !!this.settings.card_enforcement_enabled,
+      require_payment_receipt:                 !!this.settings.require_payment_receipt,
+      market_purchase_spending_limit_kobo:     Math.round((Number(this.settings.market_purchase_spending_limit_display) || 0) * 100),
+      market_purchase_require_dual_approval:   !!this.settings.market_purchase_require_dual_approval,
+      market_purchase_require_receipt_or_note: !!this.settings.market_purchase_require_receipt_or_note,
+      require_admin_approval_for_consumables:  !!this.settings.require_admin_approval_for_consumables,
     };
 
     this.api.patch(`/properties/${this.propertyId}/settings`, payload).subscribe({

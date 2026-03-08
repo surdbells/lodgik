@@ -139,8 +139,9 @@ final class FolioService
         $charge->setNotes($notes);
         $this->em->persist($charge);
 
-        $this->recalculate($folio);
-        $this->em->flush();
+        $this->em->flush();         // Write charge first
+        $this->recalculate($folio); // DB sum now includes new charge
+        $this->em->flush();         // Write updated balance
 
         return $charge;
     }
@@ -254,8 +255,9 @@ final class FolioService
         }
 
         $this->em->persist($payment);
-        $this->recalculate($folio);
-        $this->em->flush();
+        $this->em->flush();          // Write payment to DB first
+        $this->recalculate($folio);  // Now DB sum includes the new payment
+        $this->em->flush();          // Write updated folio balance
 
         return $payment;
     }
@@ -274,8 +276,9 @@ final class FolioService
         $payment->setConfirmedAt(new \DateTimeImmutable());
 
         $folio = $this->folioRepo->findOrFail($payment->getFolioId());
-        $this->recalculate($folio);
-        $this->em->flush();
+        $this->em->flush();          // Write confirmed status to DB first
+        $this->recalculate($folio);  // Now DB sum includes the newly confirmed payment
+        $this->em->flush();          // Write updated folio balance
 
         return $payment;
     }
@@ -292,8 +295,9 @@ final class FolioService
         $payment->setConfirmedBy($userId);
 
         $folio = $this->folioRepo->findOrFail($payment->getFolioId());
-        $this->recalculate($folio);
-        $this->em->flush();
+        $this->em->flush();          // Write rejected status first
+        $this->recalculate($folio);  // Recalculate without the rejected payment
+        $this->em->flush();          // Write updated folio balance
 
         return $payment;
     }
@@ -312,6 +316,7 @@ final class FolioService
         $adj->setReason($reason);
         $this->em->persist($adj);
 
+        $this->em->flush();
         $this->recalculate($folio);
         $this->em->flush();
 

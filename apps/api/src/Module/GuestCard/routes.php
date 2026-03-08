@@ -15,10 +15,13 @@ return function (App $app): void {
         $g->get('',                          [GuestCardController::class, 'listCards']);
         // Static routes MUST be before variable routes in FastRoute
         $g->get('/pending',                  [GuestCardController::class, 'listPendingCards']);
+        $g->get('/lookup',                   [GuestCardController::class, 'lookupByQuery']);      // ?q=&property_id=
         $g->get('/lookup/{cardUid}',         [GuestCardController::class, 'lookup']);
         $g->get('/{id}',                     [GuestCardController::class, 'showCard']);
         $g->post('/issue',                   [GuestCardController::class, 'issueCard']);
+        $g->post('/gate-issue',              [GuestCardController::class, 'gateIssueCard']);      // NEW: gate issue by card_id
         $g->post('/security-issue',          [GuestCardController::class, 'securityIssueCard']);
+        $g->post('/security-exit',           [GuestCardController::class, 'securityExit']);       // NEW: exit + revoke
         $g->post('/scan',                    [GuestCardController::class, 'scan']);
         $g->post('/{id}/report-lost',        [GuestCardController::class, 'reportLost']);
         $g->post('/{id}/deactivate',         [GuestCardController::class, 'deactivate']);

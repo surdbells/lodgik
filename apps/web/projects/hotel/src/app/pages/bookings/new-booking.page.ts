@@ -32,22 +32,68 @@ import { AuthService } from '@lodgik/shared';
         <h3 class="text-base font-semibold text-gray-700 mb-4">Select Guest</h3>
         <div class="relative mb-4">
           <input [(ngModel)]="guestSearch" (ngModelChange)="searchGuests()" placeholder="Search by name, phone, or email..." class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50" autofocus>
-          @if (guestResults().length > 0) {
-            <div class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+          @if (guestResults().length > 0 || guestSearch.length >= 2) {
+            <div class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-72 overflow-y-auto">
               @for (g of guestResults(); track g.id) {
                 <button (click)="selectGuest(g)" class="w-full text-left px-4 py-3 text-sm hover:bg-sage-50 border-b border-gray-50 flex justify-between items-center">
                   <div><span class="font-medium">{{ g.full_name }}</span><br><span class="text-gray-400 text-xs">{{ g.phone || g.email || '' }}</span></div>
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500">{{ g.vip_status }}</span>
                 </button>
               }
+              <!-- Always show Add New Guest at bottom of dropdown -->
+              <button (click)="openNewGuestPanel()" class="w-full text-left px-4 py-3 text-sm hover:bg-sage-50 flex items-center gap-2 text-sage-700 font-medium border-t border-gray-100">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add New Guest
+              </button>
             </div>
           }
         </div>
+
+        <!-- Inline: Add New Guest Panel -->
+        @if (showNewGuestPanel) {
+          <div class="border border-sage-200 bg-sage-50 rounded-xl p-4 mb-4 space-y-3">
+            <div class="flex items-center justify-between mb-1">
+              <h4 class="text-sm font-semibold text-sage-800">New Guest</h4>
+              <button (click)="showNewGuestPanel = false" class="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">First Name *</label>
+                <input [(ngModel)]="newGuestForm.first_name" placeholder="First name" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Last Name *</label>
+                <input [(ngModel)]="newGuestForm.last_name" placeholder="Last name" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Phone *</label>
+              <input [(ngModel)]="newGuestForm.phone" placeholder="08xxxxxxxxxx" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Email (optional)</label>
+              <input [(ngModel)]="newGuestForm.email" type="email" placeholder="email@example.com" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button (click)="saveNewGuest()" [disabled]="savingNewGuest"
+                class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700 disabled:opacity-50">
+                {{ savingNewGuest ? 'Saving...' : 'Save &amp; Select' }}
+              </button>
+              <button (click)="showNewGuestPanel = false" class="px-4 py-2 border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-white">Cancel</button>
+            </div>
+          </div>
+        }
+
         @if (booking.guest_id) {
           <div class="p-4 bg-sage-50 rounded-lg flex items-center justify-between">
             <div><span class="font-medium text-sage-800">{{ selectedGuestName }}</span><p class="text-xs text-sage-500 mt-0.5">Guest selected</p></div>
             <button (click)="booking.guest_id = ''; selectedGuestName = ''" class="text-xs text-sage-600 hover:underline">Change</button>
           </div>
+        } @else if (!showNewGuestPanel) {
+          <button (click)="openNewGuestPanel()" class="text-sm text-sage-600 hover:underline flex items-center gap-1 mt-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add New Guest
+          </button>
         }
         <div class="flex justify-end mt-6">
           <button (click)="nextStep()" [disabled]="!booking.guest_id" class="px-6 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700 disabled:opacity-40">Next →</button>
@@ -216,6 +262,9 @@ export class NewBookingPage implements OnInit {
   ratePreview = signal<any>({});
   propertyId = '';
   guestSearch = '';
+  showNewGuestPanel = false;
+  savingNewGuest    = false;
+  newGuestForm = { first_name: '', last_name: '', phone: '', email: '' };
   selectedGuestName = '';
   selectedRoomNumber = '';
   private searchTimer: any;
@@ -255,10 +304,46 @@ export class NewBookingPage implements OnInit {
   }
 
   selectGuest(g: any): void {
-    this.booking.guest_id = g.id;
-    this.selectedGuestName = g.full_name;
-    this.guestSearch = g.full_name;
+    this.booking.guest_id   = g.id;
+    this.selectedGuestName  = g.full_name;
+    this.guestSearch        = g.full_name;
     this.guestResults.set([]);
+    this.showNewGuestPanel  = false;
+  }
+
+  openNewGuestPanel(): void {
+    this.newGuestForm = { first_name: '', last_name: '', phone: '', email: '' };
+    this.showNewGuestPanel = true;
+    this.guestResults.set([]);
+  }
+
+  saveNewGuest(): void {
+    if (!this.newGuestForm.first_name.trim()) { this.toast.error('First name is required'); return; }
+    if (!this.newGuestForm.last_name.trim())  { this.toast.error('Last name is required');  return; }
+    if (!this.newGuestForm.phone.trim())       { this.toast.error('Phone number is required'); return; }
+
+    this.savingNewGuest = true;
+    const body: any = {
+      first_name:  this.newGuestForm.first_name.trim(),
+      last_name:   this.newGuestForm.last_name.trim(),
+      phone:       this.newGuestForm.phone.trim(),
+      property_id: this.activeProperty.propertyId(),
+    };
+    if (this.newGuestForm.email.trim()) body.email = this.newGuestForm.email.trim();
+
+    this.api.post('/guests', body).subscribe({
+      next: (r: any) => {
+        this.savingNewGuest = false;
+        if (r.success && r.data) {
+          const g = r.data;
+          this.selectGuest({ id: g.id, full_name: (g.first_name + ' ' + g.last_name).trim() });
+          this.toast.success('Guest created and selected');
+        } else {
+          this.toast.error(r.message || 'Failed to create guest');
+        }
+      },
+      error: () => { this.savingNewGuest = false; this.toast.error('Failed to create guest'); },
+    });
   }
 
   selectRoom(r: any): void {

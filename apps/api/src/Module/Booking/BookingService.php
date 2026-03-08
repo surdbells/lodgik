@@ -355,6 +355,15 @@ final class BookingService
         try {
             $folio = $this->folioService->getByBooking($booking->getId());
             if ($folio !== null) {
+                // Phase 3: Corporate folios with deferred payment are closed
+                // without requiring a zero balance. The consolidated invoice
+                // will be sent to the corporate client separately.
+                if ($folio->isCorporate() && $folio->getAllowCheckoutWithoutPayment()) {
+                    $this->logger->info(
+                        "Corporate folio checkout (deferred payment) for {$booking->getBookingRef()}. " .
+                        "Outstanding: ₦" . number_format((float)$folio->getBalance(), 2)
+                    );
+                }
                 $this->folioService->close($folio->getId(), $userId);
                 $this->invoiceService->generateFromFolio($folio);
             }

@@ -519,27 +519,131 @@ final class GuestCardController
     // Serializers
     // ══════════════════════════════════════════════════════════════
 
+    /**
+     * POST /api/cards/gate-issue
+     * Security issues a card by card_id (from search results), capturing guest name + phone.
+     */
+    public function gateIssueCard(Request $request, Response $response): Response
+    {
+        try {
+            $body       = (array) ($request->getParsedBody() ?? []);
+            $tenantId   = $request->getAttribute('auth.tenant_id');
+            $userId     = $request->getAttribute('auth.user_id');
+            $propertyId = $body['property_id'] ?? $request->getAttribute('auth.property_id') ?? null;
+            $cardId     = trim($body['card_id'] ?? '');
+            $guestName  = trim($body['guest_name'] ?? '');
+            $phone      = trim($body['phone'] ?? '');
+
+            if (!$propertyId)  return $this->response->error($response, 'property_id is required', 400);
+            if (!$cardId)      return $this->response->error($response, 'card_id is required', 400);
+            if (!$guestName)   return $this->response->error($response, 'guest_name is required', 400);
+            if (!$phone)       return $this->response->error($response, 'phone is required', 400);
+
+            $card = $this->cardService->gateIssueCardById(
+                cardId:      $cardId,
+                propertyId:  $propertyId,
+                issuedBy:    $userId,
+                tenantId:    $tenantId,
+                guestName:   $guestName,
+                phone:       $phone,
+                plateNumber: $body['plate_number'] ?? null,
+                bookingRef:  $body['booking_ref']  ?? null,
+                notes:       $body['notes']        ?? null,
+            );
+
+            return $this->response->created($response, $this->serializeCard($card), 'Card issued at gate — pending pool');
+        } catch (\DomainException $e) {
+            return $this->response->error($response, $e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->response->error($response, $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * POST /api/cards/security-exit
+     * Security confirms guest has left the premises. Revokes card, logs event, triggers discrepancy check.
+     */
+    public function securityExit(Request $request, Response $response): Response
+    {
+        try {
+            $body       = (array) ($request->getParsedBody() ?? []);
+            $tenantId   = $request->getAttribute('auth.tenant_id');
+            $userId     = $request->getAttribute('auth.user_id');
+            $propertyId = $body['property_id'] ?? $request->getAttribute('auth.property_id') ?? null;
+            $cardId     = trim($body['card_id'] ?? '');
+
+            if (!$propertyId) return $this->response->error($response, 'property_id is required', 400);
+            if (!$cardId)     return $this->response->error($response, 'card_id is required', 400);
+
+            $card = $this->cardService->securityProcessExit($cardId, $propertyId, $tenantId, $userId);
+            return $this->response->success($response, $this->serializeCard($card), 'Exit processed — card revoked');
+        } catch (\DomainException $e) {
+            return $this->response->error($response, $e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->response->error($response, $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * GET /api/cards/lookup?q={query}&property_id={id}
+     * Look up a card by card_number or card_uid.
+     */
+    public function lookupByQuery(Request $request, Response $response): Response
+    {
+        $params     = $request->getQueryParams();
+        $propertyId = $params['property_id'] ?? $request->getAttribute('auth.property_id') ?? null;
+        $q          = trim($params['q'] ?? '');
+
+        if (!$propertyId || !$q) return $this->response->error($response, 'property_id and q are required', 400);
+
+        $card = $this->cardService->lookupByQuery($propertyId, $q);
+        if (!$card) return $this->response->notFound($response, 'Card not found');
+        return $this->response->success($response, $card);
+    }
+
+    /**
+     * GET /api/security/checkout-discrepancies
+     */
+    public function checkoutDiscrepancies(Request $request, Response $response): Response
+    {
+        $params     = $request->getQueryParams();
+        $propertyId = $params['property_id'] ?? $request->getAttribute('auth.property_id') ?? null;
+        if (!$propertyId) return $this->response->error($response, 'property_id is required', 400);
+
+        $data = $this->cardService->getDiscrepancies(
+            $propertyId,
+            $params['type'] ?? null,
+            (int) ($params['page'] ?? 1),
+        );
+        return $this->response->success($response, $data);
+    }
+
     private function serializeCard(GuestCard $card): array
     {
         return [
-            'id'                   => $card->getId(),
-            'card_uid'             => $card->getCardUid(),
-            'card_number'          => $card->getCardNumber(),
-            'status'               => $card->getStatus()->value,
-            'status_label'         => $card->getStatus()->label(),
-            'status_color'         => $card->getStatus()->color(),
-            'booking_id'           => $card->getBookingId(),
-            'guest_id'             => $card->getGuestId(),
-            'issued_by'            => $card->getIssuedBy(),
-            'issued_at'            => $card->getIssuedAt()?->format('c'),
-            'deactivated_at'       => $card->getDeactivatedAt()?->format('c'),
-            'replaced_by'          => $card->getReplacedBy(),
-            'notes'                => $card->getNotes(),
+            'id'                        => $card->getId(),
+            'card_uid'                  => $card->getCardUid(),
+            'card_number'               => $card->getCardNumber(),
+            'status'                    => $card->getStatus()->value,
+            'status_label'              => $card->getStatus()->label(),
+            'status_color'              => $card->getStatus()->color(),
+            'booking_id'                => $card->getBookingId(),
+            'guest_id'                  => $card->getGuestId(),
+            'issued_by'                 => $card->getIssuedBy(),
+            'issued_at'                 => $card->getIssuedAt()?->format('c'),
+            'deactivated_at'            => $card->getDeactivatedAt()?->format('c'),
+            'replaced_by'               => $card->getReplacedBy(),
+            'notes'                     => $card->getNotes(),
             // Security-gate issuance
-            'plate_number'         => $card->getPlateNumber(),
-            'issued_by_security'   => $card->isIssuedBySecurity(),
-            'security_issued_at'   => $card->getSecurityIssuedAt()?->format('c'),
-            'created_at'           => $card->getCreatedAt()->format('c'),
+            'plate_number'              => $card->getPlateNumber(),
+            'gate_guest_name'           => $card->getGateGuestName(),
+            'gate_phone'                => $card->getGatePhone(),
+            'guest_name'                => $card->getGateGuestName(), // alias for frontend convenience
+            'issued_by_security'        => $card->isIssuedBySecurity(),
+            'security_issued_at'        => $card->getSecurityIssuedAt()?->format('c'),
+            'security_exit_at'          => $card->getSecurityExitAt()?->format('c'),
+            'receptionist_checkout_at'  => $card->getReceptionistCheckoutAt()?->format('c'),
+            'created_at'                => $card->getCreatedAt()->format('c'),
         ];
     }
 

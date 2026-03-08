@@ -70,8 +70,24 @@ class GuestCard implements TenantAware
      * Vehicle plate number captured when security issues the card at the gate.
      * Optional — only recorded when the guest arrives by vehicle.
      */
-    #[ORM\Column(name: 'plate_number', type: Types::STRING, length: 20, nullable: true)]
+    #[ORM\Column(name: 'plate_number', type: Types::STRING, length: 30, nullable: true)]
     private ?string $plateNumber = null;
+
+    /** Guest name captured at gate (before booking exists). */
+    #[ORM\Column(name: 'gate_guest_name', type: Types::STRING, length: 200, nullable: true)]
+    private ?string $gateGuestName = null;
+
+    /** Guest phone captured at gate. */
+    #[ORM\Column(name: 'gate_phone', type: Types::STRING, length: 50, nullable: true)]
+    private ?string $gatePhone = null;
+
+    /** Timestamp when security processed the guest's exit from premises. */
+    #[ORM\Column(name: 'security_exit_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $securityExitAt = null;
+
+    /** Timestamp when receptionist completed the hotel checkout. */
+    #[ORM\Column(name: 'receptionist_checkout_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $receptionistCheckoutAt = null;
 
     /**
      * True when the card was issued at the security gate before check-in.
@@ -105,8 +121,15 @@ class GuestCard implements TenantAware
     public function getReplacedBy(): ?string             { return $this->replacedBy; }
     public function getNotes(): ?string                  { return $this->notes; }
     public function getPlateNumber(): ?string            { return $this->plateNumber; }
+    public function getGateGuestName(): ?string          { return $this->gateGuestName; }
+    public function getGatePhone(): ?string              { return $this->gatePhone; }
+    public function getSecurityExitAt(): ?\DateTimeImmutable { return $this->securityExitAt; }
+    public function getReceptionistCheckoutAt(): ?\DateTimeImmutable { return $this->receptionistCheckoutAt; }
     public function isIssuedBySecurity(): bool           { return $this->issuedBySecurity; }
     public function getSecurityIssuedAt(): ?\DateTimeImmutable { return $this->securityIssuedAt; }
+
+    public function setSecurityExitAt(\DateTimeImmutable $at): void          { $this->securityExitAt = $at; }
+    public function setReceptionistCheckoutAt(\DateTimeImmutable $at): void  { $this->receptionistCheckoutAt = $at; }
 
     // ── Business methods ─────────────────────────────────────────
 
@@ -115,12 +138,18 @@ class GuestCard implements TenantAware
      * Card enters the pending pool — no booking attached yet.
      * Reception will call attachToBooking() when the guest checks in.
      */
-    public function issueAtGate(string $issuedBy, ?string $plateNumber = null): void
-    {
+    public function issueAtGate(
+        string  $issuedBy,
+        ?string $plateNumber = null,
+        ?string $guestName   = null,
+        ?string $phone       = null,
+    ): void {
         $this->issuedBy          = $issuedBy;
         $this->issuedBySecurity  = true;
         $this->securityIssuedAt  = new \DateTimeImmutable();
         $this->plateNumber       = $plateNumber;
+        $this->gateGuestName     = $guestName;
+        $this->gatePhone         = $phone;
         $this->status            = GuestCardStatus::PENDING_CHECKIN;
     }
 

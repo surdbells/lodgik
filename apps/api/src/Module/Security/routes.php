@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use Lodgik\Module\Security\SecurityController;
+use Lodgik\Module\GuestCard\GuestCardController;
 use Lodgik\Middleware\RoleMiddleware;
 use Lodgik\Middleware\AuthMiddleware;
 use Lodgik\Middleware\TenantMiddleware;
@@ -22,6 +23,7 @@ return function (App $app): void {
         $g->get('/movements', [SecurityController::class, 'getMovements']);
         $g->post('/movements', [SecurityController::class, 'recordMovement']);
         $g->get('/on-premise', [SecurityController::class, 'getOnPremise']);
+        $g->get('/checkout-discrepancies', [GuestCardController::class, 'checkoutDiscrepancies']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager', 'security', 'front_desk']))
         ->add(TenantMiddleware::class)

@@ -148,6 +148,10 @@ final class TenantController
             'market_purchase_spending_limit_kobo',
             'market_purchase_require_dual_approval',
             'market_purchase_require_receipt_or_note',
+            // New — Payment receipt enforcement
+            'require_payment_receipt',
+            // New — Checkout discrepancy threshold
+            'checkout_discrepancy_threshold_minutes',
         ];
 
         $property = $this->tenantService->getProperty($args['id']);
