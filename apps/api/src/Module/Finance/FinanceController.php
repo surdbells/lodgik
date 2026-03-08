@@ -46,7 +46,7 @@ final class FinanceController
 
     // Group Bookings
     public function listGroups(Request $req, Response $res): Response { $p = $req->getQueryParams(); return $this->json($res, ['success' => true, 'data' => $this->svc->listGroupBookings($p['property_id'] ?? '', $p['status'] ?? null)]); }
-    public function createGroup(Request $req, Response $res): Response { $d = $this->body($req); $g = $this->svc->createGroupBooking($d['property_id'], $d['name'], $d['booking_type'], $d['contact_name'], $d['check_in'], $d['check_out'], $req->getAttribute('auth.tenant_id'), $d); return $this->json($res, ['success' => true, 'data' => $g->toArray()], 201); }
+    public function createGroup(Request $req, Response $res): Response { $d = $this->body($req); $pid = $d['property_id'] ?? $req->getQueryParams()['property_id'] ?? $req->getAttribute('auth.property_id') ?? null; if (!$pid) return $this->json($res, ['success' => false, 'message' => 'property_id is required'], 422); $g = $this->svc->createGroupBooking($pid, $d['name'] ?? '', $d['booking_type'] ?? 'overnight', $d['contact_name'] ?? '', $d['check_in'] ?? '', $d['check_out'] ?? '', $req->getAttribute('auth.tenant_id'), $d); return $this->json($res, ['success' => true, 'data' => $g->toArray()], 201); }
     public function confirmGroup(Request $req, Response $res, array $args): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->confirmGroupBooking($args['id'])->toArray()]); }
     public function cancelGroup(Request $req, Response $res, array $args): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->cancelGroupBooking($args['id'])->toArray()]); }
 }
