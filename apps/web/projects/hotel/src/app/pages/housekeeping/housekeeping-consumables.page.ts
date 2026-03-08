@@ -419,7 +419,10 @@ export class HousekeepingConsumablesPage implements OnInit {
     });
   }
 
-  reqStatusVariant(status: string): string {
-    return ({ pending: 'warning', storekeeper_approved: 'info', admin_approved: 'info', fulfilled: 'success', rejected: 'danger' } as Record<string, 'success'|'danger'|'warning'|'info'|'neutral'|'primary'>)[status] ?? 'neutral';
+  reqStatusVariant(status: string): 'success'|'danger'|'warning'|'info'|'neutral'|'primary' {
+    const map: Record<string, 'success'|'danger'|'warning'|'info'|'neutral'|'primary'> = {
+      pending: 'warning', storekeeper_approved: 'info', admin_approved: 'info', fulfilled: 'success', rejected: 'danger'
+    };
+    return map[status] ?? 'neutral';
   }
 }
