@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService, ToastService, ActivePropertyService } from '@lodgik/shared';
 
-type ScanContext = 'reception_lookup' | 'checkout' | 'security_exit' | 'facility_access' | 'pos_charge';
+type ScanContext = 'gate_issue' | 'reception_lookup' | 'checkout' | 'security_exit' | 'facility_access' | 'pos_charge';
 
 @Component({
   selector: 'app-card-scanner',
@@ -32,6 +32,7 @@ type ScanContext = 'reception_lookup' | 'checkout' | 'security_exit' | 'facility
           </select>
           <!-- Context selector -->
           <select [(ngModel)]="context" class="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2">
+            <option value="gate_issue">🛡️ Gate Issue (Security)</option>
             <option value="reception_lookup">🔍 Reception Lookup</option>
             <option value="checkout">🚪 Checkout</option>
             <option value="security_exit">🛡️ Security Exit</option>
@@ -73,6 +74,16 @@ type ScanContext = 'reception_lookup' | 'checkout' | 'security_exit' | 'facility
                   class="w-full bg-gray-800 border border-gray-600 text-white rounded-xl px-4 py-3 text-center text-lg font-mono focus:outline-none focus:border-blue-500">
                 <input [(ngModel)]="chargeDesc" placeholder="Description (e.g. Bar order)"
                   class="w-full bg-gray-800 border border-gray-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500">
+              </div>
+            }
+
+            <!-- Vehicle plate number (only shown for gate_issue context) -->
+            @if (context === 'gate_issue') {
+              <div class="mt-4">
+                <input [(ngModel)]="gatePlateNumber"
+                  placeholder="Vehicle plate number (optional, e.g. LND-123-AA)"
+                  class="w-full bg-gray-800 border border-gray-600 text-white rounded-xl px-4 py-3 text-center text-sm font-mono uppercase tracking-widest focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500">
+                <p class="text-xs text-gray-500 text-center mt-2">Card will enter the pending pool — reception attaches it to a booking.</p>
               </div>
             }
 
@@ -211,6 +222,7 @@ export class CardScannerPage implements OnInit, OnDestroy {
   context: ScanContext = 'reception_lookup';
   chargeAmount = '';
   chargeDesc   = '';
+  gatePlateNumber = '';
   propertyId   = '';
   scanPointId  = '';
 
@@ -271,11 +283,51 @@ export class CardScannerPage implements OnInit, OnDestroy {
     }
 
     this.scanning.set(true);
+
+    // Gate issue: different endpoint — issues card to pending pool
+    if (this.context === 'gate_issue') {
+      const body = {
+        card_uid:     this.cardUid.trim(),
+        plate_number: this.gatePlateNumber.trim().toUpperCase() || null,
+        property_id:  this.propertyId,
+      };
+      this.api.post('/cards/security-issue', body).subscribe({
+        next: (r: any) => {
+          const card = r.data;
+          const result = {
+            allowed:  true,
+            context:  'gate_issue',
+            message:  card?.plate_number
+              ? `Card ${card.card_number} — Plate ${card.plate_number} — sent to pending pool`
+              : `Card ${card?.card_number ?? ''} added to pending pool`,
+            card_number: card?.card_number,
+            plate_number: card?.plate_number,
+          };
+          this.lastResult.set(result);
+          this.scanTime.set(new Date().toLocaleTimeString());
+          this.scanning.set(false);
+          this.recentScans.update(prev => [{
+            id: Date.now(), event_type: 'gate_issue', event_label: result.message?.slice(0, 40),
+            event_icon: '🛡️', guestName: card?.plate_number ?? null, scanned_at: new Date().toISOString(),
+          }, ...prev.slice(0, 49)]);
+          this.playBeep(true);
+          setTimeout(() => { this.cardUid = ''; this.gatePlateNumber = ''; }, 1500);
+        },
+        error: (e: any) => {
+          this.scanning.set(false);
+          this.lastResult.set({ allowed: false, message: e?.error?.message ?? 'Gate issue failed' });
+          this.playBeep(false);
+        },
+      });
+      return;
+    }
+
+    // All other contexts — standard scan endpoint
     const body: any = {
-      card_uid:          this.cardUid.trim(),
-      context:           this.context,
-      scan_point_id:     this.scanPointId || undefined,
-      charge_amount:     this.chargeAmount || undefined,
+      card_uid:           this.cardUid.trim(),
+      context:            this.context,
+      scan_point_id:      this.scanPointId || undefined,
+      charge_amount:      this.chargeAmount || undefined,
       charge_description: this.chargeDesc || undefined,
     };
 
@@ -286,7 +338,6 @@ export class CardScannerPage implements OnInit, OnDestroy {
         this.scanTime.set(new Date().toLocaleTimeString());
         this.scanning.set(false);
 
-        // Push to local recent scans sidebar
         const scanEntry: any = {
           id:          Date.now(),
           event_type:  result.context ?? (result.allowed ? 'entry' : 'access_denied'),
@@ -297,10 +348,7 @@ export class CardScannerPage implements OnInit, OnDestroy {
         };
         this.recentScans.update(prev => [scanEntry, ...prev.slice(0, 49)]);
 
-        // Play audio cue (browser permitting)
         this.playBeep(result.allowed);
-
-        // Auto-clear uid after scan
         setTimeout(() => { this.cardUid = ''; this.chargeAmount = ''; this.chargeDesc = ''; }, 1500);
       },
       error: (e: any) => {
