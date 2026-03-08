@@ -89,6 +89,109 @@ final class GuestCardController
         }
     }
 
+    /**
+     * POST /api/cards/security-issue
+     *
+     * Security gate issues a card to a guest arriving by vehicle or on foot.
+     * No booking required at this point — card enters PENDING_CHECKIN pool.
+     *
+     * Body:
+     *   property_id  string  required
+     *   card_uid     string  required  (auto-typed by USB RFID reader)
+     *   plate_number string  optional  (vehicle plate)
+     */
+    public function securityIssueCard(Request $request, Response $response): Response
+    {
+        try {
+            $body       = (array) ($request->getParsedBody() ?? []);
+            $tenantId   = $request->getAttribute('auth.tenant_id');
+            $userId     = $request->getAttribute('auth.user_id');
+            $propertyId = $body['property_id'] ?? $request->getAttribute('auth.property_id') ?? null;
+            $cardUid    = trim($body['card_uid'] ?? '');
+
+            if (!$propertyId) return $this->response->error($response, 'property_id is required', 400);
+            if (!$cardUid)    return $this->response->error($response, 'card_uid is required', 400);
+
+            $card = $this->cardService->securityIssueCard(
+                propertyId:  $propertyId,
+                cardUid:     $cardUid,
+                issuedBy:    $userId,
+                tenantId:    $tenantId,
+                plateNumber: $body['plate_number'] ?? null,
+            );
+
+            return $this->response->created(
+                $response,
+                $this->serializeCard($card),
+                'Card issued at gate — awaiting check-in',
+            );
+        } catch (\DomainException $e) {
+            return $this->response->error($response, $e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->response->error($response, $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * POST /api/cards/{id}/attach-booking
+     *
+     * Reception attaches a PENDING_CHECKIN card to a booking.
+     * Transitions the card from PENDING_CHECKIN → ACTIVE.
+     *
+     * Body:
+     *   booking_id  string  required
+     */
+    public function attachCardToBooking(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $body      = (array) ($request->getParsedBody() ?? []);
+            $tenantId  = $request->getAttribute('auth.tenant_id');
+            $userId    = $request->getAttribute('auth.user_id');
+            $bookingId = $body['booking_id'] ?? null;
+
+            if (!$bookingId) return $this->response->error($response, 'booking_id is required', 400);
+
+            $card = $this->cardService->attachCardToBooking(
+                cardId:    $args['id'],
+                bookingId: $bookingId,
+                userId:    $userId,
+                tenantId:  $tenantId,
+            );
+
+            return $this->response->success($response, $this->serializeCard($card), 'Card attached to booking successfully');
+        } catch (\DomainException $e) {
+            return $this->response->error($response, $e->getMessage(), 422);
+        } catch (\RuntimeException $e) {
+            return $this->response->notFound($response, $e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->response->error($response, $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * GET /api/cards/pending?property_id=
+     *
+     * List all PENDING_CHECKIN cards — reception uses this to pick a card
+     * for a guest checking in (when card enforcement is enabled).
+     */
+    public function listPendingCards(Request $request, Response $response): Response
+    {
+        try {
+            $propertyId = $request->getQueryParams()['property_id'] ?? null;
+            $tenantId   = $request->getAttribute('auth.tenant_id');
+
+            if (!$propertyId) return $this->response->error($response, 'property_id is required', 400);
+
+            $cards = $this->cardService->listPendingCards($propertyId, $tenantId);
+            return $this->response->success($response, [
+                'items' => array_map(fn(GuestCard $c) => $this->serializeCard($c), $cards),
+                'total' => count($cards),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->error($response, $e->getMessage(), 500);
+        }
+    }
+
     /** POST /api/cards/scan — Universal scan endpoint */
     public function scan(Request $request, Response $response): Response
     {
@@ -419,20 +522,24 @@ final class GuestCardController
     private function serializeCard(GuestCard $card): array
     {
         return [
-            'id'             => $card->getId(),
-            'card_uid'       => $card->getCardUid(),
-            'card_number'    => $card->getCardNumber(),
-            'status'         => $card->getStatus()->value,
-            'status_label'   => $card->getStatus()->label(),
-            'status_color'   => $card->getStatus()->color(),
-            'booking_id'     => $card->getBookingId(),
-            'guest_id'       => $card->getGuestId(),
-            'issued_by'      => $card->getIssuedBy(),
-            'issued_at'      => $card->getIssuedAt()?->format('c'),
-            'deactivated_at' => $card->getDeactivatedAt()?->format('c'),
-            'replaced_by'    => $card->getReplacedBy(),
-            'notes'          => $card->getNotes(),
-            'created_at'     => $card->getCreatedAt()->format('c'),
+            'id'                   => $card->getId(),
+            'card_uid'             => $card->getCardUid(),
+            'card_number'          => $card->getCardNumber(),
+            'status'               => $card->getStatus()->value,
+            'status_label'         => $card->getStatus()->label(),
+            'status_color'         => $card->getStatus()->color(),
+            'booking_id'           => $card->getBookingId(),
+            'guest_id'             => $card->getGuestId(),
+            'issued_by'            => $card->getIssuedBy(),
+            'issued_at'            => $card->getIssuedAt()?->format('c'),
+            'deactivated_at'       => $card->getDeactivatedAt()?->format('c'),
+            'replaced_by'          => $card->getReplacedBy(),
+            'notes'                => $card->getNotes(),
+            // Security-gate issuance
+            'plate_number'         => $card->getPlateNumber(),
+            'issued_by_security'   => $card->isIssuedBySecurity(),
+            'security_issued_at'   => $card->getSecurityIssuedAt()?->format('c'),
+            'created_at'           => $card->getCreatedAt()->format('c'),
         ];
     }
 

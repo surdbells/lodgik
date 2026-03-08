@@ -13,12 +13,16 @@ return function (App $app): void {
     // ── Card operations (reception + security + management) ───────
     $app->group('/api/cards', function (RouteCollectorProxy $g) {
         $g->get('',                          [GuestCardController::class, 'listCards']);
+        // Static routes MUST be before variable routes in FastRoute
+        $g->get('/pending',                  [GuestCardController::class, 'listPendingCards']);
+        $g->get('/lookup/{cardUid}',         [GuestCardController::class, 'lookup']);
         $g->get('/{id}',                     [GuestCardController::class, 'showCard']);
         $g->post('/issue',                   [GuestCardController::class, 'issueCard']);
+        $g->post('/security-issue',          [GuestCardController::class, 'securityIssueCard']);
         $g->post('/scan',                    [GuestCardController::class, 'scan']);
-        $g->get('/lookup/{cardUid}',         [GuestCardController::class, 'lookup']);
         $g->post('/{id}/report-lost',        [GuestCardController::class, 'reportLost']);
         $g->post('/{id}/deactivate',         [GuestCardController::class, 'deactivate']);
+        $g->post('/{id}/attach-booking',     [GuestCardController::class, 'attachCardToBooking']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager', 'front_desk', 'security', 'receptionist']))
         ->add(TenantMiddleware::class)

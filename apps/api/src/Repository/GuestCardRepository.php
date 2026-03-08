@@ -96,4 +96,34 @@ final class GuestCardRepository extends BaseRepository
         if (!$card) throw new \RuntimeException('Guest card not found');
         return $card;
     }
+
+    /**
+     * Return the single ACTIVE card for a booking, or null.
+     * Used by attachCardToBooking() to prevent double-assignment.
+     */
+    public function findActiveCardForBooking(string $bookingId): ?GuestCard
+    {
+        return $this->createQueryBuilder('c')
+            ->where('c.bookingId = :bid')
+            ->andWhere('c.status = :status')
+            ->setParameter('bid', $bookingId)
+            ->setParameter('status', GuestCardStatus::ACTIVE->value)
+            ->setMaxResults(1)
+            ->getQuery()->getOneOrNullResult();
+    }
+
+    /**
+     * Return all cards for a property matching a given status.
+     * Used to list the pending pool for reception.
+     */
+    public function findByPropertyAndStatus(string $propertyId, GuestCardStatus $status): array
+    {
+        return $this->createQueryBuilder('c')
+            ->where('c.propertyId = :pid')
+            ->andWhere('c.status = :status')
+            ->setParameter('pid', $propertyId)
+            ->setParameter('status', $status->value)
+            ->orderBy('c.securityIssuedAt', 'ASC')
+            ->getQuery()->getResult();
+    }
 }

@@ -45,6 +45,8 @@ final class BookingService
         private readonly \Lodgik\Module\Invoice\InvoiceService $invoiceService,
         private readonly ?\Lodgik\Module\GuestAuth\GuestAuthService $guestAuthService = null,
         private readonly ?\Lodgik\Module\Housekeeping\HousekeepingService $housekeepingService = null,
+        private readonly ?\Lodgik\Repository\GuestCardRepository $cardRepo = null,
+        private readonly ?\Lodgik\Repository\PropertyRepository $propertyRepo = null,
     ) {}
 
     // ═══ List / Get ════════════════════════════════════════════
@@ -234,6 +236,26 @@ final class BookingService
         if ($booking->getRoomId() === null) {
             throw new \InvalidArgumentException('Room must be assigned before check-in');
         }
+
+        // ── Card Enforcement (optional, per-property setting) ────────
+        // When enabled: a PENDING_CHECKIN or ACTIVE card must already be
+        // issued (at the gate) for this property before the booking can be
+        // checked in. Reception must call POST /api/cards/{id}/attach-booking
+        // first, which transitions the card to ACTIVE and sets booking_id.
+        if ($this->propertyRepo !== null && $this->cardRepo !== null) {
+            $property = $this->propertyRepo->find($booking->getPropertyId());
+            if ($property !== null && $property->getSetting('card_enforcement_enabled', false)) {
+                $activeCard = $this->cardRepo->findActiveCardForBooking($bookingId);
+                if ($activeCard === null) {
+                    throw new \DomainException(
+                        'Card enforcement is enabled for this property. ' .
+                        'A guest card must be issued at the security gate and attached to this booking ' .
+                        'before check-in can proceed. Please attach a card via the Guest Cards screen.'
+                    );
+                }
+            }
+        }
+        // ────────────────────────────────────────────────────────────
 
         // Set room to occupied
         $room = $this->roomRepo->findOrFail($booking->getRoomId());

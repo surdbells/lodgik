@@ -118,9 +118,138 @@ final class GuestCardService
         return $card;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // PHASE A — Universal Scan
-    // ══════════════════════════════════════════════════════════════
+    // ──────────────────────────────────────────────────────────────
+    // Security-gate issuance (Feature: security-first card flow)
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * Security gate: scan an AVAILABLE card UID, optionally record a plate number.
+     * Card moves to PENDING_CHECKIN — sits in the pending pool until reception
+     * attaches it to a booking during check-in.
+     *
+     * Called by: POST /api/cards/security-issue
+     * Roles: security, front_desk, receptionist, manager, property_admin
+     */
+    public function securityIssueCard(
+        string  $propertyId,
+        string  $cardUid,
+        string  $issuedBy,
+        string  $tenantId,
+        ?string $plateNumber = null,
+    ): GuestCard {
+        $card = $this->cardRepo->findByUidOrFail($cardUid);
+
+        // Guard: only AVAILABLE cards can be issued at the gate
+        if ($card->getStatus() !== GuestCardStatus::AVAILABLE) {
+            throw new \DomainException(
+                "Card {$card->getCardNumber()} cannot be issued at gate — current status: {$card->getStatus()->label()}. " .
+                "Only 'available' cards can be issued at the gate."
+            );
+        }
+
+        // Guard: card must belong to the same property
+        if ($card->getPropertyId() !== $propertyId) {
+            throw new \DomainException('Card does not belong to this property.');
+        }
+
+        $card->issueAtGate($issuedBy, $plateNumber);
+        $this->em->flush();
+
+        $this->logEvent(
+            $card,
+            GuestCardEventType::ISSUED,
+            $tenantId,
+            $propertyId,
+            [
+                'issued_by'    => $issuedBy,
+                'plate_number' => $plateNumber,
+                'method'       => 'security_gate',
+            ],
+            scannedBy: $issuedBy,
+        );
+
+        $plateInfo = $plateNumber ? " (plate: {$plateNumber})" : '';
+        $this->logger->info("Card {$card->getCardNumber()} issued at gate by security{$plateInfo}");
+        return $card;
+    }
+
+    /**
+     * Reception: attach a PENDING_CHECKIN card to a booking.
+     * Card transitions PENDING_CHECKIN → ACTIVE.
+     * The booking's check-in process should call this before (or instead of) issueCard
+     * when card enforcement is enabled.
+     *
+     * Called by: POST /api/cards/{id}/attach-booking
+     * Roles: front_desk, receptionist, manager, property_admin
+     */
+    public function attachCardToBooking(
+        string $cardId,
+        string $bookingId,
+        string $userId,
+        string $tenantId,
+    ): GuestCard {
+        $card    = $this->cardRepo->findOrFail($cardId);
+        $booking = $this->bookingRepo->find($bookingId);
+
+        if (!$booking) {
+            throw new \RuntimeException('Booking not found.');
+        }
+
+        // Allow attaching PENDING_CHECKIN or AVAILABLE cards
+        // (AVAILABLE = enforcement off or card was not pre-issued at gate)
+        if (!in_array($card->getStatus(), [GuestCardStatus::PENDING_CHECKIN, GuestCardStatus::AVAILABLE])) {
+            throw new \DomainException(
+                "Card {$card->getCardNumber()} cannot be attached — status: {$card->getStatus()->label()}. " .
+                "Only 'pending_checkin' or 'available' cards can be attached to a booking."
+            );
+        }
+
+        // Guard: ensure card belongs to the same property as the booking
+        if ($card->getPropertyId() !== $booking->getPropertyId()) {
+            throw new \DomainException('Card property does not match booking property.');
+        }
+
+        // Guard: booking must not already have an active card
+        $existing = $this->cardRepo->findActiveCardForBooking($bookingId);
+        if ($existing !== null) {
+            throw new \DomainException(
+                "Booking {$booking->getBookingRef()} already has an active card ({$existing->getCardNumber()})."
+            );
+        }
+
+        $card->attachToBooking($bookingId, $booking->getGuestId());
+        $this->em->flush();
+
+        $this->logEvent(
+            $card,
+            GuestCardEventType::CHECK_IN,
+            $tenantId,
+            $booking->getPropertyId(),
+            [
+                'booking_ref'         => $booking->getBookingRef(),
+                'attached_by'         => $userId,
+                'plate_number'        => $card->getPlateNumber(),
+                'issued_by_security'  => $card->isIssuedBySecurity(),
+            ],
+            scannedBy: $userId,
+        );
+
+        $this->logger->info("Card {$card->getCardNumber()} attached to booking {$booking->getBookingRef()}");
+        return $card;
+    }
+
+    /**
+     * Return all PENDING_CHECKIN cards for a property.
+     * Reception uses this to pick a card for a guest checking in.
+     *
+     * Called by: GET /api/cards/pending?property_id=
+     */
+    public function listPendingCards(string $propertyId, string $tenantId): array
+    {
+        return $this->cardRepo->findByPropertyAndStatus($propertyId, GuestCardStatus::PENDING_CHECKIN);
+    }
+
+
 
     /**
      * The single entry-point for ALL scan operations across the property.
@@ -481,23 +610,25 @@ final class GuestCardService
 
     public function getInventoryReport(string $propertyId): array
     {
-        $counts    = $this->cardRepo->countByStatus($propertyId);
-        $available = $counts[GuestCardStatus::AVAILABLE->value] ?? 0;
-        $active    = $counts[GuestCardStatus::ACTIVE->value]    ?? 0;
-        $issued    = $counts[GuestCardStatus::ISSUED->value]    ?? 0;
-        $lost      = $counts[GuestCardStatus::LOST->value]      ?? 0;
-        $deactivated = $counts[GuestCardStatus::DEACTIVATED->value] ?? 0;
-        $replaced  = $counts[GuestCardStatus::REPLACED->value]  ?? 0;
-        $total     = array_sum($counts);
+        $counts         = $this->cardRepo->countByStatus($propertyId);
+        $available      = $counts[GuestCardStatus::AVAILABLE->value]        ?? 0;
+        $active         = $counts[GuestCardStatus::ACTIVE->value]           ?? 0;
+        $issued         = $counts[GuestCardStatus::ISSUED->value]           ?? 0;
+        $pendingCheckin = $counts[GuestCardStatus::PENDING_CHECKIN->value]  ?? 0;
+        $lost           = $counts[GuestCardStatus::LOST->value]             ?? 0;
+        $deactivated    = $counts[GuestCardStatus::DEACTIVATED->value]      ?? 0;
+        $replaced       = $counts[GuestCardStatus::REPLACED->value]         ?? 0;
+        $total          = array_sum($counts);
 
         return [
-            'total'       => $total,
-            'available'   => $available,
-            'in_use'      => $active + $issued,
-            'deactivated' => $deactivated,
-            'lost'        => $lost,
-            'replaced'    => $replaced,
-            'breakdown'   => $counts,
+            'total'           => $total,
+            'available'       => $available,
+            'pending_checkin' => $pendingCheckin,
+            'in_use'          => $active + $issued,
+            'deactivated'     => $deactivated,
+            'lost'            => $lost,
+            'replaced'        => $replaced,
+            'breakdown'       => $counts,
         ];
     }
 

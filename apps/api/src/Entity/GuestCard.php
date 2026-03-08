@@ -64,6 +64,26 @@ class GuestCard implements TenantAware
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
 
+    // ── Security-gate issuance fields ────────────────────────────
+
+    /**
+     * Vehicle plate number captured when security issues the card at the gate.
+     * Optional — only recorded when the guest arrives by vehicle.
+     */
+    #[ORM\Column(name: 'plate_number', type: Types::STRING, length: 20, nullable: true)]
+    private ?string $plateNumber = null;
+
+    /**
+     * True when the card was issued at the security gate before check-in.
+     * False (default) for the traditional reception-issue flow.
+     */
+    #[ORM\Column(name: 'issued_by_security', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $issuedBySecurity = false;
+
+    /** Timestamp of security gate issuance. Null for reception-issued cards. */
+    #[ORM\Column(name: 'security_issued_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $securityIssuedAt = null;
+
     public function __construct(string $propertyId, string $cardUid, string $cardNumber, string $tenantId)
     {
         $this->propertyId  = $propertyId;
@@ -84,8 +104,37 @@ class GuestCard implements TenantAware
     public function getDeactivatedAt(): ?\DateTimeImmutable { return $this->deactivatedAt; }
     public function getReplacedBy(): ?string             { return $this->replacedBy; }
     public function getNotes(): ?string                  { return $this->notes; }
+    public function getPlateNumber(): ?string            { return $this->plateNumber; }
+    public function isIssuedBySecurity(): bool           { return $this->issuedBySecurity; }
+    public function getSecurityIssuedAt(): ?\DateTimeImmutable { return $this->securityIssuedAt; }
 
     // ── Business methods ─────────────────────────────────────────
+
+    /**
+     * Security gate: move card from AVAILABLE → PENDING_CHECKIN.
+     * Card enters the pending pool — no booking attached yet.
+     * Reception will call attachToBooking() when the guest checks in.
+     */
+    public function issueAtGate(string $issuedBy, ?string $plateNumber = null): void
+    {
+        $this->issuedBy          = $issuedBy;
+        $this->issuedBySecurity  = true;
+        $this->securityIssuedAt  = new \DateTimeImmutable();
+        $this->plateNumber       = $plateNumber;
+        $this->status            = GuestCardStatus::PENDING_CHECKIN;
+    }
+
+    /**
+     * Reception: attach a PENDING_CHECKIN card to a booking at check-in.
+     * Transitions PENDING_CHECKIN → ACTIVE.
+     */
+    public function attachToBooking(string $bookingId, string $guestId): void
+    {
+        $this->bookingId = $bookingId;
+        $this->guestId   = $guestId;
+        $this->issuedAt  = new \DateTimeImmutable();
+        $this->status    = GuestCardStatus::ACTIVE;
+    }
     public function issue(string $bookingId, string $guestId, string $issuedBy): void
     {
         $this->bookingId = $bookingId;
