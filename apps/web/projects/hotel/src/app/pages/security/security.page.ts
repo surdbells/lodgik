@@ -376,36 +376,39 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, AuthService, Activ
       <!-- Gate Issue Modal -->
       @if (showGateIssueModal) {
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-            <h3 class="text-sm font-semibold text-gray-800 mb-4">Issue Card at Gate — {{ gateIssueCard?.card_number }}</h3>
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-10 h-10 bg-sage-100 rounded-full flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-sage-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-gray-800">Issue at Gate</h3>
+                <p class="text-xs text-gray-400">Card: <span class="font-mono font-semibold text-sage-700">{{ gateIssueCard?.card_number }}</span></p>
+              </div>
+            </div>
             <div class="space-y-3">
               <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Guest Name *</label>
-                <input [(ngModel)]="gateIssueForm.guest_name" placeholder="Full name" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Vehicle Plate Number <span class="text-gray-300">(optional)</span></label>
+                <input [(ngModel)]="gateIssueForm.plate_number"
+                  placeholder="e.g. LND-123-AA"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono uppercase tracking-widest bg-gray-50">
               </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Phone Number *</label>
-                <input [(ngModel)]="gateIssueForm.phone" placeholder="08xxxxxxxxxx" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Vehicle Plate Number (optional)</label>
-                <input [(ngModel)]="gateIssueForm.plate_number" placeholder="e.g. ABC-123-DE" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono uppercase">
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Booking Reference (optional)</label>
-                <input [(ngModel)]="gateIssueForm.booking_ref" placeholder="BK-..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Notes (optional)</label>
-                <input [(ngModel)]="gateIssueForm.notes" placeholder="Additional notes" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+              <div class="p-3 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-700 leading-relaxed">
+                <span class="font-semibold">What happens next:</span> Card enters the <em>Pending at Gate</em> pool.
+                Reception will see it highlighted and must attach it to a booking before check-in can proceed.
               </div>
             </div>
             <div class="flex gap-2 mt-5">
+              <button (click)="showGateIssueModal = false" class="flex-1 py-2.5 border border-gray-200 text-sm text-gray-600 rounded-xl hover:bg-gray-50">Cancel</button>
               <button (click)="submitGateIssue()" [disabled]="savingGateIssue"
-                class="flex-1 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700 disabled:opacity-50">
-                {{ savingGateIssue ? 'Issuing...' : 'Issue Card' }}
+                class="flex-1 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                {{ savingGateIssue ? 'Issuing...' : 'Issue at Gate' }}
               </button>
-              <button (click)="showGateIssueModal = false" class="px-4 py-2 border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50">Cancel</button>
             </div>
           </div>
         </div>
@@ -721,7 +724,7 @@ export class SecurityPage implements OnInit, OnDestroy {
   showGateIssueModal = false;
   savingGateIssue    = false;
   gateIssueCard: any = null;
-  gateIssueForm = { guest_name: '', phone: '', plate_number: '', booking_ref: '', notes: '' };
+  gateIssueForm = { plate_number: '' };
 
   searchCards(): void {
     clearTimeout(this.cardSearchTimer);
@@ -735,29 +738,23 @@ export class SecurityPage implements OnInit, OnDestroy {
 
   openGateIssueModal(card: any): void {
     this.gateIssueCard = card;
-    this.gateIssueForm = { guest_name: '', phone: '', plate_number: '', booking_ref: '', notes: '' };
+    this.gateIssueForm = { plate_number: '' };
     this.showGateIssueModal = true;
   }
 
   submitGateIssue(): void {
-    if (!this.gateIssueForm.guest_name.trim()) { this.toast.error('Guest name is required'); return; }
-    if (!this.gateIssueForm.phone.trim()) { this.toast.error('Phone number is required'); return; }
     this.savingGateIssue = true;
     const payload: any = {
-      card_id:      this.gateIssueCard.id,
-      property_id:  this.activeProperty.propertyId(),
-      guest_name:   this.gateIssueForm.guest_name.trim(),
-      phone:        this.gateIssueForm.phone.trim(),
+      card_id:     this.gateIssueCard.id,
+      property_id: this.activeProperty.propertyId(),
     };
-    if (this.gateIssueForm.plate_number) payload.plate_number  = this.gateIssueForm.plate_number.trim().toUpperCase();
-    if (this.gateIssueForm.booking_ref)  payload.booking_ref   = this.gateIssueForm.booking_ref.trim();
-    if (this.gateIssueForm.notes)        payload.notes         = this.gateIssueForm.notes.trim();
+    if (this.gateIssueForm.plate_number) payload.plate_number = this.gateIssueForm.plate_number.trim().toUpperCase();
 
     this.api.post('/cards/gate-issue', payload).subscribe({
       next: (r: any) => {
         this.savingGateIssue = false;
         if (r.success) {
-          this.toast.success('Card issued at gate — status: Pending Gate Pool');
+          this.toast.success('Card issued at gate — Pending Gate pool');
           this.showGateIssueModal = false;
           this.searchCards();
         } else {

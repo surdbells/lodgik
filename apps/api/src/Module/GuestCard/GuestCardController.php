@@ -531,24 +531,20 @@ final class GuestCardController
             $userId     = $request->getAttribute('auth.user_id');
             $propertyId = $body['property_id'] ?? $request->getAttribute('auth.property_id') ?? null;
             $cardId     = trim($body['card_id'] ?? '');
-            $guestName  = trim($body['guest_name'] ?? '');
-            $phone      = trim($body['phone'] ?? '');
 
             if (!$propertyId)  return $this->response->error($response, 'property_id is required', 400);
             if (!$cardId)      return $this->response->error($response, 'card_id is required', 400);
-            if (!$guestName)   return $this->response->error($response, 'guest_name is required', 400);
-            if (!$phone)       return $this->response->error($response, 'phone is required', 400);
 
             $card = $this->cardService->gateIssueCardById(
                 cardId:      $cardId,
                 propertyId:  $propertyId,
                 issuedBy:    $userId,
                 tenantId:    $tenantId,
-                guestName:   $guestName,
-                phone:       $phone,
-                plateNumber: $body['plate_number'] ?? null,
-                bookingRef:  $body['booking_ref']  ?? null,
-                notes:       $body['notes']        ?? null,
+                guestName:   $body['guest_name']   ?? null,
+                phone:       $body['phone']         ?? null,
+                plateNumber: $body['plate_number']  ?? null,
+                bookingRef:  $body['booking_ref']   ?? null,
+                notes:       $body['notes']         ?? null,
             );
 
             return $this->response->created($response, $this->serializeCard($card), 'Card issued at gate — pending pool');
