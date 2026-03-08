@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import {
   ApiService,
+  AuthService,
   PageHeaderComponent,
   LoadingSpinnerComponent,
   ToastService,
@@ -132,6 +133,78 @@ import {
               </button>
             }
           </div>
+
+          <!-- ── Shadow Rate (Invoice Override) — property_admin only ── -->
+          @if (auth.currentUser?.role === 'property_admin') {
+            <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
+              <div class="flex items-center justify-between mb-1">
+                <div>
+                  <h3 class="text-sm font-semibold text-gray-700">Invoice Rate Override</h3>
+                  <p class="text-xs text-gray-400 mt-0.5">Sets a different rate on the guest's invoice. Actual revenue is always recorded at the real booking rate.</p>
+                </div>
+                @if (booking()!.has_shadow_rate) {
+                  <span class="text-xs font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-700">Override Active</span>
+                }
+              </div>
+
+              @if (booking()!.has_shadow_rate) {
+                <div class="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm flex items-start justify-between gap-4">
+                  <div class="space-y-1">
+                    <p class="text-amber-800 font-medium">Current override</p>
+                    <p class="text-amber-700">Invoice rate: <strong>₦{{ (+booking()!.shadow_rate_per_night).toLocaleString() }}/night</strong></p>
+                    <p class="text-amber-700">Invoice total: <strong>₦{{ (+booking()!.shadow_total_amount).toLocaleString() }}</strong></p>
+                    <p class="text-amber-600 text-xs">Set {{ booking()!.shadow_rate_set_at | date:'medium' }}</p>
+                  </div>
+                  <button (click)="clearShadowRate()"
+                    class="shrink-0 text-xs px-3 py-1.5 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-100 transition-colors">
+                    Remove Override
+                  </button>
+                </div>
+              }
+
+              @if (!showShadowPanel()) {
+                <button (click)="showShadowPanel.set(true)"
+                  class="mt-3 text-sm px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+                  {{ booking()!.has_shadow_rate ? 'Edit Override' : '+ Set Invoice Override' }}
+                </button>
+              } @else {
+                <div class="mt-3 space-y-3 pt-3 border-t border-gray-100">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs font-medium text-gray-600 mb-1">Invoice Rate / Night (₦)</label>
+                      <input type="number" min="0" step="0.01"
+                        [value]="shadowRateInput()"
+                        (input)="shadowRateInput.set($any($event.target).value)"
+                        placeholder="e.g. 25000"
+                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-400">
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium text-gray-600 mb-1">Invoice Total (₦)</label>
+                      <input type="number" min="0" step="0.01"
+                        [value]="shadowTotalInput()"
+                        (input)="shadowTotalInput.set($any($event.target).value)"
+                        placeholder="e.g. 75000"
+                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-400">
+                    </div>
+                  </div>
+                  <p class="text-xs text-gray-400">
+                    Real booking rate: <strong>₦{{ (+booking()!.rate_per_night).toLocaleString() }}/night</strong> ·
+                    Real total: <strong>₦{{ (+booking()!.total_amount).toLocaleString() }}</strong>
+                  </p>
+                  <div class="flex gap-2">
+                    <button (click)="saveShadowRate()" [disabled]="savingShadow()"
+                      class="px-4 py-2 text-sm font-medium bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 transition-colors">
+                      {{ savingShadow() ? 'Saving…' : 'Save Override' }}
+                    </button>
+                    <button (click)="showShadowPanel.set(false)"
+                      class="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
 
           <!-- Folio & Invoice Links -->
           @if (booking()!.status === 'checked_in' || booking()!.status === 'checked_out') {
@@ -354,6 +427,7 @@ export class BookingDetailPage implements OnInit {
   @ViewChild('qrCanvas') qrCanvasRef?: ElementRef<HTMLCanvasElement>;
 
   private api     = inject(ApiService);
+  private auth    = inject(AuthService);
   private route   = inject(ActivatedRoute);
   private toast   = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
@@ -364,6 +438,12 @@ export class BookingDetailPage implements OnInit {
   statusHistory = signal<any[]>([]);
   folioId       = signal('');
   invoiceId     = signal('');
+
+  // ── Admin: shadow rate panel state ───────────────────────────
+  showShadowPanel   = signal(false);
+  shadowRateInput   = signal('');
+  shadowTotalInput  = signal('');
+  savingShadow      = signal(false);
 
   // ── Guest Access modal state ─────────────────────────────────
   showAccessModal = signal(false);
@@ -688,6 +768,66 @@ export class BookingDetailPage implements OnInit {
         this.toast.success('Card deactivated');
         this.showCardModal.set(false);
         this.activeCard.set(null);
+      },
+      error: (e: any) => this.toast.error(e?.error?.message ?? 'Failed'),
+    });
+  }
+
+  // ── Shadow Rate (Invoice Override) ────────────────────────────
+
+  saveShadowRate(): void {
+    const rate  = this.shadowRateInput().trim();
+    const total = this.shadowTotalInput().trim();
+
+    if (!rate || !total) {
+      this.toast.error('Both invoice rate and total are required');
+      return;
+    }
+    if (+rate <= 0 || +total <= 0) {
+      this.toast.error('Values must be greater than zero');
+      return;
+    }
+
+    this.savingShadow.set(true);
+    this.api.patch(`/bookings/${this.bookingId}/shadow-rate`, {
+      shadow_rate_per_night: rate,
+      shadow_total_amount:   total,
+    }).subscribe({
+      next: (r: any) => {
+        this.savingShadow.set(false);
+        if (r.success) {
+          this.toast.success('Invoice rate override saved');
+          this.booking.set(r.data);
+          this.showShadowPanel.set(false);
+          this.shadowRateInput.set('');
+          this.shadowTotalInput.set('');
+        } else {
+          this.toast.error(r.message || 'Failed to save override');
+        }
+      },
+      error: (e: any) => {
+        this.savingShadow.set(false);
+        this.toast.error(e?.error?.error?.message ?? e?.error?.message ?? 'Failed to save override');
+      },
+    });
+  }
+
+  async clearShadowRate(): Promise<void> {
+    const ok = await this.confirm.confirm({
+      title: 'Remove Invoice Override',
+      message: 'Remove the invoice rate override? The actual booking rate will appear on the invoice.',
+      variant: 'warning',
+    });
+    if (!ok) return;
+
+    this.api.patch(`/bookings/${this.bookingId}/shadow-rate`, { clear: true }).subscribe({
+      next: (r: any) => {
+        if (r.success) {
+          this.toast.success('Invoice rate override removed');
+          this.booking.set(r.data);
+        } else {
+          this.toast.error(r.message || 'Failed to remove override');
+        }
       },
       error: (e: any) => this.toast.error(e?.error?.message ?? 'Failed'),
     });

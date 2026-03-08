@@ -96,6 +96,29 @@ class Booking implements TenantAware
     #[ORM\Column(name: 'corporate_name', type: Types::STRING, length: 200, nullable: true)]
     private ?string $corporateName = null;
 
+    // ── Shadow rate (invoice display override) ────────────────
+    //
+    // These fields are ONLY used to print a different rate on the invoice PDF.
+    // They MUST NEVER appear in revenue reports, dashboards, or aggregates.
+    // Only property_admin can set them. The difference is handled externally
+    // by the hotel (e.g. partial refund to the guest).
+
+    /** Override rate printed on invoice. Null = use actual rate_per_night. */
+    #[ORM\Column(name: 'shadow_rate_per_night', type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
+    private ?string $shadowRatePerNight = null;
+
+    /** Override total printed on invoice. Null = use actual total_amount. */
+    #[ORM\Column(name: 'shadow_total_amount', type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
+    private ?string $shadowTotalAmount = null;
+
+    /** UUID of the property_admin who set the shadow rate. */
+    #[ORM\Column(name: 'shadow_rate_set_by', type: Types::STRING, length: 36, nullable: true)]
+    private ?string $shadowRateSetBy = null;
+
+    /** Timestamp when shadow rate was last set. */
+    #[ORM\Column(name: 'shadow_rate_set_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $shadowRateSetAt = null;
+
     public function __construct(
         string $bookingRef,
         BookingType $bookingType,
@@ -144,6 +167,31 @@ class Booking implements TenantAware
     public function getTotalAmount(): string { return $this->totalAmount; }
     public function setTotalAmount(string $v): void { $this->totalAmount = $v; }
     public function getDiscountAmount(): string { return $this->discountAmount; }
+
+    // ── Shadow rate getters / setters ─────────────────────────
+    public function getShadowRatePerNight(): ?string          { return $this->shadowRatePerNight; }
+    public function getShadowTotalAmount(): ?string           { return $this->shadowTotalAmount; }
+    public function getShadowRateSetBy(): ?string             { return $this->shadowRateSetBy; }
+    public function getShadowRateSetAt(): ?\DateTimeImmutable { return $this->shadowRateSetAt; }
+
+    /** Returns true when a shadow rate override is active. */
+    public function hasShadowRate(): bool { return $this->shadowRatePerNight !== null; }
+
+    /**
+     * Set or clear the invoice rate override.
+     * Pass null for both rate and total to remove a previously set shadow rate.
+     *
+     * @param string|null $ratePerNight  Override rate per night (invoice display only)
+     * @param string|null $totalAmount   Override total (invoice display only)
+     * @param string      $setBy         UUID of the property_admin setting this
+     */
+    public function setShadowRate(?string $ratePerNight, ?string $totalAmount, string $setBy): void
+    {
+        $this->shadowRatePerNight = $ratePerNight;
+        $this->shadowTotalAmount  = $totalAmount;
+        $this->shadowRateSetBy    = $setBy;
+        $this->shadowRateSetAt    = $ratePerNight !== null ? new \DateTimeImmutable() : null;
+    }
     public function setDiscountAmount(string $v): void { $this->discountAmount = $v; }
     public function getNotes(): ?string { return $this->notes; }
     public function setNotes(?string $v): void { $this->notes = $v; }

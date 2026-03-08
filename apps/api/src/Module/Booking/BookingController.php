@@ -164,6 +164,69 @@ final class BookingController
         }
     }
 
+    /**
+     * PATCH /api/bookings/{id}/shadow-rate
+     *
+     * Sets or clears the invoice rate override for a booking.
+     * Restricted to property_admin only — enforced here AND in the route group.
+     *
+     * Body (set override):
+     *   shadow_rate_per_night  numeric  required
+     *   shadow_total_amount    numeric  required
+     *
+     * Body (clear override):
+     *   clear  true  — removes the shadow rate
+     */
+    public function setShadowRate(Request $request, Response $response, array $args): Response
+    {
+        $role = $request->getAttribute('auth.role');
+        if ($role !== 'property_admin') {
+            return $this->response->error($response, 'Only hotel administrators can set an invoice rate override.', 403);
+        }
+
+        $body    = (array) ($request->getParsedBody() ?? []);
+        $userId  = $request->getAttribute('auth.user_id');
+        $tenantId = $request->getAttribute('auth.tenant_id');
+
+        // Clear mode
+        if (!empty($body['clear'])) {
+            try {
+                $booking = $this->bookingService->clearShadowRate($args['id'], $tenantId, $userId);
+                return $this->response->success($response, $this->serialize($booking), 'Invoice rate override removed');
+            } catch (\RuntimeException $e) {
+                return $this->response->notFound($response, $e->getMessage());
+            }
+        }
+
+        // Set mode
+        $shadowRate  = $body['shadow_rate_per_night'] ?? null;
+        $shadowTotal = $body['shadow_total_amount']   ?? null;
+
+        $errors = [];
+        if ($shadowRate === null || $shadowRate === '') $errors[] = 'shadow_rate_per_night is required';
+        if ($shadowTotal === null || $shadowTotal === '') $errors[] = 'shadow_total_amount is required';
+        if (!empty($errors)) return $this->response->validationError($response, $errors);
+
+        if ((float)$shadowRate <= 0)  $errors[] = 'shadow_rate_per_night must be greater than zero';
+        if ((float)$shadowTotal <= 0) $errors[] = 'shadow_total_amount must be greater than zero';
+        if (!empty($errors)) return $this->response->validationError($response, $errors);
+
+        try {
+            $booking = $this->bookingService->setShadowRate(
+                $args['id'],
+                $tenantId,
+                $userId,
+                number_format((float)$shadowRate,  2, '.', ''),
+                number_format((float)$shadowTotal, 2, '.', ''),
+            );
+            return $this->response->success($response, $this->serialize($booking), 'Invoice rate override saved');
+        } catch (\RuntimeException $e) {
+            return $this->response->notFound($response, $e->getMessage());
+        } catch (\DomainException $e) {
+            return $this->response->error($response, $e->getMessage(), 422);
+        }
+    }
+
     /** GET /api/bookings/overdue */
     public function overdue(Request $request, Response $response): Response
     {
@@ -298,33 +361,42 @@ final class BookingController
 
     private function serialize(Booking $b): array
     {
+        $role = '';
+        // Will be set from request context in individual actions — set here as fallback
         return [
-            'id' => $b->getId(),
-            'property_id' => $b->getPropertyId(),
-            'guest_id' => $b->getGuestId(),
-            'room_id' => $b->getRoomId(),
-            'booking_ref' => $b->getBookingRef(),
-            'booking_type' => $b->getBookingType()->value,
-            'booking_type_label' => $b->getBookingType()->label(),
-            'status' => $b->getStatus()->value,
-            'status_label' => $b->getStatus()->label(),
-            'status_color' => $b->getStatus()->color(),
-            'check_in' => $b->getCheckIn()->format('c'),
-            'check_out' => $b->getCheckOut()->format('c'),
-            'duration_hours' => $b->getDurationHours(),
-            'nights' => $b->getNights(),
-            'adults' => $b->getAdults(),
-            'children' => $b->getChildren(),
-            'rate_per_night' => $b->getRatePerNight(),
-            'total_amount' => $b->getTotalAmount(),
-            'discount_amount' => $b->getDiscountAmount(),
-            'notes' => $b->getNotes(),
-            'source' => $b->getSource(),
-            'special_requests' => $b->getSpecialRequests(),
-            'created_by' => $b->getCreatedBy(),
-            'checked_in_at' => $b->getCheckedInAt()?->format('c'),
-            'checked_out_at' => $b->getCheckedOutAt()?->format('c'),
-            'created_at' => $b->getCreatedAt()?->format('c'),
+            'id'                    => $b->getId(),
+            'property_id'           => $b->getPropertyId(),
+            'guest_id'              => $b->getGuestId(),
+            'room_id'               => $b->getRoomId(),
+            'booking_ref'           => $b->getBookingRef(),
+            'booking_type'          => $b->getBookingType()->value,
+            'booking_type_label'    => $b->getBookingType()->label(),
+            'status'                => $b->getStatus()->value,
+            'status_label'          => $b->getStatus()->label(),
+            'status_color'          => $b->getStatus()->color(),
+            'check_in'              => $b->getCheckIn()->format('c'),
+            'check_out'             => $b->getCheckOut()->format('c'),
+            'duration_hours'        => $b->getDurationHours(),
+            'nights'                => $b->getNights(),
+            'adults'                => $b->getAdults(),
+            'children'              => $b->getChildren(),
+            'rate_per_night'        => $b->getRatePerNight(),
+            'total_amount'          => $b->getTotalAmount(),
+            'discount_amount'       => $b->getDiscountAmount(),
+            'notes'                 => $b->getNotes(),
+            'source'                => $b->getSource(),
+            'special_requests'      => $b->getSpecialRequests(),
+            'created_by'            => $b->getCreatedBy(),
+            'checked_in_at'         => $b->getCheckedInAt()?->format('c'),
+            'checked_out_at'        => $b->getCheckedOutAt()?->format('c'),
+            'created_at'            => $b->getCreatedAt()?->format('c'),
+            // Shadow rate — present in every serialized response.
+            // Frontend hides this panel for non-admin roles.
+            // Revenue reports MUST never aggregate shadow_rate_per_night.
+            'shadow_rate_per_night' => $b->getShadowRatePerNight(),
+            'shadow_total_amount'   => $b->getShadowTotalAmount(),
+            'has_shadow_rate'       => $b->hasShadowRate(),
+            'shadow_rate_set_at'    => $b->getShadowRateSetAt()?->format('c'),
         ];
     }
 }

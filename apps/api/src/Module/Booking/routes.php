@@ -35,4 +35,13 @@ return function (App $app): void {
         ->add(new RoleMiddleware(['property_admin', 'manager', 'front_desk']))
         ->add(TenantMiddleware::class)
         ->add(AuthMiddleware::class);
+
+    // ── Shadow rate — property_admin only ────────────────────────────
+    // Separate group so the role restriction is narrower than general booking ops.
+    $app->group('/api/bookings', function (RouteCollectorProxy $group) {
+        $group->patch('/{id}/shadow-rate', [BookingController::class, 'setShadowRate']);
+    })
+        ->add(new RoleMiddleware(['property_admin']))
+        ->add(TenantMiddleware::class)
+        ->add(AuthMiddleware::class);
 };

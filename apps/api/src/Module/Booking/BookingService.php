@@ -486,6 +486,76 @@ final class BookingService
         return $booking;
     }
 
+    // ── Shadow Rate (Invoice Override) ───────────────────────────
+
+    /**
+     * Set an invoice rate override for a booking.
+     * Only property_admin may call this (enforced in controller + route).
+     * Revenue reports must NEVER use shadow_rate_per_night.
+     *
+     * @throws \RuntimeException   if booking not found or doesn't belong to tenant
+     * @throws \DomainException    if shadow rate is lower than the actual rate
+     *                             (shadow rate should always be the higher invoice amount)
+     */
+    public function setShadowRate(
+        string $bookingId,
+        string $tenantId,
+        string $setBy,
+        string $shadowRatePerNight,
+        string $shadowTotalAmount,
+    ): Booking {
+        $booking = $this->bookingRepo->findOrFail($bookingId);
+
+        if ($booking->getTenantId() !== $tenantId) {
+            throw new \RuntimeException('Booking not found');
+        }
+
+        // Business rule: shadow rate must exceed the actual rate —
+        // it represents the higher invoice amount, not a discount.
+        if ((float)$shadowRatePerNight <= (float)$booking->getRatePerNight()) {
+            throw new \DomainException(
+                sprintf(
+                    'Invoice override rate (₦%s) must be higher than the actual booking rate (₦%s). ' .
+                    'The shadow rate is the amount shown on the invoice; the difference is returned to the guest.',
+                    number_format((float)$shadowRatePerNight, 2),
+                    number_format((float)$booking->getRatePerNight(), 2),
+                )
+            );
+        }
+
+        $booking->setShadowRate($shadowRatePerNight, $shadowTotalAmount, $setBy);
+        $this->em->flush();
+
+        $this->logger?->info(sprintf(
+            '[Booking] Shadow rate set: booking=%s actual=₦%s invoice=₦%s by=%s',
+            $bookingId,
+            $booking->getRatePerNight(),
+            $shadowRatePerNight,
+            $setBy,
+        ));
+
+        return $booking;
+    }
+
+    /**
+     * Remove the invoice rate override, restoring the actual rate on the invoice.
+     */
+    public function clearShadowRate(string $bookingId, string $tenantId, string $clearedBy): Booking
+    {
+        $booking = $this->bookingRepo->findOrFail($bookingId);
+
+        if ($booking->getTenantId() !== $tenantId) {
+            throw new \RuntimeException('Booking not found');
+        }
+
+        $booking->setShadowRate(null, null, $clearedBy);
+        $this->em->flush();
+
+        $this->logger?->info("[Booking] Shadow rate cleared: booking={$bookingId} by={$clearedBy}");
+
+        return $booking;
+    }
+
     /**
      * Returns bookings that are checked-in but past their checkout date.
      * Used by the NoonCheckoutCommand and FraudAutoCheckoutCommand.

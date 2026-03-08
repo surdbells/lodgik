@@ -9,6 +9,7 @@ use Lodgik\Entity\Invoice;
 use Lodgik\Entity\InvoiceItem;
 use Lodgik\Entity\Folio;
 use Lodgik\Entity\FolioCharge;
+use Lodgik\Entity\Booking;
 use Lodgik\Entity\Guest;
 use Lodgik\Entity\Property;
 use Lodgik\Entity\PropertyBankAccount;
@@ -181,15 +182,55 @@ final class InvoiceService
 
     public function generatePdfHtml(string $invoiceId): string
     {
-        $invoice = $this->invoiceRepo->findOrFail($invoiceId);
-        $items = $this->itemRepo->findByInvoice($invoiceId);
-        $inv = $invoice->toArray();
+        $invoice  = $this->invoiceRepo->findOrFail($invoiceId);
+        $items    = $this->itemRepo->findByInvoice($invoiceId);
+        $inv      = $invoice->toArray();
         $itemsArr = array_map(fn(InvoiceItem $i) => $i->toArray(), $items);
 
-        $tenant = $this->em->find(Tenant::class, $invoice->getTenantId());
+        $tenant   = $this->em->find(Tenant::class, $invoice->getTenantId());
         $property = $this->em->find(Property::class, $invoice->getPropertyId());
         $hotelName = $property?->getName() ?? ($tenant?->getName() ?? 'Hotel');
         $hotelAddr = array_filter([$property?->getAddress(), $property?->getCity(), $property?->getState()]);
+
+        // ── Shadow rate: use override amounts on PDF if set ──────────
+        // The shadow rate is the inflated amount shown to the guest on the invoice.
+        // Actual (real) rates are NEVER shown on this document.
+        // Revenue reports always use the actual rate from the bookings table directly.
+        $booking = $invoice->getBookingId()
+            ? $this->em->find(Booking::class, $invoice->getBookingId())
+            : null;
+
+        $displaySubtotal  = $inv['subtotal'];
+        $displayTaxTotal  = $inv['tax_total'];
+        $displayGrandTotal = $inv['grand_total'];
+        $shadowNotice     = '';
+
+        if ($booking !== null && $booking->hasShadowRate()) {
+            // Recalculate display totals based on shadow total
+            $shadowGrand    = (float)$booking->getShadowTotalAmount();
+            $vatRate        = $displaySubtotal > 0
+                ? (float)$displayTaxTotal / (float)$displaySubtotal
+                : 0.075;
+            $shadowSubtotal = $shadowGrand / (1 + $vatRate);
+            $shadowVat      = $shadowGrand - $shadowSubtotal;
+
+            $displaySubtotal   = number_format($shadowSubtotal, 2, '.', '');
+            $displayTaxTotal   = number_format($shadowVat, 2, '.', '');
+            $displayGrandTotal = number_format($shadowGrand, 2, '.', '');
+
+            // Scale each line item proportionally so line totals add up correctly
+            $scaleFactor = (float)$displaySubtotal > 0
+                ? $shadowSubtotal / ((float)$inv['subtotal'] ?: 1)
+                : 1;
+
+            $itemsArr = array_map(static function (array $item) use ($scaleFactor): array {
+                $item['unit_price'] = number_format((float)$item['unit_price'] * $scaleFactor, 2, '.', '');
+                $item['line_total'] = number_format((float)$item['line_total'] * $scaleFactor, 2, '.', '');
+                $item['tax_amount'] = number_format((float)$item['tax_amount'] * $scaleFactor, 2, '.', '');
+                return $item;
+            }, $itemsArr);
+        }
+        // ────────────────────────────────────────────────────────────
 
         $itemRows = '';
         foreach ($itemsArr as $item) {
@@ -225,10 +266,10 @@ th{background:#f8fafc;font-weight:600;text-align:left}
 <table><thead><tr><th>Description</th><th style="width:60px;text-align:center">Qty</th><th style="width:100px;text-align:right">Unit Price</th><th style="width:100px;text-align:right">Amount</th><th style="width:80px;text-align:right">VAT</th></tr></thead>
 <tbody>{$itemRows}</tbody></table>
 <table class="totals" style="width:300px;margin-left:auto;margin-top:10px">
-<tr><td class="label">Subtotal:</td><td style="text-align:right">₦{$this->fmt($inv['subtotal'])}</td></tr>
-<tr><td class="label">VAT (7.5%):</td><td style="text-align:right">₦{$this->fmt($inv['tax_total'])}</td></tr>
+<tr><td class="label">Subtotal:</td><td style="text-align:right">₦{$this->fmt($displaySubtotal)}</td></tr>
+<tr><td class="label">VAT (7.5%):</td><td style="text-align:right">₦{$this->fmt($displayTaxTotal)}</td></tr>
 <tr><td class="label">Discount:</td><td style="text-align:right">-₦{$this->fmt($inv['discount_total'])}</td></tr>
-<tr style="border-top:2px solid #333"><td class="label grand">TOTAL:</td><td style="text-align:right" class="grand">₦{$this->fmt($inv['grand_total'])}</td></tr>
+<tr style="border-top:2px solid #333"><td class="label grand">TOTAL:</td><td style="text-align:right" class="grand">₦{$this->fmt($displayGrandTotal)}</td></tr>
 <tr><td class="label">Paid:</td><td style="text-align:right">₦{$this->fmt($inv['amount_paid'])}</td></tr>
 </table>
 {$bankSection}
