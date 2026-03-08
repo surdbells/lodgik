@@ -49,4 +49,31 @@ final class FinanceController
     public function createGroup(Request $req, Response $res): Response { $d = $this->body($req); $pid = $d['property_id'] ?? $req->getQueryParams()['property_id'] ?? $req->getAttribute('auth.property_id') ?? null; if (!$pid) return $this->json($res, ['success' => false, 'message' => 'property_id is required'], 422); $g = $this->svc->createGroupBooking($pid, $d['name'] ?? '', $d['booking_type'] ?? 'overnight', $d['contact_name'] ?? '', $d['check_in'] ?? '', $d['check_out'] ?? '', $req->getAttribute('auth.tenant_id'), $d); return $this->json($res, ['success' => true, 'data' => $g->toArray()], 201); }
     public function confirmGroup(Request $req, Response $res, array $args): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->confirmGroupBooking($args['id'])->toArray()]); }
     public function cancelGroup(Request $req, Response $res, array $args): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->cancelGroupBooking($args['id'])->toArray()]); }
+
+    // Phase 3: Corporate Folio endpoints
+    public function getGroupCorporateSummary(Request $req, Response $res, array $args): Response
+    {
+        return $this->json($res, ['success' => true, 'data' => $this->svc->getCorporateSummary($args['id'])]);
+    }
+    public function setCorporateSettings(Request $req, Response $res, array $args): Response
+    {
+        $d = $this->body($req);
+        $g = $this->svc->updateCorporateSettings(
+            $args['id'],
+            $req->getAttribute('auth.tenant_id'),
+            isset($d['is_corporate']) ? (bool)$d['is_corporate'] : null,
+            isset($d['credit_limit_type']) ? (string)$d['credit_limit_type'] : null,
+            isset($d['credit_limit_ngn']) ? (float)$d['credit_limit_ngn'] : null,
+            $d['corporate_contact_email'] ?? null,
+            $d['corporate_ref_number'] ?? null,
+            isset($d['allow_checkout_without_payment']) ? (bool)$d['allow_checkout_without_payment'] : null,
+        );
+        return $this->json($res, ['success' => true, 'data' => $g->toArray()]);
+    }
+    public function sendCorporateInvoice(Request $req, Response $res, array $args): Response
+    {
+        $result = $this->svc->sendCorporateInvoice($args['id'], $req->getAttribute('auth.tenant_id'));
+        return $this->json($res, ['success' => true, 'message' => $result]);
+    }
 }
+

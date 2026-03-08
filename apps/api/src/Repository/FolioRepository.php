@@ -39,4 +39,15 @@ final class FolioRepository extends BaseRepository
         $count = (int)$qb->getQuery()->getSingleScalarResult();
         return sprintf('FL-%s-%03d', $date, $count + 1);
     }
+
+    /** Phase 3: Return all folios linked to a corporate group booking. */
+    public function findByGroupBooking(string $groupBookingId): array
+    {
+        return $this->createQueryBuilder('f')
+            ->where('f.groupBookingId = :gbid')
+            ->setParameter('gbid', $groupBookingId)
+            ->orderBy('f.createdAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

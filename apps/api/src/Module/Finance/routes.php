@@ -61,5 +61,9 @@ return function (App $app): void {
         $g->post('', [FinanceController::class, 'createGroup']);
         $g->post('/{id}/confirm', [FinanceController::class, 'confirmGroup']);
         $g->post('/{id}/cancel', [FinanceController::class, 'cancelGroup']);
+        // Phase 3: Corporate Folio
+        $g->patch('/{id}/corporate', [FinanceController::class, 'setCorporateSettings']);
+        $g->get('/{id}/corporate-summary', [FinanceController::class, 'getGroupCorporateSummary']);
+        $g->post('/{id}/send-invoice', [FinanceController::class, 'sendCorporateInvoice']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'front_desk']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 };

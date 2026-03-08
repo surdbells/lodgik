@@ -60,6 +60,27 @@ class Folio
     #[ORM\Column(name: 'notes', type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
 
+    // ── Phase 3: Corporate Folio fields ──────────────────────────────────
+
+    /** 'personal' (default) or 'corporate' */
+    #[ORM\Column(name: 'folio_type', type: Types::STRING, length: 10, options: ['default' => 'personal'])]
+    private string $folioType = 'personal';
+
+    /** FK → group_bookings.id — set when this is a corporate folio */
+    #[ORM\Column(name: 'group_booking_id', type: Types::STRING, length: 36, nullable: true)]
+    private ?string $groupBookingId = null;
+
+    /**
+     * When true, checkout is allowed even if balance > 0.
+     * Used for corporate accounts that settle invoices post-stay.
+     */
+    #[ORM\Column(name: 'allow_checkout_without_payment', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $allowCheckoutWithoutPayment = false;
+
+    /** Running total of charges posted against the corporate credit limit (kobo) */
+    #[ORM\Column(name: 'corporate_credit_used_kobo', type: Types::BIGINT, options: ['default' => 0])]
+    private int $corporateCreditUsedKobo = 0;
+
     public function __construct(string $propertyId, string $bookingId, string $guestId, string $folioNumber, string $tenantId)
     {
         $this->generateId();
@@ -87,6 +108,21 @@ class Folio
     public function setClosedBy(?string $closedBy): void { $this->closedBy = $closedBy; }
     public function getNotes(): ?string { return $this->notes; }
     public function setNotes(?string $notes): void { $this->notes = $notes; }
+
+    // ── Phase 3: Corporate Folio accessors ───────────────────────────────
+    public function getFolioType(): string { return $this->folioType; }
+    public function isCorporate(): bool { return $this->folioType === 'corporate'; }
+    public function markAsCorporate(string $groupBookingId, bool $allowCheckout = true): void
+    {
+        $this->folioType                   = 'corporate';
+        $this->groupBookingId              = $groupBookingId;
+        $this->allowCheckoutWithoutPayment = $allowCheckout;
+    }
+    public function getGroupBookingId(): ?string { return $this->groupBookingId; }
+    public function getAllowCheckoutWithoutPayment(): bool { return $this->allowCheckoutWithoutPayment; }
+    public function setAllowCheckoutWithoutPayment(bool $v): void { $this->allowCheckoutWithoutPayment = $v; }
+    public function getCorporateCreditUsedKobo(): int { return $this->corporateCreditUsedKobo; }
+    public function addCorporateCreditUsed(int $kobo): void { $this->corporateCreditUsedKobo += $kobo; }
 
     public function recalculate(string $charges, string $payments, string $adjustments): void
     {
@@ -117,6 +153,13 @@ class Folio
             'notes' => $this->notes,
             'created_at' => $this->createdAt->format('c'),
             'updated_at' => $this->updatedAt->format('c'),
+            // Corporate folio fields
+            'folio_type'                      => $this->folioType,
+            'is_corporate'                    => $this->isCorporate(),
+            'group_booking_id'                => $this->groupBookingId,
+            'allow_checkout_without_payment'  => $this->allowCheckoutWithoutPayment,
+            'corporate_credit_used_kobo'      => $this->corporateCreditUsedKobo,
         ];
     }
+
 }

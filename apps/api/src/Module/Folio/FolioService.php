@@ -19,6 +19,7 @@ use Lodgik\Repository\FolioChargeRepository;
 use Lodgik\Repository\FolioPaymentRepository;
 use Lodgik\Repository\FolioAdjustmentRepository;
 use Lodgik\Repository\PropertyBankAccountRepository;
+use Lodgik\Repository\GroupBookingRepository;
 use Psr\Log\LoggerInterface;
 
 final class FolioService
@@ -30,6 +31,7 @@ final class FolioService
         private readonly FolioPaymentRepository $paymentRepo,
         private readonly FolioAdjustmentRepository $adjustmentRepo,
         private readonly LoggerInterface $logger,
+        private readonly ?GroupBookingRepository $groupBookingRepo = null,
     ) {}
 
     // ═══ Create Folio ══════════════════════════════════════════
@@ -113,6 +115,24 @@ final class FolioService
             throw new \InvalidArgumentException('Cannot add charges to a closed/voided folio');
         }
 
+        // Phase 3: Corporate credit limit enforcement
+        if ($folio->isCorporate() && $folio->getGroupBookingId() !== null && $this->groupBookingRepo !== null) {
+            $gb = $this->groupBookingRepo->find($folio->getGroupBookingId());
+            if ($gb !== null) {
+                $chargeKobo = (int) round(((float) $amount) * $quantity * 100);
+                if (!$gb->creditLimitAllows($folio->getCorporateCreditUsedKobo(), $chargeKobo)) {
+                    $limitNgn = $gb->getCreditLimitKobo() !== null
+                        ? number_format($gb->getCreditLimitKobo() / 100, 2)
+                        : '0.00';
+                    throw new \DomainException(
+                        "Corporate credit limit of ₦{$limitNgn} would be exceeded. " .
+                        "Used: ₦" . number_format($folio->getCorporateCreditUsedKobo() / 100, 2) . "."
+                    );
+                }
+                $folio->addCorporateCreditUsed($chargeKobo);
+            }
+        }
+
         $cat = ChargeCategory::from($category);
         $charge = new FolioCharge($folioId, $cat, $description, $amount, $quantity, $folio->getTenantId());
         $charge->setPostedBy($userId);
@@ -123,6 +143,78 @@ final class FolioService
         $this->em->flush();
 
         return $charge;
+    }
+
+    // ═══ Phase 3: Corporate Folio ══════════════════════════════
+
+    /**
+     * Create a corporate folio linked to a group booking.
+     * Called when a corporate group booking is confirmed.
+     */
+    public function createCorporateFolio(
+        string $propertyId,
+        string $bookingId,
+        string $guestId,
+        string $groupBookingId,
+        string $tenantId,
+        bool $allowCheckoutWithoutPayment = true
+    ): Folio {
+        $existing = $this->folioRepo->findByBooking($bookingId);
+        if ($existing !== null) {
+            // If already exists, just mark it corporate
+            if (!$existing->isCorporate()) {
+                $existing->markAsCorporate($groupBookingId, $allowCheckoutWithoutPayment);
+                $this->em->flush();
+            }
+            return $existing;
+        }
+
+        $folioNumber = 'CF-' . strtoupper(substr($groupBookingId, 0, 8)) . '-' . strtoupper(substr($bookingId, 0, 6));
+        $folio = new Folio($propertyId, $bookingId, $guestId, $folioNumber, $tenantId);
+        $folio->markAsCorporate($groupBookingId, $allowCheckoutWithoutPayment);
+        $this->em->persist($folio);
+        $this->em->flush();
+
+        return $folio;
+    }
+
+    /**
+     * Get all folios belonging to a corporate group booking.
+     * Used when generating the consolidated corporate invoice.
+     */
+    public function getCorporateFolios(string $groupBookingId): array
+    {
+        return $this->folioRepo->findByGroupBooking($groupBookingId);
+    }
+
+    /**
+     * Aggregate totals across all corporate folios for a group booking.
+     * Returns summary figures used for the consolidated invoice.
+     */
+    public function getCorporateSummary(string $groupBookingId): array
+    {
+        $folios = $this->getCorporateFolios($groupBookingId);
+        $totalCharges     = 0.0;
+        $totalPayments    = 0.0;
+        $totalAdjustments = 0.0;
+        $totalBalance     = 0.0;
+
+        foreach ($folios as $f) {
+            $totalCharges     += (float) $f->getTotalCharges();
+            $totalPayments    += (float) $f->getTotalPayments();
+            $totalAdjustments += (float) $f->getTotalAdjustments();
+            $totalBalance     += (float) $f->getBalance();
+        }
+
+        return [
+            'group_booking_id'  => $groupBookingId,
+            'folio_count'       => count($folios),
+            'total_charges'     => number_format($totalCharges,     2, '.', ''),
+            'total_payments'    => number_format($totalPayments,    2, '.', ''),
+            'total_adjustments' => number_format($totalAdjustments, 2, '.', ''),
+            'outstanding'       => number_format($totalBalance,     2, '.', ''),
+            'folios'            => array_map(fn(Folio $f) => $f->toArray(), $folios),
+        ];
     }
 
     // ═══ Record Payment ═══════════════════════════════════════
