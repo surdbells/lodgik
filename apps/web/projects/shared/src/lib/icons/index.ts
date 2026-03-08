@@ -48,6 +48,7 @@ import {
 
   // ─── Maintenance & Assets ─────────────
   Package,
+  Box,
   TriangleAlert,
   Wrench,
   HardHat,
@@ -144,6 +145,7 @@ export const LODGIK_ICONS = {
   Star,
   Briefcase,
   Package,
+  Box,
   TriangleAlert,
   Wrench,
   HardHat,
