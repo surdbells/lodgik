@@ -140,6 +140,14 @@ final class TenantController
             'timezone',
             'wifi_ssid',
             'wifi_password',
+            // Phase 1 — Guest Card enforcement
+            'card_enforcement_enabled',
+            // Phase 4 — Housekeeping consumable approvals
+            'require_admin_approval_for_consumables',
+            // Phase 5 — Walk-in/market purchase controls
+            'market_purchase_spending_limit_kobo',
+            'market_purchase_require_dual_approval',
+            'market_purchase_require_receipt_or_note',
         ];
 
         $property = $this->tenantService->getProperty($args['id']);
@@ -270,24 +278,27 @@ final class TenantController
     private function serializeProperty(object $p): array
     {
         return [
-            'id' => $p->getId(),
-            'name' => $p->getName(),
-            'slug' => $p->getSlug(),
-            'email' => $p->getEmail(),
-            'phone' => $p->getPhone(),
-            'address' => $p->getAddress(),
-            'city' => $p->getCity(),
-            'state' => $p->getState(),
-            'country' => $p->getCountry(),
-            'star_rating' => $p->getStarRating(),
-            'check_in_time' => $p->getCheckInTime(),
-            'check_out_time' => $p->getCheckOutTime(),
-            'timezone' => $p->getTimezone(),
-            'currency' => $p->getCurrency(),
-            'logo_url' => $p->getLogoUrl(),
+            'id'              => $p->getId(),
+            'name'            => $p->getName(),
+            'slug'            => $p->getSlug(),
+            'email'           => $p->getEmail(),
+            'phone'           => $p->getPhone(),
+            'address'         => $p->getAddress(),
+            'city'            => $p->getCity(),
+            'state'           => $p->getState(),
+            'country'         => $p->getCountry(),
+            'star_rating'     => $p->getStarRating(),
+            'check_in_time'   => $p->getCheckInTime(),
+            'check_out_time'  => $p->getCheckOutTime(),
+            'timezone'        => $p->getTimezone(),
+            'currency'        => $p->getCurrency(),
+            'logo_url'        => $p->getLogoUrl(),
             'cover_image_url' => $p->getCoverImageUrl(),
-            'is_active' => $p->isActive(),
-            'created_at' => $p->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+            'is_active'       => $p->isActive(),
+            'created_at'      => $p->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+            // Operational settings (JSONB) — returned so the frontend can
+            // populate the settings form without a second API call.
+            'settings'        => $p->getSettings() ?? (object)[],
         ];
     }
 
