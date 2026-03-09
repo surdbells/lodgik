@@ -355,9 +355,9 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: '' },
-
   // ── Guest PWA — separate layout with dark theme ───────────────
+  // Must be BEFORE the wildcard route or Angular matches '**' first and redirects
+  // to '' (the authGuard shell) → admin login page.
   {
     path: 'guest',
     loadComponent: () => import('./pages/guest-portal/guest-layout.component').then(m => m.GuestLayoutComponent),
@@ -370,4 +370,6 @@ export const routes: Routes = [
       { path: 'chat',     loadComponent: () => import('./pages/guest-portal/guest-chat.page') },
     ],
   },
+
+  { path: '**', redirectTo: '' },
 ];
