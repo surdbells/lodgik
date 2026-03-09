@@ -153,8 +153,24 @@ export default class GuestFolioPage implements OnInit {
 
   private load(): void {
     this.guestApi.get<any>('/guest/folio').subscribe({
-      next: (r: any) => { this.folio.set(r.data ?? null); this.loading.set(false); },
-      error: ()      => { this.loading.set(false); },
+      next: (r: any) => {
+        if (r.data) {
+          // API returns { folio: {...}, charges: [...], payments: [...], bank_accounts: [...] }
+          // Flatten into a single object the template can access directly
+          const d = r.data;
+          this.folio.set({
+            ...d.folio,
+            charges:      d.charges      ?? [],
+            payments:     d.payments     ?? [],
+            adjustments:  d.adjustments  ?? [],
+            bank_accounts: d.bank_accounts ?? [],
+          });
+        } else {
+          this.folio.set(null);
+        }
+        this.loading.set(false);
+      },
+      error: () => { this.loading.set(false); },
     });
   }
 }
