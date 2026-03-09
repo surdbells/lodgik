@@ -18,6 +18,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     '/auth/refresh',
     '/onboarding/register',
     '/onboarding/verify-invite',
+    '/upload/qr-token/',   // mobile upload status poll — public token auth
+    '/upload/qr/',         // mobile upload POST — public token auth
   ];
 
   const url = new URL(req.url, 'http://localhost');

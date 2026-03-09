@@ -141,7 +141,9 @@ export class MobileUploadPage implements OnInit {
   progress  = signal(0);
 
   private token = '';
-  private apiBase = (environment as any).apiUrl || '';
+  // environment.apiUrl = 'https://api.lodgik.co/api' — strip the trailing /api
+  // because the URL templates below already include /api/...
+  private apiBase = ((environment as any).apiUrl as string).replace(/\/api$/, '');
 
   ngOnInit(): void {
     this.token = this.route.snapshot.paramMap.get('token') ?? '';
