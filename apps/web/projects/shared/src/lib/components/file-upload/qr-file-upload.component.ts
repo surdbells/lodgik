@@ -3,6 +3,7 @@ import {
   inject, signal, computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ApiService } from '../../services/api.service';
 import { UploadedFile } from './file-upload.component';
 import { FileUploadComponent } from './file-upload.component';
@@ -208,7 +209,8 @@ export type QrUploadStatus = 'idle' | 'generating' | 'waiting' | 'uploading' | '
   `,
 })
 export class QrFileUploadComponent implements OnInit, OnDestroy {
-  private api = inject(ApiService);
+  private api       = inject(ApiService);
+  private sanitizer = inject(DomSanitizer);
 
   @Input() context: 'kyc' | 'document' | 'avatar' | 'resource' | 'other' = 'other';
   @Input() label = '';
@@ -223,7 +225,7 @@ export class QrFileUploadComponent implements OnInit, OnDestroy {
 
   activeTab   = signal<'manual' | 'qr'>('manual');
   status      = signal<QrUploadStatus>('idle');
-  qrSvg       = signal<string>('');
+  qrSvg       = signal<SafeHtml>('');
   countdown   = signal(900);
   errorMsg    = signal('');
   uploadedUrl      = signal<string | null>(null);
@@ -268,7 +270,8 @@ export class QrFileUploadComponent implements OnInit, OnDestroy {
         this.expiresAt = Date.now() + (r.data?.expires_in ?? 900) * 1000;
 
         const uploadUrl = `${this.mobileUploadBase}/mobile-upload/${this.token}`;
-        this.qrSvg.set(this.buildQrSvg(uploadUrl));
+        const svgString = this.buildQrSvg(uploadUrl);
+        this.qrSvg.set(this.sanitizer.bypassSecurityTrustHtml(svgString));
         this.countdown.set(Math.round((this.expiresAt - Date.now()) / 1000));
         this.status.set('waiting');
         this.startPolling();

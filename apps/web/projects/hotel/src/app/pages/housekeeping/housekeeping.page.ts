@@ -82,7 +82,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
             <button (click)="assigningTask = null" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
           </div>
           <div class="space-y-2 max-h-64 overflow-y-auto mb-4">
-            @if (staffLoading) {
+            @if (staffLoading()) {
               <p class="text-sm text-gray-400 text-center py-6">Loading staff...</p>
             } @else if (staffList().length === 0) {
               <p class="text-sm text-gray-400 text-center py-6">No housekeeping staff found</p>
@@ -354,14 +354,12 @@ export class HousekeepingPage implements OnInit {
   stats = signal<any>({});
   lostItems = signal<any[]>([]);
   staffList = signal<any[]>([]);
-
-  filterStatus = '';
+  staffLoading = signal(false);
   lostFilter = '';
   showCreateTask = false;
   showLostForm = false;
   creatingTask = false;
   reportingItem = false;
-  staffLoading = false;
 
   assigningTask: any = null;
   completingTask: any = null;
@@ -416,11 +414,11 @@ export class HousekeepingPage implements OnInit {
   }
 
   loadStaff() {
-    this.staffLoading = true;
+    this.staffLoading.set(true);
     this.staffList.set([]);
     this.api.get(`/employees?property_id=${this.activeProperty.propertyId()}`).subscribe({
-      next: (r: any) => { this.staffList.set(r.data || r.items || []); this.staffLoading = false; },
-      error: () => { this.staffLoading = false; },
+      next: (r: any) => { this.staffList.set(r.data || r.items || []); this.staffLoading.set(false); },
+      error: () => { this.staffLoading.set(false); },
     });
   }
 
