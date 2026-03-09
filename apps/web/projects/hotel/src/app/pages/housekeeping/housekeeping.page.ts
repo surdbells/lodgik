@@ -355,6 +355,8 @@ export class HousekeepingPage implements OnInit {
   lostItems = signal<any[]>([]);
   staffList = signal<any[]>([]);
   staffLoading = signal(false);
+
+  filterStatus = '';
   lostFilter = '';
   showCreateTask = false;
   showLostForm = false;
