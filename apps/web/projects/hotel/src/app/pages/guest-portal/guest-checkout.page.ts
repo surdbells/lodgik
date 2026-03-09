@@ -104,7 +104,13 @@ export default class GuestCheckoutPage implements OnInit {
   ngOnInit(): void {
     // Load folio so we can show the balance summary
     this.guestApi.get<any>('/guest/folio').subscribe({
-      next: (r: any) => this.folio.set(r.data ?? null),
+      next: (r: any) => {
+        if (r.data?.folio) {
+          this.folio.set({ ...r.data.folio, ...r.data });
+        } else {
+          this.folio.set(r.data ?? null);
+        }
+      },
       error: () => {},
     });
   }

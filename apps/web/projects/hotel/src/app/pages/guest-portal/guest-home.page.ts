@@ -141,8 +141,15 @@ export default class GuestHomePage implements OnInit {
     if (!bookingId) { this.loading.set(false); return; }
 
     this.guestApi.get<any>('/guest/folio').subscribe({
-      next: (r: any) => { this.folio.set(r.data ?? null); this.loading.set(false); },
-      error: ()      => { this.loading.set(false); },
+      next: (r: any) => {
+        if (r.data?.folio) {
+          this.folio.set({ ...r.data.folio, ...r.data });
+        } else {
+          this.folio.set(r.data ?? null);
+        }
+        this.loading.set(false);
+      },
+      error: () => { this.loading.set(false); },
     });
   }
 }
