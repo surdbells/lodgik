@@ -20,12 +20,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     '/onboarding/verify-invite',
     '/upload/qr-token/',   // mobile upload status poll — public token auth
     '/upload/qr/',         // mobile upload POST — public token auth
+    '/guest-auth/',        // guest login (access code + OTP) — no staff token
+    '/guest/',             // guest portal API calls — authenticated with guest_token, not staff JWT
   ];
 
   const url = new URL(req.url, 'http://localhost');
   const path = url.pathname;
 
-  const isPublic = publicPaths.some(p => path.endsWith(p)) ||
+  const isPublic = publicPaths.some(p =>
+      // Exact suffix match (e.g. '/auth/login') or substring match for prefix paths (e.g. '/guest/')
+      path.endsWith(p) || path.includes(p)
+    ) ||
     (path.match(/\/plans$/) !== null && !path.includes('/admin/') && !path.includes('/gym/')) ||
     path.endsWith('/apps/latest') ||
     path.endsWith('/apps/version-check');
