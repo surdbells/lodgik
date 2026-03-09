@@ -62,7 +62,10 @@
             "outputPath": {
               "base": "dist/admin",
               "browser": ""
-            }
+            },
+            "allowedCommonJsDependencies": [
+              "qrcode"
+            ]
           },
           "configurations": {
             "production": {
@@ -166,7 +169,10 @@
             "outputPath": {
               "base": "dist/hotel",
               "browser": ""
-            }
+            },
+            "allowedCommonJsDependencies": [
+              "qrcode"
+            ]
           },
           "configurations": {
             "production": {
@@ -322,7 +328,10 @@
             "outputPath": {
               "base": "dist/merchant",
               "browser": ""
-            }
+            },
+            "allowedCommonJsDependencies": [
+              "qrcode"
+            ]
           },
           "configurations": {
             "production": {

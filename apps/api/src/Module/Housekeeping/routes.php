@@ -28,10 +28,13 @@ return function (App $app): void {
 
     // Phase 4: Housekeeping Consumables
     $app->group('/api/housekeeping/consumables', function (RouteCollectorProxy $g) {
-        $g->get('',       [ConsumableController::class, 'listConsumables']);
-        $g->post('',      [ConsumableController::class, 'createConsumable']);
-        $g->patch('/{id}',[ConsumableController::class, 'updateConsumable']);
+        $g->get('',        [ConsumableController::class, 'listConsumables']);
+        $g->post('',       [ConsumableController::class, 'createConsumable']);
+        $g->patch('/{id}', [ConsumableController::class, 'updateConsumable']);
         $g->delete('/{id}',[ConsumableController::class, 'deleteConsumable']);
+        // Stock management
+        $g->get('/{id}/stock',   [ConsumableController::class, 'getStock']);
+        $g->post('/{id}/stock',  [ConsumableController::class, 'adjustStock']);
     })->add(new RoleMiddleware(['property_admin', 'manager']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     $app->group('/api/housekeeping/store-requests', function (RouteCollectorProxy $g) {

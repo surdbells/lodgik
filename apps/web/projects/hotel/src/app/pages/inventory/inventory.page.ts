@@ -218,6 +218,25 @@ const BLANK_FORM = () => ({
 
       <div class="px-6 py-4 grid grid-cols-2 gap-4">
 
+        <!-- Setup warning if categories/UoMs not configured -->
+        @if (activeCategories().length === 0 || activeUoms().length === 0) {
+          <div class="col-span-2 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <span class="text-amber-500 text-lg leading-none mt-0.5">⚠️</span>
+            <div class="text-sm">
+              <p class="font-medium text-amber-800">Setup required before adding items</p>
+              <p class="text-amber-600 text-xs mt-0.5">
+                @if (activeCategories().length === 0) { <span>No categories found. </span> }
+                @if (activeUoms().length === 0) { <span>No units of measure found. </span> }
+                Go to
+                <a routerLink="/inventory/settings" class="underline font-semibold hover:text-amber-800">
+                  Inventory Settings
+                </a>
+                to create categories, units of measure, and storage locations first.
+              </p>
+            </div>
+          </div>
+        }
+
         <!-- SKU -->
         <div>
           <label class="text-xs font-medium text-gray-500 mb-1 block">SKU *</label>
@@ -373,6 +392,18 @@ const BLANK_FORM = () => ({
       <p class="text-sm text-gray-500 mb-4">
         Setting opening balance for: <strong>{{ balanceItem()?.name }}</strong>
       </p>
+      @if (locations().length === 0) {
+        <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
+          <span class="text-amber-500 text-lg leading-none mt-0.5">⚠️</span>
+          <div class="text-sm">
+            <p class="font-medium text-amber-800">No storage locations configured</p>
+            <p class="text-amber-600 text-xs mt-0.5">
+              Go to <a routerLink="/inventory/settings" class="underline font-semibold hover:text-amber-800">Inventory Settings</a>
+              to create storage locations (e.g. Main Store, Bar Store) before receiving stock.
+            </p>
+          </div>
+        </div>
+      }
       <div class="space-y-3">
         <div>
           <label class="text-xs font-medium text-gray-500 mb-1 block">Location *</label>

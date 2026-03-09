@@ -278,4 +278,88 @@ final class ConsumableService
             'discrepancies'   => $flagged,
         ];
     }
+
+    // ── Stock Management ─────────────────────────────────────────────────────
+
+    /**
+     * Get current stock record for a consumable+property. Returns array with quantity.
+     */
+    public function getStock(string $consumableId, string $propertyId, string $tenantId): array
+    {
+        $row = $this->em->getConnection()->fetchAssociative(
+            'SELECT id, consumable_id, quantity, updated_at FROM housekeeping_consumable_stock
+             WHERE consumable_id = ? AND property_id = ?',
+            [$consumableId, $propertyId]
+        );
+
+        if ($row === false) {
+            return ['consumable_id' => $consumableId, 'property_id' => $propertyId, 'quantity' => 0];
+        }
+
+        return [
+            'consumable_id' => $row['consumable_id'],
+            'property_id'   => $propertyId,
+            'quantity'      => (float) $row['quantity'],
+            'updated_at'    => $row['updated_at'],
+        ];
+    }
+
+    /**
+     * Adjust stock level for a consumable.
+     *
+     * @param string $mode 'set' = absolute value, 'add' = increase, 'subtract' = decrease
+     */
+    public function adjustStock(
+        string $consumableId,
+        string $propertyId,
+        string $tenantId,
+        string $userId,
+        float  $quantity,
+        string $mode = 'set',
+        ?string $notes = null
+    ): array {
+        $conn = $this->em->getConnection();
+
+        // Get current quantity
+        $current = (float) ($conn->fetchOne(
+            'SELECT quantity FROM housekeeping_consumable_stock
+             WHERE consumable_id = ? AND property_id = ?',
+            [$consumableId, $propertyId]
+        ) ?: 0);
+
+        $newQty = match ($mode) {
+            'add'      => $current + $quantity,
+            'subtract' => max(0, $current - $quantity),
+            default    => $quantity, // 'set'
+        };
+
+        $existing = $conn->fetchOne(
+            'SELECT id FROM housekeeping_consumable_stock WHERE consumable_id = ? AND property_id = ?',
+            [$consumableId, $propertyId]
+        );
+
+        if ($existing) {
+            $conn->executeStatement(
+                'UPDATE housekeeping_consumable_stock
+                 SET quantity = ?, last_updated_by = ?, updated_at = NOW()
+                 WHERE consumable_id = ? AND property_id = ?',
+                [$newQty, $userId, $consumableId, $propertyId]
+            );
+        } else {
+            $conn->executeStatement(
+                'INSERT INTO housekeeping_consumable_stock
+                    (id, consumable_id, tenant_id, property_id, quantity, last_updated_by, updated_at)
+                 VALUES (gen_random_uuid(), ?, ?, ?, ?, ?, NOW())',
+                [$consumableId, $tenantId, $propertyId, $newQty, $userId]
+            );
+        }
+
+        $this->logger?->info("Stock adjusted: consumable={$consumableId} mode={$mode} qty={$quantity} new={$newQty}");
+
+        return [
+            'consumable_id' => $consumableId,
+            'property_id'   => $propertyId,
+            'quantity'      => $newQty,
+        ];
+    }
 }

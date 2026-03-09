@@ -177,4 +177,49 @@ final class ConsumableController
         $result = $this->svc->runDiscrepancyCheck($pid, $tid, $from, $to);
         return $this->json($res, ['success' => true, 'data' => $result]);
     }
+
+    // ── Stock Management ─────────────────────────────────────────────
+
+    /**
+     * GET /api/housekeeping/consumables/{id}/stock
+     * Returns current stock level for the consumable + property.
+     */
+    public function getStock(Request $req, Response $res, array $args): Response
+    {
+        $p   = $req->getQueryParams();
+        $pid = $p['property_id'] ?? $req->getAttribute('auth.property_id') ?? '';
+        $tid = $req->getAttribute('auth.tenant_id');
+
+        $stock = $this->svc->getStock($args['id'], $pid, $tid);
+        return $this->json($res, ['success' => true, 'data' => $stock]);
+    }
+
+    /**
+     * POST /api/housekeeping/consumables/{id}/stock
+     * Adjust stock level (set absolute quantity or apply delta).
+     * Body: { property_id, quantity, mode: 'set'|'add'|'subtract', notes? }
+     */
+    public function adjustStock(Request $req, Response $res, array $args): Response
+    {
+        $d   = $this->body($req);
+        $pid = $d['property_id'] ?? $req->getAttribute('auth.property_id') ?? '';
+        $tid = $req->getAttribute('auth.tenant_id');
+        $uid = $req->getAttribute('auth.user_id');
+
+        if (!isset($d['quantity']) || $pid === '') {
+            return $this->json($res, ['success' => false, 'message' => 'quantity and property_id are required.'], 422);
+        }
+
+        try {
+            $stock = $this->svc->adjustStock(
+                $args['id'], $pid, $tid, $uid,
+                (float) $d['quantity'],
+                $d['mode'] ?? 'set',
+                $d['notes'] ?? null
+            );
+            return $this->json($res, ['success' => true, 'data' => $stock]);
+        } catch (\RuntimeException $e) {
+            return $this->json($res, ['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
 }

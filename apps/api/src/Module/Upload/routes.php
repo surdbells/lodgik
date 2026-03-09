@@ -42,14 +42,14 @@ return function (App $app): void {
 
     /**
      * GET /api/upload/qr-token/{token}/status
-     * Poll token status from desktop. Authenticated (the staff member who
-     * generated the token). Returns pending | done | 410 expired.
+     * Poll token status. Public — the mobile browser calls this too.
+     * Returns pending | done | 410 expired.
+     * Security: the token itself is a secret 48-char random hex value.
      *
      * NOTE: Static path segment /status must be registered BEFORE
      * the variable /{token} route to avoid FastRoute shadowing.
      */
-    $app->get('/api/upload/qr-token/{token}/status', [UploadController::class, 'pollQrToken'])
-        ->add(AuthMiddleware::class);
+    $app->get('/api/upload/qr-token/{token}/status', [UploadController::class, 'pollQrToken']);
 
     /**
      * POST /api/upload/qr/{token}
