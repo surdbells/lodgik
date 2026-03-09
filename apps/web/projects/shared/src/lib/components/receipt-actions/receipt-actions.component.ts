@@ -1,6 +1,7 @@
 import { Component, Input, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -204,8 +205,9 @@ export class ReceiptActionsComponent {
   @Input() shareUrl: string | null | undefined = null;
   @Input() label: string = 'receipt';
 
-  private api   = inject(ApiService);
-  private toast = inject(ToastService);
+  private api       = inject(ApiService);
+  private toast     = inject(ToastService);
+  private sanitizer = inject(DomSanitizer);
 
   showViewer = signal(false);
   showShare  = signal(false);
@@ -227,9 +229,14 @@ export class ReceiptActionsComponent {
     return /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?|$)/i.test(this.url);
   }
 
-  safeUrl(): string {
-    // For PDFs we append #toolbar=1 to show the browser PDF toolbar
-    return this.url ? this.url + (this.isPdf() && !this.url.includes('#') ? '#toolbar=1' : '') : '';
+  safeUrl(): SafeResourceUrl {
+    // Angular requires SafeResourceUrl for iframe [src] bindings (NG0904).
+    // bypassSecurityTrustResourceUrl is safe here because the URL always
+    // points to our own API domain (api.lodgik.co/storage/...).
+    const raw = this.url
+      ? this.url + (this.isPdf() && !this.url.includes('#') ? '#toolbar=1' : '')
+      : '';
+    return this.sanitizer.bypassSecurityTrustResourceUrl(raw);
   }
 
   downloadName(): string {

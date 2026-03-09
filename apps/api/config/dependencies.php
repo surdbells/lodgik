@@ -781,6 +781,7 @@ return function (ContainerBuilder $builder): void {
             tabletRepo: $c->get(TabletDeviceRepository::class),
             bookingRepo: $c->get(BookingRepository::class),
             guestRepo: $c->get(GuestRepository::class),
+            roomRepo: $c->get(RoomRepository::class),
             termii: $c->get(TermiiService::class),
             logger: $c->get(LoggerInterface::class),
         ),
