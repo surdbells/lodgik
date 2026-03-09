@@ -5,18 +5,21 @@ import {
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { LucideAngularModule, ArrowLeft, MessageCircle, SendHorizonal } from 'lucide-angular';
 import { GuestApiService } from '../../services/guest-api.service';
 
 @Component({
   selector: 'app-guest-chat',
   standalone: true,
-  imports: [FormsModule, DatePipe, RouterLink],
+  imports: [FormsModule, DatePipe, RouterLink, LucideAngularModule],
   template: `
     <div class="flex flex-col h-[calc(100vh-120px)] max-w-md mx-auto">
 
       <!-- Header -->
       <div class="px-4 py-3 flex items-center gap-3 border-b border-white/10">
-        <a routerLink="/guest/home" class="text-white/50 hover:text-white text-xl">←</a>
+        <a routerLink="/guest/home" class="text-white/50 hover:text-white transition-colors">
+          <lucide-icon [img]="ArrowLeftIcon" class="w-5 h-5"></lucide-icon>
+        </a>
         <div class="flex-1">
           <h2 class="text-sm font-semibold text-white">Front Desk</h2>
           <p class="text-[11px] text-white/40">Hotel staff · usually replies in minutes</p>
@@ -54,7 +57,9 @@ import { GuestApiService } from '../../services/guest-api.service';
 
         @if (!loading() && messages().length === 0) {
           <div class="text-center py-16">
-            <p class="text-3xl mb-3">💬</p>
+            <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
+              <lucide-icon [img]="MessageCircleIcon" class="w-7 h-7 text-white/20"></lucide-icon>
+            </div>
             <p class="text-white/40 text-sm">Start a conversation</p>
             <p class="text-white/25 text-xs mt-1">Our team typically replies within minutes</p>
           </div>
@@ -77,9 +82,13 @@ import { GuestApiService } from '../../services/guest-api.service';
                    max-h-24 leading-snug">
           </textarea>
           <button (click)="send()" [disabled]="!newMessage.trim() || sending()"
-            class="w-10 h-10 bg-amber-400 rounded-2xl flex items-center justify-center text-slate-900 text-lg
+            class="w-10 h-10 bg-amber-400 rounded-2xl flex items-center justify-center text-slate-900
                    hover:bg-amber-300 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 transition-colors">
-            {{ sending() ? '…' : '↑' }}
+            @if (sending()) {
+              <div class="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+            } @else {
+              <lucide-icon [img]="SendHorizonalIcon" class="w-4 h-4"></lucide-icon>
+            }
           </button>
         </div>
       </div>
@@ -91,6 +100,10 @@ export default class GuestChatPage implements OnInit, OnDestroy, AfterViewChecke
   @ViewChild('messageContainer') private msgContainer!: ElementRef;
 
   private guestApi = inject(GuestApiService);
+
+  readonly ArrowLeftIcon     = ArrowLeft;
+  readonly MessageCircleIcon = MessageCircle;
+  readonly SendHorizonalIcon = SendHorizonal;
 
   loading    = signal(true);
   sending    = signal(false);
@@ -116,10 +129,7 @@ export default class GuestChatPage implements OnInit, OnDestroy, AfterViewChecke
   send(): void {
     const text = this.newMessage.trim();
     if (!text || this.sending()) return;
-    this.sending.set(true);
-    this.error.set(null);
-    this.newMessage = '';
-
+    this.sending.set(true); this.error.set(null); this.newMessage = '';
     this.guestApi.post<any>('/guest/chat/send', { message: text }).subscribe({
       next: (r: any) => {
         this.sending.set(false);
@@ -144,7 +154,6 @@ export default class GuestChatPage implements OnInit, OnDestroy, AfterViewChecke
         this.messages.set(r.data ?? []);
         this.loading.set(false);
         this.shouldScrollBottom = true;
-        // Mark staff messages as read
         if ((r.data ?? []).some((m: any) => m.sender_type !== 'guest')) {
           this.guestApi.post('/guest/chat/read', {}).subscribe();
         }
@@ -154,9 +163,6 @@ export default class GuestChatPage implements OnInit, OnDestroy, AfterViewChecke
   }
 
   private scrollBottom(): void {
-    try {
-      const el = this.msgContainer.nativeElement;
-      el.scrollTop = el.scrollHeight;
-    } catch {}
+    try { const el = this.msgContainer.nativeElement; el.scrollTop = el.scrollHeight; } catch {}
   }
 }

@@ -2,6 +2,7 @@ import { Component, signal, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { LucideAngularModule, ArrowLeft, Sparkles, ChevronDown, Send, RotateCcw } from 'lucide-angular';
 import { GuestApiService } from '../../services/guest-api.service';
 
 const CATEGORIES = [
@@ -11,7 +12,7 @@ const CATEGORIES = [
   { value: 'transport',     label: 'Transport',       icon: '🚗' },
   { value: 'concierge',     label: 'Concierge',       icon: '🎩' },
   { value: 'amenity',       label: 'Amenity',         icon: '🎁' },
-  { value: 'other',         label: 'Other',           icon: '❓' },
+  { value: 'other',         label: 'Other',           icon: '📋' },
 ];
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
@@ -25,12 +26,19 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
 @Component({
   selector: 'app-guest-services',
   standalone: true,
-  imports: [FormsModule, DatePipe, RouterLink],
+  imports: [FormsModule, DatePipe, RouterLink, LucideAngularModule],
   template: `
     <div class="px-4 py-6 max-w-md mx-auto">
+
+      <!-- Header -->
       <div class="flex items-center gap-3 mb-5">
-        <a routerLink="/guest/home" class="text-white/50 hover:text-white text-xl">←</a>
-        <h2 class="text-lg font-bold text-white">Room Services</h2>
+        <a routerLink="/guest/home" class="text-white/50 hover:text-white transition-colors">
+          <lucide-icon [img]="ArrowLeftIcon" class="w-5 h-5"></lucide-icon>
+        </a>
+        <div class="flex items-center gap-2">
+          <lucide-icon [img]="SparklesIcon" class="w-5 h-5 text-amber-400"></lucide-icon>
+          <h2 class="text-lg font-bold text-white">Room Services</h2>
+        </div>
       </div>
 
       <!-- Category picker -->
@@ -39,8 +47,8 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
         <div class="grid grid-cols-2 gap-3 mb-6">
           @for (cat of categories; track cat.value) {
             <button (click)="selectCategory(cat)"
-              class="bg-white/8 hover:bg-white/14 border border-white/10 rounded-2xl p-4 flex flex-col items-center gap-2
-                     transition-all active:scale-95 text-center">
+              class="bg-white/8 hover:bg-white/14 border border-white/10 rounded-2xl p-4
+                     flex flex-col items-center gap-2 transition-all active:scale-95 text-center">
               <span class="text-3xl">{{ cat.icon }}</span>
               <span class="text-xs font-medium text-white/70">{{ cat.label }}</span>
             </button>
@@ -73,8 +81,10 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
       <!-- Request form -->
       @if (showForm() && !submitted()) {
         <div>
-          <button (click)="showForm.set(false)" class="flex items-center gap-2 text-white/50 hover:text-white text-sm mb-4">
-            ← Back
+          <button (click)="showForm.set(false)"
+            class="flex items-center gap-1.5 text-white/50 hover:text-white text-sm mb-4 transition-colors">
+            <lucide-icon [img]="ArrowLeftIcon" class="w-4 h-4"></lucide-icon>
+            Back
           </button>
 
           <div class="bg-white/8 border border-white/10 rounded-2xl p-4 mb-4 flex items-center gap-3">
@@ -121,21 +131,27 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
           }
 
           <button (click)="submit()" [disabled]="!form.title.trim() || submitting()"
-            class="w-full py-3.5 bg-amber-400 text-slate-900 font-semibold rounded-2xl hover:bg-amber-300
-                   disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            {{ submitting() ? 'Sending…' : '🛎️ Submit Request' }}
+            class="w-full py-3.5 bg-amber-400 text-slate-900 font-semibold rounded-2xl
+                   hover:bg-amber-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors
+                   flex items-center justify-center gap-2">
+            <lucide-icon [img]="SendIcon" class="w-4 h-4"></lucide-icon>
+            {{ submitting() ? 'Sending…' : 'Submit Request' }}
           </button>
         </div>
       }
 
-      <!-- Success state -->
+      <!-- Success -->
       @if (submitted()) {
         <div class="text-center py-16">
-          <p class="text-5xl mb-4">✅</p>
+          <div class="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <lucide-icon [img]="SparklesIcon" class="w-8 h-8 text-emerald-400"></lucide-icon>
+          </div>
           <h3 class="text-xl font-bold text-white mb-2">Request Sent!</h3>
           <p class="text-white/50 text-sm mb-6">Our team has been notified and will attend to you shortly.</p>
           <button (click)="reset()"
-            class="px-6 py-3 bg-white/10 border border-white/20 rounded-2xl text-white text-sm hover:bg-white/15">
+            class="flex items-center gap-2 px-6 py-3 bg-white/10 border border-white/20 rounded-2xl
+                   text-white text-sm hover:bg-white/15 mx-auto transition-colors">
+            <lucide-icon [img]="RotateCcwIcon" class="w-4 h-4"></lucide-icon>
             Make another request
           </button>
         </div>
@@ -145,6 +161,11 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
 })
 export default class GuestServicesPage implements OnInit {
   private guestApi = inject(GuestApiService);
+
+  readonly ArrowLeftIcon = ArrowLeft;
+  readonly SparklesIcon  = Sparkles;
+  readonly SendIcon      = Send;
+  readonly RotateCcwIcon = RotateCcw;
 
   loading    = signal(true);
   requests   = signal<any[]>([]);
@@ -174,9 +195,7 @@ export default class GuestServicesPage implements OnInit {
 
   submit(): void {
     if (!this.form.title.trim()) return;
-    this.error.set(null);
-    this.submitting.set(true);
-
+    this.error.set(null); this.submitting.set(true);
     this.guestApi.post<any>('/guest/service-requests', {
       category:    this.selectedCategory()!.value,
       title:       this.form.title.trim(),
@@ -185,13 +204,8 @@ export default class GuestServicesPage implements OnInit {
     }).subscribe({
       next: (r: any) => {
         this.submitting.set(false);
-        if (r.success) {
-          this.showForm.set(false);
-          this.submitted.set(true);
-          this.loadRequests();
-        } else {
-          this.error.set(r.message ?? 'Failed to submit');
-        }
+        if (r.success) { this.showForm.set(false); this.submitted.set(true); this.loadRequests(); }
+        else { this.error.set(r.message ?? 'Failed to submit'); }
       },
       error: (err: any) => {
         this.submitting.set(false);
@@ -201,18 +215,9 @@ export default class GuestServicesPage implements OnInit {
   }
 
   reset(): void { this.submitted.set(false); this.showForm.set(false); }
-
-  getCatIcon(val: string): string {
-    return CATEGORIES.find(c => c.value === val)?.icon ?? '❓';
-  }
-
-  getStatusLabel(status: string): string {
-    return STATUS_META[status]?.label ?? status;
-  }
-
-  getStatusColor(status: string): string {
-    return STATUS_META[status]?.color ?? '#6b7280';
-  }
+  getCatIcon(val: string): string { return CATEGORIES.find(c => c.value === val)?.icon ?? '📋'; }
+  getStatusLabel(status: string): string { return STATUS_META[status]?.label ?? status; }
+  getStatusColor(status: string): string { return STATUS_META[status]?.color ?? '#6b7280'; }
 
   private loadRequests(): void {
     this.guestApi.get<any>('/guest/service-requests').subscribe({

@@ -1,12 +1,13 @@
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { LucideAngularModule, Receipt, ConciergeBell, MessageCircle, DoorOpen, CircleDollarSign, Wallet, AlertCircle, CheckCircle2, Moon } from 'lucide-angular';
 import { GuestApiService } from '../../services/guest-api.service';
 
 @Component({
   selector: 'app-guest-home',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, LucideAngularModule],
   template: `
     <div class="px-4 py-6 max-w-md mx-auto">
 
@@ -40,9 +41,12 @@ import { GuestApiService } from '../../services/guest-api.service';
               <p class="text-[11px] opacity-70">Check-out</p>
               <p class="font-semibold">{{ session()!.booking!.check_out | date:'dd MMM' }}</p>
             </div>
-            <div>
-              <p class="text-[11px] opacity-70">Nights</p>
-              <p class="font-semibold">{{ nightsLeft() }}</p>
+            <div class="flex items-center gap-1.5">
+              <lucide-icon [img]="MoonIcon" class="w-3.5 h-3.5 opacity-70"></lucide-icon>
+              <div>
+                <p class="text-[11px] opacity-70">Nights left</p>
+                <p class="font-semibold">{{ nightsLeft() }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -50,13 +54,30 @@ import { GuestApiService } from '../../services/guest-api.service';
 
       <!-- Quick actions -->
       <div class="grid grid-cols-2 gap-3 mb-5">
-        @for (action of quickActions; track action.label) {
-          <a [routerLink]="action.route"
-             class="bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-4 flex flex-col items-center gap-2 transition-all active:scale-95">
-            <span class="text-2xl">{{ action.icon }}</span>
-            <span class="text-xs font-medium text-white/80">{{ action.label }}</span>
-          </a>
-        }
+        <a routerLink="/guest/folio"
+           class="bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-4
+                  flex flex-col items-center gap-2 transition-all active:scale-95">
+          <lucide-icon [img]="ReceiptIcon" class="w-6 h-6 text-amber-400"></lucide-icon>
+          <span class="text-xs font-medium text-white/80">My Bill</span>
+        </a>
+        <a routerLink="/guest/services"
+           class="bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-4
+                  flex flex-col items-center gap-2 transition-all active:scale-95">
+          <lucide-icon [img]="ConciergeBellIcon" class="w-6 h-6 text-amber-400"></lucide-icon>
+          <span class="text-xs font-medium text-white/80">Room Service</span>
+        </a>
+        <a routerLink="/guest/chat"
+           class="bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-4
+                  flex flex-col items-center gap-2 transition-all active:scale-95">
+          <lucide-icon [img]="MessageCircleIcon" class="w-6 h-6 text-amber-400"></lucide-icon>
+          <span class="text-xs font-medium text-white/80">Chat Staff</span>
+        </a>
+        <a routerLink="/guest/checkout"
+           class="bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-4
+                  flex flex-col items-center gap-2 transition-all active:scale-95">
+          <lucide-icon [img]="DoorOpenIcon" class="w-6 h-6 text-amber-400"></lucide-icon>
+          <span class="text-xs font-medium text-white/80">Checkout</span>
+        </a>
       </div>
 
       <!-- Balance summary -->
@@ -70,16 +91,33 @@ import { GuestApiService } from '../../services/guest-api.service';
         <div class="bg-white/10 border border-white/10 rounded-2xl p-4 mb-4">
           <div class="flex items-center justify-between mb-3">
             <p class="text-sm font-semibold text-white/80">Account Balance</p>
-            <a routerLink="/guest/folio" class="text-amber-400 text-xs hover:text-amber-300">View details →</a>
+            <a routerLink="/guest/folio" class="text-amber-400 text-xs hover:text-amber-300 transition-colors">
+              View details →
+            </a>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-3 gap-2">
             <div>
-              <p class="text-xs text-white/40">Total charges</p>
-              <p class="text-base font-bold text-white">₦{{ fmt(folio()!.total_charges) }}</p>
+              <div class="flex items-center gap-1 mb-0.5">
+                <lucide-icon [img]="CircleDollarSignIcon" class="w-3 h-3 text-white/30"></lucide-icon>
+                <p class="text-[10px] text-white/40">Total</p>
+              </div>
+              <p class="text-sm font-bold text-white">₦{{ fmt(folio()!.total_charges) }}</p>
             </div>
             <div>
-              <p class="text-xs text-white/40">Balance due</p>
-              <p class="text-base font-bold" [class]="(+folio()!.balance) > 0 ? 'text-red-400' : 'text-emerald-400'">
+              <div class="flex items-center gap-1 mb-0.5">
+                <lucide-icon [img]="WalletIcon" class="w-3 h-3 text-emerald-400/60"></lucide-icon>
+                <p class="text-[10px] text-white/40">Paid</p>
+              </div>
+              <p class="text-sm font-bold text-emerald-400">₦{{ fmt(folio()!.total_payments) }}</p>
+            </div>
+            <div>
+              <div class="flex items-center gap-1 mb-0.5">
+                <lucide-icon [img]="(+folio()!.balance) > 0 ? AlertCircleIcon : CheckCircle2Icon"
+                  class="w-3 h-3" [class]="(+folio()!.balance) > 0 ? 'text-red-400/60' : 'text-emerald-400/60'">
+                </lucide-icon>
+                <p class="text-[10px] text-white/40">Balance</p>
+              </div>
+              <p class="text-sm font-bold" [class]="(+folio()!.balance) > 0 ? 'text-red-400' : 'text-emerald-400'">
                 ₦{{ fmt(folio()!.balance) }}
               </p>
             </div>
@@ -99,16 +137,19 @@ import { GuestApiService } from '../../services/guest-api.service';
 export default class GuestHomePage implements OnInit {
   private guestApi = inject(GuestApiService);
 
+  readonly ReceiptIcon        = Receipt;
+  readonly ConciergeBellIcon  = ConciergeBell;
+  readonly MessageCircleIcon  = MessageCircle;
+  readonly DoorOpenIcon       = DoorOpen;
+  readonly CircleDollarSignIcon = CircleDollarSign;
+  readonly WalletIcon         = Wallet;
+  readonly AlertCircleIcon    = AlertCircle;
+  readonly CheckCircle2Icon   = CheckCircle2;
+  readonly MoonIcon           = Moon;
+
   session = signal<any | null>(null);
   folio   = signal<any | null>(null);
   loading = signal(true);
-
-  readonly quickActions = [
-    { icon: '🧾', label: 'My Bill',      route: '/guest/folio' },
-    { icon: '🛎️', label: 'Room Service', route: '/guest/services' },
-    { icon: '💬', label: 'Chat Staff',   route: '/guest/chat' },
-    { icon: '🔑', label: 'Checkout',     route: '/guest/checkout' },
-  ];
 
   readonly greeting = computed(() => {
     const h = new Date().getHours();
@@ -120,15 +161,12 @@ export default class GuestHomePage implements OnInit {
   readonly nightsLeft = computed(() => {
     const s = this.session();
     if (!s?.booking?.check_out) return 0;
-    const diff = new Date(s.booking.check_out).getTime() - Date.now();
-    return Math.max(0, Math.ceil(diff / 86_400_000));
+    return Math.max(0, Math.ceil((new Date(s.booking.check_out).getTime() - Date.now()) / 86_400_000));
   });
 
   ngOnInit(): void {
     const stored = localStorage.getItem('guest_session');
-    if (stored) {
-      try { this.session.set(JSON.parse(stored)); } catch {}
-    }
+    if (stored) { try { this.session.set(JSON.parse(stored)); } catch {} }
     this.loadFolio();
   }
 
@@ -137,16 +175,10 @@ export default class GuestHomePage implements OnInit {
   }
 
   private loadFolio(): void {
-    const bookingId = this.session()?.booking?.id;
-    if (!bookingId) { this.loading.set(false); return; }
-
+    if (!this.session()?.booking?.id) { this.loading.set(false); return; }
     this.guestApi.get<any>('/guest/folio').subscribe({
       next: (r: any) => {
-        if (r.data?.folio) {
-          this.folio.set({ ...r.data.folio, ...r.data });
-        } else {
-          this.folio.set(r.data ?? null);
-        }
+        this.folio.set(r.data?.folio ? { ...r.data.folio, ...r.data } : (r.data ?? null));
         this.loading.set(false);
       },
       error: () => { this.loading.set(false); },
