@@ -92,7 +92,7 @@ final class GuestPortalController
             priority:    (int) ($body['priority'] ?? 2),
         );
 
-        return JsonResponse::ok($res, $sr->toArray(), 'Service request submitted', 201);
+        return JsonResponse::created($res, $sr->toArray(), 'Service request submitted');
     }
 
     // ── GET /api/guest/service-requests ────────────────────────
@@ -139,7 +139,7 @@ final class GuestPortalController
             tenantId:    $tenantId,
         );
 
-        return JsonResponse::ok($res, $message->toArray(), 'Message sent', 201);
+        return JsonResponse::created($res, $message->toArray(), 'Message sent');
     }
 
     // ── POST /api/guest/chat/read ───────────────────────────────
