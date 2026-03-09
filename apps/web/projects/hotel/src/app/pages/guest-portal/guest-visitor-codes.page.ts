@@ -1,6 +1,6 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
+import { DatePipe, TitleCasePipe } from '@angular/common';
 import {
   LucideAngularModule,
   ArrowLeft, Users, Plus, Trash2, QrCode, Clock, CheckCircle2,
@@ -12,7 +12,7 @@ import { GuestThemeService } from '../../services/guest-theme.service';
 @Component({
   selector: 'app-guest-visitor-codes',
   standalone: true,
-  imports: [RouterLink, DatePipe, LucideAngularModule],
+  imports: [RouterLink, DatePipe, TitleCasePipe, LucideAngularModule],
   template: `
     <div class="px-4 py-6 max-w-md mx-auto">
 

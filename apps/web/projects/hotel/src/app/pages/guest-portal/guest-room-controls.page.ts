@@ -1,4 +1,5 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
+import { TitleCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
   LucideAngularModule,
@@ -10,7 +11,7 @@ import { GuestThemeService } from '../../services/guest-theme.service';
 @Component({
   selector: 'app-guest-room-controls',
   standalone: true,
-  imports: [RouterLink, LucideAngularModule],
+  imports: [TitleCasePipe, RouterLink, LucideAngularModule],
   template: `
     <div class="px-4 py-6 max-w-md mx-auto">
 

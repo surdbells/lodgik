@@ -1,4 +1,5 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
+import { TitleCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, ArrowLeft, Wifi, Eye, EyeOff, Copy, CheckCheck, Dumbbell, Waves, Utensils, Coffee, Car, Gem, MapPin, Phone, Mail } from 'lucide-angular';
 import { GuestApiService } from '../../services/guest-api.service';
@@ -7,7 +8,7 @@ import { GuestThemeService } from '../../services/guest-theme.service';
 @Component({
   selector: 'app-guest-hotel-info',
   standalone: true,
-  imports: [RouterLink, LucideAngularModule],
+  imports: [TitleCasePipe, RouterLink, LucideAngularModule],
   template: `
     <div class="px-4 py-6 max-w-md mx-auto">
 

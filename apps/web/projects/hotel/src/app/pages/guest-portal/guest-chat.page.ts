@@ -79,7 +79,7 @@ import { GuestThemeService } from '../../services/guest-theme.service';
         <div class="flex items-end gap-2">
           <textarea [(ngModel)]="message" rows="1"
             placeholder="Message the front desk…"
-            (keydown.enter)="$event.shiftKey ? null : (send(); $event.preventDefault())"
+            (keydown.enter)="onEnter($event)"
             class="flex-1 rounded-2xl px-4 py-2.5 text-sm resize-none max-h-32 leading-relaxed"
             [class]="th.input()">
           </textarea>
@@ -131,6 +131,11 @@ export default class GuestChatPage implements OnInit, OnDestroy, AfterViewChecke
       this.scrollBottom();
       this.shouldScrollBottom = false;
     }
+  }
+
+  onEnter(event: Event): void {
+    const ke = event as KeyboardEvent;
+    if (!ke.shiftKey) { ke.preventDefault(); this.send(); }
   }
 
   send(): void {

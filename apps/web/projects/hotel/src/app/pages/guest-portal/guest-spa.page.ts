@@ -1,6 +1,6 @@
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
+import { DatePipe, TitleCasePipe } from '@angular/common';
 import {
   LucideAngularModule,
   ArrowLeft, Sparkles, Dumbbell, Plus, X, CheckCircle2, Clock, Calendar,
@@ -13,7 +13,7 @@ type Tab = 'spa' | 'gym';
 @Component({
   selector: 'app-guest-spa',
   standalone: true,
-  imports: [RouterLink, DatePipe, LucideAngularModule],
+  imports: [RouterLink, DatePipe, TitleCasePipe, LucideAngularModule],
   template: `
     <div class="px-4 py-6 max-w-md mx-auto">
 

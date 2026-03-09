@@ -1,6 +1,6 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
+import { DatePipe, TitleCasePipe } from '@angular/common';
 import { LucideAngularModule, ArrowLeft, SearchX, Plus, CheckCircle2, Clock } from 'lucide-angular';
 import { GuestApiService } from '../../services/guest-api.service';
 import { GuestThemeService } from '../../services/guest-theme.service';
@@ -8,7 +8,7 @@ import { GuestThemeService } from '../../services/guest-theme.service';
 @Component({
   selector: 'app-guest-lost-found',
   standalone: true,
-  imports: [RouterLink, DatePipe, LucideAngularModule],
+  imports: [RouterLink, DatePipe, TitleCasePipe, LucideAngularModule],
   template: `
     <div class="px-4 py-6 max-w-md mx-auto">
 
