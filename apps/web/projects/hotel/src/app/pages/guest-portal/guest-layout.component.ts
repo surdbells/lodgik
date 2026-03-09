@@ -1,34 +1,49 @@
-import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { RouterOutlet, RouterLink, Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { LucideAngularModule, Home, Receipt, ConciergeBell, MessageCircle, LogOut, Hotel } from 'lucide-angular';
-import { GuestApiService } from '../services/guest-api.service';
+import {
+  LucideAngularModule,
+  Home, Receipt, ConciergeBell, MessageCircle, LogOut, Hotel, Sun, Moon,
+} from 'lucide-angular';
+import { GuestApiService } from '../../services/guest-api.service';
+import { GuestThemeService } from '../../services/guest-theme.service';
 
 @Component({
   selector: 'app-guest-layout',
   standalone: true,
   imports: [RouterOutlet, RouterLink, LucideAngularModule],
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col">
+    <!-- Root shell — theme class applied here -->
+    <div [class]="th.page() + ' flex flex-col'">
 
       <!-- Top bar -->
-      <header class="px-4 py-3 flex items-center justify-between border-b border-white/10">
+      <header class="px-4 py-3 flex items-center justify-between border-b" [class]="th.header()">
         <div class="flex items-center gap-2">
           <div class="w-7 h-7 bg-amber-400 rounded-lg flex items-center justify-center text-slate-900">
             <lucide-icon [img]="HotelIcon" class="w-4 h-4"></lucide-icon>
           </div>
-          <span class="text-sm font-semibold text-white/90">Lodgik Guest</span>
+          <span class="text-sm font-semibold" [class]="th.text()">Lodgik Guest</span>
         </div>
-        @if (guestName()) {
-          <div class="flex items-center gap-2 text-xs text-white/50">
-            <span>{{ guestName() }}</span>
-            <button (click)="logout()"
-              class="flex items-center gap-1 text-amber-400 hover:text-amber-300 transition-colors">
-              <lucide-icon [img]="LogOutIcon" class="w-3.5 h-3.5"></lucide-icon>
-              <span>Sign out</span>
-            </button>
-          </div>
-        }
+        <div class="flex items-center gap-3">
+          <!-- Theme toggle -->
+          <button (click)="th.toggle()" class="transition-colors" [class]="th.muted()">
+            @if (th.isDark()) {
+              <lucide-icon [img]="SunIcon" class="w-4 h-4"></lucide-icon>
+            } @else {
+              <lucide-icon [img]="MoonIcon" class="w-4 h-4"></lucide-icon>
+            }
+          </button>
+          @if (guestName()) {
+            <div class="flex items-center gap-2 text-xs" [class]="th.muted()">
+              <span>{{ guestName() }}</span>
+              <button (click)="logout()"
+                class="flex items-center gap-1 transition-colors" [class]="th.accent()">
+                <lucide-icon [img]="LogOutIcon" class="w-3.5 h-3.5"></lucide-icon>
+                <span>Sign out</span>
+              </button>
+            </div>
+          }
+        </div>
       </header>
 
       <!-- Page content -->
@@ -38,29 +53,33 @@ import { GuestApiService } from '../services/guest-api.service';
 
       <!-- Bottom nav -->
       @if (guestName()) {
-        <nav class="border-t border-white/10 bg-slate-900/80 backdrop-blur-md px-2 py-1 safe-area-bottom">
+        <nav class="border-t px-2 py-1 safe-area-bottom" [class]="th.navBg()">
           <div class="flex justify-around max-w-md mx-auto">
 
             <a routerLink="/guest/home"
-               class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-white/50 hover:text-white transition-colors">
+               class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors"
+               [class]="currentPath().startsWith('/guest/home') ? th.navActive() : th.navItem()">
               <lucide-icon [img]="HomeIcon" class="w-5 h-5"></lucide-icon>
               <span class="text-[10px]">Home</span>
             </a>
 
             <a routerLink="/guest/folio"
-               class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-white/50 hover:text-white transition-colors">
+               class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors"
+               [class]="currentPath().startsWith('/guest/folio') ? th.navActive() : th.navItem()">
               <lucide-icon [img]="ReceiptIcon" class="w-5 h-5"></lucide-icon>
               <span class="text-[10px]">My Bill</span>
             </a>
 
             <a routerLink="/guest/services"
-               class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-white/50 hover:text-white transition-colors">
+               class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors"
+               [class]="currentPath().startsWith('/guest/services') ? th.navActive() : th.navItem()">
               <lucide-icon [img]="ConciergeBellIcon" class="w-5 h-5"></lucide-icon>
               <span class="text-[10px]">Services</span>
             </a>
 
             <a routerLink="/guest/chat"
-               class="relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-white/50 hover:text-white transition-colors">
+               class="relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors"
+               [class]="currentPath().startsWith('/guest/chat') ? th.navActive() : th.navItem()">
               <div class="relative">
                 <lucide-icon [img]="MessageCircleIcon" class="w-5 h-5"></lucide-icon>
                 @if (unreadCount() > 0) {
@@ -83,6 +102,7 @@ export class GuestLayoutComponent implements OnInit, OnDestroy {
   private router   = inject(Router);
   private route    = inject(ActivatedRoute);
   private guestApi = inject(GuestApiService);
+  readonly th      = inject(GuestThemeService);
 
   readonly HomeIcon          = Home;
   readonly ReceiptIcon       = Receipt;
@@ -90,14 +110,19 @@ export class GuestLayoutComponent implements OnInit, OnDestroy {
   readonly MessageCircleIcon = MessageCircle;
   readonly LogOutIcon        = LogOut;
   readonly HotelIcon         = Hotel;
+  readonly SunIcon           = Sun;
+  readonly MoonIcon          = Moon;
 
   guestName   = signal<string | null>(null);
   unreadCount = signal(0);
+  currentPath = signal('');
 
   private pollTimer: any = null;
 
   private readonly protectedRoutes = [
     '/guest/home', '/guest/folio', '/guest/services', '/guest/chat', '/guest/checkout',
+    '/guest/visitor-codes', '/guest/stay-extension', '/guest/room-controls',
+    '/guest/lost-found', '/guest/hotel-info', '/guest/spa',
   ];
 
   ngOnInit(): void {
@@ -105,16 +130,19 @@ export class GuestLayoutComponent implements OnInit, OnDestroy {
     if (stored) {
       try { this.guestName.set(JSON.parse(stored).guest?.name ?? 'Guest'); } catch {}
     }
+    this.currentPath.set(this.router.url.split('?')[0]);
 
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => {
+      const url = e.urlAfterRedirects ?? e.url;
+      this.currentPath.set(url.split('?')[0]);
       const s = localStorage.getItem('guest_session');
       if (s) {
         try { this.guestName.set(JSON.parse(s).guest?.name ?? 'Guest'); } catch {}
       } else {
         this.guestName.set(null);
       }
-      this.guardRoute(e.urlAfterRedirects ?? e.url);
-      this.managePolling(e.urlAfterRedirects ?? e.url);
+      this.guardRoute(url);
+      this.managePolling(url);
     });
 
     this.guardRoute(this.router.url);
@@ -124,8 +152,6 @@ export class GuestLayoutComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.pollTimer) clearInterval(this.pollTimer);
   }
-
-  // ── Unread badge polling (every 15s, skipped when on chat page) ─
 
   private managePolling(url: string): void {
     const onChat = url.startsWith('/guest/chat');
@@ -151,8 +177,6 @@ export class GuestLayoutComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Route guard ──────────────────────────────────────────────
-
   private guardRoute(url: string): void {
     const path = url.split('?')[0];
     if (!this.protectedRoutes.some(r => path.startsWith(r))) return;
@@ -167,16 +191,6 @@ export class GuestLayoutComponent implements OnInit, OnDestroy {
     const snap = this.route.snapshot.queryParams;
     if (snap['t'] && !params['t']) params['t'] = snap['t'];
     if (snap['c'] && !params['c']) params['c'] = snap['c'];
-    try {
-      window.location.search.slice(1).split('&').forEach(pair => {
-        const idx = pair.indexOf('=');
-        if (idx >= 0) {
-          const k = decodeURIComponent(pair.slice(0, idx));
-          const v = decodeURIComponent(pair.slice(idx + 1));
-          if (k && !params[k]) params[k] = v;
-        }
-      });
-    } catch {}
 
     this.router.navigate(['/guest/login'], {
       queryParams: Object.keys(params).length ? params : undefined,
