@@ -3,33 +3,44 @@ declare(strict_types=1);
 
 namespace Lodgik\Repository;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Entity\PropertyBankAccount;
 
 final class PropertyBankAccountRepository extends BaseRepository
 {
-    public function __construct(EntityManagerInterface $em)
+    protected function getEntityClass(): string
     {
-        parent::__construct($em, PropertyBankAccount::class);
+        return PropertyBankAccount::class;
     }
 
     /** @return PropertyBankAccount[] */
     public function findByProperty(string $propertyId): array
     {
-        return $this->em->getRepository(PropertyBankAccount::class)
-            ->findBy(['propertyId' => $propertyId], ['isPrimary' => 'DESC']);
+        return $this->createQueryBuilder('b')
+            ->where('b.propertyId = :pid')
+            ->setParameter('pid', $propertyId)
+            ->orderBy('b.isPrimary', 'DESC')
+            ->getQuery()->getResult();
     }
 
     /** @return PropertyBankAccount[] */
     public function findActiveByProperty(string $propertyId): array
     {
-        return $this->em->getRepository(PropertyBankAccount::class)
-            ->findBy(['propertyId' => $propertyId, 'isActive' => true], ['isPrimary' => 'DESC']);
+        return $this->createQueryBuilder('b')
+            ->where('b.propertyId = :pid')
+            ->andWhere('b.isActive = true')
+            ->setParameter('pid', $propertyId)
+            ->orderBy('b.isPrimary', 'DESC')
+            ->getQuery()->getResult();
     }
 
     public function findPrimary(string $propertyId): ?PropertyBankAccount
     {
-        return $this->em->getRepository(PropertyBankAccount::class)
-            ->findOneBy(['propertyId' => $propertyId, 'isPrimary' => true, 'isActive' => true]);
+        return $this->createQueryBuilder('b')
+            ->where('b.propertyId = :pid')
+            ->andWhere('b.isPrimary = true')
+            ->andWhere('b.isActive = true')
+            ->setParameter('pid', $propertyId)
+            ->setMaxResults(1)
+            ->getQuery()->getOneOrNullResult();
     }
 }
