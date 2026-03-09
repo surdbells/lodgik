@@ -96,6 +96,9 @@ use Lodgik\Repository\ChatMessageRepository;
 use Lodgik\Service\TermiiService;
 use Lodgik\Module\GuestAuth\GuestAuthService;
 use Lodgik\Module\GuestAuth\GuestAuthController;
+use Lodgik\Module\GuestPortal\GuestPortalController;
+use Lodgik\Middleware\GuestMiddleware;
+use Lodgik\Repository\PropertyBankAccountRepository;
 use Lodgik\Module\ServiceRequest\ServiceRequestService;
 use Lodgik\Module\ServiceRequest\ServiceRequestController;
 use Lodgik\Module\Chat\ChatService;
@@ -788,6 +791,19 @@ return function (ContainerBuilder $builder): void {
         GuestAuthController::class => fn(ContainerInterface $c) => new GuestAuthController(
             service:    $c->get(GuestAuthService::class),
             tenantRepo: $c->get(TenantRepository::class),
+        ),
+
+        GuestMiddleware::class => fn(ContainerInterface $c) => new GuestMiddleware(
+            guestAuthService: $c->get(GuestAuthService::class),
+        ),
+
+        GuestPortalController::class => fn(ContainerInterface $c) => new GuestPortalController(
+            folioService:          $c->get(FolioService::class),
+            serviceRequestService: $c->get(ServiceRequestService::class),
+            bookingRepo:           $c->get(BookingRepository::class),
+            guestRepo:             $c->get(GuestRepository::class),
+            bankAccountRepo:       $c->get(PropertyBankAccountRepository::class),
+            chatService:           $c->get(ChatService::class),
         ),
 
         ServiceRequestService::class => fn(ContainerInterface $c) => new ServiceRequestService(

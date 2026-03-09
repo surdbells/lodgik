@@ -1,7 +1,6 @@
 import { Component, Input, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -100,11 +99,39 @@ import { ToastService } from '../../services/toast.service';
           <!-- Content area -->
           <div class="flex-1 overflow-auto flex items-center justify-center p-4">
             @if (isPdf()) {
-              <!-- PDF: use iframe embed -->
-              <iframe [src]="safeUrl()" class="w-full h-full rounded-lg bg-white"
-                      style="min-height: 70vh;"
-                      sandbox="allow-scripts allow-same-origin">
-              </iframe>
+              <!--
+                api.lodgik.co sets X-Frame-Options: DENY on all responses,
+                so iframes are blocked by the browser. Instead we offer
+                open-in-new-tab (full native PDF viewer) and download.
+              -->
+              <div class="text-center text-white/70 space-y-5">
+                <svg class="w-20 h-20 mx-auto text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                <div>
+                  <p class="text-base font-medium text-white">{{ label || 'Receipt' }}</p>
+                  <p class="text-xs text-white/50 mt-1">PDF documents open in a new browser tab for the best viewing experience.</p>
+                </div>
+                <div class="flex gap-3 justify-center flex-wrap">
+                  <a [href]="url" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    Open PDF
+                  </a>
+                  <a [href]="url" [download]="downloadName()"
+                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white text-sm rounded-lg hover:bg-white/20 transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Download
+                  </a>
+                </div>
+              </div>
             } @else if (isImage()) {
               <!-- Image: rendered directly -->
               <img [src]="url" [alt]="label || 'Receipt'"
@@ -207,7 +234,6 @@ export class ReceiptActionsComponent {
 
   private api       = inject(ApiService);
   private toast     = inject(ToastService);
-  private sanitizer = inject(DomSanitizer);
 
   showViewer = signal(false);
   showShare  = signal(false);
@@ -227,16 +253,6 @@ export class ReceiptActionsComponent {
   isImage(): boolean {
     if (!this.url) return false;
     return /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?|$)/i.test(this.url);
-  }
-
-  safeUrl(): SafeResourceUrl {
-    // Angular requires SafeResourceUrl for iframe [src] bindings (NG0904).
-    // bypassSecurityTrustResourceUrl is safe here because the URL always
-    // points to our own API domain (api.lodgik.co/storage/...).
-    const raw = this.url
-      ? this.url + (this.isPdf() && !this.url.includes('#') ? '#toolbar=1' : '')
-      : '';
-    return this.sanitizer.bypassSecurityTrustResourceUrl(raw);
   }
 
   downloadName(): string {
