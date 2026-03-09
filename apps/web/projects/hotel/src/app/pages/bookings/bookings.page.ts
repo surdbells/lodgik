@@ -292,7 +292,7 @@ import { AuthService } from '@lodgik/shared';
           @if (detail.status === 'checked_in' || detail.status === 'checked_out') {
             <div class="mt-3 p-3 border border-gray-100 rounded-xl flex items-center justify-between">
               <span class="text-sm text-gray-500">View Folio & Payments</span>
-              <a [href]="'/folios?booking_id=' + detail.id"
+              <a [href]="'/bookings/' + detail.id"
                  class="text-sm text-sage-600 font-medium hover:underline" target="_blank">
                 Open Folio ↗
               </a>
