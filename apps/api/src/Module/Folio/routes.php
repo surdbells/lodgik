@@ -27,6 +27,7 @@ return function (App $app): void {
         $g->post('/{id}/void',                   [FolioController::class, 'void']);
         $g->post('/payments/{paymentId}/confirm',[FolioController::class, 'confirmPayment']);
         $g->post('/payments/{paymentId}/reject', [FolioController::class, 'rejectPayment']);
+        $g->post('/payments/{paymentId}/share-receipt', [FolioController::class, 'shareReceipt']);
     })
         ->add($roles)
         ->add($folioGate)

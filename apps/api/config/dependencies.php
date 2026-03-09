@@ -676,6 +676,7 @@ return function (ContainerBuilder $builder): void {
         FolioController::class => fn(ContainerInterface $c) => new FolioController(
             folioService: $c->get(FolioService::class),
             response: $c->get(ResponseHelper::class),
+            mailer: $c->get(ZeptoMailService::class),
         ),
 
         InvoiceService::class => function (ContainerInterface $c): InvoiceService {
@@ -907,6 +908,7 @@ return function (ContainerBuilder $builder): void {
         ),
         \Lodgik\Module\Finance\FinanceController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Finance\FinanceController(
             svc: $c->get(\Lodgik\Module\Finance\FinanceService::class),
+            mailer: $c->get(ZeptoMailService::class),
         ),
 
         // ─── Phase 8B: Asset Management ─────────────────────────

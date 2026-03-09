@@ -1,11 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, AuthService, StatsCardComponent, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, QrFileUploadComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, AuthService, StatsCardComponent, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, QrFileUploadComponent, ReceiptActionsComponent } from '@lodgik/shared';
 
 @Component({
   selector: 'app-expenses',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ConfirmDialogComponent, QrFileUploadComponent],
+  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ConfirmDialogComponent, QrFileUploadComponent, ReceiptActionsComponent],
   template: `
     <ui-confirm-dialog/>
     <ui-page-header title="Expenses" icon="receipt" [breadcrumbs]="['Finance', 'Expenses']" subtitle="Track and approve operational expenses">
@@ -176,6 +176,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
             <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Receipt</th>
             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
           </tr></thead>
           <tbody>
@@ -194,6 +195,29 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                 </td>
                 <td class="px-4 py-3 text-right font-semibold">₦{{ fmtAmt(e.amount) }}</td>
                 <td class="px-4 py-3 text-center"><span class="px-2 py-1 rounded-full text-xs font-medium" [class]="stCls(e.status)">{{ e.status }}</span></td>
+                <!-- Receipt: view / download / share -->
+                <td class="px-4 py-3">
+                  @if (e.receipt_url || e.signed_note_url) {
+                    <div class="space-y-1">
+                      @if (e.receipt_url) {
+                        <app-receipt-actions
+                          [url]="e.receipt_url"
+                          [shareUrl]="'/expenses/' + e.id + '/share-receipt'"
+                          label="expense receipt">
+                        </app-receipt-actions>
+                      }
+                      @if (e.signed_note_url) {
+                        <app-receipt-actions
+                          [url]="e.signed_note_url"
+                          [shareUrl]="'/expenses/' + e.id + '/share-receipt'"
+                          label="signed note">
+                        </app-receipt-actions>
+                      }
+                    </div>
+                  } @else {
+                    <span class="text-xs text-gray-300">—</span>
+                  }
+                </td>
                 <td class="px-4 py-3 text-center whitespace-nowrap">
                   @if (e.status === 'draft') { <button (click)="doSubmit(e.id)" class="text-sage-600 hover:underline text-xs mr-2">Submit</button> }
                   @if (e.status === 'pending') {
@@ -203,7 +227,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                   @if (e.status === 'approved') { <button (click)="markPaid(e.id)" class="text-sage-600 hover:underline text-xs">Paid</button> }
                 </td>
               </tr>
-            } @empty { <tr><td colspan="7" class="px-4 py-12 text-center text-gray-400">No expenses found</td></tr> }
+            } @empty { <tr><td colspan="8" class="px-4 py-12 text-center text-gray-400">No expenses found</td></tr> }
           </tbody>
         </table>
       </div>

@@ -61,6 +61,8 @@ final class FinanceService
     public function rejectExpense(string $id, string $uid, string $name, ?string $reason = null): Expense { $e = $this->em->find(Expense::class, $id); $e->reject($uid, $name, $reason); $this->em->flush(); return $e; }
     public function markExpensePaid(string $id, string $method, ?string $ref = null): Expense { $e = $this->em->find(Expense::class, $id); $e->markPaid($method, $ref); $this->em->flush(); return $e; }
 
+    public function getExpenseById(string $id): ?Expense { return $this->em->find(Expense::class, $id); }
+
     /** Phase 5: Admin second-approval for market purchases */
     public function secondApproveExpense(string $id, string $uid, string $name): Expense
     {

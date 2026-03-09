@@ -9,3 +9,5 @@ export { LoadingSpinnerComponent } from './loading-spinner/loading-spinner.compo
 export { FileUploadComponent, UploadedFile } from './file-upload/file-upload.component';
 export { QrFileUploadComponent } from './file-upload/qr-file-upload.component';
 export { DocPreviewComponent } from './doc-preview/doc-preview.component';
+
+export { ReceiptActionsComponent } from './receipt-actions/receipt-actions.component';

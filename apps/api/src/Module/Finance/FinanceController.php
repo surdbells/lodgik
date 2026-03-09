@@ -1,12 +1,16 @@
 <?php
 declare(strict_types=1);
 namespace Lodgik\Module\Finance;
+use Lodgik\Service\ZeptoMailService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 final class FinanceController
 {
-    public function __construct(private readonly FinanceService $svc) {}
+    public function __construct(
+        private readonly FinanceService $svc,
+        private readonly ZeptoMailService $mailer,
+    ) {}
     private function json(Response $r, mixed $d, int $s = 200): Response { $r->getBody()->write(json_encode($d)); return $r->withHeader('Content-Type', 'application/json')->withStatus($s); }
     private function body(Request $req): array { return (array)$req->getParsedBody(); }
 
@@ -91,6 +95,79 @@ final class FinanceController
     {
         $result = $this->svc->sendCorporateInvoice($args['id'], $req->getAttribute('auth.tenant_id'));
         return $this->json($res, ['success' => true, 'message' => $result]);
+    }
+
+    /** POST /api/expenses/{id}/share-receipt */
+    public function shareExpenseReceipt(Request $req, Response $res, array $args): Response
+    {
+        $body  = $this->body($req);
+        $email = trim($body['email'] ?? '');
+        $name  = trim($body['name'] ?? 'Recipient');
+
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->json($res, ['success' => false, 'message' => 'A valid email address is required'], 422);
+        }
+
+        $expense = $this->svc->getExpenseById($args['id']);
+        if ($expense === null) {
+            return $this->json($res, ['success' => false, 'message' => 'Expense not found'], 404);
+        }
+
+        $data = $expense->toArray();
+        $receiptUrl     = $data['receipt_url'] ?? null;
+        $signedNoteUrl  = $data['signed_note_url'] ?? null;
+
+        if (!$receiptUrl && !$signedNoteUrl) {
+            return $this->json($res, ['success' => false, 'message' => 'No receipt attached to this expense'], 422);
+        }
+
+        $html = $this->buildExpenseReceiptEmail($name, $data, $receiptUrl, $signedNoteUrl);
+        $sent = $this->mailer->send($email, $name, 'Expense Receipt — ' . ($data['category_name'] ?? 'Expense'), $html);
+
+        if (!$sent) {
+            return $this->json($res, ['success' => false, 'message' => 'Failed to send email. Please try again.'], 500);
+        }
+
+        return $this->json($res, ['success' => true, 'message' => 'Receipt sent to ' . $email]);
+    }
+
+    private function buildExpenseReceiptEmail(string $recipientName, array $e, ?string $receiptUrl, ?string $signedNoteUrl): string
+    {
+        $amount   = '₦' . number_format((float)($e['amount'] ?? 0), 2);
+        $category = htmlspecialchars($e['category_name'] ?? '', ENT_QUOTES);
+        $desc     = htmlspecialchars($e['description'] ?? '', ENT_QUOTES);
+        $date     = $e['expense_date'] ?? '';
+        $vendor   = htmlspecialchars($e['vendor'] ?? $e['market_vendor_name'] ?? '', ENT_QUOTES);
+        $vendorRow = $vendor ? "<tr><td style='padding:6px 0;color:#6b7280;font-size:13px'>Vendor</td><td style='padding:6px 0;font-size:13px'>{$vendor}</td></tr>" : '';
+
+        $btns = '';
+        if ($receiptUrl) {
+            $u = htmlspecialchars($receiptUrl, ENT_QUOTES);
+            $btns .= "<a href='{$u}' style='display:inline-block;background:#1a3c34;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;margin-right:8px'>View Receipt</a>";
+        }
+        if ($signedNoteUrl) {
+            $u = htmlspecialchars($signedNoteUrl, ENT_QUOTES);
+            $btns .= "<a href='{$u}' style='display:inline-block;background:#374151;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600'>View Signed Note</a>";
+        }
+
+        return "
+        <div style='font-family:Inter,sans-serif;max-width:520px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden'>
+          <div style='background:#1a3c34;padding:28px 32px'>
+            <h1 style='color:#fff;margin:0;font-size:20px;font-weight:700'>Expense Receipt</h1>
+            <p style='color:#a7f3d0;margin:4px 0 0;font-size:13px'>{$category}</p>
+          </div>
+          <div style='padding:28px 32px'>
+            <p style='margin:0 0 20px;color:#374151;font-size:14px'>Hi {$recipientName},</p>
+            <p style='margin:0 0 24px;color:#6b7280;font-size:14px'>Please find the expense receipt(s) below.</p>
+            <table style='width:100%;border-collapse:collapse;margin-bottom:24px'>
+              <tr><td style='padding:6px 0;color:#6b7280;font-size:13px'>Amount</td><td style='padding:6px 0;font-size:13px;font-weight:700;color:#1a3c34'>{$amount}</td></tr>
+              <tr><td style='padding:6px 0;color:#6b7280;font-size:13px'>Description</td><td style='padding:6px 0;font-size:13px'>{$desc}</td></tr>
+              <tr><td style='padding:6px 0;color:#6b7280;font-size:13px'>Date</td><td style='padding:6px 0;font-size:13px'>{$date}</td></tr>
+              {$vendorRow}
+            </table>
+            <div style='display:flex;gap:8px;flex-wrap:wrap'>{$btns}</div>
+          </div>
+        </div>";
     }
 }
 

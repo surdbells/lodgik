@@ -26,6 +26,7 @@ return function (App $app): void {
         // Phase 5: Walk-in / Market purchase second-approval
         $g->get('/pending-second-approval', [FinanceController::class, 'pendingSecondApproval']);
         $g->post('/{id}/second-approve', [FinanceController::class, 'secondApproveExpense']);
+        $g->post('/{id}/share-receipt',  [FinanceController::class, 'shareExpenseReceipt']);
     })->add(new RoleMiddleware(['property_admin', 'manager', 'accountant']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 
     // Night Audit: manager, admin

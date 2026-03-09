@@ -358,6 +358,24 @@ final class FolioService
         return $this->paymentRepo->findPendingByProperty($propertyId);
     }
 
+    /**
+     * Returns flat context array for a payment receipt email.
+     * Includes folio_number + payment fields.
+     * @throws \InvalidArgumentException if payment not found
+     */
+    public function getPaymentReceiptContext(string $paymentId): array
+    {
+        /** @var \Lodgik\Entity\FolioPayment|null $payment */
+        $payment = $this->paymentRepo->findOrFail($paymentId);
+        $folio   = $this->folioRepo->findOrFail($payment->getFolioId());
+
+        $data = $payment->toArray();
+        $data['folio_number'] = $folio->getFolioNumber();
+        $data['receipt_url']  = $payment->getProofImageUrl();
+
+        return $data;
+    }
+
     // ═══ Internal ═════════════════════════════════════════════
 
     private function recalculate(Folio $folio): void

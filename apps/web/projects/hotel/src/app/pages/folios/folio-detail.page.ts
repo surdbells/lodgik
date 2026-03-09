@@ -2,13 +2,13 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService, QrFileUploadComponent, UploadedFile } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService, QrFileUploadComponent, UploadedFile, ReceiptActionsComponent } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-folio-detail',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, PageHeaderComponent, LoadingSpinnerComponent, QrFileUploadComponent],
+  imports: [DatePipe, FormsModule, RouterLink, PageHeaderComponent, LoadingSpinnerComponent, QrFileUploadComponent, ReceiptActionsComponent],
   template: `
     <ui-page-header [title]="folio()?.folio_number || 'Folio'" subtitle="Charges, payments and balance">
       <div class="flex gap-2">
@@ -87,6 +87,16 @@ import { AuthService } from '@lodgik/shared';
                   <p class="text-xs text-gray-500 mt-1">From: {{ p.sender_name }} · Ref: {{ p.transfer_reference }}</p>
                 }
                 <p class="text-xs text-gray-400 mt-1">{{ p.payment_date }}</p>
+                <!-- Receipt actions: View / Download / Share -->
+                @if (p.proof_image_url) {
+                  <div class="mt-2">
+                    <app-receipt-actions
+                      [url]="p.proof_image_url"
+                      [shareUrl]="'/folios/payments/' + p.id + '/share-receipt'"
+                      label="payment receipt">
+                    </app-receipt-actions>
+                  </div>
+                }
                 <!-- Confirm/Reject actions for pending -->
                 @if (p.status === 'pending') {
                   <div class="flex gap-2 mt-2">
