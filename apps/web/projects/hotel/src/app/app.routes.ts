@@ -15,6 +15,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/register/register.page').then(m => m.RegisterPage),
   },
   {
+    // Public, unauthenticated — called from mobile after QR scan
+    path: 'mobile-upload/:token',
+    loadComponent: () => import('./pages/mobile-upload/mobile-upload.page').then(m => m.MobileUploadPage),
+  },
+  {
     path: 'onboarding',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/onboarding/onboarding.page').then(m => m.OnboardingPage),

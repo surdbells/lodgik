@@ -287,6 +287,67 @@ final class GuestCardController
         }
     }
 
+    /**
+     * POST /api/cards/{id}/revoke
+     *
+     * Security-only card revocation. Distinct from management deactivation:
+     * - Creates an audit event of type REVOKED (not DEACTIVATED)
+     * - Only accessible to security, manager, property_admin roles
+     * - The card's booking association is cleared
+     * - Reception staff CANNOT revoke cards — only security + management
+     *
+     * Body: { reason: string (required) }
+     */
+    public function revoke(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $body     = (array) ($request->getParsedBody() ?? []);
+            $tenantId = $request->getAttribute('auth.tenant_id');
+            $userId   = $request->getAttribute('auth.user_id');
+            $reason   = trim($body['reason'] ?? '');
+
+            if ($reason === '') {
+                return $this->response->validationError($response, ['reason' => 'Reason is required for card revocation.']);
+            }
+
+            $card = $this->cardService->revoke($args['id'], $tenantId, $reason, $userId);
+            return $this->response->success($response, $this->serializeCard($card), 'Card revoked');
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * POST /api/cards/{id}/reactivate
+     *
+     * Security-only reactivation for guests who changed their mind at the exit gate.
+     * Restores the card's ACTIVE state and re-links it to the booking.
+     *
+     * Body: { booking_id: string (required), guest_id: string (required) }
+     */
+    public function reactivate(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $body      = (array) ($request->getParsedBody() ?? []);
+            $tenantId  = $request->getAttribute('auth.tenant_id');
+            $userId    = $request->getAttribute('auth.user_id');
+            $bookingId = trim($body['booking_id'] ?? '');
+            $guestId   = trim($body['guest_id']   ?? '');
+
+            if ($bookingId === '') {
+                return $this->response->validationError($response, ['booking_id' => 'booking_id is required']);
+            }
+            if ($guestId === '') {
+                return $this->response->validationError($response, ['guest_id' => 'guest_id is required']);
+            }
+
+            $card = $this->cardService->reactivate($args['id'], $tenantId, $bookingId, $guestId, $userId);
+            return $this->response->success($response, $this->serializeCard($card), 'Card reactivated — guest may re-enter');
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 422);
+        }
+    }
+
     // ══════════════════════════════════════════════════════════════
     // PHASE B — Inventory Management
     // ══════════════════════════════════════════════════════════════

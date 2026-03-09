@@ -19,15 +19,34 @@ return function (App $app): void {
         $g->get('/lookup/{cardUid}',         [GuestCardController::class, 'lookup']);
         $g->get('/{id}',                     [GuestCardController::class, 'showCard']);
         $g->post('/issue',                   [GuestCardController::class, 'issueCard']);
-        $g->post('/gate-issue',              [GuestCardController::class, 'gateIssueCard']);      // NEW: gate issue by card_id
+        $g->post('/gate-issue',              [GuestCardController::class, 'gateIssueCard']);
         $g->post('/security-issue',          [GuestCardController::class, 'securityIssueCard']);
-        $g->post('/security-exit',           [GuestCardController::class, 'securityExit']);       // NEW: exit + revoke
+        $g->post('/security-exit',           [GuestCardController::class, 'securityExit']);
         $g->post('/scan',                    [GuestCardController::class, 'scan']);
         $g->post('/{id}/report-lost',        [GuestCardController::class, 'reportLost']);
-        $g->post('/{id}/deactivate',         [GuestCardController::class, 'deactivate']);
         $g->post('/{id}/attach-booking',     [GuestCardController::class, 'attachCardToBooking']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager', 'front_desk', 'security', 'receptionist']))
+        ->add(TenantMiddleware::class)
+        ->add(AuthMiddleware::class);
+
+    // ── Card deactivation — management only (admin + manager) ─────
+    // Reception / front-desk staff cannot deactivate cards directly.
+    $app->post('/api/cards/{id}/deactivate', [GuestCardController::class, 'deactivate'])
+        ->add(new RoleMiddleware(['property_admin', 'manager']))
+        ->add(TenantMiddleware::class)
+        ->add(AuthMiddleware::class);
+
+    // ── Security revocation: REVOKED audit event, role-restricted ─
+    // revoke   → security exits a guest and revokes the card (logged as REVOKED, not DEACTIVATED)
+    // reactivate → guest changed mind; restore card to ACTIVE with booking re-linked
+    $app->post('/api/cards/{id}/revoke',     [GuestCardController::class, 'revoke'])
+        ->add(new RoleMiddleware(['security', 'manager', 'property_admin']))
+        ->add(TenantMiddleware::class)
+        ->add(AuthMiddleware::class);
+
+    $app->post('/api/cards/{id}/reactivate', [GuestCardController::class, 'reactivate'])
+        ->add(new RoleMiddleware(['security', 'manager', 'property_admin']))
         ->add(TenantMiddleware::class)
         ->add(AuthMiddleware::class);
 

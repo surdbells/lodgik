@@ -227,36 +227,90 @@ import { AuthService } from '@lodgik/shared';
     <!-- Booking Detail Modal -->
     @if (showDetail && detail) {
       <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" (click)="showDetail = false">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+          <!-- Header -->
           <div class="flex justify-between items-start mb-4">
             <div>
-              <h3 class="text-lg font-semibold">{{ detail.booking_ref }}</h3>
-              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium text-white mt-1" [style.background-color]="detail.status_color">{{ detail.status_label }}</span>
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-semibold font-mono tracking-wide">{{ detail.booking_ref }}</h3>
+                <button (click)="copyRef(detail.booking_ref)"
+                        class="text-gray-300 hover:text-gray-500 transition-colors" title="Copy reference">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium text-white mt-1"
+                    [style.background-color]="detail.status_color">{{ detail.status_label }}</span>
             </div>
             <button (click)="showDetail = false" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
           </div>
-          <div class="grid grid-cols-2 gap-3 text-sm">
-            <div><span class="text-gray-400">Type</span><p class="font-medium">{{ detail.booking_type_label }}</p></div>
-            <div><span class="text-gray-400">Room</span><p class="font-medium">{{ getRoomNumber(detail.room_id) }}</p></div>
-            <div><span class="text-gray-400">Check-in</span><p class="font-medium">{{ detail.check_in | date:'medium' }}</p></div>
-            <div><span class="text-gray-400">Check-out</span><p class="font-medium">{{ detail.check_out | date:'medium' }}</p></div>
-            <div><span class="text-gray-400">Guests</span><p class="font-medium">{{ detail.adults }} adults, {{ detail.children }} children</p></div>
-            <div><span class="text-gray-400">Total</span><p class="font-medium text-emerald-600 text-lg">₦{{ detail.total_amount | number }}</p></div>
-          </div>
-          @if (detail.special_requests) {
-            <div class="mt-3 text-sm"><span class="text-gray-400">Special Requests</span><p class="mt-1">{{ detail.special_requests }}</p></div>
+
+          <!-- Guest info panel -->
+          @if (detail.guest_name) {
+            <div class="bg-gray-50 rounded-xl p-3 mb-4 flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-sage-100 flex items-center justify-center flex-shrink-0">
+                <span class="text-sage-700 font-semibold text-sm">{{ detail.guest_name.charAt(0).toUpperCase() }}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-gray-800 text-sm truncate">{{ detail.guest_name }}</p>
+                @if (detail.guest_email) {
+                  <p class="text-xs text-gray-400 truncate">{{ detail.guest_email }}</p>
+                }
+                @if (detail.guest_phone) {
+                  <p class="text-xs text-gray-400">{{ detail.guest_phone }}</p>
+                }
+              </div>
+            </div>
           }
+
+          <!-- Core details grid -->
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div><span class="text-gray-400 text-xs">Type</span><p class="font-medium">{{ detail.booking_type_label }}</p></div>
+            <div>
+              <span class="text-gray-400 text-xs">Room</span>
+              <p class="font-medium">{{ detail.room_number || getRoomNumber(detail.room_id) }}</p>
+              @if (detail.room_type_name) {
+                <p class="text-xs text-gray-400">{{ detail.room_type_name }}</p>
+              }
+            </div>
+            <div><span class="text-gray-400 text-xs">Check-in</span><p class="font-medium">{{ detail.check_in | date:'mediumDate' }}</p></div>
+            <div><span class="text-gray-400 text-xs">Check-out</span><p class="font-medium">{{ detail.check_out | date:'mediumDate' }}</p></div>
+            <div><span class="text-gray-400 text-xs">Guests</span><p class="font-medium">{{ detail.adults }} adults{{ detail.children ? ', ' + detail.children + ' children' : '' }}</p></div>
+            <div>
+              <span class="text-gray-400 text-xs">Total</span>
+              <p class="font-semibold text-emerald-600 text-base">₦{{ detail.total_amount | number }}</p>
+            </div>
+          </div>
+
+          @if (detail.special_requests) {
+            <div class="mt-3 text-sm bg-amber-50 border border-amber-100 rounded-lg p-3">
+              <span class="text-amber-600 text-xs font-medium">Special Requests</span>
+              <p class="mt-1 text-gray-700">{{ detail.special_requests }}</p>
+            </div>
+          }
+
+          <!-- Folio quick-link -->
+          @if (detail.status === 'checked_in' || detail.status === 'checked_out') {
+            <div class="mt-3 p-3 border border-gray-100 rounded-xl flex items-center justify-between">
+              <span class="text-sm text-gray-500">View Folio & Payments</span>
+              <a [href]="'/folios?booking_id=' + detail.id"
+                 class="text-sm text-sage-600 font-medium hover:underline" target="_blank">
+                Open Folio ↗
+              </a>
+            </div>
+          }
+
           <!-- Action buttons based on status -->
-          <div class="flex gap-2 mt-5">
+          <div class="flex flex-wrap gap-2 mt-5">
+            @if (detail.status === 'pending') {
+              <button (click)="doConfirm(detail.id)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Confirm</button>
+              <button (click)="doCancel(detail.id)" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Cancel</button>
+            }
             @if (detail.status === 'confirmed') {
               <button (click)="doCheckIn(detail.id)" class="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">Check In</button>
               <button (click)="doCancel(detail.id)" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Cancel</button>
             }
             @if (detail.status === 'checked_in') {
               <button (click)="doCheckOut(detail.id)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Check Out</button>
-            }
-            @if (detail.status === 'pending') {
-              <button (click)="doCancel(detail.id)" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Cancel</button>
             }
             <button (click)="showDetail = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">Close</button>
           </div>
@@ -378,7 +432,12 @@ export class BookingsPage implements OnInit {
   ];
 
   columns: TableColumn[] = [
-    { key: 'booking_ref', label: 'Ref', sortable: true, width: '140px' },
+    {
+      key: 'booking_ref', label: 'Ref', sortable: true, width: '155px',
+      render: (v: string) => v, // monospace + copy handled by template slot if DataTable supports it
+    },
+    { key: 'guest_name', label: 'Guest', render: (v: string) => v || '—' },
+    { key: 'room_number', label: 'Room', render: (v: string) => v || '—', width: '80px' },
     { key: 'status_label', label: 'Status', type: 'badge', badgeColor: (r) => r.status_color || '#6b7280', badgeLabel: (r) => r.status_label || r.status },
     { key: 'booking_type_label', label: 'Type' },
     { key: 'check_in', label: 'Check-in', render: (v: string) => new Date(v).toLocaleDateString() },
@@ -388,6 +447,7 @@ export class BookingsPage implements OnInit {
 
   actions: TableAction[] = [
     { label: 'View', handler: (r) => this.router.navigate(['/bookings', r.id]) },
+    { label: 'Confirm', color: 'primary', handler: (r) => this.doConfirm(r.id), hidden: (r) => r.status !== 'pending' },
     { label: 'Check In', color: 'primary', handler: (r) => this.doCheckIn(r.id), hidden: (r) => r.status !== 'confirmed' },
     { label: 'Check Out', color: 'primary', handler: (r) => this.doCheckOut(r.id), hidden: (r) => r.status !== 'checked_in' },
     { label: 'Cancel', color: 'danger', handler: (r) => this.doCancel(r.id), hidden: (r) => !['pending', 'confirmed'].includes(r.status) },
@@ -582,5 +642,22 @@ export class BookingsPage implements OnInit {
         else this.toast.error(r.message || 'Failed');
       });
     }
+  }
+
+  async doConfirm(bookingId: string): Promise<void> {
+    const ok = await this.confirm.confirm({ title: 'Confirm Booking', message: 'Mark this booking as confirmed?', variant: 'info' });
+    if (ok) {
+      this.api.post(`/bookings/${bookingId}/confirm`).subscribe(r => {
+        if (r.success) { this.toast.success('Booking confirmed'); this.showDetail = false; this.load(); this.loadTodayStats(); }
+        else this.toast.error(r.message || 'Failed to confirm booking');
+      });
+    }
+  }
+
+  copyRef(ref: string): void {
+    navigator.clipboard?.writeText(ref).then(
+      () => this.toast.success('Booking reference copied'),
+      () => this.toast.error('Could not copy to clipboard'),
+    );
   }
 }

@@ -135,6 +135,14 @@ abstract class BaseRepository
     }
 
     /**
+     * Expose the EntityManager for cross-entity lookups (e.g., RoomType from Room).
+     */
+    public function getEntityManager(): EntityManagerInterface
+    {
+        return $this->em;
+    }
+
+    /**
      * Create a new QueryBuilder for this entity.
      */
     protected function createQueryBuilder(string $alias = 'e'): QueryBuilder

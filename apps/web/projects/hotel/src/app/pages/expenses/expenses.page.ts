@@ -1,11 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, AuthService, StatsCardComponent, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, AuthService, StatsCardComponent, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, QrFileUploadComponent } from '@lodgik/shared';
 
 @Component({
   selector: 'app-expenses',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ConfirmDialogComponent],
+  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ConfirmDialogComponent, QrFileUploadComponent],
   template: `
     <ui-confirm-dialog/>
     <ui-page-header title="Expenses" icon="receipt" [breadcrumbs]="['Finance', 'Expenses']" subtitle="Track and approve operational expenses">
@@ -102,32 +102,20 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
                     <label class="block text-xs font-medium text-gray-500 mb-1">Market Vendor Name *</label>
                     <input [(ngModel)]="form.market_vendor_name" placeholder="e.g. Balogun Market Trader" class="w-full px-3 py-2 border rounded-lg text-sm">
                   </div>
-                  <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Receipt Photo</label>
-                    <label class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 border rounded-lg text-sm bg-white hover:bg-gray-50">
-                      <input type="file" accept="image/*,application/pdf" class="hidden" (change)="onReceiptFileChange($event, 'receipt')">
-                      @if (form.receipt_url) {
-                        <span class="text-emerald-600 font-medium truncate">✓ {{ form.receipt_filename || 'Uploaded' }}</span>
-                      } @else if (uploadingReceipt) {
-                        <span class="text-gray-400">Uploading…</span>
-                      } @else {
-                        <span class="text-gray-400">📎 Choose file (photo or PDF)</span>
-                      }
-                    </label>
-                  </div>
-                  <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Signed Note (if no receipt)</label>
-                    <label class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 border rounded-lg text-sm bg-white hover:bg-gray-50">
-                      <input type="file" accept="image/*,application/pdf" class="hidden" (change)="onReceiptFileChange($event, 'note')">
-                      @if (form.signed_note_url) {
-                        <span class="text-emerald-600 font-medium truncate">✓ {{ form.note_filename || 'Uploaded' }}</span>
-                      } @else if (uploadingNote) {
-                        <span class="text-gray-400">Uploading…</span>
-                      } @else {
-                        <span class="text-gray-400">📎 Choose file (photo or PDF)</span>
-                      }
-                    </label>
-                  </div>
+                  <ui-qr-file-upload
+                    context="document"
+                    label="Receipt Photo"
+                    [currentUrl]="form.receipt_url"
+                    (uploaded)="form.receipt_url = $event.url; form.receipt_filename = $event.original"
+                    (cleared)="form.receipt_url = ''; form.receipt_filename = ''"
+                  />
+                  <ui-qr-file-upload
+                    context="document"
+                    label="Signed Note (if no receipt)"
+                    [currentUrl]="form.signed_note_url"
+                    (uploaded)="form.signed_note_url = $event.url; form.note_filename = $event.original"
+                    (cleared)="form.signed_note_url = ''; form.note_filename = ''"
+                  />
                 </div>
               </div>
             }
@@ -246,36 +234,11 @@ export default class ExpensesPage implements OnInit {
     { value: 'market',     label: '🛒 Market / Walk-in' },
     { value: 'petty_cash', label: '💵 Petty Cash' },
   ];
-  uploadingReceipt = false;
+  uploadingReceipt = false; // kept for TS compatibility — no longer used in template
   uploadingNote    = false;
   get pid(): string { return this.activeProperty.propertyId(); }
 
   ngOnInit(): void { this.loadCategories(); this.loadVendors(); this.loadExpenses(); this.loadPendingSecondApproval(); }
-
-  onReceiptFileChange(event: Event, target: 'receipt' | 'note'): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    if (target === 'receipt') this.uploadingReceipt = true;
-    else this.uploadingNote = true;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      this.api.post('/upload', { file_base64: base64, filename: file.name, context: 'document' })
-        .subscribe((r: any) => {
-          if (target === 'receipt') {
-            this.uploadingReceipt = false;
-            if (r?.success) { this.form.receipt_url = r.data?.url; this.form.receipt_filename = file.name; }
-            else this.toast.error('Receipt upload failed');
-          } else {
-            this.uploadingNote = false;
-            if (r?.success) { this.form.signed_note_url = r.data?.url; this.form.note_filename = file.name; }
-            else this.toast.error('Note upload failed');
-          }
-        });
-    };
-    reader.readAsDataURL(file);
-  }
 
   loadExpenses(): void {
     this.loading.set(true);

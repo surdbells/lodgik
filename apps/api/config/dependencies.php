@@ -617,6 +617,8 @@ return function (ContainerBuilder $builder): void {
                 response:        $c->get(ResponseHelper::class),
                 mailService:     $c->get(\Lodgik\Service\ZeptoMailService::class),
                 accessCodeRepo:  $c->get(GuestAccessCodeRepository::class),
+                guestRepo:       $c->get(GuestRepository::class),
+                roomRepo:        $c->get(RoomRepository::class),
             );
         },
 
@@ -1050,6 +1052,7 @@ return function (ContainerBuilder $builder): void {
         ),
         \Lodgik\Module\Upload\UploadController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Upload\UploadController(
             storage:  $c->get(\Lodgik\Service\FileStorageService::class),
+            redis:    $c->get(RedisClient::class),
         ),
 
         // ── Guest Card System (Phases A–D) ────────────────────────

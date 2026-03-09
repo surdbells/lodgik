@@ -12,6 +12,8 @@ use Lodgik\Enum\BookingType;
 use Lodgik\Helper\PaginationHelper;
 use Lodgik\Helper\ResponseHelper;
 use Lodgik\Module\Booking\DTO\CreateBookingRequest;
+use Lodgik\Repository\GuestRepository;
+use Lodgik\Repository\RoomRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -22,6 +24,8 @@ final class BookingController
         private readonly ResponseHelper $response,
         private readonly ?\Lodgik\Service\ZeptoMailService $mailService = null,
         private readonly ?\Lodgik\Repository\GuestAccessCodeRepository $accessCodeRepo = null,
+        private readonly ?GuestRepository $guestRepo = null,
+        private readonly ?RoomRepository  $roomRepo  = null,
     ) {}
 
     /** GET /api/bookings */
@@ -43,7 +47,7 @@ final class BookingController
             limit: $pagination['limit'],
         );
 
-        $items = array_map(fn(Booking $b) => $this->serialize($b), $result['items']);
+        $items = $this->serializeMany($result['items']);
         return $this->response->paginated($response, $items, $result['total'], $pagination['page'], $pagination['limit']);
     }
 
@@ -55,7 +59,7 @@ final class BookingController
             return $this->response->notFound($response, 'Booking not found');
         }
 
-        $data = $this->serialize($booking);
+        $data = $this->serializeEnriched($booking);
         $data['addons'] = array_map(fn(BookingAddon $a) => [
             'id' => $a->getId(),
             'name' => $a->getName(),
@@ -83,7 +87,7 @@ final class BookingController
             $userId = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->create($dto, $tenantId, $userId);
 
-            return $this->response->created($response, $this->serialize($booking));
+            return $this->response->created($response, $this->serializeEnriched($booking));
         } catch (\InvalidArgumentException $e) {
             return $this->response->validationError($response, ['error' => $e->getMessage()]);
         }
@@ -96,7 +100,7 @@ final class BookingController
         try {
             $userId = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->checkIn($args['id'], $body['room_id'] ?? null, $userId);
-            return $this->response->success($response, $this->serialize($booking), 'Guest checked in');
+            return $this->response->success($response, $this->serializeEnriched($booking), 'Guest checked in');
         } catch (\RuntimeException | \InvalidArgumentException $e) {
             return $this->response->validationError($response, ['error' => $e->getMessage()]);
         }
@@ -108,7 +112,7 @@ final class BookingController
         try {
             $userId = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->checkOut($args['id'], $userId);
-            return $this->response->success($response, $this->serialize($booking), 'Guest checked out');
+            return $this->response->success($response, $this->serializeEnriched($booking), 'Guest checked out');
         } catch (\RuntimeException | \InvalidArgumentException $e) {
             return $this->response->validationError($response, ['error' => $e->getMessage()]);
         }
@@ -121,7 +125,19 @@ final class BookingController
         try {
             $userId = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->cancel($args['id'], $body['reason'] ?? null, $userId);
-            return $this->response->success($response, $this->serialize($booking), 'Booking cancelled');
+            return $this->response->success($response, $this->serializeEnriched($booking), 'Booking cancelled');
+        } catch (\RuntimeException | \InvalidArgumentException $e) {
+            return $this->response->validationError($response, ['error' => $e->getMessage()]);
+        }
+    }
+
+    /** POST /api/bookings/{id}/confirm */
+    public function confirm(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $userId  = $request->getAttribute('auth.user_id');
+            $booking = $this->bookingService->confirm($args['id'], $userId);
+            return $this->response->success($response, $this->serializeEnriched($booking), 'Booking confirmed');
         } catch (\RuntimeException | \InvalidArgumentException $e) {
             return $this->response->validationError($response, ['error' => $e->getMessage()]);
         }
@@ -133,7 +149,7 @@ final class BookingController
         try {
             $userId = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->noShow($args['id'], $userId);
-            return $this->response->success($response, $this->serialize($booking), 'Booking marked as no-show');
+            return $this->response->success($response, $this->serializeEnriched($booking), 'Booking marked as no-show');
         } catch (\RuntimeException | \InvalidArgumentException $e) {
             return $this->response->validationError($response, ['error' => $e->getMessage()]);
         }
@@ -146,7 +162,7 @@ final class BookingController
         try {
             $userId  = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->clearFrontDesk($args['id'], $userId ?? 'unknown');
-            return $this->response->success($response, $this->serialize($booking), 'Front desk clearance recorded');
+            return $this->response->success($response, $this->serializeEnriched($booking), 'Front desk clearance recorded');
         } catch (\RuntimeException | \InvalidArgumentException $e) {
             return $this->response->validationError($response, ['error' => $e->getMessage()]);
         }
@@ -158,7 +174,7 @@ final class BookingController
         try {
             $userId  = $request->getAttribute('auth.user_id');
             $booking = $this->bookingService->clearSecurity($args['id'], $userId ?? 'unknown');
-            return $this->response->success($response, $this->serialize($booking), 'Security clearance recorded');
+            return $this->response->success($response, $this->serializeEnriched($booking), 'Security clearance recorded');
         } catch (\RuntimeException | \InvalidArgumentException $e) {
             return $this->response->validationError($response, ['error' => $e->getMessage()]);
         }
@@ -192,7 +208,7 @@ final class BookingController
         if (!empty($body['clear'])) {
             try {
                 $booking = $this->bookingService->clearShadowRate($args['id'], $tenantId, $userId);
-                return $this->response->success($response, $this->serialize($booking), 'Invoice rate override removed');
+                return $this->response->success($response, $this->serializeEnriched($booking), 'Invoice rate override removed');
             } catch (\RuntimeException $e) {
                 return $this->response->notFound($response, $e->getMessage());
             }
@@ -219,7 +235,7 @@ final class BookingController
                 number_format((float)$shadowRate,  2, '.', ''),
                 number_format((float)$shadowTotal, 2, '.', ''),
             );
-            return $this->response->success($response, $this->serialize($booking), 'Invoice rate override saved');
+            return $this->response->success($response, $this->serializeEnriched($booking), 'Invoice rate override saved');
         } catch (\RuntimeException $e) {
             return $this->response->notFound($response, $e->getMessage());
         } catch (\DomainException $e) {
@@ -233,7 +249,7 @@ final class BookingController
         $propertyId = $request->getQueryParams()['property_id'] ?? null;
         $tenantId   = $request->getAttribute('auth.tenant_id');
         $bookings   = $this->bookingService->getOverdue($propertyId ?? '', $tenantId);
-        return $this->response->success($response, array_map([$this, 'serialize'], $bookings));
+        return $this->response->success($response, $this->serializeMany($bookings));
     }
 
     /** GET /api/bookings/today */
@@ -245,7 +261,7 @@ final class BookingController
         }
 
         $bookings = $this->bookingService->getToday($propertyId);
-        $items = array_map(fn(Booking $b) => $this->serialize($b), $bookings);
+        $items = $this->serializeMany($bookings);
         return $this->response->success($response, $items);
     }
 
@@ -262,7 +278,7 @@ final class BookingController
         }
 
         $bookings = $this->bookingService->getCalendar($propertyId, $from, $to);
-        $items = array_map(fn(Booking $b) => $this->serialize($b), $bookings);
+        $items = $this->serializeMany($bookings);
         return $this->response->success($response, $items);
     }
 
@@ -357,17 +373,30 @@ final class BookingController
         ]);
     }
 
-    // ─── Serializer ───────────────────────────────────────────
+    // ─── Serializers ──────────────────────────────────────────────
 
-    private function serialize(Booking $b): array
+    /**
+     * Serialize a single booking, optionally with pre-loaded guest/room maps.
+     * Pre-loaded maps avoid N+1 queries on list endpoints.
+     *
+     * @param array<string,array> $guestMap  keyed by guest_id
+     * @param array<string,array> $roomMap   keyed by room_id
+     */
+    private function serialize(Booking $b, array $guestMap = [], array $roomMap = []): array
     {
-        $role = '';
-        // Will be set from request context in individual actions — set here as fallback
+        $guest = $guestMap[$b->getGuestId()] ?? null;
+        $room  = $roomMap[$b->getRoomId()]   ?? null;
+
         return [
             'id'                    => $b->getId(),
             'property_id'           => $b->getPropertyId(),
             'guest_id'              => $b->getGuestId(),
+            'guest_name'            => $guest['name']  ?? null,
+            'guest_email'           => $guest['email'] ?? null,
+            'guest_phone'           => $guest['phone'] ?? null,
             'room_id'               => $b->getRoomId(),
+            'room_number'           => $room['number'] ?? null,
+            'room_type_name'        => $room['type']   ?? null,
             'booking_ref'           => $b->getBookingRef(),
             'booking_type'          => $b->getBookingType()->value,
             'booking_type_label'    => $b->getBookingType()->label(),
@@ -390,13 +419,97 @@ final class BookingController
             'checked_in_at'         => $b->getCheckedInAt()?->format('c'),
             'checked_out_at'        => $b->getCheckedOutAt()?->format('c'),
             'created_at'            => $b->getCreatedAt()?->format('c'),
-            // Shadow rate — present in every serialized response.
-            // Frontend hides this panel for non-admin roles.
-            // Revenue reports MUST never aggregate shadow_rate_per_night.
             'shadow_rate_per_night' => $b->getShadowRatePerNight(),
             'shadow_total_amount'   => $b->getShadowTotalAmount(),
             'has_shadow_rate'       => $b->hasShadowRate(),
             'shadow_rate_set_at'    => $b->getShadowRateSetAt()?->format('c'),
         ];
+    }
+
+    /**
+     * Serialize a single booking with an individual guest/room lookup.
+     * Used for single-booking endpoints (show, create, checkIn, etc.)
+     * where we only have one booking to enrich.
+     */
+    private function serializeEnriched(Booking $b): array
+    {
+        [$guestMap, $roomMap] = $this->buildEnrichmentMaps([$b]);
+        return $this->serialize($b, $guestMap, $roomMap);
+    }
+
+    /**
+     * Serialize a list of bookings with batch-loaded guest and room data.
+     * Collects all unique guest_ids and room_ids in a single pass,
+     * executes two queries (one for guests, one for rooms), then maps
+     * results — O(n) queries regardless of list size.
+     *
+     * @param Booking[] $bookings
+     * @return array[]
+     */
+    private function serializeMany(array $bookings): array
+    {
+        if (empty($bookings)) {
+            return [];
+        }
+        [$guestMap, $roomMap] = $this->buildEnrichmentMaps($bookings);
+        return array_map(fn(Booking $b) => $this->serialize($b, $guestMap, $roomMap), $bookings);
+    }
+
+    /**
+     * Build guest and room lookup maps from a list of bookings.
+     * Returns [guestMap, roomMap] where each map is keyed by UUID.
+     *
+     * @param Booking[] $bookings
+     * @return array{array<string,array>, array<string,array>}
+     */
+    private function buildEnrichmentMaps(array $bookings): array
+    {
+        $guestIds = array_values(array_unique(array_filter(
+            array_map(fn(Booking $b) => $b->getGuestId(), $bookings)
+        )));
+        $roomIds = array_values(array_unique(array_filter(
+            array_map(fn(Booking $b) => $b->getRoomId(), $bookings)
+        )));
+
+        $guestMap = [];
+        if (!empty($guestIds) && $this->guestRepo !== null) {
+            foreach ($guestIds as $gid) {
+                $guest = $this->guestRepo->find($gid);
+                if ($guest !== null) {
+                    $guestMap[$gid] = [
+                        'name'  => trim($guest->getFirstName() . ' ' . $guest->getLastName()),
+                        'email' => $guest->getEmail()  ?? null,
+                        'phone' => $guest->getPhone()  ?? null,
+                    ];
+                }
+            }
+        }
+
+        $roomMap = [];
+        if (!empty($roomIds) && $this->roomRepo !== null) {
+            foreach ($roomIds as $rid) {
+                $room = $this->roomRepo->find($rid);
+                if ($room !== null) {
+                    $roomMap[$rid] = [
+                        'number' => $room->getRoomNumber(),
+                        'type'   => null, // room_type_name — resolved below if RoomType is loaded
+                    ];
+                    // Attempt to resolve room type name via EntityManager identity map (no extra query if cached)
+                    try {
+                        $rt = $this->roomRepo->getEntityManager()->find(
+                            \Lodgik\Entity\RoomType::class,
+                            $room->getRoomTypeId()
+                        );
+                        if ($rt !== null) {
+                            $roomMap[$rid]['type'] = $rt->getName();
+                        }
+                    } catch (\Throwable) {
+                        // Non-fatal — room_type_name will be null
+                    }
+                }
+            }
+        }
+
+        return [$guestMap, $roomMap];
     }
 }

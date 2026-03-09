@@ -7,4 +7,5 @@ export { ToastContainerComponent } from './toast-container/toast-container.compo
 export { BadgeComponent } from './badge/badge.component';
 export { LoadingSpinnerComponent } from './loading-spinner/loading-spinner.component';
 export { FileUploadComponent, UploadedFile } from './file-upload/file-upload.component';
+export { QrFileUploadComponent } from './file-upload/qr-file-upload.component';
 export { DocPreviewComponent } from './doc-preview/doc-preview.component';

@@ -405,6 +405,24 @@ final class BookingService
 
     // ═══ Cancel / No-Show ══════════════════════════════════════
 
+    public function confirm(string $bookingId, ?string $userId = null): Booking
+    {
+        $booking = $this->bookingRepo->findOrFail($bookingId);
+
+        $this->stateMachine->assertTransition($booking->getStatus(), BookingStatus::CONFIRMED);
+
+        $oldStatus = $booking->getStatus();
+        $booking->setStatus(BookingStatus::CONFIRMED);
+
+        $log = new BookingStatusLog($booking->getId(), $oldStatus, BookingStatus::CONFIRMED, $booking->getTenantId());
+        $log->setChangedBy($userId);
+        $log->setNotes('Manually confirmed by staff');
+        $this->em->persist($log);
+
+        $this->em->flush();
+        return $booking;
+    }
+
     public function cancel(string $bookingId, ?string $reason = null, ?string $userId = null): Booking
     {
         $booking = $this->bookingRepo->findOrFail($bookingId);

@@ -7,6 +7,7 @@ namespace Lodgik\Module\Upload;
 
 use Lodgik\Helper\JsonResponse;
 use Lodgik\Service\FileStorageService;
+use Predis\Client as RedisClient;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
@@ -46,6 +47,12 @@ final class UploadController
     private const MEDIA_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
     private const MEDIA_CONTEXTS = ['kyc', 'document', 'avatar', 'resource', 'other'];
+
+    // ── QR upload token ───────────────────────────────────────────
+    /** TTL for QR upload tokens — 15 minutes. */
+    private const QR_TOKEN_TTL  = 900;
+    /** Redis key prefix for QR upload tokens. */
+    private const QR_KEY_PREFIX = 'upload_qr:';
 
     // ── Binary uploads (app distributions) ───────────────────────
     /** MIME → canonical extension for app binaries. */
@@ -91,6 +98,7 @@ final class UploadController
 
     public function __construct(
         private readonly FileStorageService $storage,
+        private readonly ?RedisClient $redis = null,
     ) {}
 
     // ─────────────────────────────────────────────────────────────
@@ -176,6 +184,237 @@ final class UploadController
             'mime_type' => $mime,
             'context'   => $context,
         ], 'File uploaded successfully');
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // POST /api/upload/qr-token  — generate a one-time QR upload token
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Generate a short-lived token that authorises an unauthenticated
+     * mobile device to upload a single file on behalf of this session.
+     *
+     * The token is stored in Redis with a 15-minute TTL and carries:
+     *   status    — 'pending' | 'done'
+     *   user_id   — the staff member who generated the token
+     *   context   — storage context for the eventual upload
+     *   label     — human-readable label shown on the mobile upload page
+     *   expires_at — Unix timestamp
+     *
+     * The desktop/web UI polls GET /api/upload/qr-token/{token}/status
+     * until status = 'done', then reads url + filename from the response.
+     *
+     * Request body (JSON):
+     *   { "context": "document", "label": "Expense Receipt" }
+     *
+     * Response:
+     *   { "token": "...", "expires_in": 900, "expires_at": "..." }
+     */
+    public function generateQrToken(Request $req, Response $res): Response
+    {
+        if ($this->redis === null) {
+            return JsonResponse::error($res, 'QR upload feature is not configured on this server.', 503);
+        }
+
+        $body    = (array) ($req->getParsedBody() ?? []);
+        $context = trim($body['context'] ?? 'other');
+        $label   = trim($body['label']   ?? 'File Upload');
+        $userId  = $req->getAttribute('auth.user_id') ?? 'unknown';
+
+        if (!in_array($context, self::MEDIA_CONTEXTS, true)) {
+            return JsonResponse::validationError($res, [
+                'context' => 'Invalid context. Allowed: ' . implode(', ', self::MEDIA_CONTEXTS),
+            ]);
+        }
+
+        $token     = bin2hex(random_bytes(24)); // 48-char hex token
+        $expiresAt = time() + self::QR_TOKEN_TTL;
+
+        $payload = json_encode([
+            'status'     => 'pending',
+            'user_id'    => $userId,
+            'context'    => $context,
+            'label'      => $label,
+            'expires_at' => $expiresAt,
+            'url'        => null,
+            'filename'   => null,
+            'original'   => null,
+            'size'       => null,
+            'mime_type'  => null,
+        ], JSON_THROW_ON_ERROR);
+
+        $key = self::QR_KEY_PREFIX . $token;
+        $this->redis->setex($key, self::QR_TOKEN_TTL, $payload);
+
+        return JsonResponse::ok($res, [
+            'token'      => $token,
+            'expires_in' => self::QR_TOKEN_TTL,
+            'expires_at' => (new \DateTimeImmutable('@' . $expiresAt))->format('c'),
+        ], 'QR upload token generated');
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // POST /api/upload/qr/{token}  — public endpoint for mobile upload
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Unauthenticated endpoint called by the mobile browser after the user
+     * scans the QR code and selects a file on their phone.
+     *
+     * This endpoint:
+     *  1. Validates the token exists and is still pending in Redis
+     *  2. Accepts the same base64 JSON body as POST /api/upload
+     *  3. Stores the file via Flysystem
+     *  4. Updates the Redis token status to 'done' with the file URL
+     *  5. The token is consumed — subsequent calls with the same token return 409
+     *
+     * NO authentication required — the token itself is the credential.
+     *
+     * Request body (JSON):
+     *   { "file_base64": "data:image/png;base64,...", "filename": "receipt.jpg" }
+     *
+     * Response:
+     *   { "url": "...", "filename": "...", "original": "...", "size": ... }
+     */
+    public function uploadViaQr(Request $req, Response $res, array $args): Response
+    {
+        if ($this->redis === null) {
+            return JsonResponse::error($res, 'QR upload feature is not configured.', 503);
+        }
+
+        $token = trim($args['token'] ?? '');
+        if ($token === '') {
+            return JsonResponse::error($res, 'Invalid token.', 400);
+        }
+
+        $key     = self::QR_KEY_PREFIX . $token;
+        $rawJson = $this->redis->get($key);
+
+        if ($rawJson === null) {
+            return JsonResponse::error($res, 'Upload link has expired or is invalid. Please generate a new QR code.', 410);
+        }
+
+        try {
+            $meta = json_decode($rawJson, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return JsonResponse::error($res, 'Token state is corrupted. Please generate a new QR code.', 500);
+        }
+
+        if (($meta['status'] ?? '') === 'done') {
+            return JsonResponse::error($res, 'This upload link has already been used.', 409);
+        }
+
+        $context = $meta['context'] ?? 'other';
+        $body    = (array) ($req->getParsedBody() ?? []);
+
+        $base64   = trim($body['file_base64'] ?? '');
+        $filename = trim($body['filename']    ?? '');
+
+        if ($base64 === '') {
+            return JsonResponse::validationError($res, ['file_base64' => 'File data is required']);
+        }
+        if ($filename === '') {
+            return JsonResponse::validationError($res, ['filename' => 'Filename is required']);
+        }
+
+        // Detect MIME & validate
+        $mime = $this->detectMediaMime($base64);
+        if ($mime === null) {
+            return JsonResponse::error($res, 'Unsupported file type. Allowed: JPEG, PNG, WebP, GIF, PDF.', 422);
+        }
+
+        // Decode & size check
+        $raw = str_contains($base64, ',') ? substr($base64, strpos($base64, ',') + 1) : $base64;
+        $decoded = base64_decode($raw, true);
+        if ($decoded === false) {
+            return JsonResponse::error($res, 'Invalid base64 data.', 422);
+        }
+        if (strlen($decoded) > self::MEDIA_MAX_BYTES) {
+            return JsonResponse::error($res, 'File too large. Maximum size is 10 MB.', 422);
+        }
+
+        // Store file
+        $ext          = self::MEDIA_MIME[$mime];
+        $safeFilename = bin2hex(random_bytes(16)) . '.' . $ext;
+
+        try {
+            $result = $this->storage->storeBase64($base64, $context, $safeFilename);
+        } catch (\Throwable $e) {
+            return JsonResponse::error($res, 'Storage error: ' . $e->getMessage(), 500);
+        }
+
+        // Mark token as done — update in Redis (keep remaining TTL so poll can read it)
+        $remaining = (int) $this->redis->ttl($key);
+        $meta['status']    = 'done';
+        $meta['url']       = $result['url'];
+        $meta['filename']  = $safeFilename;
+        $meta['original']  = $filename;
+        $meta['size']      = $result['size'];
+        $meta['mime_type'] = $mime;
+
+        // Preserve remaining TTL (minimum 60 s so the desktop can poll the result)
+        $ttl = max($remaining, 60);
+        $this->redis->setex($key, $ttl, json_encode($meta, JSON_THROW_ON_ERROR));
+
+        return JsonResponse::ok($res, [
+            'url'       => $result['url'],
+            'filename'  => $safeFilename,
+            'original'  => $filename,
+            'size'      => $result['size'],
+            'mime_type' => $mime,
+            'context'   => $context,
+        ], 'File uploaded successfully');
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GET /api/upload/qr-token/{token}/status — poll from desktop
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Called every 2.5 s by the desktop UI to check if the mobile device
+     * has completed the upload.
+     *
+     * Response:
+     *   pending: { "status": "pending", "expires_at": "..." }
+     *   done:    { "status": "done",    "url": "...", "filename": "...",
+     *              "original": "...", "size": ..., "mime_type": "..." }
+     *   expired: 410 Gone
+     */
+    public function pollQrToken(Request $req, Response $res, array $args): Response
+    {
+        if ($this->redis === null) {
+            return JsonResponse::error($res, 'QR upload feature is not configured.', 503);
+        }
+
+        $token  = trim($args['token'] ?? '');
+        $key    = self::QR_KEY_PREFIX . $token;
+        $rawJson = $this->redis->get($key);
+
+        if ($rawJson === null) {
+            return JsonResponse::error($res, 'Token has expired or is invalid.', 410);
+        }
+
+        try {
+            $meta = json_decode($rawJson, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return JsonResponse::error($res, 'Token state is corrupted.', 500);
+        }
+
+        if (($meta['status'] ?? '') === 'done') {
+            return JsonResponse::ok($res, [
+                'status'    => 'done',
+                'url'       => $meta['url'],
+                'filename'  => $meta['filename'],
+                'original'  => $meta['original'],
+                'size'      => $meta['size'],
+                'mime_type' => $meta['mime_type'],
+            ]);
+        }
+
+        return JsonResponse::ok($res, [
+            'status'     => 'pending',
+            'expires_at' => (new \DateTimeImmutable('@' . ($meta['expires_at'] ?? 0)))->format('c'),
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────────

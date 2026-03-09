@@ -182,6 +182,35 @@ class GuestCard implements TenantAware
         $this->guestId         = null;
     }
 
+    /**
+     * Security-only revocation. Distinct from deactivate so the audit log
+     * clearly distinguishes management deactivation from security revocation.
+     * Revoked cards are returned to the DEACTIVATED pool awaiting reset.
+     */
+    public function revoke(string $reason = 'security_revocation'): void
+    {
+        $this->status        = GuestCardStatus::DEACTIVATED;
+        $this->deactivatedAt = new \DateTimeImmutable();
+        $this->notes         = 'REVOKED: ' . $reason;
+        $this->bookingId     = null;
+        $this->guestId       = null;
+    }
+
+    /**
+     * Reactivate a card that was deactivated/revoked by mistake.
+     * Only security + management can reactivate. The card must still have a
+     * valid booking attached before it can be reactivated; supply the bookingId
+     * and guestId to restore the association.
+     */
+    public function reactivateCard(string $bookingId, string $guestId): void
+    {
+        $this->status        = GuestCardStatus::ACTIVE;
+        $this->bookingId     = $bookingId;
+        $this->guestId       = $guestId;
+        $this->deactivatedAt = null;
+        $this->notes         = null;
+    }
+
     public function markLost(string $replacedById): void
     {
         $this->status      = GuestCardStatus::LOST;

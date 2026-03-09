@@ -2,13 +2,13 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService} from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService, QrFileUploadComponent, UploadedFile } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-folio-detail',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, PageHeaderComponent, LoadingSpinnerComponent],
+  imports: [DatePipe, FormsModule, RouterLink, PageHeaderComponent, LoadingSpinnerComponent, QrFileUploadComponent],
   template: `
     <ui-page-header [title]="folio()?.folio_number || 'Folio'" subtitle="Charges, payments and balance">
       <div class="flex gap-2">
@@ -185,21 +185,14 @@ import { AuthService } from '@lodgik/shared';
               @if (payForm.payment_method === 'bank_transfer') {
                 <input [(ngModel)]="payForm.sender_name" placeholder="Sender Name" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
                 <input [(ngModel)]="payForm.transfer_reference" placeholder="Transfer Reference" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
-                <!-- Receipt / proof of payment upload -->
-                <div>
-                  <label class="block text-xs text-gray-500 mb-1">Receipt / Proof of Payment</label>
-                  <label class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50 hover:bg-gray-100">
-                    <input type="file" accept="image/*,application/pdf" class="hidden" (change)="onProofFileChange($event)">
-                    @if (payForm.proof_image_url) {
-                      <span class="text-emerald-600 font-medium truncate">✓ {{ payForm.proof_filename || 'Uploaded' }}</span>
-                      <button type="button" class="ml-auto text-xs text-red-400 shrink-0" (click)="$event.preventDefault(); payForm.proof_image_url = ''; payForm.proof_filename = ''">Remove</button>
-                    } @else if (uploadingProof) {
-                      <span class="text-gray-400">Uploading…</span>
-                    } @else {
-                      <span class="text-gray-400">📎 Choose photo or PDF (optional)</span>
-                    }
-                  </label>
-                </div>
+                <!-- Receipt / proof of payment — supports manual upload AND QR phone capture -->
+                <ui-qr-file-upload
+                  context="document"
+                  label="Receipt / Proof of Payment (optional)"
+                  [currentUrl]="payForm.proof_image_url"
+                  (uploaded)="payForm.proof_image_url = $event.url; payForm.proof_filename = $event.original"
+                  (cleared)="payForm.proof_image_url = ''; payForm.proof_filename = ''"
+                />
               }
               <textarea [(ngModel)]="payForm.notes" placeholder="Notes (optional)" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></textarea>
             </div>
@@ -259,7 +252,6 @@ export class FolioDetailPage implements OnInit {
   chargeForm = { category: 'service', description: '', amount: null as any, quantity: 1 };
   payForm = { payment_method: 'cash', amount: null as any, sender_name: '', transfer_reference: '', notes: '', proof_image_url: '', proof_filename: '' };
   adjForm = { type: 'discount', description: '', amount: null as any, reason: '' };
-  uploadingProof = false;
 
   private folioId = '';
 
@@ -321,27 +313,6 @@ export class FolioDetailPage implements OnInit {
         this.loadFolio();
       } else this.toast.error(r.message || 'Failed');
     });
-  }
-
-  onProofFileChange(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    this.uploadingProof = true;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      this.api.post('/upload', { file_base64: base64, filename: file.name, context: 'document' })
-        .subscribe((r: any) => {
-          this.uploadingProof = false;
-          if (r?.success) {
-            this.payForm.proof_image_url = r.data?.url;
-            this.payForm.proof_filename  = file.name;
-          } else {
-            this.toast.error('Receipt upload failed');
-          }
-        });
-    };
-    reader.readAsDataURL(file);
   }
 
   submitAdj(): void {

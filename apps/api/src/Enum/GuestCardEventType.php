@@ -15,6 +15,8 @@ enum GuestCardEventType: string
     case POS_CHARGE        = 'pos_charge';
     case LOST_REPORTED     = 'lost_reported';
     case DEACTIVATED       = 'deactivated';
+    case REVOKED           = 'revoked';
+    case REACTIVATED       = 'reactivated';
     case ACCESS_DENIED     = 'access_denied';
 
     public function label(): string
@@ -31,6 +33,8 @@ enum GuestCardEventType: string
             self::POS_CHARGE       => 'POS Charge',
             self::LOST_REPORTED    => 'Card Reported Lost',
             self::DEACTIVATED      => 'Card Deactivated',
+            self::REVOKED          => 'Card Revoked by Security',
+            self::REACTIVATED      => 'Card Reactivated by Security',
             self::ACCESS_DENIED    => 'Access Denied',
         };
     }
@@ -49,6 +53,8 @@ enum GuestCardEventType: string
             self::POS_CHARGE       => '💳',
             self::LOST_REPORTED    => '❗',
             self::DEACTIVATED      => '🚫',
+            self::REVOKED          => '🔒',
+            self::REACTIVATED      => '🔓',
             self::ACCESS_DENIED    => '⛔',
         };
     }

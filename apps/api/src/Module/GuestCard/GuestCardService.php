@@ -595,6 +595,60 @@ final class GuestCardService
     }
 
     /**
+     * Security-only revocation — called by POST /api/cards/{id}/revoke.
+     * Only security staff, managers, and property admins may call this.
+     * The card booking association is cleared; the card returns to the
+     * deactivated pool pending physical return and reset.
+     */
+    public function revoke(string $cardId, string $tenantId, string $reason, string $revokedBy): GuestCard
+    {
+        $card = $this->cardRepo->findOrFail($cardId);
+
+        if ($card->getStatus() === \Lodgik\Enum\GuestCardStatus::DEACTIVATED) {
+            throw new \RuntimeException('Card is already deactivated.');
+        }
+
+        $card->revoke($reason);
+
+        $this->logEvent($card, GuestCardEventType::REVOKED, $tenantId, $card->getPropertyId(), [
+            'reason'     => $reason,
+            'revoked_by' => $revokedBy,
+        ], scannedBy: $revokedBy);
+
+        $this->em->flush();
+        return $card;
+    }
+
+    /**
+     * Security-only reactivation — called by POST /api/cards/{id}/reactivate.
+     * Guest changed their mind at the exit gate: restore the card's active state.
+     * Requires the bookingId and guestId to re-associate the card.
+     */
+    public function reactivate(
+        string $cardId,
+        string $tenantId,
+        string $bookingId,
+        string $guestId,
+        string $reactivatedBy,
+    ): GuestCard {
+        $card = $this->cardRepo->findOrFail($cardId);
+
+        if ($card->getStatus() !== \Lodgik\Enum\GuestCardStatus::DEACTIVATED) {
+            throw new \RuntimeException('Only deactivated cards can be reactivated.');
+        }
+
+        $card->reactivateCard($bookingId, $guestId);
+
+        $this->logEvent($card, GuestCardEventType::REACTIVATED, $tenantId, $card->getPropertyId(), [
+            'booking_id'      => $bookingId,
+            'reactivated_by'  => $reactivatedBy,
+        ], scannedBy: $reactivatedBy);
+
+        $this->em->flush();
+        return $card;
+    }
+
+    /**
      * Deactivate all cards linked to a booking — called automatically at checkout.
      */
     public function deactivateForBooking(string $bookingId, string $tenantId): int

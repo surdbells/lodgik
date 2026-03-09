@@ -8,6 +8,7 @@ use Lodgik\Module\Upload\UploadController;
 use Slim\App;
 
 return function (App $app): void {
+
     /**
      * POST /api/upload
      * Small file upload via base64 JSON body (images, PDFs — max 10 MB).
@@ -16,6 +17,48 @@ return function (App $app): void {
      */
     $app->post('/api/upload', [UploadController::class, 'upload'])
         ->add(AuthMiddleware::class);
+
+    // ── QR Upload Token System ─────────────────────────────────────
+    //
+    // Allows a desktop/web session to delegate file capture to a mobile
+    // device without sharing credentials.
+    //
+    // Flow:
+    //   1. Desktop calls POST /api/upload/qr-token (authenticated)
+    //      → gets a short-lived token (15 min)
+    //   2. Desktop renders QR pointing to {HOTEL_APP_URL}/mobile-upload/{token}
+    //   3. User scans QR on phone → mobile page calls POST /api/upload/qr/{token}
+    //      (unauthenticated — the token is the credential)
+    //   4. Desktop polls GET /api/upload/qr-token/{token}/status every 2.5 s
+    //      until status = 'done', then reads the file URL
+
+    /**
+     * POST /api/upload/qr-token
+     * Generate a one-time QR upload token. Authenticated staff only.
+     * Body: { context: string, label: string }
+     */
+    $app->post('/api/upload/qr-token', [UploadController::class, 'generateQrToken'])
+        ->add(AuthMiddleware::class);
+
+    /**
+     * GET /api/upload/qr-token/{token}/status
+     * Poll token status from desktop. Authenticated (the staff member who
+     * generated the token). Returns pending | done | 410 expired.
+     *
+     * NOTE: Static path segment /status must be registered BEFORE
+     * the variable /{token} route to avoid FastRoute shadowing.
+     */
+    $app->get('/api/upload/qr-token/{token}/status', [UploadController::class, 'pollQrToken'])
+        ->add(AuthMiddleware::class);
+
+    /**
+     * POST /api/upload/qr/{token}
+     * PUBLIC endpoint — called by the mobile browser after QR scan.
+     * No authentication required. The token itself is the credential.
+     * Body: { file_base64: string, filename: string }
+     * One-time use: subsequent calls after upload return 409.
+     */
+    $app->post('/api/upload/qr/{token}', [UploadController::class, 'uploadViaQr']);
 
     /**
      * POST /api/admin/upload/binary

@@ -28,6 +28,7 @@ return function (App $app): void {
         $group->post('/{id}/check-in', [BookingController::class, 'checkIn']);
         $group->post('/{id}/check-out', [BookingController::class, 'checkOut']);
         $group->post('/{id}/cancel', [BookingController::class, 'cancel']);
+        $group->post('/{id}/confirm', [BookingController::class, 'confirm']);
         $group->post('/{id}/no-show', [BookingController::class, 'noShow']);
         $group->post('/{id}/clear-front-desk', [BookingController::class, 'clearFrontDesk']);
         $group->post('/{id}/clear-security', [BookingController::class, 'clearSecurity']);
