@@ -12,7 +12,7 @@ interface Discrepancy  { id: string; consumable_name: string; period_start: stri
   standalone: true,
   imports: [FormsModule, DatePipe, DecimalPipe, TitleCasePipe, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent],
   template: `
-    <ui-page-header title="Consumables" icon="inventory_2"
+    <ui-page-header title="Consumables" icon="package"
       [breadcrumbs]="['Housekeeping','Consumables']"
       subtitle="Manage housekeeping consumable stock, store requests, and discrepancy tracking">
     </ui-page-header>
