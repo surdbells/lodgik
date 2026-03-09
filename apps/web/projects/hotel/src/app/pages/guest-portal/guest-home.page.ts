@@ -1,8 +1,7 @@
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ApiService } from '@lodgik/shared';
-import { HttpHeaders } from '@angular/common/http';
+import { GuestApiService } from '../../services/guest-api.service';
 
 @Component({
   selector: 'app-guest-home',
@@ -29,7 +28,7 @@ import { HttpHeaders } from '@angular/common/http';
             </div>
             <div class="bg-slate-900/20 rounded-xl px-3 py-1.5 text-center">
               <p class="text-xs font-semibold opacity-80">Room</p>
-              <p class="text-lg font-black">{{ roomNumber() ?? '—' }}</p>
+              <p class="text-lg font-black">{{ session()!.booking!.room_number ?? '—' }}</p>
             </div>
           </div>
           <div class="flex gap-4 text-sm">
@@ -61,7 +60,13 @@ import { HttpHeaders } from '@angular/common/http';
       </div>
 
       <!-- Balance summary -->
-      @if (folio()) {
+      @if (loading()) {
+        <div class="flex items-center justify-center py-8">
+          <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }
+
+      @if (!loading() && folio()) {
         <div class="bg-white/10 border border-white/10 rounded-2xl p-4 mb-4">
           <div class="flex items-center justify-between mb-3">
             <p class="text-sm font-semibold text-white/80">Account Balance</p>
@@ -70,35 +75,29 @@ import { HttpHeaders } from '@angular/common/http';
           <div class="grid grid-cols-2 gap-3">
             <div>
               <p class="text-xs text-white/40">Total charges</p>
-              <p class="text-base font-bold text-white">₦{{ (+folio()!.total_charges).toLocaleString() }}</p>
+              <p class="text-base font-bold text-white">₦{{ fmt(folio()!.total_charges) }}</p>
             </div>
             <div>
               <p class="text-xs text-white/40">Balance due</p>
               <p class="text-base font-bold" [class]="(+folio()!.balance) > 0 ? 'text-red-400' : 'text-emerald-400'">
-                ₦{{ (+folio()!.balance).toLocaleString() }}
+                ₦{{ fmt(folio()!.balance) }}
               </p>
             </div>
           </div>
           @if (+folio()!.balance > 0) {
             <div class="mt-3 bg-amber-400/20 border border-amber-400/30 rounded-xl p-3">
               <p class="text-xs text-amber-300 font-medium">Payment due</p>
-              <p class="text-xs text-amber-200/70 mt-0.5">Please visit the front desk or view bill for bank details.</p>
+              <p class="text-xs text-amber-200/70 mt-0.5">Please view your bill for payment details.</p>
             </div>
           }
         </div>
       }
 
-      <!-- Loading -->
-      @if (loading()) {
-        <div class="flex items-center justify-center py-10">
-          <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      }
     </div>
   `,
 })
 export default class GuestHomePage implements OnInit {
-  private api = inject(ApiService);
+  private guestApi = inject(GuestApiService);
 
   session = signal<any | null>(null);
   folio   = signal<any | null>(null);
@@ -118,8 +117,6 @@ export default class GuestHomePage implements OnInit {
     return 'Good evening';
   });
 
-  readonly roomNumber = computed(() => this.session()?.booking?.room_number ?? null);
-
   readonly nightsLeft = computed(() => {
     const s = this.session();
     if (!s?.booking?.check_out) return 0;
@@ -135,17 +132,17 @@ export default class GuestHomePage implements OnInit {
     this.loadFolio();
   }
 
+  fmt(v: number | string): string {
+    return (+v || 0).toLocaleString('en-NG', { minimumFractionDigits: 0 });
+  }
+
   private loadFolio(): void {
     const bookingId = this.session()?.booking?.id;
     if (!bookingId) { this.loading.set(false); return; }
-    this.api.get('/guest/folio').subscribe({
-      next: (r: any) => { this.folio.set(r.data ?? null); this.loading.set(false); },
-      error: () => this.loading.set(false),
-    });
-  }
 
-  private guestHeaders(): Record<string, string> {
-    const token = localStorage.getItem('guest_token') ?? '';
-    return { Authorization: `Bearer ${token}` };
+    this.guestApi.get<any>('/guest/folio').subscribe({
+      next: (r: any) => { this.folio.set(r.data ?? null); this.loading.set(false); },
+      error: ()      => { this.loading.set(false); },
+    });
   }
 }

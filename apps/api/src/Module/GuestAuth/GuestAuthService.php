@@ -14,6 +14,7 @@ use Lodgik\Repository\GuestSessionRepository;
 use Lodgik\Repository\TabletDeviceRepository;
 use Lodgik\Repository\BookingRepository;
 use Lodgik\Repository\GuestRepository;
+use Lodgik\Repository\RoomRepository;
 use Lodgik\Service\TermiiService;
 use Lodgik\Helper\UuidHelper;
 use Psr\Log\LoggerInterface;
@@ -30,6 +31,7 @@ final class GuestAuthService
         private readonly TabletDeviceRepository $tabletRepo,
         private readonly BookingRepository $bookingRepo,
         private readonly GuestRepository $guestRepo,
+        private readonly RoomRepository $roomRepo,
         private readonly TermiiService $termii,
         private readonly LoggerInterface $logger,
     ) {}
@@ -263,19 +265,27 @@ final class GuestAuthService
         $booking = $this->bookingRepo->find($bookingId);
         $guest = $this->guestRepo->find($guestId);
 
+        // Resolve room number for display in the guest PWA
+        $roomNumber = null;
+        if ($booking?->getRoomId()) {
+            $room = $this->roomRepo->find($booking->getRoomId());
+            $roomNumber = $room?->getRoomNumber();
+        }
+
         return [
             'token' => $session->getToken(),
             'expires_at' => $session->getExpiresAt()->format('Y-m-d H:i:s'),
             'guest' => [
-                'id' => $guest?->getId(),
+                'id'   => $guest?->getId(),
                 'name' => $guest?->getFullName(),
             ],
             'booking' => [
-                'id' => $booking?->getId(),
-                'ref' => $booking?->getBookingRef(),
-                'room_id' => $booking?->getRoomId(),
-                'check_in' => $booking?->getCheckIn()->format('Y-m-d'),
-                'check_out' => $booking?->getCheckOut()->format('Y-m-d'),
+                'id'          => $booking?->getId(),
+                'ref'         => $booking?->getBookingRef(),
+                'room_id'     => $booking?->getRoomId(),
+                'room_number' => $roomNumber,
+                'check_in'    => $booking?->getCheckIn()->format('Y-m-d'),
+                'check_out'   => $booking?->getCheckOut()->format('Y-m-d'),
             ],
             'property_id' => $session->getPropertyId(),
         ];

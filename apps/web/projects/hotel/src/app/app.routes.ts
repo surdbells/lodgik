@@ -368,6 +368,7 @@ export const routes: Routes = [
       { path: 'folio',    loadComponent: () => import('./pages/guest-portal/guest-folio.page') },
       { path: 'services', loadComponent: () => import('./pages/guest-portal/guest-services.page') },
       { path: 'chat',     loadComponent: () => import('./pages/guest-portal/guest-chat.page') },
+      { path: 'checkout', loadComponent: () => import('./pages/guest-portal/guest-checkout.page') },
     ],
   },
 

@@ -7,6 +7,7 @@ use Lodgik\Module\Chat\ChatService;
 use Lodgik\Module\Folio\FolioService;
 use Lodgik\Module\ServiceRequest\ServiceRequestService;
 use Lodgik\Repository\BookingRepository;
+use Lodgik\Repository\GuestRepository;
 use Lodgik\Repository\PropertyBankAccountRepository;
 use Lodgik\Util\JsonResponse;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -24,6 +25,7 @@ final class GuestPortalController
         private readonly FolioService                  $folioService,
         private readonly ServiceRequestService         $serviceRequestService,
         private readonly BookingRepository             $bookingRepo,
+        private readonly GuestRepository               $guestRepo,
         private readonly PropertyBankAccountRepository $bankAccountRepo,
         private readonly ChatService                   $chatService,
     ) {}
@@ -123,8 +125,9 @@ final class GuestPortalController
             return JsonResponse::error($res, 'message is required', 422);
         }
 
-        $booking  = $this->bookingRepo->find($bookingId);
-        $guestName = 'Guest'; // Resolved from booking context
+        $booking   = $this->bookingRepo->find($bookingId);
+        $guest     = $this->guestRepo->find($guestId);
+        $guestName = $guest?->getFullName() ?? 'Guest';
 
         $message = $this->chatService->sendMessage(
             bookingId:   $bookingId,

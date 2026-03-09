@@ -1,8 +1,11 @@
-import { Component, signal, inject, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import {
+  Component, signal, inject, OnInit, OnDestroy,
+  ViewChild, ElementRef, AfterViewChecked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { GuestApiService } from '../../services/guest-api.service';
 
 @Component({
   selector: 'app-guest-chat',
@@ -16,7 +19,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
         <a routerLink="/guest/home" class="text-white/50 hover:text-white text-xl">←</a>
         <div class="flex-1">
           <h2 class="text-sm font-semibold text-white">Front Desk</h2>
-          <p class="text-[11px] text-white/40">Hotel staff chat</p>
+          <p class="text-[11px] text-white/40">Hotel staff · usually replies in minutes</p>
         </div>
         <div class="w-2 h-2 bg-emerald-400 rounded-full"></div>
       </div>
@@ -33,7 +36,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
           <div class="flex" [class]="msg.sender_type === 'guest' ? 'justify-end' : 'justify-start'">
             <div class="max-w-[78%]">
               @if (msg.sender_type !== 'guest') {
-                <p class="text-[10px] text-white/30 mb-0.5 px-1">Staff</p>
+                <p class="text-[10px] text-white/30 mb-0.5 px-1">{{ msg.sender_name ?? 'Staff' }}</p>
               }
               <div class="px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed"
                 [class]="msg.sender_type === 'guest'
@@ -60,6 +63,9 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 
       <!-- Input -->
       <div class="px-4 py-3 border-t border-white/10 bg-slate-900/50 backdrop-blur-md">
+        @if (error()) {
+          <p class="text-red-400 text-xs mb-2 px-1">{{ error() }}</p>
+        }
         <div class="flex gap-2 items-end">
           <textarea
             [(ngModel)]="newMessage"
@@ -77,30 +83,29 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
           </button>
         </div>
       </div>
+
     </div>
   `,
 })
 export default class GuestChatPage implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messageContainer') private msgContainer!: ElementRef;
 
-  private http = inject(HttpClient);
+  private guestApi = inject(GuestApiService);
 
   loading    = signal(true);
   sending    = signal(false);
   messages   = signal<any[]>([]);
+  error      = signal<string | null>(null);
   newMessage = '';
 
   private pollInterval: ReturnType<typeof setInterval> | null = null;
   private shouldScrollBottom = false;
 
-  ngOnInit(): void  { this.initChat(); }
+  ngOnInit(): void  { this.loadMessages(); this.startPolling(); }
   ngOnDestroy(): void { if (this.pollInterval) clearInterval(this.pollInterval); }
 
   ngAfterViewChecked(): void {
-    if (this.shouldScrollBottom) {
-      this.scrollBottom();
-      this.shouldScrollBottom = false;
-    }
+    if (this.shouldScrollBottom) { this.scrollBottom(); this.shouldScrollBottom = false; }
   }
 
   onEnter(event: Event): void {
@@ -111,50 +116,38 @@ export default class GuestChatPage implements OnInit, OnDestroy, AfterViewChecke
   send(): void {
     const text = this.newMessage.trim();
     if (!text || this.sending()) return;
-
     this.sending.set(true);
+    this.error.set(null);
     this.newMessage = '';
 
-    const headers = this.guestHeaders();
-    const baseUrl  = (window as any).__LODGIK_API_URL__ ?? '';
-
-    const payload = { message: text };
-
-    this.http.post<any>(`${baseUrl}/api/guest/chat/send`, payload, { headers }).subscribe({
-      next: r => {
+    this.guestApi.post<any>('/guest/chat/send', { message: text }).subscribe({
+      next: (r: any) => {
         this.sending.set(false);
-        if (r.success) {
-          this.loadMessages();
-        }
+        if (r.success) { this.loadMessages(); }
+        else { this.error.set(r.message ?? 'Failed to send'); }
       },
-      error: () => this.sending.set(false),
+      error: (err: any) => {
+        this.sending.set(false);
+        this.error.set(err?.error?.message ?? 'Could not send message. Please try again.');
+      },
     });
   }
 
-  private initChat(): void {
-    const bookingId = this.bookingId();
-    if (!bookingId) { this.loading.set(false); return; }
-
-    const headers = this.guestHeaders();
-    const baseUrl  = (window as any).__LODGIK_API_URL__ ?? '';
-
-    // Load messages directly — no conversation ID needed, backend uses booking_id
-    this.loadMessages();
-    // Poll every 8s for new messages
+  private startPolling(): void {
     this.pollInterval = setInterval(() => this.loadMessages(false), 8000);
   }
 
   private loadMessages(showLoader = true): void {
     if (showLoader) this.loading.set(true);
-
-    const headers = this.guestHeaders();
-    const baseUrl  = (window as any).__LODGIK_API_URL__ ?? '';
-
-    this.http.get<any>(`${baseUrl}/api/guest/chat/messages`, { headers }).subscribe({
-      next: r => {
+    this.guestApi.get<any>('/guest/chat/messages').subscribe({
+      next: (r: any) => {
         this.messages.set(r.data ?? []);
         this.loading.set(false);
         this.shouldScrollBottom = true;
+        // Mark staff messages as read
+        if ((r.data ?? []).some((m: any) => m.sender_type !== 'guest')) {
+          this.guestApi.post('/guest/chat/read', {}).subscribe();
+        }
       },
       error: () => this.loading.set(false),
     });
@@ -165,17 +158,5 @@ export default class GuestChatPage implements OnInit, OnDestroy, AfterViewChecke
       const el = this.msgContainer.nativeElement;
       el.scrollTop = el.scrollHeight;
     } catch {}
-  }
-
-  private bookingId(): string {
-    try {
-      const s = JSON.parse(localStorage.getItem('guest_session') ?? '{}');
-      return s.booking?.id ?? '';
-    } catch { return ''; }
-  }
-
-  private guestHeaders(): HttpHeaders {
-    const token = localStorage.getItem('guest_token') ?? '';
-    return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 }

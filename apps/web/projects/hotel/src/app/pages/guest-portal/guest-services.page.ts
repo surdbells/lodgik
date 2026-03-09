@@ -2,7 +2,7 @@ import { Component, signal, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { GuestApiService } from '../../services/guest-api.service';
 
 const CATEGORIES = [
   { value: 'housekeeping',  label: 'Housekeeping',    icon: '🧹' },
@@ -13,6 +13,14 @@ const CATEGORIES = [
   { value: 'amenity',       label: 'Amenity',         icon: '🎁' },
   { value: 'other',         label: 'Other',           icon: '❓' },
 ];
+
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  pending:     { label: 'Pending',     color: '#f59e0b' },
+  assigned:    { label: 'Assigned',    color: '#3b82f6' },
+  in_progress: { label: 'In Progress', color: '#8b5cf6' },
+  completed:   { label: 'Done',        color: '#10b981' },
+  cancelled:   { label: 'Cancelled',   color: '#6b7280' },
+};
 
 @Component({
   selector: 'app-guest-services',
@@ -26,7 +34,7 @@ const CATEGORIES = [
       </div>
 
       <!-- Category picker -->
-      @if (!showForm()) {
+      @if (!showForm() && !submitted()) {
         <p class="text-sm text-white/50 mb-4">What do you need?</p>
         <div class="grid grid-cols-2 gap-3 mb-6">
           @for (cat of categories; track cat.value) {
@@ -41,19 +49,19 @@ const CATEGORIES = [
 
         <!-- Past requests -->
         @if (requests().length) {
-          <div class="mt-4">
+          <div class="mt-2">
             <h3 class="text-xs font-semibold text-white/40 uppercase tracking-wide mb-3">My Requests</h3>
             <div class="space-y-2">
               @for (r of requests(); track r.id) {
                 <div class="bg-white/5 border border-white/10 rounded-xl p-3 flex items-start justify-between">
-                  <div>
-                    <p class="text-sm text-white/80">{{ r.category_icon }} {{ r.title }}</p>
+                  <div class="flex-1 min-w-0 pr-2">
+                    <p class="text-sm text-white/80 truncate">{{ getCatIcon(r.category) }} {{ r.title }}</p>
                     <p class="text-[11px] text-white/40 mt-0.5">{{ r.created_at | date:'dd MMM HH:mm' }}</p>
                   </div>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-medium mt-0.5"
-                    [style.background-color]="r.status_color + '33'"
-                    [style.color]="r.status_color">
-                    {{ r.status_label }}
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 mt-0.5"
+                    [style.background-color]="getStatusColor(r.status) + '33'"
+                    [style.color]="getStatusColor(r.status)">
+                    {{ getStatusLabel(r.status) }}
                   </span>
                 </div>
               }
@@ -63,7 +71,7 @@ const CATEGORIES = [
       }
 
       <!-- Request form -->
-      @if (showForm()) {
+      @if (showForm() && !submitted()) {
         <div>
           <button (click)="showForm.set(false)" class="flex items-center gap-2 text-white/50 hover:text-white text-sm mb-4">
             ← Back
@@ -136,7 +144,7 @@ const CATEGORIES = [
   `,
 })
 export default class GuestServicesPage implements OnInit {
-  private http = inject(HttpClient);
+  private guestApi = inject(GuestApiService);
 
   loading    = signal(true);
   requests   = signal<any[]>([]);
@@ -169,16 +177,13 @@ export default class GuestServicesPage implements OnInit {
     this.error.set(null);
     this.submitting.set(true);
 
-    const headers = this.guestHeaders();
-    const baseUrl = (window as any).__LODGIK_API_URL__ ?? '';
-
-    this.http.post<any>(`${baseUrl}/api/guest/service-requests`, {
+    this.guestApi.post<any>('/guest/service-requests', {
       category:    this.selectedCategory()!.value,
       title:       this.form.title.trim(),
       description: this.form.description.trim() || null,
       priority:    this.form.priority,
-    }, { headers }).subscribe({
-      next: r => {
+    }).subscribe({
+      next: (r: any) => {
         this.submitting.set(false);
         if (r.success) {
           this.showForm.set(false);
@@ -188,7 +193,7 @@ export default class GuestServicesPage implements OnInit {
           this.error.set(r.message ?? 'Failed to submit');
         }
       },
-      error: err => {
+      error: (err: any) => {
         this.submitting.set(false);
         this.error.set(err?.error?.error?.message ?? 'Failed to submit request');
       },
@@ -197,18 +202,22 @@ export default class GuestServicesPage implements OnInit {
 
   reset(): void { this.submitted.set(false); this.showForm.set(false); }
 
-  private loadRequests(): void {
-    const headers = this.guestHeaders();
-    const baseUrl = (window as any).__LODGIK_API_URL__ ?? '';
-
-    this.http.get<any>(`${baseUrl}/api/guest/service-requests`, { headers }).subscribe({
-      next: r => { this.requests.set(r.data ?? []); this.loading.set(false); },
-      error: () => this.loading.set(false),
-    });
+  getCatIcon(val: string): string {
+    return CATEGORIES.find(c => c.value === val)?.icon ?? '❓';
   }
 
-  private guestHeaders(): HttpHeaders {
-    const token = localStorage.getItem('guest_token') ?? '';
-    return new HttpHeaders({ Authorization: `Bearer ${token}` });
+  getStatusLabel(status: string): string {
+    return STATUS_META[status]?.label ?? status;
+  }
+
+  getStatusColor(status: string): string {
+    return STATUS_META[status]?.color ?? '#6b7280';
+  }
+
+  private loadRequests(): void {
+    this.guestApi.get<any>('/guest/service-requests').subscribe({
+      next: (r: any) => { this.requests.set(r.data ?? []); this.loading.set(false); },
+      error: ()      => { this.loading.set(false); },
+    });
   }
 }

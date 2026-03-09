@@ -1,7 +1,7 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { GuestApiService } from '../../services/guest-api.service';
 
 @Component({
   selector: 'app-guest-folio',
@@ -131,32 +131,30 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 
       @if (!loading() && !folio()) {
         <div class="text-center py-16">
+          <p class="text-4xl mb-3">🧾</p>
           <p class="text-white/40 text-sm">No bill found for your booking.</p>
+          <p class="text-white/25 text-xs mt-1">Check back after check-in or contact the front desk.</p>
         </div>
       }
     </div>
   `,
 })
 export default class GuestFolioPage implements OnInit {
-  private http = inject(HttpClient);
+  private guestApi = inject(GuestApiService);
 
   loading = signal(true);
   folio   = signal<any | null>(null);
 
   ngOnInit(): void { this.load(); }
 
-  private load(): void {
-    const token   = localStorage.getItem('guest_token') ?? '';
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-    const baseUrl = (window as any).__LODGIK_API_URL__ ?? '/api';
-
-    this.http.get<any>(`${baseUrl}/api/guest/folio`, { headers }).subscribe({
-      next: r => { this.folio.set(r.data ?? null); this.loading.set(false); },
-      error: () => this.loading.set(false),
-    });
-  }
-
   fmt(v: number | string): string {
     return (+v || 0).toLocaleString('en-NG', { minimumFractionDigits: 0 });
+  }
+
+  private load(): void {
+    this.guestApi.get<any>('/guest/folio').subscribe({
+      next: (r: any) => { this.folio.set(r.data ?? null); this.loading.set(false); },
+      error: ()      => { this.loading.set(false); },
+    });
   }
 }

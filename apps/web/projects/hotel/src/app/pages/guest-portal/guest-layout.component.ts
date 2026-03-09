@@ -59,7 +59,7 @@ export class GuestLayoutComponent implements OnInit {
   ];
 
   /** Routes that require a guest session */
-  private readonly protectedRoutes = ['/guest/home', '/guest/folio', '/guest/services', '/guest/chat'];
+  private readonly protectedRoutes = ['/guest/home', '/guest/folio', '/guest/services', '/guest/chat', '/guest/checkout'];
 
   ngOnInit(): void {
     // Restore session name display
@@ -71,10 +71,17 @@ export class GuestLayoutComponent implements OnInit {
       } catch {}
     }
 
-    // Guard on every subsequent navigation
+    // Guard on every subsequent navigation and refresh the displayed name
     this.router.events.pipe(
       filter(e => e instanceof NavigationEnd),
     ).subscribe((e: any) => {
+      // Refresh name in case the user just logged in
+      const s2 = localStorage.getItem('guest_session');
+      if (s2) {
+        try { this.guestName.set(JSON.parse(s2).guest?.name ?? 'Guest'); } catch {}
+      } else {
+        this.guestName.set(null);
+      }
       this.guardRoute(e.urlAfterRedirects ?? e.url);
     });
 
