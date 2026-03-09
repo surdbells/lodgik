@@ -437,6 +437,22 @@ final class GymService
         return $cls;
     }
 
+    /**
+     * List all class bookings where the memberId matches a guest UUID.
+     * Guests are booked using their guest_id as the memberId field.
+     */
+    public function listClassBookingsByGuest(string $guestId): array
+    {
+        return $this->em->createQueryBuilder()
+            ->select('b')
+            ->from(GymClassBooking::class, 'b')
+            ->where('b.memberId = :gid')
+            ->setParameter('gid', $guestId)
+            ->orderBy('b.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function recordPayment(array $data): GymMembershipPayment
     {
         $membership = $this->em->find(GymMembership::class, $data['membership_id'] ?? '');

@@ -803,7 +803,14 @@ return function (ContainerBuilder $builder): void {
             bookingRepo:           $c->get(BookingRepository::class),
             guestRepo:             $c->get(GuestRepository::class),
             bankAccountRepo:       $c->get(PropertyBankAccountRepository::class),
+            propertyRepo:          $c->get(PropertyRepository::class),
             chatService:           $c->get(ChatService::class),
+            securityService:       $c->get(\Lodgik\Module\Security\SecurityService::class),
+            roomControlService:    $c->get(\Lodgik\Module\RoomControl\RoomControlService::class),
+            spaService:            $c->get(\Lodgik\Module\Spa\SpaService::class),
+            gymService:            $c->get(\Lodgik\Module\Gym\GymService::class),
+            em:                    $c->get(EntityManagerInterface::class),
+            termii:                $c->get(TermiiService::class),
         ),
 
         ServiceRequestService::class => fn(ContainerInterface $c) => new ServiceRequestService(
