@@ -321,7 +321,7 @@ export const routes: Routes = [
 
       {
         path: 'spa',
-        loadComponent: () => import('./pages/spa/spa.page'),
+        loadComponent: () => import('./pages/spa/spa.page').then(m => m.SpaPage),
       },
       {
         path: 'iot',
