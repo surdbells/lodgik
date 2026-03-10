@@ -63,6 +63,7 @@ final class FinanceController
     public function listPricingRules(Request $req, Response $res): Response { $p = $req->getQueryParams(); return $this->json($res, ['success' => true, 'data' => $this->svc->listPricingRules($p['property_id'] ?? '', isset($p['active']) ? $p['active'] === 'true' : null)]); }
     public function createPricingRule(Request $req, Response $res): Response { $d = $this->body($req); $r = $this->svc->createPricingRule($d['property_id'], $d['name'], $d['rule_type'], $d['adjustment_type'], $d['adjustment_value'], $req->getAttribute('auth.tenant_id'), $d); return $this->json($res, ['success' => true, 'data' => $r->toArray()], 201); }
     public function updatePricingRule(Request $req, Response $res, array $args): Response { return $this->json($res, ['success' => true, 'data' => $this->svc->updatePricingRule($args['id'], $this->body($req))->toArray()]); }
+    public function deletePricingRule(Request $req, Response $res, array $args): Response { $this->svc->deletePricingRule($args['id']); return $this->json($res, ['success' => true, 'message' => 'Pricing rule deleted']); }
     public function calculateRate(Request $req, Response $res): Response { $p = $req->getQueryParams(); return $this->json($res, ['success' => true, 'data' => $this->svc->calculateDynamicRate($p['property_id'] ?? '', $p['room_type_id'] ?? null, $p['base_rate'] ?? '0', new \DateTimeImmutable($p['date'] ?? 'today'), isset($p['nights']) ? (int)$p['nights'] : null, isset($p['occupancy']) ? (float)$p['occupancy'] : null)]); }
 
     // Group Bookings

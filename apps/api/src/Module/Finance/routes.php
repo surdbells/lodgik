@@ -56,6 +56,7 @@ return function (App $app): void {
         $g->get('', [FinanceController::class, 'listPricingRules']);
         $g->post('', [FinanceController::class, 'createPricingRule']);
         $g->put('/{id}', [FinanceController::class, 'updatePricingRule']);
+        $g->delete('/{id}', [FinanceController::class, 'deletePricingRule']);
         $g->get('/calculate', [FinanceController::class, 'calculateRate']);
     })->add(new RoleMiddleware(['property_admin', 'manager']))->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 

@@ -71,7 +71,9 @@ class PricingRule implements TenantAware
     public function getRuleType(): string { return $this->ruleType; }
     public function getAdjustmentType(): string { return $this->adjustmentType; }
     public function getAdjustmentValue(): string { return $this->adjustmentValue; }
+    public function setAdjustmentType(string $v): void { $this->adjustmentType = $v; }
     public function setAdjustmentValue(string $v): void { $this->adjustmentValue = $v; }
+    public function setRuleType(string $v): void { $this->ruleType = $v; }
     public function getStartDate(): ?\DateTimeImmutable { return $this->startDate; }
     public function setStartDate(?\DateTimeImmutable $v): void { $this->startDate = $v; }
     public function getEndDate(): ?\DateTimeImmutable { return $this->endDate; }

@@ -28,6 +28,7 @@ class OtaChannel implements TenantAware
     public function getChannelName(): string { return $this->channelName; } public function getSyncStatus(): string { return $this->syncStatus; }
     public function setCredentials(?array $v): void { $this->credentials = $v; } public function setRoomTypeMapping(?array $v): void { $this->roomTypeMapping = $v; }
     public function setRatePlanMapping(?array $v): void { $this->ratePlanMapping = $v; } public function setCommissionPercentage(string $v): void { $this->commissionPercentage = $v; }
+    public function setDisplayName(string $v): void { $this->displayName = $v; }
     public function activate(): void { $this->isActive = true; $this->syncStatus = 'active'; } public function pause(): void { $this->syncStatus = 'paused'; }
     public function disconnect(): void { $this->isActive = false; $this->syncStatus = 'disconnected'; }
     public function markSynced(): void { $this->lastSyncAt = new \DateTimeImmutable(); }

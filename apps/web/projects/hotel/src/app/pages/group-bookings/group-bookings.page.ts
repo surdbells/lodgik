@@ -1,7 +1,9 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, BadgeComponent } from '@lodgik/shared';
+import { ActivePropertyService } from '@lodgik/shared';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-group-bookings',
@@ -240,9 +242,11 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
     }
   `,
 })
-export default class GroupBookingsPage implements OnInit {
+export default class GroupBookingsPage implements OnInit, OnDestroy {
   private api  = inject(ApiService);
   private toast = inject(ToastService);
+  private propSvc = inject(ActivePropertyService);
+  private sub!: Subscription;
 
   loading         = signal(true);
   groups          = signal<any[]>([]);
@@ -267,9 +271,17 @@ export default class GroupBookingsPage implements OnInit {
   };
 
   ngOnInit(): void {
-    this.api.get('/group-bookings').subscribe((r: any) => {
-      this.groups.set(r?.data || []);
-      this.loading.set(false);
+    this.loadGroups();
+    this.sub = this.propSvc.propertySwitched$.subscribe(() => this.loadGroups());
+  }
+
+  ngOnDestroy(): void { this.sub?.unsubscribe(); }
+
+  private loadGroups(): void {
+    this.loading.set(true);
+    this.api.get('/group-bookings', { property_id: this.propSvc.propertyId() }).subscribe({
+      next: (r: any) => { this.groups.set(r?.data || []); this.loading.set(false); },
+      error: () => { this.toast.error('Failed to load group bookings'); this.loading.set(false); },
     });
   }
 
@@ -278,30 +290,36 @@ export default class GroupBookingsPage implements OnInit {
       this.toast.error('Please fill in all required fields');
       return;
     }
-    this.api.post('/group-bookings', this.form).subscribe((r: any) => {
-      if (r?.success) {
-        this.toast.success('Group booking created');
-        this.showForm = false;
-        this.form = { name: '', booking_type: 'overnight', contact_name: '', company_name: '', check_in: '', check_out: '', total_rooms: 1, discount_percentage: 0 };
-        this.ngOnInit();
-      } else {
-        this.toast.error(r?.message || 'Failed to create');
-      }
+    const payload = { ...this.form, property_id: this.propSvc.propertyId() };
+    this.api.post('/group-bookings', payload).subscribe({
+      next: (r: any) => {
+        if (r?.success) {
+          this.toast.success('Group booking created');
+          this.showForm = false;
+          this.form = { name: '', booking_type: 'overnight', contact_name: '', company_name: '', check_in: '', check_out: '', total_rooms: 1, discount_percentage: 0 };
+          this.loadGroups();
+        } else {
+          this.toast.error(r?.message || 'Failed to create');
+        }
+      },
+      error: (e: any) => this.toast.error(e?.error?.message || 'Failed to create group booking'),
     });
   }
 
   confirm(id: string, event: Event): void {
     event.stopPropagation();
-    this.api.post(`/group-bookings/${id}/confirm`, {}).subscribe((r: any) => {
-      if (r?.success) { this.toast.success('Confirmed'); this.ngOnInit(); }
+    this.api.post(`/group-bookings/${id}/confirm`, {}).subscribe({
+      next: (r: any) => { if (r?.success) { this.toast.success('Confirmed'); this.loadGroups(); } },
+      error: () => this.toast.error('Failed to confirm'),
     });
   }
 
   cancel(id: string, event: Event): void {
     event.stopPropagation();
     if (!confirm('Cancel this group booking?')) return;
-    this.api.post(`/group-bookings/${id}/cancel`, {}).subscribe((r: any) => {
-      if (r?.success) { this.toast.success('Cancelled'); this.ngOnInit(); }
+    this.api.post(`/group-bookings/${id}/cancel`, {}).subscribe({
+      next: (r: any) => { if (r?.success) { this.toast.success('Cancelled'); this.loadGroups(); } },
+      error: () => this.toast.error('Failed to cancel'),
     });
   }
 
@@ -347,8 +365,9 @@ export default class GroupBookingsPage implements OnInit {
   }
 
   loadCorporateSummary(id: string): void {
-    this.api.get(`/group-bookings/${id}/corporate-summary`).subscribe((r: any) => {
-      if (r?.success) this.corporateSummary.set(r.data);
+    this.api.get(`/group-bookings/${id}/corporate-summary`).subscribe({
+      next: (r: any) => { if (r?.success) this.corporateSummary.set(r.data); },
+      error: () => this.toast.error('Failed to load folio summary'),
     });
   }
 

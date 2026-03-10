@@ -222,6 +222,14 @@ export const routes: Routes = [
         path: 'group-bookings',
         loadComponent: () => import('./pages/group-bookings/group-bookings.page'),
       },
+      {
+        path: 'corporate-profiles',
+        loadComponent: () => import('./pages/corporate-profiles/corporate-profiles.page'),
+      },
+      {
+        path: 'events',
+        loadComponent: () => import('./pages/events/events.page'),
+      },
       // ─── Phase 8B ─────────────────────────
       {
         path: 'assets',

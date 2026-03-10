@@ -309,6 +309,8 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Night Audit', icon: 'moon', route: '/night-audit', requiredModule: 'folio_billing' },
         { label: 'Pricing Rules', icon: 'trending-up', route: '/pricing-rules', requiredModule: 'dynamic_pricing' },
         { label: 'Group Bookings', icon: 'users', route: '/group-bookings' },
+        { label: 'Corporate Profiles', icon: 'building-2', route: '/corporate-profiles' },
+        { label: 'Events & Banquets', icon: 'calendar-days', route: '/events' },
         { label: 'Analytics', icon: 'chart-bar', route: '/analytics', requiredModule: 'basic_analytics' },
         { label: 'Reports', icon: 'file-chart-column', route: '/reports', requiredModule: 'basic_analytics' },
         { label: 'Police Reports', icon: 'shield-alert', route: '/police-reports' },

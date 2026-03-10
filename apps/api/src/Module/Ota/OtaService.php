@@ -19,6 +19,14 @@ final class OtaService
       if (isset($x['commission_percentage'])) $c->setCommissionPercentage($x['commission_percentage']);
       $this->em->persist($c); $this->em->flush(); return $c; }
 
+    public function updateChannel(string $id, array $d): OtaChannel
+    { $c = $this->em->find(OtaChannel::class, $id);
+      if (isset($d['room_type_mapping'])) $c->setRoomTypeMapping($d['room_type_mapping']);
+      if (isset($d['rate_plan_mapping'])) $c->setRatePlanMapping($d['rate_plan_mapping']);
+      if (isset($d['commission_percentage'])) $c->setCommissionPercentage($d['commission_percentage']);
+      if (isset($d['display_name'])) $c->setDisplayName($d['display_name']);
+      $this->em->flush(); return $c; }
+
     public function activateChannel(string $id): OtaChannel { $c = $this->em->find(OtaChannel::class, $id); $c->activate(); $this->em->flush(); return $c; }
     public function pauseChannel(string $id): OtaChannel { $c = $this->em->find(OtaChannel::class, $id); $c->pause(); $this->em->flush(); return $c; }
     public function disconnectChannel(string $id): OtaChannel { $c = $this->em->find(OtaChannel::class, $id); $c->disconnect(); $this->em->flush(); return $c; }

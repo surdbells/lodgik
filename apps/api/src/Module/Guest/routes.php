@@ -20,6 +20,7 @@ return function (App $app): void {
         $group->put('/{id}', [GuestController::class, 'update']);
         $group->delete('/{id}', [GuestController::class, 'delete']);
         $group->get('/{id}/documents', [GuestController::class, 'documents']);
+        $group->get('/{id}/intelligence', [GuestController::class, 'intelligence']);
     })
         ->add(new RoleMiddleware(['property_admin', 'manager', 'front_desk']))
         ->add(TenantMiddleware::class)

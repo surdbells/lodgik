@@ -1,13 +1,13 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { DecimalPipe, UpperCasePipe } from '@angular/common';
+import { DecimalPipe, UpperCasePipe, DatePipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-guests',
   standalone: true,
-  imports: [FormsModule, DecimalPipe, UpperCasePipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent],
+  imports: [FormsModule, DecimalPipe, UpperCasePipe, DatePipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Guests" subtitle="Manage guest profiles and history" icon="user-round" [breadcrumbs]="['Manage Guests', 'Guest List']">
       <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showForm = !showForm; resetForm()">
@@ -107,8 +107,79 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
           }
           <div class="flex gap-2 mt-5">
             <button (click)="edit(detailGuest); showDetail = false" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Edit</button>
+            <button (click)="loadIntelligence(detailGuest.id)"
+              class="px-4 py-2 text-sm bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors">
+              📊 Intelligence
+            </button>
             <button (click)="showDetail = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">Close</button>
           </div>
+
+          @if (loadingIntelligence) {
+            <div class="mt-4 text-center text-sm text-gray-400">Loading analytics…</div>
+          }
+
+          @if (guestIntelligence && !loadingIntelligence) {
+            <div class="mt-5 border-t pt-5 space-y-4">
+              <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Lifetime Analytics</p>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div class="bg-blue-50 rounded-lg p-3">
+                  <p class="text-xl font-bold text-blue-700">{{ guestIntelligence.total_stays }}</p>
+                  <p class="text-xs text-blue-500">Total Stays</p>
+                </div>
+                <div class="bg-green-50 rounded-lg p-3">
+                  <p class="text-sm font-bold text-green-700">₦{{ guestIntelligence.total_charges_ngn | number:'1.0-0' }}</p>
+                  <p class="text-xs text-green-500">Total Charges</p>
+                </div>
+                <div class="bg-emerald-50 rounded-lg p-3">
+                  <p class="text-sm font-bold text-emerald-700">₦{{ guestIntelligence.avg_spend_per_stay | number:'1.0-0' }}</p>
+                  <p class="text-xs text-emerald-500">Avg / Stay</p>
+                </div>
+                <div class="rounded-lg p-3" [class]="guestIntelligence.outstanding_ngn > 0 ? 'bg-red-50' : 'bg-gray-50'">
+                  <p class="text-sm font-bold" [class]="guestIntelligence.outstanding_ngn > 0 ? 'text-red-700' : 'text-gray-500'">
+                    ₦{{ guestIntelligence.outstanding_ngn | number:'1.0-0' }}
+                  </p>
+                  <p class="text-xs" [class]="guestIntelligence.outstanding_ngn > 0 ? 'text-red-400' : 'text-gray-400'">Outstanding</p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                @if (guestIntelligence.favourite_room_type) {
+                  <div class="bg-gray-50 rounded-lg px-3 py-2">
+                    <p class="text-xs text-gray-400">Favourite Room Type</p>
+                    <p class="font-medium text-gray-800">{{ guestIntelligence.favourite_room_type }}</p>
+                  </div>
+                }
+                @if (guestIntelligence.loyalty_balance > 0) {
+                  <div class="bg-amber-50 rounded-lg px-3 py-2">
+                    <p class="text-xs text-amber-500">Loyalty Points</p>
+                    <p class="font-bold text-amber-700">{{ guestIntelligence.loyalty_balance | number }}</p>
+                  </div>
+                }
+                @if (guestIntelligence.first_stay_date) {
+                  <div class="bg-gray-50 rounded-lg px-3 py-2">
+                    <p class="text-xs text-gray-400">First Stay</p>
+                    <p class="font-medium text-gray-800">{{ guestIntelligence.first_stay_date | date:'mediumDate' }}</p>
+                  </div>
+                }
+                @if (guestIntelligence.last_stay_date) {
+                  <div class="bg-gray-50 rounded-lg px-3 py-2">
+                    <p class="text-xs text-gray-400">Last Stay</p>
+                    <p class="font-medium text-gray-800">{{ guestIntelligence.last_stay_date | date:'mediumDate' }}</p>
+                  </div>
+                }
+              </div>
+              @if (guestIntelligence.upcoming_bookings?.length > 0) {
+                <div>
+                  <p class="text-xs font-medium text-gray-500 mb-2">Upcoming Bookings</p>
+                  @for (b of guestIntelligence.upcoming_bookings; track b.id) {
+                    <div class="flex justify-between items-center bg-blue-50 rounded-lg px-3 py-2 mb-1 text-xs">
+                      <span class="text-blue-800">{{ b.check_in }} → {{ b.check_out }}</span>
+                      <span class="text-blue-600">{{ b.room_number ?? '—' }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
         </div>
       </div>
     }
@@ -130,6 +201,8 @@ export class GuestsPage implements OnInit {
   editId = '';
   showDetail = false;
   detailGuest: any = null;
+  guestIntelligence: any = null;
+  loadingIntelligence = false;
   showMerge = false;
   mergeSourceId = '';
   mergeTargetId = '';
@@ -215,5 +288,20 @@ export class GuestsPage implements OnInit {
       vvip: 'bg-red-100 text-red-700',
     };
     return map[status] ?? 'bg-gray-100 text-gray-600';
+  }
+
+  loadIntelligence(guestId: string): void {
+    this.guestIntelligence = null;
+    this.loadingIntelligence = true;
+    this.api.get(`/guests/${guestId}/intelligence`).subscribe({
+      next: (r: any) => {
+        this.guestIntelligence = r.data;
+        this.loadingIntelligence = false;
+      },
+      error: () => {
+        this.loadingIntelligence = false;
+        this.toast.error('Failed to load guest intelligence');
+      },
+    });
   }
 }

@@ -201,4 +201,15 @@ final class GuestController
             'total_stays' => $g->getTotalStays(),
         ];
     }
+
+    /** GET /api/guests/{id}/intelligence */
+    public function intelligence(Request $request, Response $response, array $args): Response
+    {
+        try {
+            $data = $this->guestService->getIntelligence($args['id']);
+            return $this->response->success($response, $data);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
 }

@@ -195,4 +195,110 @@ final class GuestService
     {
         return $this->docRepo->findByGuest($guestId);
     }
+
+    // ═══ Guest Intelligence (Lifetime Analytics) ═══════════════
+
+    /**
+     * Lifetime analytics for a single guest across all their stays.
+     * Returns booking history, spend totals, preferences, loyalty info.
+     */
+    public function getIntelligence(string $guestId): array
+    {
+        $guest = $this->getById($guestId);
+        if (!$guest) throw new \RuntimeException('Guest not found', 404);
+
+        $conn = $this->em->getConnection();
+
+        // ── Booking history ───────────────────────────────────────
+        $bookings = $conn->fetchAllAssociative(
+            "SELECT b.id, b.booking_type, b.status, b.check_in, b.check_out,
+                    b.total_amount, b.source, r.room_number, rt.name AS room_type_name,
+                    b.created_at
+             FROM bookings b
+             LEFT JOIN rooms r ON r.id = b.room_id
+             LEFT JOIN room_types rt ON rt.id = r.room_type_id
+             WHERE b.guest_id = :gid AND b.status NOT IN ('cancelled')
+             ORDER BY b.check_in DESC
+             LIMIT 20",
+            ['gid' => $guestId]
+        );
+
+        // ── Spend stats ───────────────────────────────────────────
+        $spendRow = $conn->fetchAssociative(
+            "SELECT COUNT(DISTINCT b.id)                              AS total_stays,
+                    COALESCE(SUM(fc.amount), 0)                       AS total_charges,
+                    COALESCE(SUM(fp.amount), 0)                       AS total_paid,
+                    MIN(b.check_in)                                   AS first_stay,
+                    MAX(b.check_in)                                   AS last_stay
+             FROM bookings b
+             LEFT JOIN folios f  ON f.booking_id = b.id
+             LEFT JOIN folio_charges fc ON fc.folio_id = f.id AND fc.is_void = FALSE
+             LEFT JOIN folio_payments fp ON fp.folio_id = f.id
+             WHERE b.guest_id = :gid AND b.status NOT IN ('cancelled')",
+            ['gid' => $guestId]
+        );
+
+        // ── Favourite room type ───────────────────────────────────
+        $favRoomRow = $conn->fetchAssociative(
+            "SELECT rt.name, COUNT(*) AS cnt
+             FROM bookings b
+             JOIN rooms r ON r.id = b.room_id
+             JOIN room_types rt ON rt.id = r.room_type_id
+             WHERE b.guest_id = :gid AND b.status NOT IN ('cancelled')
+             GROUP BY rt.name ORDER BY cnt DESC LIMIT 1",
+            ['gid' => $guestId]
+        );
+
+        // ── Preferred booking source ──────────────────────────────
+        $favSourceRow = $conn->fetchAssociative(
+            "SELECT source, COUNT(*) AS cnt
+             FROM bookings
+             WHERE guest_id = :gid AND status NOT IN ('cancelled') AND source IS NOT NULL
+             GROUP BY source ORDER BY cnt DESC LIMIT 1",
+            ['gid' => $guestId]
+        );
+
+        // ── Upcoming bookings ─────────────────────────────────────
+        $upcoming = $conn->fetchAllAssociative(
+            "SELECT b.id, b.status, b.check_in, b.check_out, b.total_amount,
+                    r.room_number, rt.name AS room_type_name
+             FROM bookings b
+             LEFT JOIN rooms r ON r.id = b.room_id
+             LEFT JOIN room_types rt ON rt.id = r.room_type_id
+             WHERE b.guest_id = :gid AND b.check_in >= CURRENT_DATE
+               AND b.status IN ('confirmed', 'checked_in')
+             ORDER BY b.check_in ASC LIMIT 5",
+            ['gid' => $guestId]
+        );
+
+        // ── Loyalty points ────────────────────────────────────────
+        $loyaltyRow = $conn->fetchAssociative(
+            "SELECT COALESCE(SUM(lp.points_earned), 0) - COALESCE(SUM(lp.points_redeemed), 0) AS balance,
+                    COALESCE(SUM(lp.points_earned), 0) AS total_earned
+             FROM loyalty_points lp WHERE lp.guest_id = :gid",
+            ['gid' => $guestId]
+        ) ?: ['balance' => 0, 'total_earned' => 0];
+
+        $totalStays   = (int)   ($spendRow['total_stays']   ?? 0);
+        $totalCharges = (float) ($spendRow['total_charges'] ?? 0);
+        $totalPaid    = (float) ($spendRow['total_paid']    ?? 0);
+        $avgSpend     = $totalStays > 0 ? round($totalCharges / $totalStays, 2) : 0;
+
+        return [
+            'guest'               => $guest->toArray(),
+            'total_stays'         => $totalStays,
+            'total_charges_ngn'   => round($totalCharges, 2),
+            'total_paid_ngn'      => round($totalPaid, 2),
+            'outstanding_ngn'     => round(max(0, $totalCharges - $totalPaid), 2),
+            'avg_spend_per_stay'  => $avgSpend,
+            'first_stay_date'     => $spendRow['first_stay'] ?? null,
+            'last_stay_date'      => $spendRow['last_stay']  ?? null,
+            'favourite_room_type' => $favRoomRow ? $favRoomRow['name'] : null,
+            'preferred_source'    => $favSourceRow ? $favSourceRow['source'] : null,
+            'loyalty_balance'     => (int) ($loyaltyRow['balance']      ?? 0),
+            'loyalty_earned'      => (int) ($loyaltyRow['total_earned'] ?? 0),
+            'upcoming_bookings'   => $upcoming,
+            'recent_bookings'     => $bookings,
+        ];
+    }
 }

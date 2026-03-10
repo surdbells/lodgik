@@ -988,6 +988,20 @@ return function (ContainerBuilder $builder): void {
         \Lodgik\Module\Ota\OtaController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Ota\OtaController(
             svc: $c->get(\Lodgik\Module\Ota\OtaService::class),
         ),
+        // ── Corporate Profiles ────────────────────────────────────────────
+        \Lodgik\Module\Corporate\CorporateService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Corporate\CorporateService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Corporate\CorporateController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Corporate\CorporateController(
+            svc: $c->get(\Lodgik\Module\Corporate\CorporateService::class),
+        ),
+        // ── Events / Banquet Management ───────────────────────────────────
+        \Lodgik\Module\Event\EventService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Event\EventService(
+            em: $c->get(EntityManagerInterface::class),
+        ),
+        \Lodgik\Module\Event\EventController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Event\EventController(
+            svc: $c->get(\Lodgik\Module\Event\EventService::class),
+        ),
         \Lodgik\Module\IoT\IoTService::class => fn(ContainerInterface $c) => new \Lodgik\Module\IoT\IoTService(
             em: $c->get(EntityManagerInterface::class),
         ),

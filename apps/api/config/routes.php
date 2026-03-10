@@ -99,4 +99,10 @@ return function (App $app): void {
 
     // ─── Generic File Upload ──────────────────────────────────
     (require __DIR__ . '/../src/Module/Upload/routes.php')($app);
+
+    // ── Phase 3: Corporate Profiles ───────────────────────────────
+    (require __DIR__ . '/../src/Module/Corporate/routes.php')($app);
+
+    // ── Phase 4: Events / Banquet Management ─────────────────────
+    (require __DIR__ . '/../src/Module/Event/routes.php')($app);
 };

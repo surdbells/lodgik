@@ -327,10 +327,32 @@ final class FinanceService
       if (!empty($x['end_date'])) $r->setEndDate(new \DateTimeImmutable($x['end_date']));
       if (isset($x['days_of_week'])) $r->setDaysOfWeek($x['days_of_week']);
       if (isset($x['min_occupancy'])) $r->setMinOccupancy((int)$x['min_occupancy']);
+      if (isset($x['max_occupancy'])) $r->setMaxOccupancy((int)$x['max_occupancy']);
       if (isset($x['min_nights'])) $r->setMinNights((int)$x['min_nights']);
+      if (isset($x['advance_days'])) $r->setAdvanceDays((int)$x['advance_days']);
       if (isset($x['priority'])) $r->setPriority((int)$x['priority']);
+      if (isset($x['description'])) $r->setDescription($x['description']);
+      if (isset($x['is_active'])) $r->setIsActive((bool)$x['is_active']);
       $this->em->persist($r); $this->em->flush(); return $r; }
-    public function updatePricingRule(string $id, array $d): PricingRule { $r = $this->em->find(PricingRule::class, $id); if (isset($d['name'])) $r->setName($d['name']); if (isset($d['adjustment_value'])) $r->setAdjustmentValue($d['adjustment_value']); if (isset($d['is_active'])) $r->setIsActive((bool)$d['is_active']); if (isset($d['priority'])) $r->setPriority((int)$d['priority']); $this->em->flush(); return $r; }
+    public function updatePricingRule(string $id, array $d): PricingRule {
+      $r = $this->em->find(PricingRule::class, $id);
+      if (isset($d['name'])) $r->setName($d['name']);
+      if (isset($d['adjustment_value'])) $r->setAdjustmentValue($d['adjustment_value']);
+      if (isset($d['adjustment_type'])) $r->setAdjustmentType($d['adjustment_type']);
+      if (isset($d['rule_type'])) $r->setRuleType($d['rule_type']);
+      if (isset($d['is_active'])) $r->setIsActive((bool)$d['is_active']);
+      if (isset($d['priority'])) $r->setPriority((int)$d['priority']);
+      if (array_key_exists('room_type_id', $d)) $r->setRoomTypeId($d['room_type_id']);
+      if (array_key_exists('start_date', $d)) $r->setStartDate($d['start_date'] ? new \DateTimeImmutable($d['start_date']) : null);
+      if (array_key_exists('end_date', $d)) $r->setEndDate($d['end_date'] ? new \DateTimeImmutable($d['end_date']) : null);
+      if (array_key_exists('days_of_week', $d)) $r->setDaysOfWeek($d['days_of_week']);
+      if (array_key_exists('min_occupancy', $d)) $r->setMinOccupancy($d['min_occupancy'] !== null ? (int)$d['min_occupancy'] : null);
+      if (array_key_exists('max_occupancy', $d)) $r->setMaxOccupancy($d['max_occupancy'] !== null ? (int)$d['max_occupancy'] : null);
+      if (array_key_exists('advance_days', $d)) $r->setAdvanceDays($d['advance_days'] !== null ? (int)$d['advance_days'] : null);
+      if (array_key_exists('min_nights', $d)) $r->setMinNights($d['min_nights'] !== null ? (int)$d['min_nights'] : null);
+      if (array_key_exists('description', $d)) $r->setDescription($d['description']);
+      $this->em->flush(); return $r; }
+    public function deletePricingRule(string $id): void { $r = $this->em->find(PricingRule::class, $id); if ($r) { $this->em->remove($r); $this->em->flush(); } }
 
     public function calculateDynamicRate(string $pid, ?string $rtId, string $baseRate, \DateTimeImmutable $date, ?int $nights = null, ?float $occRate = null): array
     { $rules = $this->em->getRepository(PricingRule::class)->findBy(['propertyId' => $pid, 'isActive' => true], ['priority' => 'DESC']);
