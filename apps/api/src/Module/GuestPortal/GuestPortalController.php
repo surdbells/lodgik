@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Entity\Amenity;
 use Lodgik\Entity\AmenityVoucher;
 use Lodgik\Entity\Room;
+use Lodgik\Entity\RoomType;
 use Lodgik\Module\Chat\ChatService;
 use Lodgik\Module\Folio\FolioService;
 use Lodgik\Module\Gym\GymService;
@@ -458,10 +459,51 @@ final class GuestPortalController
 
         $property = $this->propertyRepo->find($propertyId);
 
-        $wifi = [
-            'ssid'     => $property?->getSetting('wifi_ssid'),
-            'password' => $property?->getSetting('wifi_password'),
-        ];
+        // ── WiFi: only expose credentials if the guest's room has a WiFi amenity
+        //    AND the property has wifi_ssid configured in operational settings
+        $wifi = null;
+        $wifiSsid     = $property?->getSetting('wifi_ssid');
+        $wifiPassword = $property?->getSetting('wifi_password');
+
+        if ($wifiSsid) {
+            $booking = $this->bookingRepo->find($bookingId);
+            $roomHasWifi = false;
+
+            if ($booking?->getRoomId()) {
+                $room = $this->em->getRepository(Room::class)->find($booking->getRoomId());
+                if ($room) {
+                    // Check room-level custom amenities first
+                    $roomAmenities = $room->getAmenities() ?? [];
+                    foreach ($roomAmenities as $a) {
+                        $name = strtolower(is_array($a) ? ($a['name'] ?? '') : (string) $a);
+                        if (str_contains($name, 'wifi') || str_contains($name, 'internet') || str_contains($name, 'wi-fi')) {
+                            $roomHasWifi = true;
+                            break;
+                        }
+                    }
+
+                    // Also check room type amenities if room-level didn't match
+                    if (!$roomHasWifi) {
+                        $roomType = $this->em->getRepository(RoomType::class)->find($room->getRoomTypeId());
+                        $typeAmenities = $roomType?->getAmenities() ?? [];
+                        foreach ($typeAmenities as $a) {
+                            $name = strtolower(is_array($a) ? ($a['name'] ?? '') : (string) $a);
+                            if (str_contains($name, 'wifi') || str_contains($name, 'internet') || str_contains($name, 'wi-fi')) {
+                                $roomHasWifi = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ($roomHasWifi) {
+                $wifi = [
+                    'ssid'     => $wifiSsid,
+                    'password' => $wifiPassword,
+                ];
+            }
+        }
 
         $amenities = $this->em->getRepository(Amenity::class)
             ->findBy(['tenantId' => $tenantId, 'isActive' => true]);

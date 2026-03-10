@@ -503,9 +503,19 @@ import {
           </div>
 
           @if (extendCheckoutDate && extendNightsPreview() > 0) {
-            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-sm">
-              <p class="text-amber-700">+{{ extendNightsPreview() }} extra night(s)</p>
-              <p class="text-amber-900 font-semibold">Additional charge: ₦{{ extendChargePreview() | number:'1.0-0' }}</p>
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-sm space-y-1">
+              <div class="flex justify-between text-amber-700">
+                <span>Extra nights</span>
+                <span class="font-medium">{{ extendNightsPreview() }} night(s)</span>
+              </div>
+              <div class="flex justify-between text-amber-700">
+                <span>Rate per night</span>
+                <span class="font-medium">₦{{ (+booking()!.rate_per_night) | number:'1.0-0' }}</span>
+              </div>
+              <div class="border-t border-amber-200 pt-1 flex justify-between text-amber-900 font-semibold">
+                <span>Additional charge</span>
+                <span>₦{{ extendChargePreview() | number:'1.0-0' }}</span>
+              </div>
             </div>
           }
 
@@ -567,14 +577,20 @@ export class BookingDetailPage implements OnInit {
   readonly minExtendDate = computed(() => {
     const b = this.booking();
     if (!b?.check_out) return '';
-    // datetime-local min must be formatted as YYYY-MM-DDTHH:mm
-    return new Date(b.check_out).toISOString().slice(0, 16);
+    // Min is the day AFTER the current checkout — current checkout date is not selectable
+    const d = new Date(b.check_out);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10); // YYYY-MM-DD for type="date"
   });
 
   readonly extendNightsPreview = computed(() => {
     if (!this.extendCheckoutDate || !this.booking()?.check_out) return 0;
-    const diff = new Date(this.extendCheckoutDate).getTime() - new Date(this.booking()!.check_out).getTime();
-    return Math.max(0, Math.ceil(diff / 86400000));
+    // Use date-only comparison to avoid timezone/time-of-day skew
+    const checkoutDate = new Date(this.booking()!.check_out);
+    const checkoutDay  = new Date(checkoutDate.getFullYear(), checkoutDate.getMonth(), checkoutDate.getDate());
+    const newDay       = new Date(this.extendCheckoutDate); // YYYY-MM-DD parsed as local midnight
+    const diff = newDay.getTime() - checkoutDay.getTime();
+    return Math.max(0, Math.round(diff / 86400000));
   });
 
   readonly extendChargePreview = computed(() => {
@@ -655,7 +671,7 @@ export class BookingDetailPage implements OnInit {
     if (!this.extendCheckoutDate || this.extendingStay()) return;
     this.extendingStay.set(true);
     this.api.post(`/bookings/${this.bookingId}/extend-checkout`, {
-      new_checkout_date: this.extendCheckoutDate.replace('T', ' ') + ':00',
+      new_checkout_date: this.extendCheckoutDate + ' 12:00:00',
       reason: this.extendReason || null,
     }).subscribe({
       next: r => {
