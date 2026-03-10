@@ -1,14 +1,13 @@
 import {
-  Component, inject, OnInit, OnDestroy, signal, computed,
+  Component, inject, signal, computed, effect,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DecimalPipe, DatePipe } from '@angular/common';
+import { DecimalPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import {
   ApiService, PageHeaderComponent, LoadingSpinnerComponent,
   ToastService, BadgeComponent, EmptyStateComponent, StatsCardComponent,
 } from '@lodgik/shared';
 import { ActivePropertyService } from '@lodgik/shared';
-import { Subscription } from 'rxjs';
 
 interface EventSpace {
   id: string;
@@ -72,8 +71,8 @@ const DURATION_TYPES = [
 const LAYOUTS = ['boardroom', 'theatre', 'u_shape', 'classroom', 'cocktail', 'banquet'];
 
 const STATUS_COLORS: Record<string, string> = {
-  tentative: 'yellow', confirmed: 'green', in_progress: 'blue',
-  completed: 'gray', cancelled: 'red',
+  tentative: 'warning', confirmed: 'success', in_progress: 'info',
+  completed: 'neutral', cancelled: 'danger',
 };
 
 const EMPTY_EVENT_FORM = () => ({
@@ -100,7 +99,7 @@ const EMPTY_SPACE_FORM = () => ({
   selector: 'app-events',
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent,
-            EmptyStateComponent, StatsCardComponent, DecimalPipe, DatePipe],
+            EmptyStateComponent, StatsCardComponent, DecimalPipe, DatePipe, TitleCasePipe],
   template: `
     <ui-page-header title="Events & Banquets" icon="calendar-days"
       [breadcrumbs]="['Operations', 'Events & Banquets']"
@@ -178,7 +177,7 @@ const EMPTY_SPACE_FORM = () => ({
                     <h3 class="font-semibold text-gray-900">{{ s.name }}</h3>
                     <p class="text-sm text-gray-500">Capacity: {{ s.capacity }} guests</p>
                   </div>
-                  <ui-badge [color]="s.is_active ? 'green' : 'gray'" [label]="s.is_active ? 'Active' : 'Inactive'"></ui-badge>
+                  <ui-badge [variant]="s.is_active ? 'success' : 'neutral'">{{ s.is_active ? 'Active' : 'Inactive' }}</ui-badge>
                 </div>
                 <div class="p-4 space-y-3 text-sm">
                   @if (s.layouts?.length) {
@@ -268,7 +267,7 @@ const EMPTY_SPACE_FORM = () => ({
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="text-xs font-mono text-gray-400">{{ e.reference }}</span>
-                      <ui-badge [color]="statusColors[e.status] || 'gray'" [label]="e.status | titlecase"></ui-badge>
+                      <ui-badge [variant]="statusColors[e.status] || 'neutral'">{{ e.status | titlecase }}</ui-badge>
                       <span class="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full">{{ e.event_type }}</span>
                     </div>
                     <h3 class="font-semibold text-gray-900 mt-1">{{ e.event_name }}</h3>
@@ -583,11 +582,10 @@ const EMPTY_SPACE_FORM = () => ({
     }
   `,
 })
-export default class EventsPage implements OnInit, OnDestroy {
+export default class EventsPage {
   private api     = inject(ApiService);
   private propSvc = inject(ActivePropertyService);
   private toast   = inject(ToastService);
-  private sub?:    Subscription;
 
   loading         = signal(true);
   saving          = signal(false);
@@ -626,13 +624,12 @@ export default class EventsPage implements OnInit, OnDestroy {
     return list;
   });
 
-  ngOnInit(): void {
-    this.sub = this.propSvc.propertyId$.subscribe(pid => {
+  constructor() {
+    effect(() => {
+      const pid = this.propSvc.propertyId();
       if (pid) this.loadAll(pid);
     });
   }
-
-  ngOnDestroy(): void { this.sub?.unsubscribe(); }
 
   loadAll(pid: string): void {
     this.loading.set(true);

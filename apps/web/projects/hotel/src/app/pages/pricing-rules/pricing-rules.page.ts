@@ -128,7 +128,7 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
                     @if (r.advance_days != null) { <span>≥ {{ r.advance_days }} days advance</span> }
                     @if (r.min_nights != null) { <span>Min {{ r.min_nights }} nights</span> }
                     @if (r.days_of_week?.length) {
-                      <span>{{ r.days_of_week!.map(d => dayLabel(d)).join(', ') }}</span>
+                      <span>{{ getDaysLabel(r.days_of_week!) }}</span>
                     }
                   </div>
                 </div>
@@ -527,6 +527,7 @@ export default class PricingRulesPage implements OnInit, OnDestroy {
   isDaySelected(d: number): boolean { return (this.form.days_of_week || []).includes(d); }
 
   dayLabel(d: number): string { return DAY_LABELS[d] ?? `Day ${d}`; }
+  getDaysLabel(days: number[]): string { return days.map(d => this.dayLabel(d)).join(', '); }
 
   ruleTypeLabel(v: string): string { return RULE_TYPES.find(r => r.value === v)?.label ?? v; }
 

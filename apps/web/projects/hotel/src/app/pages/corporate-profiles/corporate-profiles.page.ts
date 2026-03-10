@@ -1,5 +1,5 @@
 import {
-  Component, inject, OnInit, OnDestroy, signal, computed,
+  Component, inject, signal, computed, effect,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe, DatePipe } from '@angular/common';
@@ -8,7 +8,6 @@ import {
   ToastService, BadgeComponent, EmptyStateComponent,
 } from '@lodgik/shared';
 import { ActivePropertyService } from '@lodgik/shared';
-import { Subscription } from 'rxjs';
 
 interface CorporateProfile {
   id: string;
@@ -44,7 +43,7 @@ const EMPTY_FORM = () => ({
   contact_phone: '',
   billing_address: '',
   tax_id: '',
-  credit_limit_type: 'fixed' as const,
+  credit_limit_type: 'fixed' as 'fixed' | 'unlimited',
   credit_limit_ngn: null as number | null,
   negotiated_rate_discount: 0,
   payment_terms: '',
@@ -115,7 +114,7 @@ const EMPTY_FORM = () => ({
                   <h3 class="font-semibold text-gray-900 truncate">{{ c.company_name }}</h3>
                   <p class="text-sm text-gray-500">{{ c.contact_name }}</p>
                 </div>
-                <ui-badge [color]="c.is_active ? 'green' : 'gray'" [label]="c.is_active ? 'Active' : 'Inactive'"></ui-badge>
+                <ui-badge [variant]="c.is_active ? 'success' : 'neutral'">{{ c.is_active ? 'Active' : 'Inactive' }}</ui-badge>
               </div>
 
               <!-- Card body -->
@@ -328,8 +327,8 @@ const EMPTY_FORM = () => ({
                         <p class="text-xs text-gray-500">{{ b.check_in }} → {{ b.check_out }} · {{ b.total_rooms }} rooms</p>
                       </div>
                       <ui-badge
-                        [color]="b.status === 'confirmed' ? 'green' : b.status === 'tentative' ? 'yellow' : b.status === 'cancelled' ? 'red' : 'gray'"
-                        [label]="b.status">
+                        [variant]="b.status === 'confirmed' ? 'success' : b.status === 'tentative' ? 'warning' : b.status === 'cancelled' ? 'danger' : 'neutral'">
+                        {{ b.status }}
                       </ui-badge>
                     </div>
                   }
@@ -348,11 +347,10 @@ const EMPTY_FORM = () => ({
     }
   `,
 })
-export default class CorporateProfilesPage implements OnInit, OnDestroy {
+export default class CorporateProfilesPage {
   private api      = inject(ApiService);
   private propSvc  = inject(ActivePropertyService);
   private toast    = inject(ToastService);
-  private sub?: Subscription;
 
   loading         = signal(true);
   saving          = signal(false);
@@ -363,6 +361,13 @@ export default class CorporateProfilesPage implements OnInit, OnDestroy {
   searchQ         = '';
   filterActive    = '';
   form            = EMPTY_FORM();
+
+  constructor() {
+    effect(() => {
+      const pid = this.propSvc.propertyId();
+      if (pid) this.load(pid);
+    });
+  }
 
   filtered = computed(() => {
     let list = this.profiles();
@@ -383,14 +388,6 @@ export default class CorporateProfilesPage implements OnInit, OnDestroy {
     withDiscount: this.profiles().filter(c => +c.negotiated_rate_discount > 0).length,
     withCredit:  this.profiles().filter(c => c.credit_limit_ngn !== null || c.credit_limit_type === 'unlimited').length,
   }));
-
-  ngOnInit(): void {
-    this.sub = this.propSvc.propertyId$.subscribe(pid => {
-      if (pid) this.load(pid);
-    });
-  }
-
-  ngOnDestroy(): void { this.sub?.unsubscribe(); }
 
   load(pid: string): void {
     this.loading.set(true);
