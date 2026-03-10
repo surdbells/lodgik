@@ -281,7 +281,7 @@ export default class GuestPreferencesPage implements OnInit {
   save(): void {
     this.saving.set(true);
     this.saved.set(false);
-    this.guestApi.post('/preferences', this.prefs).subscribe({
+    this.guestApi.put('/preferences', this.prefs).subscribe({
       next: (r: any) => {
         this.saving.set(false);
         if (r.success) { this.saved.set(true); setTimeout(() => this.saved.set(false), 3000); }

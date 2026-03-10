@@ -16,6 +16,14 @@ export class GuestApiService {
     return this.http.post<T>(`${this.base}${path}`, body, { headers: this.headers() });
   }
 
+  put<T = any>(path: string, body: any = {}): Observable<T> {
+    return this.http.put<T>(`${this.base}${path}`, body, { headers: this.headers() });
+  }
+
+  patch<T = any>(path: string, body: any = {}): Observable<T> {
+    return this.http.patch<T>(`${this.base}${path}`, body, { headers: this.headers() });
+  }
+
   delete<T = any>(path: string): Observable<T> {
     return this.http.delete<T>(`${this.base}${path}`, { headers: this.headers() });
   }
