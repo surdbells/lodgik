@@ -14,7 +14,7 @@ import { GuestThemeService } from '../../services/guest-theme.service';
   imports: [RouterOutlet, RouterLink, LucideAngularModule],
   template: `
     <!-- Root shell — theme class applied here -->
-    <div [class]="th.page() + ' flex flex-col'">
+    <div [class]="th.page() + ' h-dvh flex flex-col overflow-hidden'">
 
       <!-- Top bar -->
       <header class="px-4 py-3 flex items-center justify-between border-b" [class]="th.header()">
@@ -47,13 +47,13 @@ import { GuestThemeService } from '../../services/guest-theme.service';
       </header>
 
       <!-- Page content -->
-      <main class="flex-1 overflow-auto">
+      <main class="flex-1 overflow-y-auto">
         <router-outlet></router-outlet>
       </main>
 
       <!-- Bottom nav -->
       @if (guestName()) {
-        <nav class="border-t px-2 py-1 safe-area-bottom" [class]="th.navBg()">
+        <nav class="shrink-0 border-t px-2 py-1 safe-area-bottom" [class]="th.navBg()">
           <div class="flex justify-around max-w-md mx-auto">
 
             <a routerLink="/guest/home"

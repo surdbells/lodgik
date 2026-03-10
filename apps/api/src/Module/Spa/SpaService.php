@@ -26,7 +26,7 @@ final class SpaService
       if ($status) $qb->andWhere('b.status = :s')->setParameter('s', $status);
       return array_map(fn($b) => $b->toArray(), $qb->getQuery()->getResult()); }
 
-    public function createBooking(string $pid, string $svcId, string $svcName, string $gId, string $gName, string $date, string $time, string $price, string $tid, ?string $therapist = null): SpaBooking
+    public function createBooking(string $pid, string $svcId, string $svcName, ?string $gId, string $gName, string $date, string $time, string $price, string $tid, ?string $therapist = null): SpaBooking
     { $b = new SpaBooking($pid, $svcId, $svcName, $gId, $gName, new \DateTimeImmutable($date), $time, $price, $tid); if ($therapist) $b->setTherapistName($therapist); $this->em->persist($b); $this->em->flush(); return $b; }
 
     public function startBooking(string $id): SpaBooking { $b = $this->em->find(SpaBooking::class, $id); $b->start(); $this->em->flush(); return $b; }
@@ -38,7 +38,7 @@ final class SpaService
     { $c = ['propertyId' => $propertyId]; if ($date) $c['accessDate'] = new \DateTimeImmutable($date);
       return array_map(fn($p) => $p->toArray(), $this->em->getRepository(PoolAccessLog::class)->findBy($c, ['checkInTime' => 'DESC'])); }
 
-    public function poolCheckIn(string $pid, string $gId, string $gName, string $time, string $tid, string $area = 'main_pool'): PoolAccessLog
+    public function poolCheckIn(string $pid, ?string $gId, string $gName, string $time, string $tid, string $area = 'main_pool'): PoolAccessLog
     { $p = new PoolAccessLog($pid, $gId, $gName, new \DateTimeImmutable(), $time, $tid); $p->setArea($area); $this->em->persist($p); $this->em->flush(); return $p; }
 
     public function poolCheckOut(string $id, string $time): PoolAccessLog { $p = $this->em->find(PoolAccessLog::class, $id); $p->checkOut($time); $this->em->flush(); return $p; }

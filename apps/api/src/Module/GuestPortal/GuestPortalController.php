@@ -6,6 +6,7 @@ namespace Lodgik\Module\GuestPortal;
 use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Entity\Amenity;
 use Lodgik\Entity\AmenityVoucher;
+use Lodgik\Entity\Room;
 use Lodgik\Module\Chat\ChatService;
 use Lodgik\Module\Folio\FolioService;
 use Lodgik\Module\Gym\GymService;
@@ -199,6 +200,7 @@ final class GuestPortalController
         $property    = $this->propertyRepo->find($propertyId);
         $visitorName = trim($body['visitor_name']);
         $guestName   = $guest?->getFullName() ?? 'Guest';
+        $bookingRoom = $booking?->getRoomId() ? $this->em->find(Room::class, $booking->getRoomId()) : null;
 
         $code = $this->securityService->createVisitorCode(
             bookingId:   $bookingId,
@@ -211,7 +213,7 @@ final class GuestPortalController
             extra: [
                 'visitor_phone' => $body['visitor_phone'] ?? null,
                 'purpose'       => $body['purpose'] ?? null,
-                'room_number'   => $booking?->getRoomNumber(),
+                'room_number'   => $bookingRoom?->getRoomNumber(),
                 'guest_name'    => $guestName,
             ],
         );
@@ -308,14 +310,15 @@ final class GuestPortalController
         $booking = $this->bookingRepo->find($req->getAttribute('guest.booking_id'));
         if (!$booking) return JsonResponse::error($res, 'Booking not found', 404);
 
-        $active = (bool) ($body['active'] ?? true);
+        $active     = (bool) ($body['active'] ?? true);
+        $room       = $booking->getRoomId() ? $this->em->find(Room::class, $booking->getRoomId()) : null;
 
         $r = $this->roomControlService->toggleDnd(
             $req->getAttribute('guest.property_id'),
             $booking->getId(),
             $req->getAttribute('guest.guest_id'),
             $booking->getRoomId(),
-            $booking->getRoomNumber() ?? '',
+            $room?->getRoomNumber() ?? '',
             $active,
             $req->getAttribute('guest.tenant_id'),
         );
@@ -330,14 +333,15 @@ final class GuestPortalController
         $booking = $this->bookingRepo->find($req->getAttribute('guest.booking_id'));
         if (!$booking) return JsonResponse::error($res, 'Booking not found', 404);
 
-        $active = (bool) ($body['active'] ?? true);
+        $active     = (bool) ($body['active'] ?? true);
+        $room       = $booking->getRoomId() ? $this->em->find(Room::class, $booking->getRoomId()) : null;
 
         $r = $this->roomControlService->toggleMakeUpRoom(
             $req->getAttribute('guest.property_id'),
             $booking->getId(),
             $req->getAttribute('guest.guest_id'),
             $booking->getRoomId(),
-            $booking->getRoomNumber() ?? '',
+            $room?->getRoomNumber() ?? '',
             $active,
             $req->getAttribute('guest.tenant_id'),
         );
@@ -354,12 +358,13 @@ final class GuestPortalController
 
         if (empty($body['description'])) return JsonResponse::error($res, 'description is required', 422);
 
+        $room = $booking->getRoomId() ? $this->em->find(Room::class, $booking->getRoomId()) : null;
         $r = $this->roomControlService->reportMaintenance(
             $req->getAttribute('guest.property_id'),
             $booking->getId(),
             $req->getAttribute('guest.guest_id'),
             $booking->getRoomId(),
-            $booking->getRoomNumber() ?? '',
+            $room?->getRoomNumber() ?? '',
             trim($body['description']),
             $req->getAttribute('guest.tenant_id'),
             $body['photo_url'] ?? null,

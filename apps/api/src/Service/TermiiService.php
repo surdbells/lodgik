@@ -78,6 +78,52 @@ final class TermiiService
     }
 
     /**
+     * Send a WhatsApp message via Termii's WhatsApp channel.
+     * Falls back silently if not available.
+     */
+    public function sendWhatsApp(string $phone, string $message): bool
+    {
+        if (empty($this->apiKey) || $this->apiKey === 'disabled') {
+            $this->logger->info("WhatsApp (disabled): to=$phone");
+            return true;
+        }
+
+        $phone = $this->normalizePhone($phone);
+
+        $payload = [
+            'to'      => $phone,
+            'from'    => $this->senderId,
+            'sms'     => $message,
+            'type'    => 'plain',
+            'channel' => 'whatsapp',
+            'api_key' => $this->apiKey,
+        ];
+
+        try {
+            $ch = curl_init(self::BASE_URL . '/sms/send');
+            curl_setopt_array($ch, [
+                CURLOPT_POST          => true,
+                CURLOPT_POSTFIELDS    => json_encode($payload),
+                CURLOPT_HTTPHEADER    => ['Content-Type: application/json'],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT       => 15,
+            ]);
+            $resp = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            if ($code >= 200 && $code < 300) {
+                $this->logger->info("WhatsApp sent: to=$phone");
+                return true;
+            }
+            $this->logger->warning("WhatsApp failed: to=$phone status=$code body=$resp");
+            return false;
+        } catch (\Throwable $e) {
+            $this->logger->error("WhatsApp error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Normalize Nigerian phone numbers to international format.
      * 08012345678 → 2348012345678
      */

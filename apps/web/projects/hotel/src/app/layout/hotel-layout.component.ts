@@ -169,6 +169,26 @@ interface NavGroup {
 
       <!-- ═══ Main Content ═══ -->
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        <!-- Top bar with notification bell -->
+        <header class="h-14 shrink-0 bg-white border-b border-gray-100 px-6 flex items-center justify-end gap-3">
+          <a routerLink="/notifications"
+             class="relative p-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-700"
+             title="Notifications">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            @if (notificationCount() > 0) {
+              <span class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white
+                           text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+                {{ notificationCount() > 99 ? '99+' : notificationCount() }}
+              </span>
+            }
+          </a>
+        </header>
+
         <main class="flex-1 overflow-y-auto p-6 page-bg">
           <router-outlet />
         </main>
@@ -372,6 +392,16 @@ export class HotelLayoutComponent implements OnInit {
           return next;
         });
       }
+    });
+    this.loadNotificationCount();
+    // Poll every 60 seconds
+    setInterval(() => this.loadNotificationCount(), 60_000);
+  }
+
+  private loadNotificationCount(): void {
+    this.api.get('/notifications/unread-count').subscribe({
+      next: (r: any) => this.notificationCount.set(r?.data?.count ?? 0),
+      error: () => {},
     });
   }
 

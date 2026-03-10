@@ -11,7 +11,7 @@ export type GuestTheme = 'dark' | 'light';
 @Injectable({ providedIn: 'root' })
 export class GuestThemeService {
   readonly theme = signal<GuestTheme>(
-    (localStorage.getItem('guest_theme') as GuestTheme) ?? 'dark'
+    (localStorage.getItem('guest_theme') as GuestTheme) ?? 'light'
   );
 
   readonly isDark = computed(() => this.theme() === 'dark');

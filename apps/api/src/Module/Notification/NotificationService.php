@@ -51,14 +51,14 @@ final class NotificationService
     }
 
     /** @return Notification[] */
-    public function listForRecipient(string $recipientId, bool $unreadOnly = false, int $limit = 50): array
+    public function listForRecipient(string $recipientId, bool $unreadOnly = false, int $limit = 50, ?string $tenantId = null): array
     {
-        return $this->notifRepo->findForRecipient($recipientId, $unreadOnly, $limit);
+        return $this->notifRepo->findForRecipient($recipientId, $unreadOnly, $limit, $tenantId);
     }
 
-    public function countUnread(string $recipientId): int
+    public function countUnread(string $recipientId, ?string $tenantId = null): int
     {
-        return $this->notifRepo->countUnread($recipientId);
+        return $this->notifRepo->countUnread($recipientId, $tenantId);
     }
 
     public function markRead(string $id): ?Notification
@@ -70,9 +70,9 @@ final class NotificationService
         return $n;
     }
 
-    public function markAllRead(string $recipientId): int
+    public function markAllRead(string $recipientId, ?string $tenantId = null): int
     {
-        return $this->notifRepo->markAllRead($recipientId);
+        return $this->notifRepo->markAllRead($recipientId, $tenantId);
     }
 
     // ─── Device Tokens ──────────────────────────────────────────

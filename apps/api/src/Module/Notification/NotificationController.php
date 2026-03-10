@@ -14,15 +14,18 @@ final class NotificationController
 
     public function list(Request $req, Response $res): Response
     {
-        $userId = $req->getAttribute('auth.user_id');
+        $userId   = $req->getAttribute('auth.user_id');
+        $tenantId = $req->getAttribute('auth.tenant_id');
         $unreadOnly = ($req->getQueryParams()['unread'] ?? '') === '1';
         $limit = (int) ($req->getQueryParams()['limit'] ?? 50);
-        return JsonResponse::ok($res, array_map(fn($n) => $n->toArray(), $this->service->listForRecipient($userId, $unreadOnly, $limit)));
+        return JsonResponse::ok($res, array_map(fn($n) => $n->toArray(), $this->service->listForRecipient($userId, $unreadOnly, $limit, $tenantId)));
     }
 
     public function unreadCount(Request $req, Response $res): Response
     {
-        return JsonResponse::ok($res, ['count' => $this->service->countUnread($req->getAttribute('auth.user_id'))]);
+        $userId   = $req->getAttribute('auth.user_id');
+        $tenantId = $req->getAttribute('auth.tenant_id');
+        return JsonResponse::ok($res, ['count' => $this->service->countUnread($userId, $tenantId)]);
     }
 
     public function markRead(Request $req, Response $res, array $args): Response
@@ -33,7 +36,9 @@ final class NotificationController
 
     public function markAllRead(Request $req, Response $res): Response
     {
-        $count = $this->service->markAllRead($req->getAttribute('auth.user_id'));
+        $userId   = $req->getAttribute('auth.user_id');
+        $tenantId = $req->getAttribute('auth.tenant_id');
+        $count = $this->service->markAllRead($userId, $tenantId);
         return JsonResponse::ok($res, ['marked' => $count], 'All read');
     }
 

@@ -17,6 +17,8 @@ return function (App $app): void {
         // Convenience: bank accounts for current user's property
         $group->get('/bank-accounts', [TenantController::class, 'listBankAccountsForCurrentProperty']);
         $group->patch('/bank-accounts/{id}/primary', [TenantController::class, 'setPrimaryBankAccount']);
+        // Alias: PATCH /api/tenant/properties/{id}/settings (frontend compatibility)
+        $group->patch('/properties/{id}/settings', [TenantController::class, 'patchPropertySettings']);
     })
         ->add(new RoleMiddleware(['property_admin']))
         ->add(TenantMiddleware::class)

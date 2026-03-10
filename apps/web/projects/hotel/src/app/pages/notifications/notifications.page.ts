@@ -92,9 +92,8 @@ export class NotificationsPage implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        // If endpoint doesn't exist yet, show empty state with sample data
-        this.notifications.set(this.getSampleNotifications());
-        this.unreadCount.set(this.notifications().filter(n => !n.read).length);
+        this.notifications.set([]);
+        this.unreadCount.set(0);
         this.loading.set(false);
       },
     });

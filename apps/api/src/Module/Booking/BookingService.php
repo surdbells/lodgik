@@ -47,6 +47,8 @@ final class BookingService
         private readonly ?\Lodgik\Module\Housekeeping\HousekeepingService $housekeepingService = null,
         private readonly ?\Lodgik\Repository\GuestCardRepository $cardRepo = null,
         private readonly ?\Lodgik\Repository\PropertyRepository $propertyRepo = null,
+        private readonly ?\Lodgik\Service\TermiiService $termii = null,
+        private readonly ?\Lodgik\Module\Notification\NotificationService $notificationService = null,
     ) {}
 
     // ═══ List / Get ════════════════════════════════════════════
@@ -310,6 +312,24 @@ final class BookingService
             }
         }
 
+        // Notify staff of check-in
+        if ($this->notificationService !== null) {
+            try {
+                $ciGuest = $this->guestRepo->find($booking->getGuestId());
+                $ciName  = $ciGuest?->getFullName() ?? 'Guest';
+                $room    = $booking->getRoomId() ? $this->roomRepo->find($booking->getRoomId()) : null;
+                $roomNum = $room?->getRoomNumber() ?? '—';
+                $this->notificationService->create(
+                    $booking->getPropertyId(), 'staff', 'all', 'booking',
+                    "🏨 Check-in: {$ciName} — Room {$roomNum}",
+                    $booking->getTenantId(),
+                    "Booking: {$booking->getBookingRef()}",
+                );
+            } catch (\Throwable $e) {
+                $this->logger->error("Check-in notification failed: {$e->getMessage()}");
+            }
+        }
+
         return $booking;
     }
 
@@ -420,6 +440,70 @@ final class BookingService
         $this->em->persist($log);
 
         $this->em->flush();
+
+        // ── Generate guest access code at confirmation ───────────────────────
+        $accessCode = null;
+        if ($this->guestAuthService) {
+            try {
+                $ac = $this->guestAuthService->generateAccessCode(
+                    $booking->getId(),
+                    $booking->getGuestId(),
+                    $booking->getPropertyId(),
+                    $booking->getRoomId(),
+                    $booking->getTenantId()
+                );
+                $accessCode = $ac->getCode();
+            } catch (\Throwable $e) {
+                $this->logger->error("Access code generation failed for {$booking->getBookingRef()}: {$e->getMessage()}");
+            }
+        }
+
+        // ── Send booking confirmation SMS to guest ───────────────────────────
+        if ($this->termii !== null && $this->guestRepo !== null) {
+            try {
+                $guest   = $this->guestRepo->find($booking->getGuestId());
+                $phone   = $guest?->getPhone();
+                if ($phone) {
+                    $hotelAppUrl = rtrim($_ENV['HOTEL_APP_URL'] ?? 'https://hotel.lodgik.co', '/');
+                    $pwaPart     = $accessCode ? "/guest?c={$accessCode}" : '/guest';
+                    $pwUrl       = $hotelAppUrl . $pwaPart;
+                    $checkIn     = $booking->getCheckIn()->format('d M Y, g:i a');
+                    $checkOut    = $booking->getCheckOut()->format('d M Y, g:i a');
+                    $ref         = $booking->getBookingRef();
+
+                    $msg = "Booking Confirmed! 🎉\n"
+                        . "Booking No: {$ref}\n"
+                        . "Check-in:   {$checkIn}\n"
+                        . "Check-out:  {$checkOut}\n"
+                        . ($accessCode ? "Access Code: {$accessCode}\n" : '')
+                        . "Manage your stay: {$pwUrl}";
+
+                    $this->termii->send($phone, $msg);
+
+                    // WhatsApp (Termii 'whatsapp' channel)
+                    $this->termii->sendWhatsApp($phone, $msg);
+                }
+            } catch (\Throwable $e) {
+                $this->logger->error("Booking confirmation SMS failed for {$booking->getBookingRef()}: {$e->getMessage()}");
+            }
+        }
+
+        // ── Notify staff ─────────────────────────────────────────────────────
+        if ($this->notificationService !== null) {
+            try {
+                $guest    = $this->guestRepo?->find($booking->getGuestId());
+                $guestName = $guest?->getFullName() ?? 'Guest';
+                $this->notificationService->create(
+                    $booking->getPropertyId(), 'staff', 'all', 'booking',
+                    "✅ Booking confirmed: {$booking->getBookingRef()} — {$guestName}",
+                    $booking->getTenantId(),
+                    "Check-in: {$booking->getCheckIn()->format('d M Y')} | Check-out: {$booking->getCheckOut()->format('d M Y')}",
+                );
+            } catch (\Throwable $e) {
+                $this->logger->error("Notification failed for {$booking->getBookingRef()}: {$e->getMessage()}");
+            }
+        }
+
         return $booking;
     }
 
