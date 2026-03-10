@@ -17,7 +17,8 @@ final class EventService
         $qb = $this->em->createQueryBuilder()
             ->select('s')->from(EventSpace::class, 's')
             ->where('s.tenantId = :tid AND s.propertyId = :pid')
-            ->setParameters(['tid' => $tenantId, 'pid' => $propertyId])
+            ->setParameter('tid', $tenantId)
+            ->setParameter('pid', $propertyId)
             ->orderBy('s.name', 'ASC');
         if ($active !== null) {
             $qb->andWhere('s.isActive = :active')->setParameter('active', $active);
@@ -58,7 +59,8 @@ final class EventService
         $count = $this->em->createQueryBuilder()
             ->select('COUNT(e.id)')->from(EventBooking::class, 'e')
             ->where('e.eventSpaceId = :sid AND e.status NOT IN (:done)')
-            ->setParameters(['sid' => $id, 'done' => ['completed', 'cancelled']])
+            ->setParameter('sid', $id)
+            ->setParameter('done', ['completed', 'cancelled'])
             ->getQuery()->getSingleScalarResult();
         if ($count > 0) {
             throw new \RuntimeException('Cannot delete a space with active or upcoming events', 409);
@@ -74,7 +76,8 @@ final class EventService
         $qb = $this->em->createQueryBuilder()
             ->select('e')->from(EventBooking::class, 'e')
             ->where('e.tenantId = :tid AND e.propertyId = :pid')
-            ->setParameters(['tid' => $tenantId, 'pid' => $propertyId])
+            ->setParameter('tid', $tenantId)
+            ->setParameter('pid', $propertyId)
             ->orderBy('e.eventDate', 'DESC');
 
         if (!empty($filters['status'])) {
@@ -193,13 +196,11 @@ final class EventService
             ->where('e.tenantId = :tid AND e.propertyId = :pid')
             ->andWhere('e.eventDate BETWEEN :from AND :to')
             ->andWhere('e.status NOT IN (:excluded)')
-            ->setParameters([
-                'tid'      => $tenantId,
-                'pid'      => $propertyId,
-                'from'     => new \DateTimeImmutable($from),
-                'to'       => new \DateTimeImmutable($to),
-                'excluded' => ['cancelled'],
-            ])
+            ->setParameter('tid', $tenantId)
+            ->setParameter('pid', $propertyId)
+            ->setParameter('from', new \DateTimeImmutable($from))
+            ->setParameter('to', new \DateTimeImmutable($to))
+            ->setParameter('excluded', ['cancelled'])
             ->orderBy('e.eventDate', 'ASC')
             ->getQuery()
             ->getResult();

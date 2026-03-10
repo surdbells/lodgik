@@ -22,7 +22,8 @@ final class CorporateService
             ->select('c')
             ->from(CorporateProfile::class, 'c')
             ->where('c.tenantId = :tid AND c.propertyId = :pid')
-            ->setParameters(['tid' => $tenantId, 'pid' => $propertyId])
+            ->setParameter('tid', $tenantId)
+            ->setParameter('pid', $propertyId)
             ->orderBy('c.companyName', 'ASC');
 
         if ($active !== null) {
