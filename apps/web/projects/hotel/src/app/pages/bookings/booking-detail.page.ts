@@ -490,19 +490,22 @@ import {
           </div>
 
           <div class="mb-4">
-            <label class="block text-xs font-semibold text-gray-600 mb-1.5">New Checkout Date & Time *</label>
-            <input type="datetime-local" [(ngModel)]="extendCheckoutDate"
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5">New Checkout Date *</label>
+            <input type="date"
+              [value]="extendCheckoutDate()"
               [min]="minExtendDate()"
+              (change)="extendCheckoutDate.set($any($event.target).value)"
               class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sage-300">
+            <p class="text-xs text-gray-400 mt-1">Standard checkout time is 12:00 PM. Earliest selectable date is the day after current checkout.</p>
           </div>
 
           <div class="mb-5">
             <label class="block text-xs font-semibold text-gray-600 mb-1.5">Reason (optional)</label>
-            <input type="text" [(ngModel)]="extendReason" placeholder="e.g. Guest requested 2 extra nights"
+            <input type="text" [value]="extendReason()" (input)="extendReason.set($any($event.target).value)" placeholder="e.g. Guest requested 2 extra nights"
               class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sage-300">
           </div>
 
-          @if (extendCheckoutDate && extendNightsPreview() > 0) {
+          @if (extendCheckoutDate() && extendNightsPreview() > 0) {
             <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-sm space-y-1">
               <div class="flex justify-between text-amber-700">
                 <span>Extra nights</span>
@@ -522,7 +525,7 @@ import {
           <div class="flex gap-2.5">
             <button (click)="showExtendStay.set(false)"
               class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
-            <button (click)="submitExtendStay()" [disabled]="!extendCheckoutDate || extendingStay()"
+            <button (click)="submitExtendStay()" [disabled]="!extendCheckoutDate() || extendingStay()"
               class="flex-1 px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 disabled:opacity-50">
               {{ extendingStay() ? 'Extending...' : 'Confirm Extension' }}
             </button>
@@ -571,26 +574,32 @@ export class BookingDetailPage implements OnInit {
   // Extend stay state
   showExtendStay    = signal(false);
   extendingStay     = signal(false);
-  extendCheckoutDate = '';
-  extendReason       = '';
+  extendCheckoutDate = signal('');
+  extendReason       = signal('');
 
   readonly minExtendDate = computed(() => {
     const b = this.booking();
     if (!b?.check_out) return '';
-    // Min is the day AFTER the current checkout — current checkout date is not selectable
-    const d = new Date(b.check_out);
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10); // YYYY-MM-DD for type="date"
+    // Extract the checkout DATE portion (YYYY-MM-DD) regardless of time/timezone
+    // Then add 1 day — the current checkout date itself is NOT selectable
+    const checkoutDateStr = new Date(b.check_out).toLocaleDateString('en-CA'); // YYYY-MM-DD in local tz
+    const [y, m, d] = checkoutDateStr.split('-').map(Number);
+    const next = new Date(y, m - 1, d + 1);
+    return next.toLocaleDateString('en-CA'); // YYYY-MM-DD
   });
 
   readonly extendNightsPreview = computed(() => {
-    if (!this.extendCheckoutDate || !this.booking()?.check_out) return 0;
-    // Use date-only comparison to avoid timezone/time-of-day skew
-    const checkoutDate = new Date(this.booking()!.check_out);
-    const checkoutDay  = new Date(checkoutDate.getFullYear(), checkoutDate.getMonth(), checkoutDate.getDate());
-    const newDay       = new Date(this.extendCheckoutDate); // YYYY-MM-DD parsed as local midnight
-    const diff = newDay.getTime() - checkoutDay.getTime();
-    return Math.max(0, Math.round(diff / 86400000));
+    const newDateStr = this.extendCheckoutDate();
+    const b = this.booking();
+    if (!newDateStr || !b?.check_out) return 0;
+    // Both sides treated as local date components — no UTC/timezone ambiguity
+    const checkoutLocalStr = new Date(b.check_out).toLocaleDateString('en-CA'); // YYYY-MM-DD
+    const [cy, cm, cd] = checkoutLocalStr.split('-').map(Number);
+    const [ny, nm, nd] = newDateStr.split('-').map(Number);
+    const msPerDay = 86400000;
+    const checkoutDay = new Date(cy, cm - 1, cd).getTime();
+    const newDay      = new Date(ny, nm - 1, nd).getTime();
+    return Math.max(0, Math.round((newDay - checkoutDay) / msPerDay));
   });
 
   readonly extendChargePreview = computed(() => {
@@ -662,17 +671,17 @@ export class BookingDetailPage implements OnInit {
 
   // ── Extend Stay ───────────────────────────────────────────────
   openExtendStay(): void {
-    this.extendCheckoutDate = '';
-    this.extendReason = '';
+    this.extendCheckoutDate.set('');
+    this.extendReason.set('');
     this.showExtendStay.set(true);
   }
 
   submitExtendStay(): void {
-    if (!this.extendCheckoutDate || this.extendingStay()) return;
+    if (!this.extendCheckoutDate() || this.extendingStay()) return;
     this.extendingStay.set(true);
     this.api.post(`/bookings/${this.bookingId}/extend-checkout`, {
-      new_checkout_date: this.extendCheckoutDate + ' 12:00:00',
-      reason: this.extendReason || null,
+      new_checkout_date: this.extendCheckoutDate() + ' 12:00:00',
+      reason: this.extendReason() || null,
     }).subscribe({
       next: r => {
         this.extendingStay.set(false);
