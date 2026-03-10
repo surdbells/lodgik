@@ -811,13 +811,15 @@ return function (ContainerBuilder $builder): void {
             gymService:            $c->get(\Lodgik\Module\Gym\GymService::class),
             em:                    $c->get(EntityManagerInterface::class),
             termii:                $c->get(TermiiService::class),
+            loyaltyService:        $c->get(\Lodgik\Module\Loyalty\LoyaltyService::class),
         ),
 
         ServiceRequestService::class => fn(ContainerInterface $c) => new ServiceRequestService(
-            em: $c->get(EntityManagerInterface::class),
-            repo: $c->get(ServiceRequestRepository::class),
-            logger: $c->get(LoggerInterface::class),
-            notifService: $c->get(NotificationService::class),
+            em:             $c->get(EntityManagerInterface::class),
+            repo:           $c->get(ServiceRequestRepository::class),
+            logger:         $c->get(LoggerInterface::class),
+            notifService:   $c->get(NotificationService::class),
+            bookingService: $c->get(\Lodgik\Module\Booking\BookingService::class),
         ),
         ServiceRequestController::class => fn(ContainerInterface $c) => new ServiceRequestController(
             service: $c->get(ServiceRequestService::class),
