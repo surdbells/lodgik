@@ -70,7 +70,8 @@ const DURATION_TYPES = [
 
 const LAYOUTS = ['boardroom', 'theatre', 'u_shape', 'classroom', 'cocktail', 'banquet'];
 
-const STATUS_COLORS: Record<string, string> = {
+type BadgeVariant = 'success' | 'danger' | 'warning' | 'info' | 'neutral' | 'primary';
+const STATUS_COLORS: Record<string, BadgeVariant> = {
   tentative: 'warning', confirmed: 'success', in_progress: 'info',
   completed: 'neutral', cancelled: 'danger',
 };
@@ -267,7 +268,7 @@ const EMPTY_SPACE_FORM = () => ({
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="text-xs font-mono text-gray-400">{{ e.reference }}</span>
-                      <ui-badge [variant]="statusColors[e.status] || 'neutral'">{{ e.status | titlecase }}</ui-badge>
+                      <ui-badge [variant]="statusColors[e.status] ?? 'neutral'">{{ e.status | titlecase }}</ui-badge>
                       <span class="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full">{{ e.event_type }}</span>
                     </div>
                     <h3 class="font-semibold text-gray-900 mt-1">{{ e.event_name }}</h3>
