@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Lodgik\Middleware;
 
 use Lodgik\Entity\AuditLog;
+use Lodgik\Entity\User;
+use Lodgik\Service\JwtService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -14,14 +16,21 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Automatically logs all write operations (POST, PATCH, PUT, DELETE) to audit_logs.
- * Captures: who did what, from where, and what changed.
- * Applied globally — no per-controller modification needed.
+ *
+ * WHY WE DECODE JWT HERE:
+ *   This middleware is registered globally via $app->add(). In Slim 4 with PSR-7
+ *   (immutable requests), inner middleware (AuthMiddleware, route middleware) sets
+ *   attributes via $request->withAttribute() on a NEW request object. The global
+ *   middleware still holds the ORIGINAL request with no auth attributes set.
+ *   We decode the Bearer token directly so we can reliably capture tenant_id,
+ *   user_id, and property_id regardless of execution order.
  */
 final class AuditMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface $logger,
+        private readonly JwtService $jwt,
     ) {}
 
     public function process(Request $request, Handler $handler): Response
@@ -35,7 +44,7 @@ final class AuditMiddleware implements MiddlewareInterface
 
         $path = $request->getUri()->getPath();
 
-        // Skip non-API and high-frequency endpoints
+        // Skip non-API and high-frequency / excluded endpoints
         if (!str_starts_with($path, '/api/') || $this->isExcluded($path)) {
             return $handler->handle($request);
         }
@@ -50,7 +59,7 @@ final class AuditMiddleware implements MiddlewareInterface
         }
 
         try {
-            $this->logAudit($request, $method, $path, $response);
+            $this->logAudit($request, $method, $path);
         } catch (\Throwable $e) {
             $this->logger->warning('AuditMiddleware failed: ' . $e->getMessage());
         }
@@ -58,39 +67,66 @@ final class AuditMiddleware implements MiddlewareInterface
         return $response;
     }
 
-    private function logAudit(Request $request, string $method, string $path, Response $response): void
+    private function logAudit(Request $request, string $method, string $path): void
     {
-        $userId = $request->getAttribute('auth.user_id');
-        $tenantId = $request->getAttribute('auth.tenant_id');
-        $userName = $request->getAttribute('auth.user_name');
-        $propertyId = $request->getAttribute('auth.property_id');
+        // ── Decode auth directly from the Authorization header ──────────
+        // We cannot rely on $request->getAttribute('auth.*') because this global
+        // middleware holds the original (pre-auth-enrichment) request object.
+        $claims     = $this->extractClaimsFromRequest($request);
+        $userId     = $claims['user_id']    ?? null;
+        $tenantId   = $claims['tenant_id']  ?? null;
+        $propertyId = $claims['property_id'] ?? null;
+        $userName   = null;
 
-        // Derive action and entity from the path
+        // Fetch user's display name from DB (cached for this request only)
+        if ($userId) {
+            try {
+                $user = $this->em->find(User::class, $userId);
+                $userName = $user?->getFullName();
+            } catch (\Throwable) {
+                // Non-fatal — log without name
+            }
+        }
+
+        // ── Derive action and entity from the URL path ──────────────────
         $parsed = $this->parsePath($path, $method);
 
+        // ── Capture client info ─────────────────────────────────────────
         $serverParams = $request->getServerParams();
-        $ipAddress = $serverParams['REMOTE_ADDR']
+        $ipRaw = $serverParams['HTTP_X_FORWARDED_FOR']
+            ?? $serverParams['REMOTE_ADDR']
             ?? $request->getHeaderLine('X-Forwarded-For')
             ?: null;
+        // Take first IP if comma-separated (CDN/proxy list)
+        $ipAddress = $ipRaw ? trim(explode(',', $ipRaw)[0]) : null;
         $userAgent = $request->getHeaderLine('User-Agent') ?: null;
 
-        // Sanitize body (remove passwords, tokens)
-        $body = (array) ($request->getParsedBody() ?? []);
+        // ── Sanitize request body ───────────────────────────────────────
+        $body      = (array) ($request->getParsedBody() ?? []);
         $sanitized = $this->sanitizeBody($body);
 
-        $log = new AuditLog(
-            action: $parsed['action'],
-            entityType: $parsed['entity_type'],
-            entityId: $parsed['entity_id'],
-            tenantId: $tenantId,
-            userId: $userId,
-            userName: $userName,
-        );
-
-        $description = $parsed['description'];
+        // ── Build description ───────────────────────────────────────────
+        $verb = match ($method) {
+            'POST'   => 'create',
+            'PATCH', 'PUT' => 'update',
+            'DELETE' => 'delete',
+            default  => strtolower($method),
+        };
+        $description = ucfirst($verb) . ' ' . $parsed['entity_type']
+            . ($parsed['entity_id'] ? " ({$parsed['entity_id']})" : '');
         if ($propertyId) {
             $description .= " [property:{$propertyId}]";
         }
+
+        // ── Persist ─────────────────────────────────────────────────────
+        $log = new AuditLog(
+            action:     $parsed['action'],
+            entityType: $parsed['entity_type'],
+            entityId:   $parsed['entity_id'],
+            tenantId:   $tenantId,
+            userId:     $userId,
+            userName:   $userName,
+        );
 
         $log->setDescription($description)
             ->setNewValues(!empty($sanitized) ? $sanitized : null)
@@ -101,81 +137,97 @@ final class AuditMiddleware implements MiddlewareInterface
         $this->em->flush();
     }
 
+    // ─── JWT decoding ─────────────────────────────────────────────────
+
+    private function extractClaimsFromRequest(Request $request): array
+    {
+        $auth = $request->getHeaderLine('Authorization');
+        if (!str_starts_with($auth, 'Bearer ')) {
+            return [];
+        }
+
+        $token = substr($auth, 7);
+
+        try {
+            $decoded = $this->jwt->decodeUnsafe($token);
+            return [
+                'user_id'     => $decoded['sub']         ?? null,
+                'tenant_id'   => $decoded['tenant_id']   ?? null,
+                'property_id' => $decoded['property_id'] ?? null,
+                'role'        => $decoded['role']         ?? null,
+            ];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    // ─── Path parsing ─────────────────────────────────────────────────
+
     private function parsePath(string $path, string $method): array
     {
-        // Remove /api/ prefix and query params
-        $clean = preg_replace('#^/api/#', '', $path);
+        $clean    = preg_replace('#^/api/#', '', $path);
         $segments = explode('/', $clean);
 
-        // Map HTTP method to action verb
-        $verb = match ($method) {
+        $verb   = match ($method) {
             'POST'   => 'create',
             'PATCH', 'PUT' => 'update',
             'DELETE' => 'delete',
             default  => $method,
         };
 
-        // Extract module and entity info
-        $module = $segments[0] ?? 'unknown';
-        $entityId = null;
+        $module    = $segments[0] ?? 'unknown';
+        $entityId  = null;
         $subAction = null;
 
-        // Detect patterns like: bookings/{id}/check-in, staff/{id}/avatar
         if (count($segments) >= 3 && $this->isUuidLike($segments[1] ?? '')) {
-            $entityId = $segments[1];
+            $entityId  = $segments[1];
             $subAction = $segments[2] ?? null;
         } elseif (count($segments) >= 2 && $this->isUuidLike($segments[1] ?? '')) {
             $entityId = $segments[1];
         }
 
-        // Build action name
         $action = $subAction ? "{$module}.{$subAction}" : "{$module}.{$verb}";
-        // Normalize common patterns
         $action = str_replace('-', '_', $action);
 
-        // Derive entity type
-        $entityType = $this->moduleToEntity($module);
-
         return [
-            'action' => $action,
-            'entity_type' => $entityType,
-            'entity_id' => $entityId,
-            'description' => ucfirst($verb) . ' ' . $entityType . ($entityId ? " ({$entityId})" : ''),
+            'action'      => $action,
+            'entity_type' => $this->moduleToEntity($module),
+            'entity_id'   => $entityId,
         ];
     }
 
     private function moduleToEntity(string $module): string
     {
         return match ($module) {
-            'bookings' => 'Booking',
-            'rooms' => 'Room',
-            'room-types' => 'RoomType',
-            'folios' => 'Folio',
-            'guests' => 'Guest',
-            'staff' => 'User',
-            'invoices' => 'Invoice',
-            'expenses' => 'Expense',
+            'bookings'     => 'Booking',
+            'rooms'        => 'Room',
+            'room-types'   => 'RoomType',
+            'folios'       => 'Folio',
+            'guests'       => 'Guest',
+            'staff'        => 'User',
+            'invoices'     => 'Invoice',
+            'expenses'     => 'Expense',
             'housekeeping' => 'Housekeeping',
-            'pos' => 'POS',
-            'gym' => 'Gym',
-            'night-audit' => 'NightAudit',
-            'properties' => 'Property',
-            'tenants' => 'Tenant',
-            'auth' => 'Auth',
-            'admin' => 'Admin',
-            'settings' => 'Settings',
-            'merchants' => 'Merchant',
-            'subscriptions' => 'Subscription',
-            'plans' => 'Plan',
-            'features' => 'Feature',
-            'notifications' => 'Notification',
-            'attendance' => 'Attendance',
-            'leave' => 'Leave',
-            'payroll' => 'Payroll',
-            'security' => 'Security',
-            'audit-logs' => 'AuditLog',
+            'pos'          => 'POS',
+            'gym'          => 'Gym',
+            'night-audit'  => 'NightAudit',
+            'properties'   => 'Property',
+            'tenants'      => 'Tenant',
+            'auth'         => 'Auth',
+            'admin'        => 'Admin',
+            'settings'     => 'Settings',
+            'merchants'    => 'Merchant',
+            'subscriptions'=> 'Subscription',
+            'plans'        => 'Plan',
+            'features'     => 'Feature',
+            'notifications'=> 'Notification',
+            'attendance'   => 'Attendance',
+            'leave'        => 'Leave',
+            'payroll'      => 'Payroll',
+            'security'     => 'Security',
+            'audit-logs'   => 'AuditLog',
             'employee', 'employees' => 'Employee',
-            default => ucfirst($module),
+            default        => ucfirst($module),
         };
     }
 
@@ -186,8 +238,10 @@ final class AuditMiddleware implements MiddlewareInterface
 
     private function sanitizeBody(array $body): array
     {
-        $sensitive = ['password', 'password_hash', 'token', 'access_token', 'refresh_token',
-            'secret', 'api_key', 'card_number', 'cvv', 'pin', 'image', '_avatarBase64'];
+        $sensitive = [
+            'password', 'password_hash', 'token', 'access_token', 'refresh_token',
+            'secret', 'api_key', 'card_number', 'cvv', 'pin', 'image', '_avatarBase64',
+        ];
 
         $clean = [];
         foreach ($body as $key => $value) {
@@ -208,9 +262,9 @@ final class AuditMiddleware implements MiddlewareInterface
     {
         $excluded = [
             '/api/health',
-            '/api/dashboard',          // read-only
+            '/api/dashboard',
             '/api/analytics',
-            '/api/audit-logs',          // prevent recursive audit of audit
+            '/api/audit-logs',       // prevent recursive self-audit
             '/api/admin/audit-logs',
             '/api/admin/dashboard',
             '/api/admin/analytics',

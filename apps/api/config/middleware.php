@@ -16,9 +16,13 @@ return function (App $app): void {
     // Middleware is applied in reverse order (last added = first executed)
 
     // 0. Audit all write operations (innermost — runs after route/auth)
+    // NOTE: JwtService injected so AuditMiddleware can decode the Bearer token directly.
+    // It cannot rely on request attributes set by per-route AuthMiddleware because
+    // PSR-7 immutable requests mean those attributes exist on a different object.
     $app->add(new \Lodgik\Middleware\AuditMiddleware(
-        em: $container->get(\Doctrine\ORM\EntityManagerInterface::class),
+        em:     $container->get(\Doctrine\ORM\EntityManagerInterface::class),
         logger: $container->get(LoggerInterface::class),
+        jwt:    $container->get(\Lodgik\Service\JwtService::class),
     ));
 
     // 1. Parse JSON request bodies
