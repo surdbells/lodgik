@@ -56,5 +56,9 @@ return function (App $app): void {
         $g->get('/gym/class-bookings',                 [GuestPortalController::class, 'listGymClassBookings']);
         $g->delete('/gym/class-bookings/{id}',         [GuestPortalController::class, 'cancelGymClassBooking']);
 
+        // ── Guest Preferences ─────────────────────────────────────
+        $g->get('/preferences',                        [GuestPortalController::class, 'getPreferences']);
+        $g->put('/preferences',                        [GuestPortalController::class, 'updatePreferences']);
+
     })->add(GuestMiddleware::class);
 };

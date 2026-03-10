@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Lodgik\Module\ServiceRequest;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Lodgik\Entity\Guest;
+use Lodgik\Entity\Room;
 use Lodgik\Entity\ServiceRequest;
 use Lodgik\Enum\ServiceRequestCategory;
 use Lodgik\Enum\ServiceRequestStatus;
@@ -19,10 +21,22 @@ final class ServiceRequestService
         private readonly ServiceRequestRepository $repo,
         private readonly LoggerInterface $logger,
         private readonly ?NotificationService $notifService = null,
+        private readonly ?\Lodgik\Module\Booking\BookingService $bookingService = null,
     ) {}
 
-    public function create(string $propertyId, string $bookingId, string $guestId, string $category, string $title, string $tenantId, ?string $description = null, ?string $roomId = null, int $priority = 2, ?string $photoUrl = null): ServiceRequest
-    {
+    public function create(
+        string  $propertyId,
+        string  $bookingId,
+        string  $guestId,
+        string  $category,
+        string  $title,
+        string  $tenantId,
+        ?string $description = null,
+        ?string $roomId      = null,
+        int     $priority    = 2,
+        ?string $photoUrl    = null,
+        ?array  $metadata    = null,
+    ): ServiceRequest {
         $cat = ServiceRequestCategory::tryFrom($category);
         if (!$cat) throw new \RuntimeException("Invalid category: {$category}");
 
@@ -31,13 +45,17 @@ final class ServiceRequestService
         $sr->setRoomId($roomId);
         $sr->setPriority($priority);
         $sr->setPhotoUrl($photoUrl);
+        if ($metadata !== null) $sr->setMetadata($metadata);
 
         $this->em->persist($sr);
         $this->em->flush();
         $this->logger->info("Service request created: {$sr->getId()}, cat={$category}");
 
-        // Notify staff
-        $this->notifService?->notifyServiceRequest($propertyId, $title, $guestId, $roomId ?? '', $tenantId);
+        // Resolve room number + guest name for notification
+        $roomNumber = $roomId ? ($this->em->find(Room::class, $roomId)?->getRoomNumber() ?? 'N/A') : 'N/A';
+        $guestName  = $this->em->find(Guest::class, $guestId)?->getFullName() ?? 'Guest';
+
+        $this->notifService?->notifyServiceRequest($propertyId, $title, $guestName, $roomNumber, $tenantId);
 
         return $sr;
     }
@@ -83,11 +101,31 @@ final class ServiceRequestService
         return $sr;
     }
 
-    public function complete(string $id, ?string $notes = null): ServiceRequest
+    public function complete(string $id, ?string $notes = null, ?string $staffId = null): ServiceRequest
     {
         $sr = $this->findOrFail($id);
         $sr->complete($notes);
         $this->em->flush();
+
+        // ── Stay extension: apply checkout extension on booking + folio ──
+        if ($sr->getCategory() === ServiceRequestCategory::STAY_EXTENSION && $this->bookingService !== null) {
+            $meta = $sr->getMetadata();
+            if (!empty($meta['requested_checkout'])) {
+                try {
+                    $this->bookingService->extendCheckout(
+                        $sr->getBookingId(),
+                        $meta['requested_checkout'],
+                        $staffId,
+                        'Approved via service request',
+                    );
+                    $this->logger->info("[ServiceRequest] Stay extension applied for booking={$sr->getBookingId()}");
+                } catch (\Throwable $e) {
+                    $this->logger->error("[ServiceRequest] Failed to apply stay extension: {$e->getMessage()}");
+                    // Don't fail the complete() — SR is already marked complete
+                }
+            }
+        }
+
         return $sr;
     }
 

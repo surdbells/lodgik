@@ -45,6 +45,7 @@ final class GuestPortalController
         private readonly GymService                    $gymService,
         private readonly EntityManagerInterface        $em,
         private readonly TermiiService                 $termii,
+        private readonly \Lodgik\Module\Loyalty\LoyaltyService $loyaltyService,
     ) {}
 
     // ─────────────────────────────────────────────────────────────
@@ -273,9 +274,32 @@ final class GuestPortalController
         }
 
         $booking = $this->bookingRepo->find($bookingId);
+        if (!$booking) {
+            return JsonResponse::error($res, 'Booking not found', 404);
+        }
 
-        $desc = "Requested new check-out date/time: {$body['requested_checkout']}.";
+        $originalCheckout  = $booking->getCheckOut()->format('Y-m-d H:i:s');
+        $requestedCheckout = $body['requested_checkout'];
+
+        $desc = "Requested new check-out: {$requestedCheckout}. Original check-out: {$originalCheckout}.";
         if (!empty($body['reason'])) $desc .= " Reason: {$body['reason']}";
+
+        // Calculate extra nights for display in notification
+        try {
+            $newDate  = new \DateTimeImmutable($requestedCheckout);
+            $origDate = $booking->getCheckOut();
+            $extraNights = (int) $origDate->diff($newDate)->days;
+        } catch (\Throwable) {
+            $extraNights = 0;
+        }
+
+        $metadata = [
+            'requested_checkout' => $requestedCheckout,
+            'original_checkout'  => $originalCheckout,
+            'extra_nights'       => $extraNights,
+            'rate_per_night'     => $booking->getRatePerNight(),
+            'reason'             => $body['reason'] ?? null,
+        ];
 
         $sr = $this->serviceRequestService->create(
             propertyId:  $propertyId,
@@ -285,8 +309,9 @@ final class GuestPortalController
             title:       'Stay Extension Request',
             tenantId:    $tenantId,
             description: $desc,
-            roomId:      $booking?->getRoomId(),
+            roomId:      $booking->getRoomId(),
             priority:    3,
+            metadata:    $metadata,
         );
 
         return JsonResponse::created($res, $sr->toArray(), 'Extension request submitted. Our team will confirm shortly.');
@@ -570,5 +595,28 @@ final class GuestPortalController
         $booking->cancel();
         $this->em->flush();
         return JsonResponse::ok($res, $booking->toArray(), 'Class booking cancelled');
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GUEST PREFERENCES
+    // ─────────────────────────────────────────────────────────────
+
+    /** GET /api/guest/preferences */
+    public function getPreferences(Request $req, Response $res): Response
+    {
+        $guestId  = $req->getAttribute('guest.guest_id');
+        $tenantId = $req->getAttribute('guest.tenant_id');
+        $prefs    = $this->loyaltyService->getPreferences($guestId, $tenantId);
+        return JsonResponse::ok($res, $prefs ?? (object)[]);
+    }
+
+    /** PUT /api/guest/preferences */
+    public function updatePreferences(Request $req, Response $res): Response
+    {
+        $guestId  = $req->getAttribute('guest.guest_id');
+        $tenantId = $req->getAttribute('guest.tenant_id');
+        $body     = (array) ($req->getParsedBody() ?? []);
+        $prefs    = $this->loyaltyService->setPreferences($guestId, $tenantId, $body);
+        return JsonResponse::ok($res, $prefs->toArray(), 'Preferences saved');
     }
 }

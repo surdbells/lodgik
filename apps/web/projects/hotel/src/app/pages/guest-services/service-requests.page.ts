@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import {
   ApiService, PageHeaderComponent, LoadingSpinnerComponent,
   StatsCardComponent, ToastService, ActivePropertyService,
@@ -9,7 +9,7 @@ import {
 @Component({
   selector: 'app-service-requests',
   standalone: true,
-  imports: [FormsModule, DatePipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
+  imports: [FormsModule, DatePipe, DecimalPipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
     <ui-page-header title="Service Requests" icon="concierge-bell"
       subtitle="Guest requests — acknowledge, assign and complete"
@@ -26,9 +26,9 @@ import {
     @if (!loading()) {
       <!-- Stats -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <ui-stats-card label="Total"       [value]="summary().total"       icon="inbox"></ui-stats-card>
+        <ui-stats-card label="Total"       [value]="summary().total"       icon="list"></ui-stats-card>
         <ui-stats-card label="Pending"     [value]="summary().pending"     icon="clock"></ui-stats-card>
-        <ui-stats-card label="In Progress" [value]="summary().in_progress" icon="loader"></ui-stats-card>
+        <ui-stats-card label="In Progress" [value]="summary().in_progress" icon="activity"></ui-stats-card>
         <ui-stats-card label="Completed"   [value]="summary().completed"   icon="circle-check"></ui-stats-card>
       </div>
 
@@ -51,12 +51,16 @@ import {
           <select [(ngModel)]="filterCategory"
             class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
             <option value="">All categories</option>
+            <option value="room_service">Room Service</option>
             <option value="housekeeping">Housekeeping</option>
             <option value="food_beverage">Food & Beverage</option>
             <option value="maintenance">Maintenance</option>
             <option value="transport">Transport</option>
             <option value="concierge">Concierge</option>
             <option value="amenity">Amenity</option>
+            <option value="laundry">Laundry</option>
+            <option value="stay_extension">Stay Extension</option>
+            <option value="lost_and_found">Lost & Found</option>
             <option value="other">Other</option>
           </select>
         </div>
@@ -213,6 +217,14 @@ import {
             <p class="text-sm text-gray-700 mb-4 bg-gray-50 rounded-lg p-3">{{ selectedRequest()!.description }}</p>
           }
           <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+            @if (selectedRequest()!.guest_name) {
+              <div><span class="text-xs text-gray-400">Guest</span>
+                <p class="font-medium">{{ selectedRequest()!.guest_name }}</p></div>
+            }
+            @if (selectedRequest()!.room_number) {
+              <div><span class="text-xs text-gray-400">Room</span>
+                <p class="font-medium">{{ selectedRequest()!.room_number }}</p></div>
+            }
             <div><span class="text-xs text-gray-400">Priority</span>
               <p class="font-medium">{{ selectedRequest()!.priority_label }}</p></div>
             <div><span class="text-xs text-gray-400">Created</span>
@@ -226,6 +238,22 @@ import {
                 <p class="font-medium">{{ selectedRequest()!.completed_at | date:'HH:mm' }}</p></div>
             }
           </div>
+          <!-- Stay extension metadata -->
+          @if (selectedRequest()!.category === 'stay_extension' && selectedRequest()!.metadata) {
+            <div class="bg-blue-50 rounded-lg p-3 mb-4">
+              <p class="text-xs font-semibold text-blue-700 mb-2">📅 Extension Details</p>
+              <div class="grid grid-cols-2 gap-2 text-xs text-blue-800">
+                <div><span class="text-blue-500">Original checkout</span>
+                  <p class="font-medium">{{ selectedRequest()!.metadata.original_checkout | date:'dd MMM yyyy HH:mm' }}</p></div>
+                <div><span class="text-blue-500">Requested checkout</span>
+                  <p class="font-medium">{{ selectedRequest()!.metadata.requested_checkout | date:'dd MMM yyyy HH:mm' }}</p></div>
+                <div><span class="text-blue-500">Extra nights</span>
+                  <p class="font-medium">{{ selectedRequest()!.metadata.extra_nights }}</p></div>
+                <div><span class="text-blue-500">Rate/night</span>
+                  <p class="font-medium">₦{{ selectedRequest()!.metadata.rate_per_night | number }}</p></div>
+              </div>
+            </div>
+          }
           @if (selectedRequest()!.staff_notes) {
             <div class="bg-amber-50 rounded-lg p-3 mb-4">
               <p class="text-xs font-semibold text-amber-700 mb-1">Staff Notes</p>

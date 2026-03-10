@@ -375,6 +375,7 @@ export const routes: Routes = [
       { path: 'lost-found',     loadComponent: () => import('./pages/guest-portal/guest-lost-found.page') },
       { path: 'hotel-info',     loadComponent: () => import('./pages/guest-portal/guest-hotel-info.page') },
       { path: 'spa',            loadComponent: () => import('./pages/guest-portal/guest-spa.page') },
+      { path: 'preferences',    loadComponent: () => import('./pages/guest-portal/guest-preferences.page') },
     ],
   },
 

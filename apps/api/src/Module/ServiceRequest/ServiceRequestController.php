@@ -82,7 +82,8 @@ final class ServiceRequestController
     public function complete(Request $req, Response $res, array $args): Response
     {
         try {
-            return JsonResponse::ok($res, $this->service->complete($args['id'], ((array)$req->getParsedBody())['notes'] ?? null)->toArray(), 'Completed');
+            $staffId = $req->getAttribute('auth.user_id');
+            return JsonResponse::ok($res, $this->service->complete($args['id'], ((array)$req->getParsedBody())['notes'] ?? null, $staffId)->toArray(), 'Completed');
         } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 422); }
     }
 

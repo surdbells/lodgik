@@ -1,6 +1,7 @@
-import { Component, inject, OnInit, signal, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
   ApiService,
   AuthService,
@@ -14,7 +15,7 @@ import {
 @Component({
   selector: 'app-booking-detail',
   standalone: true,
-  imports: [DatePipe, RouterLink, PageHeaderComponent, LoadingSpinnerComponent],
+  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header [title]="booking()?.booking_ref || 'Booking'" subtitle="Booking details and timeline">
       <a routerLink="/bookings" class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">← Back</a>
@@ -114,7 +115,11 @@ import {
                 </svg>
                 Guest PWA Access
               </button>
-              <!-- Guest Card actions -->
+              <!-- Extend Stay -->
+              <button (click)="openExtendStay()"
+                class="px-5 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 text-sm font-medium rounded-lg hover:bg-amber-100 transition-colors flex items-center gap-2">
+                📅 Extend Stay
+              </button>
               @if (!activeCard()) {
                 <button (click)="issueGuestCard()" [disabled]="issuingCard()"
                   class="px-5 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-medium rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-2 disabled:opacity-50">
@@ -468,6 +473,53 @@ import {
         </div>
       </div>
     }
+
+    <!-- ── Extend Stay Modal ─────────────────────────────────── -->
+    @if (showExtendStay()) {
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+           (click)="showExtendStay.set(false)">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md" (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="text-base font-semibold text-gray-900">📅 Extend Stay</h3>
+            <button (click)="showExtendStay.set(false)" class="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          </div>
+
+          <div class="bg-blue-50 rounded-xl p-3 mb-4 text-sm">
+            <p class="text-blue-700 font-medium">Current checkout</p>
+            <p class="text-blue-900">{{ booking()!.check_out | date:'dd MMM yyyy, HH:mm' }}</p>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5">New Checkout Date & Time *</label>
+            <input type="datetime-local" [(ngModel)]="extendCheckoutDate"
+              [min]="minExtendDate()"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sage-300">
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Reason (optional)</label>
+            <input type="text" [(ngModel)]="extendReason" placeholder="e.g. Guest requested 2 extra nights"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sage-300">
+          </div>
+
+          @if (extendCheckoutDate && extendNightsPreview() > 0) {
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-sm">
+              <p class="text-amber-700">+{{ extendNightsPreview() }} extra night(s)</p>
+              <p class="text-amber-900 font-semibold">Additional charge: ₦{{ extendChargePreview() | number:'1.0-0' }}</p>
+            </div>
+          }
+
+          <div class="flex gap-2.5">
+            <button (click)="showExtendStay.set(false)"
+              class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
+            <button (click)="submitExtendStay()" [disabled]="!extendCheckoutDate || extendingStay()"
+              class="flex-1 px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 disabled:opacity-50">
+              {{ extendingStay() ? 'Extending...' : 'Confirm Extension' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class BookingDetailPage implements OnInit {
@@ -505,6 +557,30 @@ export class BookingDetailPage implements OnInit {
   activeCard      = signal<any | null>(null);
   showCardModal   = signal(false);
   issuingCard     = signal(false);
+
+  // Extend stay state
+  showExtendStay    = signal(false);
+  extendingStay     = signal(false);
+  extendCheckoutDate = '';
+  extendReason       = '';
+
+  readonly minExtendDate = computed(() => {
+    const b = this.booking();
+    if (!b?.check_out) return '';
+    // datetime-local min must be formatted as YYYY-MM-DDTHH:mm
+    return new Date(b.check_out).toISOString().slice(0, 16);
+  });
+
+  readonly extendNightsPreview = computed(() => {
+    if (!this.extendCheckoutDate || !this.booking()?.check_out) return 0;
+    const diff = new Date(this.extendCheckoutDate).getTime() - new Date(this.booking()!.check_out).getTime();
+    return Math.max(0, Math.ceil(diff / 86400000));
+  });
+
+  readonly extendChargePreview = computed(() => {
+    const rate = parseFloat(this.booking()?.rate_per_night ?? '0');
+    return this.extendNightsPreview() * rate;
+  });
 
   private bookingId = '';
 
@@ -565,6 +641,37 @@ export class BookingDetailPage implements OnInit {
     this.api.post(`/bookings/${this.bookingId}/check-out`).subscribe(r => {
       if (r.success) { this.toast.success('Guest checked out!'); this.loadBooking(); }
       else this.toast.error(r.message || 'Failed');
+    });
+  }
+
+  // ── Extend Stay ───────────────────────────────────────────────
+  openExtendStay(): void {
+    this.extendCheckoutDate = '';
+    this.extendReason = '';
+    this.showExtendStay.set(true);
+  }
+
+  submitExtendStay(): void {
+    if (!this.extendCheckoutDate || this.extendingStay()) return;
+    this.extendingStay.set(true);
+    this.api.post(`/bookings/${this.bookingId}/extend-checkout`, {
+      new_checkout_date: this.extendCheckoutDate.replace('T', ' ') + ':00',
+      reason: this.extendReason || null,
+    }).subscribe({
+      next: r => {
+        this.extendingStay.set(false);
+        if (r.success) {
+          this.toast.success('Stay extended successfully');
+          this.showExtendStay.set(false);
+          this.loadBooking();
+        } else {
+          this.toast.error(r.message || 'Failed to extend stay');
+        }
+      },
+      error: (err) => {
+        this.extendingStay.set(false);
+        this.toast.error(err?.error?.message || 'Failed to extend stay');
+      },
     });
   }
 

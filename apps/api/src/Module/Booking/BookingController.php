@@ -131,6 +131,31 @@ final class BookingController
         }
     }
 
+    /** POST /api/bookings/{id}/extend-checkout */
+    public function extendCheckout(Request $request, Response $response, array $args): Response
+    {
+        $body = (array) ($request->getParsedBody() ?? []);
+        if (empty($body['new_checkout_date'])) {
+            return $this->response->validationError($response, ['new_checkout_date' => 'Required']);
+        }
+        try {
+            $userId  = $request->getAttribute('auth.user_id');
+            $booking = $this->bookingService->extendCheckout(
+                $args['id'],
+                $body['new_checkout_date'],
+                $userId,
+                $body['reason'] ?? null,
+            );
+            return $this->response->success($response, $this->serializeEnriched($booking), 'Stay extended successfully');
+        } catch (\InvalidArgumentException $e) {
+            return $this->response->validationError($response, ['error' => $e->getMessage()]);
+        } catch (\DomainException $e) {
+            return $this->response->error($response, $e->getMessage(), 409);
+        } catch (\RuntimeException $e) {
+            return $this->response->validationError($response, ['error' => $e->getMessage()]);
+        }
+    }
+
     /** POST /api/bookings/{id}/confirm */
     public function confirm(Request $request, Response $response, array $args): Response
     {

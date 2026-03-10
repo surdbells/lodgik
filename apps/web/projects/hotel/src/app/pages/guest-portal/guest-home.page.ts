@@ -20,6 +20,7 @@ const QUICK_ACTIONS = [
   { label: 'Lost & Found',  icon: 'searchx',      route: '/guest/lost-found',     color: 'text-pink-400'  },
   { label: 'Hotel Info',    icon: 'info',         route: '/guest/hotel-info',     color: 'text-cyan-400'  },
   { label: 'Spa & Gym',     icon: 'sparkles',     route: '/guest/spa',            color: 'text-rose-400'  },
+  { label: 'Preferences',   icon: 'sliders', route: '/guest/preferences', color: 'text-violet-400' },
   { label: 'Check Out',     icon: 'dooropen',     route: '/guest/checkout',       color: 'text-red-400'   },
 ];
 

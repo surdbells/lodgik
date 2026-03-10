@@ -758,4 +758,115 @@ final class BookingService
 
         return $this->rateCalc->calculate($roomType, $bt, $ci, $co, $discount);
     }
+
+    // ═══ Stay Extension ════════════════════════════════════════
+
+    /**
+     * Extend a checked-in booking's checkout date.
+     *
+     * - Validates booking is currently checked_in
+     * - Checks for room availability overlap (excludes this booking)
+     * - Updates check_out and recalculates total_amount
+     * - Adds folio charge for the extra nights
+     * - Logs the status change
+     * - Notifies guest via notification
+     *
+     * @throws \InvalidArgumentException
+     * @throws \DomainException
+     */
+    public function extendCheckout(
+        string  $bookingId,
+        string  $newCheckoutDate,
+        ?string $staffId = null,
+        ?string $reason  = null,
+    ): Booking {
+        $booking = $this->bookingRepo->findOrFail($bookingId);
+
+        if ($booking->getStatus() !== BookingStatus::CHECKED_IN) {
+            throw new \InvalidArgumentException('Can only extend a currently checked-in booking.');
+        }
+
+        // Parse new checkout
+        $newCheckout = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $newCheckoutDate)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d H:i', $newCheckoutDate)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d', $newCheckoutDate);
+
+        if ($newCheckout === false) {
+            throw new \InvalidArgumentException('Invalid new_checkout_date format. Use Y-m-d or Y-m-d H:i:s.');
+        }
+
+        $originalCheckout = $booking->getCheckOut();
+
+        if ($newCheckout <= $originalCheckout) {
+            throw new \InvalidArgumentException('New checkout date must be after the current checkout date.');
+        }
+
+        // Check room overlap for the extension window
+        $roomId = $booking->getRoomId();
+        if ($roomId && $this->bookingRepo->hasOverlap($roomId, $originalCheckout, $newCheckout, $bookingId)) {
+            throw new \DomainException('Room is not available for the requested extension period — another booking exists.');
+        }
+
+        // Calculate extra nights and charge
+        $extraNights    = max(1, (int) $originalCheckout->diff($newCheckout)->days);
+        $ratePerNight   = (float) $booking->getRatePerNight();
+        $extraAmount    = $extraNights * $ratePerNight;
+        $newTotal       = (float) $booking->getTotalAmount() + $extraAmount;
+
+        // Update booking dates + total
+        $booking->setCheckOut($newCheckout);
+        $booking->setTotalAmount((string) $newTotal);
+
+        // Log the extension as a status-log entry (informational)
+        $log = new BookingStatusLog($booking->getId(), $booking->getStatus(), $booking->getStatus(), $booking->getTenantId());
+        $log->setChangedBy($staffId);
+        $log->setNotes(
+            "Stay extended from {$originalCheckout->format('d M Y')} to {$newCheckout->format('d M Y')}" .
+            " (+{$extraNights} night(s), ₦" . number_format($extraAmount, 2) . ")." .
+            ($reason ? " Reason: {$reason}" : '')
+        );
+        $this->em->persist($log);
+
+        // Add folio charge for extra nights
+        try {
+            $folio = $this->folioService->getByBooking($bookingId);
+            if ($folio) {
+                $this->folioService->addCharge(
+                    $folio->getId(),
+                    'room',
+                    "Stay Extension: +{$extraNights} night(s) (until {$newCheckout->format('d M Y')})",
+                    (string) ($ratePerNight),
+                    $extraNights,
+                    $staffId,
+                    $reason,
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning("[ExtendCheckout] Could not post folio charge: {$e->getMessage()}");
+        }
+
+        $this->em->flush();
+
+        // Notify guest
+        if ($this->notificationService) {
+            try {
+                $this->notificationService->create(
+                    $booking->getPropertyId(),
+                    'guest',
+                    $booking->getGuestId(),
+                    'booking',
+                    '✅ Stay Extension Confirmed',
+                    $booking->getTenantId(),
+                    "Your stay has been extended to {$newCheckout->format('d M Y')}. Extra charges of ₦" . number_format($extraAmount, 2) . " have been added to your folio.",
+                    ['booking_id' => $bookingId, 'new_checkout' => $newCheckout->format('Y-m-d H:i:s')],
+                );
+            } catch (\Throwable $e) {
+                $this->logger->warning("[ExtendCheckout] Could not send guest notification: {$e->getMessage()}");
+            }
+        }
+
+        $this->logger->info("[ExtendCheckout] Booking {$bookingId} extended to {$newCheckout->format('Y-m-d H:i:s')} by staff={$staffId}");
+
+        return $booking;
+    }
 }

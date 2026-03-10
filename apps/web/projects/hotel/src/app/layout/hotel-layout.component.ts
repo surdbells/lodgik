@@ -264,9 +264,9 @@ export class HotelLayoutComponent implements OnInit {
     {
       label: 'Guest Experience',
       items: [
-        { label: 'Service Requests', icon: 'concierge-bell', route: '/guest-services', requiredModule: 'service_requests' },
-        { label: 'Chat', icon: 'message-circle', route: '/chat', requiredModule: 'guest_chat' },
         { label: 'Service Requests', icon: 'concierge-bell', route: '/service-requests', requiredModule: 'service_requests' },
+        { label: 'Guest Services',   icon: 'users',          route: '/guest-services',   requiredModule: 'service_requests' },
+        { label: 'Chat', icon: 'message-circle', route: '/chat', requiredModule: 'guest_chat' },
         { label: 'Loyalty', icon: 'gift', route: '/loyalty', requiredModule: 'loyalty_program' },
         { label: 'Guest Preferences', icon: 'heart', route: '/guest-preferences' },
         { label: 'Security', icon: 'shield', route: '/security', requiredModule: 'security_incidents' },

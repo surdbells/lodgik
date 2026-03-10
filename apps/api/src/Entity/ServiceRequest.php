@@ -74,6 +74,17 @@ class ServiceRequest implements TenantAware
     #[ORM\Column(name: 'photo_url', type: Types::STRING, length: 500, nullable: true)]
     private ?string $photoUrl = null;
 
+    /**
+     * Arbitrary metadata for category-specific data.
+     * stay_extension stores: { requested_checkout, original_checkout, extra_nights, rate_per_night }
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $metadata = null;
+
+    // Transient enrichment fields (not persisted — set by repository/service)
+    private ?string $roomNumber = null;
+    private ?string $guestName  = null;
+
     public function __construct(string $propertyId, string $bookingId, string $guestId, ServiceRequestCategory $category, string $title, string $tenantId)
     {
         $this->generateId();
@@ -112,6 +123,17 @@ class ServiceRequest implements TenantAware
     public function setStaffNotes(?string $v): void { $this->staffNotes = $v; }
     public function getPhotoUrl(): ?string { return $this->photoUrl; }
     public function setPhotoUrl(?string $v): void { $this->photoUrl = $v; }
+
+    public function getMetadata(): ?array { return $this->metadata; }
+    public function setMetadata(?array $v): void { $this->metadata = $v; }
+
+    /** Transient — not persisted. Set by enrichment layer. */
+    public function getRoomNumber(): ?string { return $this->roomNumber; }
+    public function setRoomNumber(?string $v): void { $this->roomNumber = $v; }
+
+    /** Transient — not persisted. Set by enrichment layer. */
+    public function getGuestName(): ?string { return $this->guestName; }
+    public function setGuestName(?string $v): void { $this->guestName = $v; }
 
     public function acknowledge(?string $staffId = null): void
     {
@@ -156,7 +178,9 @@ class ServiceRequest implements TenantAware
             'property_id' => $this->propertyId,
             'booking_id' => $this->bookingId,
             'guest_id' => $this->guestId,
+            'guest_name' => $this->guestName,
             'room_id' => $this->roomId,
+            'room_number' => $this->roomNumber,
             'category' => $this->category->value,
             'category_label' => $this->category->label(),
             'category_icon' => $this->category->icon(),
@@ -174,6 +198,7 @@ class ServiceRequest implements TenantAware
             'guest_feedback' => $this->guestFeedback,
             'staff_notes' => $this->staffNotes,
             'photo_url' => $this->photoUrl,
+            'metadata' => $this->metadata,
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
     }
