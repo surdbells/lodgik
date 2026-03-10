@@ -38,7 +38,7 @@ final class InvoiceController
     public function byBooking(Request $request, Response $response, array $args): Response
     {
         $invoice = $this->invoiceService->getByBooking($args['bookingId']);
-        if ($invoice === null) return $this->response->error($response, 'No invoice found', 404);
+        if ($invoice === null) return $this->response->success($response, null, 'No invoice generated yet');
         $detail = $this->invoiceService->getDetail($invoice->getId());
         return $this->response->success($response, $detail);
     }

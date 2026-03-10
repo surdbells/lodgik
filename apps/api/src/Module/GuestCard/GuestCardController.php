@@ -32,10 +32,19 @@ final class GuestCardController
     public function listCards(Request $request, Response $response): Response
     {
         try {
-            $filters    = PaginationHelper::filtersFromRequest($request, ['property_id', 'status']);
+            $filters    = PaginationHelper::filtersFromRequest($request, ['property_id', 'booking_id', 'status']);
             $pagination = PaginationHelper::fromRequest($request);
 
+            $bookingId  = $filters['booking_id'] ?? null;
             $propertyId = $filters['property_id'] ?? null;
+
+            // If booking_id is supplied, return cards for that specific booking
+            if ($bookingId) {
+                $cards = $this->cardRepo->findActiveByBooking($bookingId);
+                $items = array_map(fn(GuestCard $c) => $this->serializeCard($c), $cards);
+                return $this->response->paginated($response, $items, count($items), 1, $pagination['limit']);
+            }
+
             if (!$propertyId) return $this->response->error($response, 'property_id is required', 400);
 
             $result = $this->cardRepo->findByProperty(
