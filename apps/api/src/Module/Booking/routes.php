@@ -16,6 +16,7 @@ return function (App $app): void {
         $group->get('/today', [BookingController::class, 'today']);
         $group->get('/calendar', [BookingController::class, 'calendar']);
         $group->get('/overdue', [BookingController::class, 'overdue']);
+        $group->get('/search', [BookingController::class, 'search']);
 
         // ── Static POST routes MUST come before /{id} ────────────────
         $group->post('', [BookingController::class, 'create']);

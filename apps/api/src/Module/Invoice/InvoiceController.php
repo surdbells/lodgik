@@ -73,8 +73,16 @@ final class InvoiceController
     {
         try {
             $body = (array) ($request->getParsedBody() ?? []);
-            $invoice = $this->invoiceService->markPaid($args['id'], $body['payment_method'] ?? 'bank_transfer', $body['reference'] ?? null);
-            return $this->response->success($response, $invoice->toArray(), 'Invoice marked as paid');
+            $amount = isset($body['amount']) ? (float) $body['amount'] : null;
+            $invoice = $this->invoiceService->markPaid(
+                $args['id'],
+                $body['payment_method'] ?? 'bank_transfer',
+                $body['reference'] ?? null,
+                $amount,
+                $body['notes'] ?? null,
+            );
+            $detail = $this->invoiceService->getDetail($invoice->getId());
+            return $this->response->success($response, $detail, 'Payment recorded');
         } catch (\RuntimeException $e) {
             return $this->response->error($response, $e->getMessage(), 422);
         }

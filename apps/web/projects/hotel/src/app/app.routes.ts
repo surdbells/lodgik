@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from '@lodgik/shared';
+import { authGuard, roleGuard } from '@lodgik/shared';
 
 export const routes: Routes = [
   {
@@ -37,26 +37,32 @@ export const routes: Routes = [
       {
         path: 'staff',
         loadComponent: () => import('./pages/staff/staff-list.page').then(m => m.StaffListPage),
+        canActivate: [roleGuard('property_admin', 'manager')],
       },
       {
         path: 'properties',
         loadComponent: () => import('./pages/properties/property-list.page').then(m => m.PropertyListPage),
+        canActivate: [roleGuard('property_admin')],
       },
       {
         path: 'settings',
         loadComponent: () => import('./pages/settings/settings.page').then(m => m.SettingsPage),
+        canActivate: [roleGuard('property_admin', 'manager')],
       },
       {
         path: 'features',
         loadComponent: () => import('./pages/features/features.page').then(m => m.FeaturesPage),
+        canActivate: [roleGuard('property_admin')],
       },
       {
         path: 'apps',
         loadComponent: () => import('./pages/apps/apps.page').then(m => m.AppsPage),
+        canActivate: [roleGuard('property_admin')],
       },
       {
         path: 'billing',
         loadComponent: () => import('./pages/billing/billing.page').then(m => m.BillingPage),
+        canActivate: [roleGuard('property_admin')],
       },
       {
         path: 'rooms',
@@ -105,31 +111,38 @@ export const routes: Routes = [
       {
         path: 'invoices',
         loadComponent: () => import('./pages/invoices/invoices.page').then(m => m.InvoicesPage),
+        canActivate: [roleGuard('property_admin', 'manager', 'accountant')],
       },
       {
         path: 'invoices/:id',
         loadComponent: () => import('./pages/invoices/invoice-detail.page').then(m => m.InvoiceDetailPage),
+        canActivate: [roleGuard('property_admin', 'manager', 'accountant')],
       },
       // Phase 3: HR & Payroll
       {
         path: 'employees',
         loadComponent: () => import('./pages/employees/employees.page').then(m => m.EmployeesPage),
+        canActivate: [roleGuard('property_admin', 'manager')],
       },
       {
         path: 'employees/:id',
         loadComponent: () => import('./pages/employees/employee-detail.page').then(m => m.EmployeeDetailPage),
+        canActivate: [roleGuard('property_admin', 'manager')],
       },
       {
         path: 'attendance',
         loadComponent: () => import('./pages/attendance/attendance.page').then(m => m.AttendancePage),
+        canActivate: [roleGuard('property_admin', 'manager')],
       },
       {
         path: 'leave',
         loadComponent: () => import('./pages/leave/leave.page').then(m => m.LeavePage),
+        canActivate: [roleGuard('property_admin', 'manager')],
       },
       {
         path: 'payroll',
         loadComponent: () => import('./pages/payroll/payroll.page').then(m => m.PayrollPage),
+        canActivate: [roleGuard('property_admin', 'manager')],
       },
       // Phase 5: Gym & Fitness
       {
@@ -160,10 +173,12 @@ export const routes: Routes = [
       {
         path: 'housekeeping',
         loadComponent: () => import('./pages/housekeeping/housekeeping.page').then(m => m.HousekeepingPage),
+        canActivate: [roleGuard('property_admin', 'manager', 'housekeeping')],
       },
       {
         path: 'housekeeping/consumables',
         loadComponent: () => import('./pages/housekeeping/housekeeping-consumables.page').then(m => m.HousekeepingConsumablesPage),
+        canActivate: [roleGuard('property_admin', 'manager', 'housekeeping')],
       },
       {
         path: 'chat',
@@ -184,6 +199,7 @@ export const routes: Routes = [
       {
         path: 'security',
         loadComponent: () => import('./pages/security/security.page').then(m => m.SecurityPage),
+        canActivate: [roleGuard('property_admin', 'manager', 'security')],
       },
       {
         path: 'room-controls',
@@ -201,14 +217,17 @@ export const routes: Routes = [
       {
         path: 'expenses',
         loadComponent: () => import('./pages/expenses/expenses.page'),
+        canActivate: [roleGuard('property_admin', 'manager', 'accountant')],
       },
       {
         path: 'night-audit',
         loadComponent: () => import('./pages/night-audit/night-audit.page'),
+        canActivate: [roleGuard('property_admin', 'manager', 'accountant')],
       },
       {
         path: 'police-reports',
         loadComponent: () => import('./pages/police-reports/police-reports.page'),
+        canActivate: [roleGuard('property_admin', 'manager', 'security')],
       },
       {
         path: 'performance-reviews',
@@ -260,6 +279,7 @@ export const routes: Routes = [
       {
         path: 'analytics',
         loadComponent: () => import('./pages/analytics/analytics.page'),
+        canActivate: [roleGuard('property_admin', 'manager', 'accountant')],
       },
       {
         path: 'guest-preferences',
@@ -338,10 +358,12 @@ export const routes: Routes = [
       {
         path: 'reports',
         loadComponent: () => import('./pages/reports/reports.page').then(m => m.ReportsPage),
+        canActivate: [roleGuard('property_admin', 'manager', 'accountant')],
       },
       {
         path: 'audit-log',
         loadComponent: () => import('./pages/audit-log/audit-log.page').then(m => m.AuditLogPage),
+        canActivate: [roleGuard('property_admin', 'manager')],
       },
 
       // ── Guest Card System ─────────────────────────────────────

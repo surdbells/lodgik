@@ -11,3 +11,4 @@ export { QrFileUploadComponent } from './file-upload/qr-file-upload.component';
 export { DocPreviewComponent } from './doc-preview/doc-preview.component';
 
 export { ReceiptActionsComponent } from './receipt-actions/receipt-actions.component';
+export { SearchableDropdownComponent } from './searchable-dropdown/searchable-dropdown.component';

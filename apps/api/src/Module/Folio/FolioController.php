@@ -24,8 +24,17 @@ final class FolioController
     public function list(Request $request, Response $response): Response
     {
         $pagination = PaginationHelper::fromRequest($request);
-        $filters = PaginationHelper::filtersFromRequest($request, ['property_id', 'status']);
-        $result = $this->folioService->getByProperty($filters['property_id'] ?? '', $filters['status'] ?? null, $pagination['page'], $pagination['limit']);
+        $filters    = PaginationHelper::filtersFromRequest($request, ['property_id', 'status', 'search', 'invoiceable_only']);
+        $search          = $filters['search'] ?? null;
+        $invoiceableOnly = isset($filters['invoiceable_only']) && $filters['invoiceable_only'] === '1';
+        $result = $this->folioService->getByProperty(
+            $filters['property_id'] ?? '',
+            $filters['status'] ?? null,
+            $pagination['page'],
+            $pagination['limit'],
+            $search,
+            $invoiceableOnly,
+        );
         return $this->response->paginated($response, array_map(fn($f) => $f->toArray(), $result['items']), $result['total'], $pagination['page'], $pagination['limit']);
     }
 
@@ -43,6 +52,21 @@ final class FolioController
         if ($folio === null) return $this->response->error($response, 'No folio found', 404);
         $detail = $this->folioService->getDetail($folio->getId());
         return $this->response->success($response, $detail);
+    }
+
+    /** GET /api/folios/search?property_id=&q= — autocomplete for invoice creation */
+    public function search(Request $request, Response $response): Response
+    {
+        $params     = $request->getQueryParams();
+        $propertyId = $params['property_id'] ?? '';
+        $query      = $params['q'] ?? '';
+
+        if (!$propertyId) {
+            return $this->response->error($response, 'property_id is required', 400);
+        }
+
+        $results = $this->folioService->searchForAutocomplete($propertyId, $query);
+        return $this->response->success($response, $results);
     }
 
     /** POST /api/folios/{id}/charges */

@@ -159,4 +159,28 @@ final class BookingRepository extends BaseRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /** Autocomplete search for invoice creation — returns bookings with folio info */
+    public function searchForAutocomplete(string $propertyId, string $query, int $limit = 10): array
+    {
+        $conn = $this->getEntityManager()->getConnection();
+        $s    = '%' . strtolower(trim($query)) . '%';
+        $sql  = "
+            SELECT b.id, b.booking_ref, b.status AS booking_status,
+                   b.check_in, b.check_out,
+                   CONCAT(g.first_name,' ',g.last_name) AS guest_name,
+                   g.email AS guest_email,
+                   f.id AS folio_id, f.folio_number, f.status AS folio_status, f.balance
+            FROM bookings b
+            LEFT JOIN guests g ON g.id = b.guest_id
+            LEFT JOIN folios f ON f.booking_id = b.id
+            WHERE b.property_id = :pid
+              AND (LOWER(b.booking_ref) LIKE :s
+                   OR LOWER(CONCAT(g.first_name,' ',g.last_name)) LIKE :s
+                   OR LOWER(g.email) LIKE :s)
+            ORDER BY b.created_at DESC
+            LIMIT :limit
+        ";
+        return $conn->fetchAllAssociative($sql, ['pid' => $propertyId, 's' => $s, 'limit' => $limit]);
+    }
 }

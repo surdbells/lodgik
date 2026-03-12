@@ -17,6 +17,7 @@ return function (App $app): void {
 
     $app->group('/api/folios', function (RouteCollectorProxy $g) {
         $g->get('',                              [FolioController::class, 'list']);
+        $g->get('/search',                       [FolioController::class, 'search']);
         $g->get('/pending-payments',             [FolioController::class, 'pendingPayments']);
         $g->get('/by-booking/{bookingId}',       [FolioController::class, 'byBooking']);
         $g->get('/{id}',                         [FolioController::class, 'detail']);

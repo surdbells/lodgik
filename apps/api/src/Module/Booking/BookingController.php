@@ -51,6 +51,21 @@ final class BookingController
         return $this->response->paginated($response, $items, $result['total'], $pagination['page'], $pagination['limit']);
     }
 
+    /** GET /api/bookings/search?property_id=&q= — autocomplete for invoice creation */
+    public function search(Request $request, Response $response): Response
+    {
+        $params     = $request->getQueryParams();
+        $propertyId = $params['property_id'] ?? '';
+        $query      = $params['q'] ?? '';
+
+        if (!$propertyId) {
+            return $this->response->error($response, 'property_id is required', 400);
+        }
+
+        $results = $this->bookingService->searchForAutocomplete($propertyId, $query);
+        return $this->response->success($response, $results);
+    }
+
     /** GET /api/bookings/{id} */
     public function show(Request $request, Response $response, array $args): Response
     {

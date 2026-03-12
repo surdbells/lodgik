@@ -86,9 +86,20 @@ final class FolioService
         return $this->folioRepo->findOrFail($folioId);
     }
 
-    public function getByProperty(string $propertyId, ?string $status = null, int $page = 1, int $limit = 20): array
+    public function getByProperty(
+        string $propertyId,
+        ?string $status = null,
+        int $page = 1,
+        int $limit = 20,
+        ?string $search = null,
+        bool $invoiceableOnly = false,
+    ): array {
+        return $this->folioRepo->findByProperty($propertyId, $status, $page, $limit, $search, $invoiceableOnly);
+    }
+
+    public function searchForAutocomplete(string $propertyId, string $query): array
     {
-        return $this->folioRepo->findByProperty($propertyId, $status, $page, $limit);
+        return $this->folioRepo->searchForAutocomplete($propertyId, $query, 10);
     }
 
     public function getDetail(string $folioId): array

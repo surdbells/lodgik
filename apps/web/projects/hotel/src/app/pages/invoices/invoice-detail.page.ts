@@ -1,28 +1,58 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService } from '@lodgik/shared';
+import { FormsModule } from '@angular/forms';
+import {
+  ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
+  ConfirmDialogService, ConfirmDialogComponent, SearchableDropdownComponent,
+} from '@lodgik/shared';
 
 @Component({
   selector: 'app-invoice-detail',
   standalone: true,
-  imports: [DatePipe, RouterLink, PageHeaderComponent, LoadingSpinnerComponent],
+  imports: [DatePipe, RouterLink, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, ConfirmDialogComponent],
   template: `
-    <ui-page-header [title]="invoice()?.invoice_number || 'Invoice'" subtitle="Invoice details">
-      <div class="flex gap-2">
-        <a routerLink="/invoices" class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">← Back</a>
-        <button (click)="downloadPdf()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">📄 PDF</button>
-        <button (click)="emailInvoice()" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700">📧 Email</button>
+    <ui-confirm-dialog/>
+
+    <ui-page-header [title]="invoice()?.invoice_number || 'Invoice'" subtitle="Invoice detail & payment">
+      <div class="flex gap-2 flex-wrap">
+        <a routerLink="/invoices" class="px-3 py-2 text-sm border border-gray-300 rounded-xl hover:bg-gray-50">← Back</a>
+        @if (invoice()?.status === 'issued') {
+          <button (click)="openPayModal()" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700">
+            💳 Record Payment
+          </button>
+        }
+        <button (click)="downloadPdf()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700">📄 PDF</button>
+        <button (click)="emailInvoice()" class="px-4 py-2 border border-sage-400 text-sage-700 text-sm font-medium rounded-xl hover:bg-sage-50">📧 Email</button>
       </div>
     </ui-page-header>
 
-    <ui-loading [loading]="loading()"></ui-loading>
+    <ui-loading [loading]="loading()"/>
 
     @if (!loading() && invoice()) {
+      <!-- Balance due banner -->
+      @if (invoice()!.status === 'issued' && balanceDue() > 0) {
+        <div class="mb-5 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-5 py-3">
+          <div>
+            <p class="text-sm font-semibold text-amber-800">Payment Outstanding</p>
+            <p class="text-xs text-amber-600 mt-0.5">₦{{ (+invoice()!.amount_paid).toLocaleString() }} paid of ₦{{ (+invoice()!.grand_total).toLocaleString() }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xl font-bold text-amber-700">₦{{ balanceDue().toLocaleString() }}</p>
+            <p class="text-xs text-amber-500">balance due</p>
+          </div>
+        </div>
+      }
+      @if (invoice()!.status === 'paid') {
+        <div class="mb-5 flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3">
+          <span class="text-emerald-600 text-xl">✓</span>
+          <p class="text-sm font-semibold text-emerald-800">Fully Paid — ₦{{ (+invoice()!.grand_total).toLocaleString() }}</p>
+        </div>
+      }
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Invoice Preview -->
         <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-card p-6">
-          <!-- Header -->
           <div class="flex justify-between items-start mb-6">
             <div>
               <h2 class="text-xl font-bold text-gray-900">INVOICE</h2>
@@ -32,13 +62,13 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
               <p>Date: {{ invoice()!.invoice_date }}</p>
               @if (invoice()!.due_date) { <p>Due: {{ invoice()!.due_date }}</p> }
               <p class="mt-1">
-                <span class="px-2 py-0.5 rounded-full text-xs font-bold text-white"
-                      [style.background-color]="statusColor()">{{ invoice()!.status.toUpperCase() }}</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold text-white" [style.background-color]="statusColor()">
+                  {{ invoice()!.status.toUpperCase() }}
+                </span>
               </p>
             </div>
           </div>
 
-          <!-- Bill To -->
           <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
             <div>
               <span class="text-xs font-semibold text-gray-400 uppercase">Bill To</span>
@@ -52,7 +82,6 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
             </div>
           </div>
 
-          <!-- Items Table -->
           <table class="w-full text-sm mb-6">
             <thead>
               <tr class="border-b-2 border-gray-200">
@@ -76,7 +105,6 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
             </tbody>
           </table>
 
-          <!-- Totals -->
           <div class="flex justify-end">
             <div class="w-64 space-y-1 text-sm">
               <div class="flex justify-between py-1"><span class="text-gray-500">Subtotal</span><span>₦{{ (+invoice()!.subtotal).toLocaleString() }}</span></div>
@@ -87,54 +115,125 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
               <div class="flex justify-between py-2 border-t-2 border-gray-800 text-lg font-bold">
                 <span>TOTAL</span><span class="text-emerald-700">₦{{ (+invoice()!.grand_total).toLocaleString() }}</span>
               </div>
-              <div class="flex justify-between py-1"><span class="text-gray-500">Amount Paid</span><span>₦{{ (+invoice()!.amount_paid).toLocaleString() }}</span></div>
+              <div class="flex justify-between py-1"><span class="text-gray-500">Amount Paid</span><span class="text-emerald-600 font-medium">₦{{ (+invoice()!.amount_paid).toLocaleString() }}</span></div>
+              @if (balanceDue() > 0) {
+                <div class="flex justify-between py-1 border-t border-dashed border-amber-300">
+                  <span class="text-amber-700 font-semibold">Balance Due</span>
+                  <span class="text-amber-700 font-bold">₦{{ balanceDue().toLocaleString() }}</span>
+                </div>
+              }
             </div>
           </div>
 
-          <!-- Bank Details -->
           @if (invoice()!.bank_name) {
             <div class="mt-6 p-4 bg-sage-50 border border-sage-200 rounded-lg">
               <h4 class="text-xs font-semibold text-sage-700 uppercase mb-2">Bank Details for Payment</h4>
               <div class="grid grid-cols-3 gap-4 text-sm">
-                <div><span class="text-gray-400">Bank</span><p class="font-bold text-gray-900">{{ invoice()!.bank_name }}</p></div>
-                <div><span class="text-gray-400">Account</span><p class="font-bold text-gray-900">{{ invoice()!.bank_account_number }}</p></div>
-                <div><span class="text-gray-400">Name</span><p class="font-bold text-gray-900">{{ invoice()!.bank_account_name }}</p></div>
+                <div><span class="text-gray-400 text-xs">Bank</span><p class="font-bold text-gray-900">{{ invoice()!.bank_name }}</p></div>
+                <div><span class="text-gray-400 text-xs">Account #</span><p class="font-bold text-gray-900">{{ invoice()!.bank_account_number }}</p></div>
+                <div><span class="text-gray-400 text-xs">Account Name</span><p class="font-bold text-gray-900">{{ invoice()!.bank_account_name }}</p></div>
               </div>
             </div>
           }
         </div>
 
-        <!-- Sidebar Info -->
-        <div class="space-y-6">
+        <!-- Sidebar -->
+        <div class="space-y-4">
           <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">Details</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">Links</h3>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between"><span class="text-gray-400">Booking</span><a [routerLink]="['/bookings', invoice()!.booking_id]" class="text-sage-600 hover:underline">View →</a></div>
               <div class="flex justify-between"><span class="text-gray-400">Folio</span><a [routerLink]="['/folios', invoice()!.folio_id]" class="text-sage-600 hover:underline">View →</a></div>
               @if (invoice()!.emailed_at) {
-                <div class="flex justify-between"><span class="text-gray-400">Emailed</span><span>{{ invoice()!.emailed_at | date:'short' }}</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Emailed</span><span class="text-xs text-gray-500">{{ invoice()!.emailed_at | date:'short' }}</span></div>
               }
             </div>
           </div>
 
-          @if (invoice()!.status !== 'void') {
-            <button (click)="voidInvoice()" class="w-full px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">Void Invoice</button>
+          @if (invoice()!.status === 'issued') {
+            <button (click)="openPayModal()"
+              class="w-full px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors">
+              💳 Record Payment
+            </button>
           }
+
+          @if (invoice()!.status !== 'void' && invoice()!.status !== 'paid') {
+            <button (click)="voidInvoice()"
+              class="w-full px-4 py-2 border border-red-300 text-red-600 text-sm font-medium rounded-xl hover:bg-red-50 transition-colors">
+              Void Invoice
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Pay Modal -->
+    @if (showPayModal()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" (click)="closePayModal()"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+          <h3 class="text-base font-semibold text-gray-900 mb-1">Record Payment</h3>
+          <p class="text-xs text-gray-400 mb-4">Invoice {{ invoice()!.invoice_number }} · Balance ₦{{ balanceDue().toLocaleString() }}</p>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Amount (₦)</label>
+              <input type="number" [(ngModel)]="payForm.amount" [max]="balanceDue()"
+                class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                [placeholder]="balanceDue().toString()"/>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Payment Method</label>
+              <select [(ngModel)]="payForm.method" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white">
+                <option value="cash">Cash</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="pos_card">POS / Card</option>
+              </select>
+            </div>
+            @if (payForm.method === 'bank_transfer') {
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Transfer Reference</label>
+                <input [(ngModel)]="payForm.reference" placeholder="e.g. NXP2024123456"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"/>
+              </div>
+            }
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Notes (optional)</label>
+              <input [(ngModel)]="payForm.notes" placeholder="Additional remarks…"
+                class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"/>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-6">
+            <button (click)="submitPayment()" [disabled]="savingPayment()"
+              class="flex-1 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+              {{ savingPayment() ? 'Recording…' : 'Record Payment' }}
+            </button>
+            <button (click)="closePayModal()" class="px-4 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50">Cancel</button>
+          </div>
         </div>
       </div>
     }
   `,
 })
 export class InvoiceDetailPage implements OnInit {
-  private api = inject(ApiService);
-  private route = inject(ActivatedRoute);
-  private toast = inject(ToastService);
+  private api     = inject(ApiService);
+  private route   = inject(ActivatedRoute);
+  private toast   = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
 
-  loading = signal(true);
-  invoice = signal<any>(null);
-  items = signal<any[]>([]);
+  loading      = signal(true);
+  invoice      = signal<any>(null);
+  items        = signal<any[]>([]);
+  showPayModal = signal(false);
+  savingPayment = signal(false);
+  payForm      = { amount: 0, method: 'cash', reference: '', notes: '' };
+
   private invoiceId = '';
+
+  balanceDue = computed(() => {
+    const inv = this.invoice();
+    if (!inv) return 0;
+    return Math.max(0, (+inv.grand_total) - (+inv.amount_paid));
+  });
 
   ngOnInit(): void {
     this.invoiceId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -142,9 +241,10 @@ export class InvoiceDetailPage implements OnInit {
   }
 
   loadInvoice(): void {
+    this.loading.set(true);
     this.api.get(`/invoices/${this.invoiceId}`).subscribe(r => {
       if (r.success) {
-        this.invoice.set(r.data.invoice);
+        this.invoice.set(r.data.invoice ?? r.data);
         this.items.set(r.data.items ?? []);
       }
       this.loading.set(false);
@@ -152,18 +252,15 @@ export class InvoiceDetailPage implements OnInit {
   }
 
   statusColor(): string {
-    const colors: Record<string, string> = { issued: '#f59e0b', paid: '#22c55e', void: '#ef4444' };
-    return colors[this.invoice()?.status ?? ''] ?? '#6b7280';
+    const c: Record<string,string> = { issued:'#f59e0b', paid:'#22c55e', void:'#ef4444', draft:'#6b7280' };
+    return c[this.invoice()?.status ?? ''] ?? '#6b7280';
   }
 
-  downloadPdf(): void {
-    window.open(`/api/invoices/${this.invoiceId}/pdf`, '_blank');
-  }
+  downloadPdf(): void { window.open(`/api/invoices/${this.invoiceId}/pdf`, '_blank'); }
 
   emailInvoice(): void {
     this.api.post(`/invoices/${this.invoiceId}/email`).subscribe(r => {
-      if (r.success) this.toast.success('Invoice emailed to guest');
-      else this.toast.error(r.message || 'Failed to send email');
+      r.success ? this.toast.success('Invoice emailed to guest') : this.toast.error(r.message || 'Failed');
       this.loadInvoice();
     });
   }
@@ -171,7 +268,29 @@ export class InvoiceDetailPage implements OnInit {
   async voidInvoice(): Promise<void> {
     const ok = await this.confirm.confirm({ title: 'Void Invoice', message: 'Void this invoice? This cannot be undone.', variant: 'warning' });
     if (ok) this.api.post(`/invoices/${this.invoiceId}/void`).subscribe(r => {
-      if (r.success) { this.toast.success('Invoice voided'); this.loadInvoice(); } else this.toast.error(r.message || 'Failed');
+      r.success ? (this.toast.success('Voided'), this.loadInvoice()) : this.toast.error(r.message || 'Failed');
+    });
+  }
+
+  openPayModal(): void {
+    this.payForm = { amount: this.balanceDue(), method: 'cash', reference: '', notes: '' };
+    this.showPayModal.set(true);
+  }
+
+  closePayModal(): void { this.showPayModal.set(false); }
+
+  submitPayment(): void {
+    if (!this.payForm.amount || this.payForm.amount <= 0) { this.toast.error('Enter a valid amount'); return; }
+    this.savingPayment.set(true);
+    this.api.post(`/invoices/${this.invoiceId}/pay`, {
+      amount: this.payForm.amount,
+      payment_method: this.payForm.method,
+      reference: this.payForm.reference || undefined,
+      notes: this.payForm.notes || undefined,
+    }).subscribe(r => {
+      this.savingPayment.set(false);
+      if (r.success) { this.toast.success('Payment recorded'); this.closePayModal(); this.loadInvoice(); }
+      else this.toast.error(r.message || 'Failed');
     });
   }
 }

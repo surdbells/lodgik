@@ -2,12 +2,14 @@ import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService, TokenService, FeatureService, BrandingService, LODGIK_ICONS, ApiService, ActivePropertyService, ToastService } from '@lodgik/shared';
 import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
+import type { UserRole } from '@lodgik/shared';
 
 interface NavItem {
   label: string;
   icon: string;
   route: string;
   requiredModule?: string;
+  requiredRoles?: UserRole[];
   badge?: string;
 }
 
@@ -214,7 +216,8 @@ export class HotelLayoutComponent implements OnInit {
   private router = inject(Router);
   private featureService = inject(FeatureService);
   private brandingService = inject(BrandingService);
-  protected user = inject(TokenService).user;
+  protected tokenService = inject(TokenService);
+  protected user = this.tokenService.user;
   protected branding = this.brandingService.config;
 
   collapsed = signal(false);
@@ -252,115 +255,136 @@ export class HotelLayoutComponent implements OnInit {
       label: 'Daily Operation',
       items: [
         { label: 'Dashboard', icon: 'layout-dashboard', route: '/dashboard' },
-        { label: 'Bookings', icon: 'clipboard-list', route: '/bookings' },
-        { label: 'Rooms', icon: 'bed-double', route: '/rooms' },
-        { label: 'Room Types', icon: 'tag', route: '/room-types' },
-        { label: 'Guests', icon: 'user-round', route: '/guests' },
-        { label: 'Housekeeping', icon: 'spray-can', route: '/housekeeping', requiredModule: 'housekeeping' },
-        { label: 'Consumables', icon: 'box', route: '/housekeeping/consumables', requiredModule: 'housekeeping' },
-        { label: 'Room Controls', icon: 'sliders-horizontal', route: '/room-controls', requiredModule: 'guest_access_codes' },
+        { label: 'Bookings',  icon: 'clipboard-list',   route: '/bookings' },
+        { label: 'Rooms',     icon: 'bed-double',        route: '/rooms' },
+        { label: 'Room Types',icon: 'tag',               route: '/room-types' },
+        { label: 'Guests',    icon: 'user-round',        route: '/guests' },
+      ],
+    },
+    {
+      label: 'Reservations & Events',
+      items: [
+        { label: 'Group Bookings',     icon: 'users',         route: '/group-bookings',   requiredRoles: ['property_admin','manager','front_desk','accountant'] },
+        { label: 'Corporate Profiles', icon: 'building-2',    route: '/corporate-profiles', requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Events & Banquets',  icon: 'calendar-days', route: '/events',           requiredRoles: ['property_admin','manager','front_desk','accountant','concierge'] },
+        { label: 'OTA Channels',       icon: 'globe',         route: '/ota',              requiredRoles: ['property_admin','manager'] },
+        { label: 'Pricing Rules',      icon: 'trending-up',   route: '/pricing-rules', requiredModule: 'dynamic_pricing', requiredRoles: ['property_admin','manager','accountant'] },
       ],
     },
     {
       label: 'Guest Experience',
       items: [
-        { label: 'Service Requests', icon: 'concierge-bell', route: '/service-requests', requiredModule: 'service_requests' },
-        { label: 'Guest Services',   icon: 'users',          route: '/guest-services',   requiredModule: 'service_requests' },
-        { label: 'Chat', icon: 'message-circle', route: '/chat', requiredModule: 'guest_chat' },
-        { label: 'Loyalty', icon: 'gift', route: '/loyalty', requiredModule: 'loyalty_program' },
-        { label: 'Guest Preferences', icon: 'heart', route: '/guest-preferences' },
-        { label: 'Security', icon: 'shield', route: '/security', requiredModule: 'security_incidents' },
-        { label: 'Guest Cards', icon: 'credit-card', route: '/guest-cards', requiredModule: 'guest_access_codes' },
-        { label: 'Card Scanner', icon: 'scan-line', route: '/guest-cards/scanner', requiredModule: 'guest_access_codes' },
-        { label: 'Card Events', icon: 'activity', route: '/guest-cards/events', requiredModule: 'guest_access_codes' },
-        { label: 'Scan Points', icon: 'radio', route: '/guest-cards/scan-points', requiredModule: 'guest_access_codes' },
+        { label: 'Service Requests',  icon: 'concierge-bell', route: '/service-requests',  requiredModule: 'service_requests' },
+        { label: 'Guest Services',    icon: 'users',          route: '/guest-services',    requiredModule: 'service_requests' },
+        { label: 'Chat',              icon: 'message-circle', route: '/chat',              requiredModule: 'guest_chat' },
+        { label: 'Loyalty',           icon: 'gift',           route: '/loyalty',           requiredModule: 'loyalty_program' },
+        { label: 'Guest Preferences', icon: 'heart',          route: '/guest-preferences' },
+        { label: 'Guest Cards',       icon: 'credit-card',    route: '/guest-cards',       requiredModule: 'guest_access_codes' },
+        { label: 'Card Scanner',      icon: 'scan-line',      route: '/guest-cards/scanner',    requiredModule: 'guest_access_codes' },
+        { label: 'Card Events',       icon: 'activity',       route: '/guest-cards/events',     requiredModule: 'guest_access_codes' },
+        { label: 'Scan Points',       icon: 'radio',          route: '/guest-cards/scan-points', requiredModule: 'guest_access_codes' },
+        { label: 'Room Controls',     icon: 'sliders-horizontal', route: '/room-controls', requiredModule: 'guest_access_codes' },
+      ],
+    },
+    {
+      label: 'Housekeeping',
+      items: [
+        { label: 'Housekeeping', icon: 'spray-can', route: '/housekeeping', requiredModule: 'housekeeping', requiredRoles: ['property_admin','manager','housekeeping'] },
+        { label: 'Consumables',  icon: 'box',        route: '/housekeeping/consumables', requiredModule: 'housekeeping', requiredRoles: ['property_admin','manager','housekeeping'] },
       ],
     },
     {
       label: 'F&B & Facilities',
       items: [
-        { label: 'POS / Restaurant', icon: 'utensils', route: '/pos', requiredModule: 'bar_pos' },
-        { label: 'Menu & Pricing', icon: 'book-open', route: '/pos/menu', requiredModule: 'bar_pos' },
-        { label: 'Gym & Fitness', icon: 'dumbbell', route: '/gym', requiredModule: 'gym_membership' },
-        { label: 'Spa & Pool', icon: 'bath', route: '/spa' },
-        { label: 'Amenities', icon: 'sparkles', route: '/amenities' },
+        { label: 'POS / Restaurant', icon: 'utensils',  route: '/pos',      requiredModule: 'bar_pos' },
+        { label: 'Menu & Pricing',   icon: 'book-open', route: '/pos/menu', requiredModule: 'bar_pos' },
+        { label: 'Gym & Fitness',    icon: 'dumbbell',  route: '/gym',      requiredModule: 'gym_membership' },
+        { label: 'Spa & Pool',       icon: 'bath',      route: '/spa' },
+        { label: 'Amenities',        icon: 'sparkles',  route: '/amenities' },
       ],
     },
     {
       label: 'Inventory & Food Cost',
       items: [
-        { label: 'Stock & Inventory',    icon: 'package',         route: '/inventory',              requiredModule: 'inventory_management' },
-        { label: 'Stock Movements',      icon: 'arrow-left-right',route: '/inventory/movements',    requiredModule: 'inventory_management' },
-        { label: 'Goods Received (GRN)', icon: 'truck',           route: '/inventory/grn',          requiredModule: 'inventory_management' },
-        { label: 'Vendors',              icon: 'building-2',      route: '/procurement/vendors',    requiredModule: 'inventory_management' },
-        { label: 'Purchase Requests',    icon: 'clipboard-list',  route: '/procurement/requests',   requiredModule: 'inventory_management' },
-        { label: 'Purchase Orders',      icon: 'file-text',       route: '/procurement/orders',     requiredModule: 'inventory_management' },
-        { label: 'Recipe Builder',       icon: 'chef-hat',        route: '/pos/recipes',            requiredModule: 'bar_pos' },
-        { label: 'Food Cost',            icon: 'percent',         route: '/pos/food-cost',          requiredModule: 'bar_pos' },
-        { label: 'Inventory Reports',    icon: 'bar-chart-2',     route: '/inventory/reports',      requiredModule: 'inventory_management' },
+        { label: 'Stock & Inventory',    icon: 'package',          route: '/inventory',           requiredModule: 'inventory_management' },
+        { label: 'Stock Movements',      icon: 'arrow-left-right', route: '/inventory/movements', requiredModule: 'inventory_management' },
+        { label: 'Goods Received (GRN)', icon: 'truck',            route: '/inventory/grn',       requiredModule: 'inventory_management' },
+        { label: 'Vendors',              icon: 'building-2',       route: '/procurement/vendors', requiredModule: 'inventory_management' },
+        { label: 'Purchase Requests',    icon: 'clipboard-list',   route: '/procurement/requests',requiredModule: 'inventory_management' },
+        { label: 'Purchase Orders',      icon: 'file-text',        route: '/procurement/orders',  requiredModule: 'inventory_management' },
+        { label: 'Recipe Builder',       icon: 'chef-hat',         route: '/pos/recipes',         requiredModule: 'bar_pos' },
+        { label: 'Food Cost',            icon: 'percent',          route: '/pos/food-cost',        requiredModule: 'bar_pos' },
+        { label: 'Inventory Reports',    icon: 'bar-chart-2',      route: '/inventory/reports',   requiredModule: 'inventory_management' },
       ],
     },
     {
       label: 'Finance & Reports',
       items: [
-        { label: 'Folios', icon: 'folder-open', route: '/folios', requiredModule: 'folio_billing' },
-        { label: 'Invoices', icon: 'file-text', route: '/invoices', requiredModule: 'invoice_generation' },
-        { label: 'Expenses', icon: 'receipt', route: '/expenses', requiredModule: 'folio_billing' },
-        { label: 'Night Audit', icon: 'moon', route: '/night-audit', requiredModule: 'folio_billing' },
-        { label: 'Pricing Rules', icon: 'trending-up', route: '/pricing-rules', requiredModule: 'dynamic_pricing' },
-        { label: 'Group Bookings', icon: 'users', route: '/group-bookings' },
-        { label: 'Corporate Profiles', icon: 'building-2', route: '/corporate-profiles' },
-        { label: 'Events & Banquets', icon: 'calendar-days', route: '/events' },
-        { label: 'Analytics', icon: 'chart-bar', route: '/analytics', requiredModule: 'basic_analytics' },
-        { label: 'Reports', icon: 'file-chart-column', route: '/reports', requiredModule: 'basic_analytics' },
-        { label: 'Police Reports', icon: 'shield-alert', route: '/police-reports' },
+        { label: 'Folios',      icon: 'folder-open',       route: '/folios',      requiredModule: 'folio_billing',       requiredRoles: ['property_admin','manager','front_desk','accountant'] },
+        { label: 'Invoices',    icon: 'file-text',         route: '/invoices',    requiredModule: 'invoice_generation',   requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Expenses',    icon: 'receipt',           route: '/expenses',    requiredModule: 'folio_billing',       requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Night Audit', icon: 'moon',              route: '/night-audit', requiredModule: 'folio_billing',       requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Analytics',   icon: 'chart-bar',         route: '/analytics',   requiredModule: 'basic_analytics',     requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Reports',     icon: 'file-chart-column', route: '/reports',     requiredModule: 'basic_analytics',     requiredRoles: ['property_admin','manager','accountant'] },
+      ],
+    },
+    {
+      label: 'Security & Compliance',
+      items: [
+        { label: 'Security',       icon: 'shield',        route: '/security',       requiredModule: 'security_incidents', requiredRoles: ['property_admin','manager','security'] },
+        { label: 'Incidents',      icon: 'triangle-alert',route: '/incidents',      requiredModule: 'security_incidents', requiredRoles: ['property_admin','manager','security'] },
+        { label: 'Police Reports', icon: 'shield-alert',  route: '/police-reports',                                       requiredRoles: ['property_admin','manager','security'] },
+        { label: 'Audit Log',      icon: 'clock-rewind',  route: '/audit-log',      requiredModule: 'audit_logging',      requiredRoles: ['property_admin','manager'] },
       ],
     },
     {
       label: 'Human Resources',
       items: [
-        { label: 'Staff', icon: 'user-round', route: '/staff' },
-        { label: 'Employees', icon: 'user-round-cog', route: '/employees', requiredModule: 'employee_management' },
-        { label: 'Attendance', icon: 'clock', route: '/attendance', requiredModule: 'attendance_shifts' },
-        { label: 'Leave', icon: 'tree-palm', route: '/leave', requiredModule: 'leave_management' },
-        { label: 'Payroll', icon: 'hand-coins', route: '/payroll', requiredModule: 'payroll' },
-        { label: 'Reviews', icon: 'star', route: '/performance-reviews', requiredModule: 'performance_reviews' },
+        { label: 'Staff',      icon: 'user-round',     route: '/staff',                                                requiredRoles: ['property_admin','manager'] },
+        { label: 'Employees',  icon: 'user-round-cog', route: '/employees',           requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager'] },
+        { label: 'Attendance', icon: 'clock',          route: '/attendance',          requiredModule: 'attendance_shifts',    requiredRoles: ['property_admin','manager'] },
+        { label: 'Leave',      icon: 'tree-palm',      route: '/leave',               requiredModule: 'leave_management',     requiredRoles: ['property_admin','manager'] },
+        { label: 'Payroll',    icon: 'hand-coins',     route: '/payroll',             requiredModule: 'payroll',              requiredRoles: ['property_admin','manager'] },
+        { label: 'Reviews',    icon: 'star',           route: '/performance-reviews', requiredModule: 'performance_reviews',  requiredRoles: ['property_admin','manager'] },
       ],
     },
     {
       label: 'Maintenance & Assets',
       items: [
-        { label: 'Assets', icon: 'package', route: '/assets', requiredModule: 'asset_management' },
-        { label: 'Incidents', icon: 'triangle-alert', route: '/incidents', requiredModule: 'security_incidents' },
-        { label: 'Maintenance', icon: 'wrench', route: '/maintenance', requiredModule: 'asset_management' },
-        { label: 'Engineers', icon: 'hard-hat', route: '/engineers', requiredModule: 'asset_management' },
+        { label: 'Assets',      icon: 'package',  route: '/assets',      requiredModule: 'asset_management', requiredRoles: ['property_admin','manager','maintenance'] },
+        { label: 'Maintenance', icon: 'wrench',   route: '/maintenance', requiredModule: 'asset_management', requiredRoles: ['property_admin','manager','maintenance'] },
+        { label: 'Engineers',   icon: 'hard-hat', route: '/engineers',   requiredModule: 'asset_management', requiredRoles: ['property_admin','manager','maintenance'] },
       ],
     },
     {
       label: 'Integrations',
       items: [
-        { label: 'OTA Channels', icon: 'globe', route: '/ota' },
-        { label: 'WhatsApp', icon: 'smartphone', route: '/whatsapp', requiredModule: 'whatsapp_messaging' },
-        { label: 'IoT Devices', icon: 'wifi', route: '/iot' },
+        { label: 'WhatsApp',    icon: 'smartphone', route: '/whatsapp', requiredModule: 'whatsapp_messaging', requiredRoles: ['property_admin','manager'] },
+        { label: 'IoT Devices', icon: 'wifi',       route: '/iot',                                            requiredRoles: ['property_admin','manager'] },
       ],
     },
     {
       label: 'System',
       items: [
-        { label: 'Properties', icon: 'building', route: '/properties', requiredModule: 'multi_property' },
-        { label: 'Features', icon: 'puzzle', route: '/features' },
-        { label: 'Apps', icon: 'zap', route: '/apps' },
-        { label: 'Billing', icon: 'credit-card', route: '/billing' },
+        { label: 'Properties', icon: 'building',    route: '/properties', requiredModule: 'multi_property', requiredRoles: ['property_admin'] },
+        { label: 'Features',   icon: 'puzzle',      route: '/features',                                     requiredRoles: ['property_admin'] },
+        { label: 'Apps',       icon: 'zap',         route: '/apps',                                         requiredRoles: ['property_admin'] },
+        { label: 'Billing',    icon: 'credit-card', route: '/billing',                                      requiredRoles: ['property_admin'] },
       ],
     },
   ];
-
   visibleNavGroups = computed(() => {
+    const role = this.tokenService.role();
     return this.allNavGroups.map(group => ({
       ...group,
       items: group.items.filter(item => {
-        if (!item.requiredModule) return true;
-        return this.featureService.isEnabled(item.requiredModule);
+        // Feature module gate
+        if (item.requiredModule && !this.featureService.isEnabled(item.requiredModule)) return false;
+        // Role gate — if no requiredRoles, item is visible to all authenticated users
+        if (item.requiredRoles && item.requiredRoles.length > 0) {
+          if (!role || !item.requiredRoles.includes(role as any)) return false;
+        }
+        return true;
       }),
     })).filter(g => g.items.length > 0);
   });

@@ -68,6 +68,12 @@ final class BookingService
         return $this->bookingRepo->listBookings($propertyId, $status, $guestId, $roomId, $dateFrom, $dateTo, $search, $page, $limit);
     }
 
+    public function searchForAutocomplete(string $propertyId, string $query): array
+    {
+        return $this->bookingRepo->searchForAutocomplete($propertyId, $query, 10);
+    }
+    }
+
     public function getById(string $id): ?Booking
     {
         $b = $this->bookingRepo->find($id);

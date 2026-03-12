@@ -316,13 +316,27 @@ HTML;
         return array_map(fn($t) => $t->toArray(), $taxes);
     }
 
-    public function markPaid(string $invoiceId, string $paymentMethod = 'bank_transfer', ?string $reference = null): Invoice
-    {
+    public function markPaid(
+        string $invoiceId,
+        string $paymentMethod = 'bank_transfer',
+        ?string $reference = null,
+        ?float $amount = null,
+        ?string $notes = null,
+    ): Invoice {
         $invoice = $this->getById($invoiceId);
-        if ($invoice->getStatus() === 'paid') throw new \RuntimeException('Invoice already paid');
         if ($invoice->getStatus() === 'void') throw new \RuntimeException('Cannot pay a voided invoice');
-        $invoice->setStatus('paid');
-        $invoice->setAmountPaid($invoice->getGrandTotal());
+
+        $totalDue   = (float) $invoice->getGrandTotal();
+        $alreadyPaid = (float) $invoice->getAmountPaid();
+        $paying     = $amount ?? ($totalDue - $alreadyPaid);
+
+        $newPaid = min($alreadyPaid + $paying, $totalDue);
+        $invoice->setAmountPaid((string) $newPaid);
+
+        if ($newPaid >= $totalDue) {
+            $invoice->setStatus('paid');
+        }
+
         $this->em->flush();
         return $invoice;
     }

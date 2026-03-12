@@ -1,14 +1,14 @@
 import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe, DatePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, BadgeComponent } from '@lodgik/shared';
+import { Observable, map, of, Subscription } from 'rxjs';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, BadgeComponent, SearchableDropdownComponent } from '@lodgik/shared';
 import { ActivePropertyService } from '@lodgik/shared';
-import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-group-bookings',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, DatePipe, DecimalPipe],
+  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, BadgeComponent, DatePipe, DecimalPipe, SearchableDropdownComponent],
   template: `
     <ui-page-header title="Group Bookings" icon="groups" [breadcrumbs]="['Bookings','Group Bookings']"
       subtitle="Manage group and corporate bookings">
@@ -38,8 +38,22 @@ import { Subscription } from 'rxjs';
               </select></div>
             <div><label class="block text-xs font-medium text-gray-500 mb-1">Contact Name *</label>
               <input [(ngModel)]="form.contact_name" placeholder="John Doe" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-            <div><label class="block text-xs font-medium text-gray-500 mb-1">Company</label>
-              <input [(ngModel)]="form.company_name" placeholder="Acme Ltd" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Corporate Profile</label>
+              <ui-searchable-dropdown
+                [searchFn]="searchCorporateProfiles"
+                labelKey="company_name"
+                sublabelKey="contact_name"
+                placeholder="Search company or leave blank…"
+                noResultsText="No corporate profiles found"
+                emptyText="Start typing company name…"
+                (selected)="onCorporateProfileSelected($event)"
+              />
+              @if (!form.corporate_profile_id && form.company_name) {
+                <p class="text-xs text-gray-400 mt-1">Or enter manually:</p>
+                <input [(ngModel)]="form.company_name" placeholder="Company name" class="mt-1 w-full px-3 py-2 border rounded-lg text-sm">
+              }
+            </div>
             <div><label class="block text-xs font-medium text-gray-500 mb-1">Check-in *</label>
               <input type="date" [(ngModel)]="form.check_in" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
             <div><label class="block text-xs font-medium text-gray-500 mb-1">Check-out *</label>
@@ -173,6 +187,27 @@ import { Subscription } from 'rxjs';
                         @if (savingCorp()) { Saving… } @else { Save Corporate Settings }
                       </button>
                     </div>
+
+                    <!-- Link to corporate profile -->
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                      <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Link Corporate Profile</p>
+                      @if (g.corporate_profile_id) {
+                        <div class="flex items-center justify-between p-2.5 bg-purple-50 border border-purple-200 rounded-lg">
+                          <p class="text-xs font-medium text-purple-800">{{ g.corporate_profile_name || 'Linked' }}</p>
+                          <button (click)="unlinkCorporateProfile(g.id)"
+                            class="text-xs text-red-500 hover:text-red-700">Unlink</button>
+                        </div>
+                      } @else {
+                        <ui-searchable-dropdown
+                          [searchFn]="searchCorporateProfiles"
+                          labelKey="company_name"
+                          sublabelKey="contact_name"
+                          placeholder="Search and link a corporate profile…"
+                          noResultsText="No profiles found"
+                          (selected)="linkCorporateProfile(g.id, $event)"
+                        />
+                      }
+                    </div>
                   </div>
 
                   <!-- Right: Folio Summary + Send Invoice -->
@@ -254,10 +289,12 @@ export default class GroupBookingsPage implements OnInit, OnDestroy {
   savingCorp      = signal(false);
   sendingInvoice  = signal(false);
   corporateSummary = signal<any>(null);
+  linkingProfile  = signal(false);
 
   showForm = false;
   form: any = {
     name: '', booking_type: 'overnight', contact_name: '', company_name: '',
+    corporate_profile_id: null,
     check_in: '', check_out: '', total_rooms: 1, discount_percentage: 0,
   };
 
@@ -276,6 +313,73 @@ export default class GroupBookingsPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void { this.sub?.unsubscribe(); }
+
+  // ── Corporate profile search (shared for create form + expand panel) ──
+  searchCorporateProfiles = (query: string): Observable<any[]> => {
+    const pid = this.propSvc.propertyId();
+    return this.api.get<any>('/corporate-profiles', { property_id: pid, active: 'true' }).pipe(
+      map(r => {
+        const all: any[] = r.success ? (r.data ?? []) : [];
+        if (!query.trim()) return all.slice(0, 10);
+        const q = query.toLowerCase();
+        return all.filter((p: any) =>
+          (p.company_name || '').toLowerCase().includes(q) ||
+          (p.contact_name || '').toLowerCase().includes(q)
+        ).slice(0, 10);
+      }),
+    );
+  };
+
+  onCorporateProfileSelected(profile: any): void {
+    if (!profile) {
+      this.form.corporate_profile_id = null;
+      this.form.company_name = '';
+      return;
+    }
+    this.form.corporate_profile_id = profile.id;
+    this.form.company_name = profile.company_name;
+    if (profile.discount_percentage) {
+      this.form.discount_percentage = profile.discount_percentage;
+    }
+    if (profile.contact_name && !this.form.contact_name) {
+      this.form.contact_name = profile.contact_name;
+    }
+  }
+
+  linkCorporateProfile(groupId: string, profile: any): void {
+    if (!profile) return;
+    this.linkingProfile.set(true);
+    this.api.patch(`/group-bookings/${groupId}/corporate`, { corporate_profile_id: profile.id }).subscribe({
+      next: (r: any) => {
+        this.linkingProfile.set(false);
+        if (r?.success) {
+          this.toast.success(`Linked to ${profile.company_name}`);
+          this.groups.update(gs => gs.map((g: any) =>
+            g.id === groupId
+              ? { ...g, corporate_profile_id: profile.id, corporate_profile_name: profile.company_name }
+              : g
+          ));
+        } else {
+          this.toast.error(r?.message || 'Failed to link');
+        }
+      },
+      error: () => { this.linkingProfile.set(false); this.toast.error('Failed to link corporate profile'); },
+    });
+  }
+
+  unlinkCorporateProfile(groupId: string): void {
+    this.api.patch(`/group-bookings/${groupId}/corporate`, { corporate_profile_id: null }).subscribe({
+      next: (r: any) => {
+        if (r?.success) {
+          this.toast.success('Corporate profile unlinked');
+          this.groups.update(gs => gs.map((g: any) =>
+            g.id === groupId ? { ...g, corporate_profile_id: null, corporate_profile_name: null } : g
+          ));
+        }
+      },
+      error: () => this.toast.error('Failed to unlink'),
+    });
+  }
 
   private loadGroups(): void {
     this.loading.set(true);
@@ -296,7 +400,7 @@ export default class GroupBookingsPage implements OnInit, OnDestroy {
         if (r?.success) {
           this.toast.success('Group booking created');
           this.showForm = false;
-          this.form = { name: '', booking_type: 'overnight', contact_name: '', company_name: '', check_in: '', check_out: '', total_rooms: 1, discount_percentage: 0 };
+          this.form = { name: '', booking_type: 'overnight', contact_name: '', company_name: '', corporate_profile_id: null, check_in: '', check_out: '', total_rooms: 1, discount_percentage: 0 };
           this.loadGroups();
         } else {
           this.toast.error(r?.message || 'Failed to create');
