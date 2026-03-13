@@ -14,6 +14,7 @@ return function (App $app): void {
     $app->group('/api/rbac', function (RouteCollectorProxy $group) use ($container) {
         $repo  = $container->get(\Lodgik\Module\Rbac\RbacRepository::class);
         $redis = $container->get(\Predis\Client::class);
+        $jwt   = $container->get(\Lodgik\Service\JwtService::class);
 
         // Permission catalogue - all authenticated users can read (used for UI rendering)
         $group->get('/permissions', [RbacController::class, 'catalogue'])
@@ -21,13 +22,13 @@ return function (App $app): void {
 
         // Matrix read & write - property_admin only
         $group->get('/matrix', [RbacController::class, 'matrix'])
-            ->add(new PermissionMiddleware($repo, $redis, 'settings.manage_rbac'));
+            ->add(new PermissionMiddleware($repo, $redis, $jwt, 'settings.manage_rbac'));
 
         $group->put('/matrix', [RbacController::class, 'saveMatrix'])
-            ->add(new PermissionMiddleware($repo, $redis, 'settings.manage_rbac'));
+            ->add(new PermissionMiddleware($repo, $redis, $jwt, 'settings.manage_rbac'));
 
         $group->post('/reset', [RbacController::class, 'resetRole'])
-            ->add(new PermissionMiddleware($repo, $redis, 'settings.manage_rbac'));
+            ->add(new PermissionMiddleware($repo, $redis, $jwt, 'settings.manage_rbac'));
 
         // My permissions - any authenticated user fetches their own permissions
         $group->get('/my-permissions', [RbacController::class, 'myPermissions']);
