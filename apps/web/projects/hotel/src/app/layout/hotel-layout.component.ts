@@ -334,7 +334,7 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Security',       icon: 'shield',        route: '/security',       requiredModule: 'security_incidents', requiredRoles: ['property_admin','manager','security'] },
         { label: 'Incidents',      icon: 'triangle-alert',route: '/incidents',      requiredModule: 'security_incidents', requiredRoles: ['property_admin','manager','security'] },
         { label: 'Police Reports', icon: 'shield-alert',  route: '/police-reports',                                       requiredRoles: ['property_admin','manager','security'] },
-        { label: 'Audit Log',      icon: 'clock-rewind',  route: '/audit-log',      requiredModule: 'audit_logging',      requiredRoles: ['property_admin','manager'] },
+        { label: 'Audit Log',      icon: 'history',       route: '/audit-log',      requiredModule: 'audit_logging',      requiredRoles: ['property_admin','manager'] },
       ],
     },
     {

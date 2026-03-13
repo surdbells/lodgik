@@ -41,6 +41,7 @@ import {
   // ─── Human Resources ──────────────────
   UserRoundCog,
   Clock,
+  History,
   TreePalm,
   HandCoins,
   Star,
@@ -140,6 +141,7 @@ export const LODGIK_ICONS = {
   CalendarCheck,
   UserRoundCog,
   Clock,
+  History,
   TreePalm,
   HandCoins,
   Star,
