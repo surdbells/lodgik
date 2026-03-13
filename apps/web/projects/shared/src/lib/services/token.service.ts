@@ -81,16 +81,12 @@ export class TokenService {
 
     this._permLoading.set(true);
 
-    this.http
-      .get<{ success: boolean; data: { permissions: string[] } }>(
+    this.api.get<{ permissions: string[] }>(
         '/rbac/my-permissions',
-        {
-          params: { property_id: propertyId },
-          headers: { Authorization: `Bearer ${this.getAccessToken() ?? ''}` },
-        }
+        { property_id: propertyId }
       )
       .subscribe({
-        next: res => {
+        next: (res: { success: boolean; data: { permissions: string[] } }) => {
           if (res.success && res.data?.permissions) {
             this.setPermissions(res.data.permissions);
           }
