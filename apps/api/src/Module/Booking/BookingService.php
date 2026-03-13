@@ -72,7 +72,6 @@ final class BookingService
     {
         return $this->bookingRepo->searchForAutocomplete($propertyId, $query, 10);
     }
-    }
 
     public function getById(string $id): ?Booking
     {
