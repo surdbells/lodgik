@@ -22,7 +22,7 @@ use Slim\Psr7\Response as SlimResponse;
  * 1. Specific permission check (opt-in decorator on a route):
  *    ->add(new PermissionMiddleware('bookings.cancel'))
  *
- * 2. Global "register route → permission" map (applied as app-level middleware):
+ * 2. Global "register route -> permission" map (applied as app-level middleware):
  *    Automatically resolves required permission from METHOD + route pattern.
  *
  * Bypass: super_admin and property_admin always pass.
@@ -32,13 +32,13 @@ use Slim\Psr7\Response as SlimResponse;
 final class PermissionMiddleware implements MiddlewareInterface
 {
     /**
-     * Maps "METHOD /route/pattern" → "module.action"
+     * Maps "METHOD /route/pattern" -> "module.action"
      *
      * Used when the middleware is applied globally (no $requiredPermission constructor arg).
-     * Key format: "{METHOD} {path_prefix}" — longest prefix match wins.
+     * Key format: "{METHOD} {path_prefix}" -- longest prefix match wins.
      */
     private const ROUTE_PERMISSION_MAP = [
-        // ── Bookings ────────────────────────────────────
+        // -- Bookings ------------------------------------
         'GET /api/bookings'                         => 'bookings.view',
         'POST /api/bookings'                        => 'bookings.create',
         'PUT /api/bookings'                         => 'bookings.edit',
@@ -55,7 +55,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'PUT /api/group-bookings'                   => 'bookings.manage_group',
         'PATCH /api/group-bookings'                 => 'bookings.manage_group',
 
-        // ── Rooms ────────────────────────────────────────
+        // -- Rooms ----------------------------------------
         'GET /api/rooms'                            => 'rooms.view',
         'POST /api/rooms'                           => 'rooms.manage_types',
         'PUT /api/rooms'                            => 'rooms.manage_types',
@@ -67,7 +67,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'PATCH /api/rooms/*/status'                 => 'rooms.edit_status',
         'POST /api/rooms/*/block'                   => 'rooms.block_room',
 
-        // ── Guests ───────────────────────────────────────
+        // -- Guests ---------------------------------------
         'GET /api/guests'                           => 'guests.view',
         'POST /api/guests'                          => 'guests.create',
         'PUT /api/guests'                           => 'guests.edit',
@@ -77,7 +77,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'POST /api/guests/*/documents'              => 'guests.upload_id_documents',
         'GET /api/guests/*/intelligence'            => 'guests.view_intelligence',
 
-        // ── Folios ───────────────────────────────────────
+        // -- Folios ---------------------------------------
         'GET /api/folios'                           => 'folios.view',
         'POST /api/folios'                          => 'folios.view',
         'GET /api/folios/search'                    => 'folios.view',
@@ -91,7 +91,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'POST /api/folios/*/close'                  => 'folios.close',
         'POST /api/folios/*/reopen'                 => 'folios.reopen',
 
-        // ── Invoices ─────────────────────────────────────
+        // -- Invoices -------------------------------------
         'GET /api/invoices'                         => 'invoices.view',
         'POST /api/invoices'                        => 'invoices.create',
         'POST /api/invoices/*/email'                => 'invoices.email',
@@ -99,7 +99,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'POST /api/invoices/*/pay'                  => 'invoices.record_payment',
         'POST /api/invoices/*/void'                 => 'invoices.void',
 
-        // ── Housekeeping ─────────────────────────────────
+        // -- Housekeeping ---------------------------------
         'GET /api/housekeeping'                     => 'housekeeping.view_tasks',
         'POST /api/housekeeping/*/assign'           => 'housekeeping.assign_tasks',
         'POST /api/housekeeping/*/complete'         => 'housekeeping.mark_complete',
@@ -110,7 +110,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'POST /api/consumables'                     => 'housekeeping.manage_consumables',
         'PUT /api/consumables'                      => 'housekeeping.manage_consumables',
 
-        // ── Staff / HR ───────────────────────────────────
+        // -- Staff / HR -----------------------------------
         'GET /api/staff'                            => 'staff.view',
         'POST /api/staff/invite'                    => 'staff.invite',
         'PUT /api/staff'                            => 'staff.edit',
@@ -125,7 +125,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'POST /api/leave/*/reject'                  => 'staff.approve_leave',
         'GET /api/employees'                        => 'staff.view',
 
-        // ── Payroll ──────────────────────────────────────
+        // -- Payroll --------------------------------------
         'GET /api/payroll'                          => 'payroll.view',
         'POST /api/payroll'                         => 'payroll.run',
         'PUT /api/payroll'                          => 'payroll.edit',
@@ -134,7 +134,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'GET /api/payroll/*/payslips'               => 'payroll.view_payslips',
         'GET /api/payroll/*/export'                 => 'payroll.export',
 
-        // ── POS ──────────────────────────────────────────
+        // -- POS ------------------------------------------
         'GET /api/pos/orders'                       => 'pos.view',
         'POST /api/pos/orders'                      => 'pos.take_order',
         'PUT /api/pos/orders'                       => 'pos.edit_order',
@@ -149,7 +149,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'GET /api/pos/tables'                       => 'pos.view',
         'POST /api/pos/tables'                      => 'pos.manage_tables',
 
-        // ── Inventory ────────────────────────────────────
+        // -- Inventory ------------------------------------
         'GET /api/inventory'                        => 'inventory.view',
         'POST /api/inventory/items'                 => 'inventory.add_item',
         'POST /api/inventory/adjustments'           => 'inventory.adjust_stock',
@@ -159,7 +159,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'GET /api/inventory/vendors'                => 'inventory.view',
         'POST /api/inventory/vendors'               => 'inventory.manage_vendors',
 
-        // ── Security ─────────────────────────────────────
+        // -- Security -------------------------------------
         'GET /api/security/incidents'               => 'security.view_incidents',
         'POST /api/security/incidents'              => 'security.create_incident',
         'PUT /api/security/incidents'               => 'security.edit_incident',
@@ -174,7 +174,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'POST /api/police-reports'                  => 'security.create_police_report',
         'GET /api/audit-log'                        => 'security.view_audit_log',
 
-        // ── Events ───────────────────────────────────────
+        // -- Events ---------------------------------------
         'GET /api/events'                           => 'events.view',
         'POST /api/events'                          => 'events.create',
         'PUT /api/events'                           => 'events.edit',
@@ -183,13 +183,13 @@ final class PermissionMiddleware implements MiddlewareInterface
         'GET /api/event-spaces'                     => 'events.view',
         'POST /api/event-spaces'                    => 'events.manage_spaces',
 
-        // ── Corporate ────────────────────────────────────
+        // -- Corporate ------------------------------------
         'GET /api/corporate-profiles'               => 'corporate.view',
         'POST /api/corporate-profiles'              => 'corporate.create',
         'PUT /api/corporate-profiles'               => 'corporate.edit',
         'PATCH /api/corporate-profiles'             => 'corporate.edit',
 
-        // ── Analytics ────────────────────────────────────
+        // -- Analytics ------------------------------------
         'GET /api/analytics'                        => 'analytics.view_dashboard',
         'GET /api/reports/occupancy'                => 'analytics.view_occupancy_report',
         'GET /api/reports/revenue'                  => 'analytics.view_revenue_report',
@@ -197,7 +197,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         'GET /api/reports/staff'                    => 'analytics.view_staff_report',
         'GET /api/reports/*/export'                 => 'analytics.export',
 
-        // ── Settings ─────────────────────────────────────
+        // -- Settings -------------------------------------
         'GET /api/settings'                         => 'settings.view',
         'PUT /api/settings'                         => 'settings.edit_property',
         'PATCH /api/settings'                       => 'settings.edit_property',
@@ -206,19 +206,19 @@ final class PermissionMiddleware implements MiddlewareInterface
         'GET /api/integrations'                     => 'settings.manage_integrations',
         'PUT /api/integrations'                     => 'settings.manage_integrations',
 
-        // ── Service Requests ─────────────────────────────
+        // -- Service Requests -----------------------------
         'GET /api/service-requests'                 => 'service_requests.view',
         'POST /api/service-requests'                => 'service_requests.create',
         'POST /api/service-requests/*/assign'       => 'service_requests.assign',
         'POST /api/service-requests/*/resolve'      => 'service_requests.resolve',
         'GET /api/chat'                             => 'service_requests.view_chat',
 
-        // ── OTA ──────────────────────────────────────────
+        // -- OTA ------------------------------------------
         'GET /api/ota'                              => 'ota.view',
         'POST /api/ota'                             => 'ota.manage',
         'PUT /api/ota'                              => 'ota.manage',
 
-        // ── Gym ──────────────────────────────────────────
+        // -- Gym ------------------------------------------
         'GET /api/gym/members'                      => 'gym.view',
         'POST /api/gym/members'                     => 'gym.create_member',
         'PUT /api/gym/members'                      => 'gym.edit_member',
@@ -230,11 +230,11 @@ final class PermissionMiddleware implements MiddlewareInterface
         'GET /api/gym/classes'                      => 'gym.view',
         'POST /api/gym/classes'                     => 'gym.manage_classes',
 
-        // ── Dashboard ────────────────────────────────────
+        // -- Dashboard ------------------------------------
         'GET /api/dashboard'                        => 'dashboard.view',
 
-        // ── RBAC itself (guarded by RoleMiddleware in its own routes.php) ────
-        // Leave out — handled directly in Rbac/routes.php
+        // -- RBAC itself (guarded by RoleMiddleware in its own routes.php) ----
+        // Leave out -- handled directly in Rbac/routes.php
     ];
 
     /**
@@ -271,7 +271,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         $path       = $request->getUri()->getPath();
         $method     = $request->getMethod();
 
-        // OPTIONS preflight — always allow
+        // OPTIONS preflight -- always allow
         if ($method === 'OPTIONS') {
             return $handler->handle($request);
         }
@@ -295,7 +295,7 @@ final class PermissionMiddleware implements MiddlewareInterface
         // Resolve which permission is required
         $required = $this->requiredPermission ?? $this->resolveFromRoute($method, $path);
 
-        // If no mapping found — allow (route may not need a specific permission,
+        // If no mapping found -- allow (route may not need a specific permission,
         // or it has its own RoleMiddleware). Strict mode can change this.
         if ($required === null) {
             return $handler->handle($request);
@@ -324,7 +324,7 @@ final class PermissionMiddleware implements MiddlewareInterface
                 return in_array($permission, $granted, true);
             }
         } catch (\Throwable $e) {
-            // Redis down — fall through to DB
+            // Redis down -- fall through to DB
         }
 
         // DB lookup
@@ -349,7 +349,7 @@ final class PermissionMiddleware implements MiddlewareInterface
             return self::ROUTE_PERMISSION_MAP[$exact];
         }
 
-        // Wildcard match — longest pattern wins
+        // Wildcard match -- longest pattern wins
         $bestMatch  = null;
         $bestLength = 0;
 
