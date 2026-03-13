@@ -1128,14 +1128,14 @@ return function (ContainerBuilder $builder): void {
 
         // ── RBAC ──────────────────────────────────────────────────────────────
         \Lodgik\Module\Rbac\RbacRepository::class => fn(ContainerInterface $c) => new \Lodgik\Module\Rbac\RbacRepository(
-            conn: $c->get(\Doctrine\DBAL\Connection::class),
+            $c->get(\Doctrine\ORM\EntityManagerInterface::class)->getConnection()
         ),
         \Lodgik\Module\Rbac\RbacService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Rbac\RbacService(
-            repo:   $c->get(\Lodgik\Module\Rbac\RbacRepository::class),
-            logger: $c->get(\Psr\Log\LoggerInterface::class),
+            $c->get(\Lodgik\Module\Rbac\RbacRepository::class),
+            $c->get(\Psr\Log\LoggerInterface::class)
         ),
         \Lodgik\Module\Rbac\RbacController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Rbac\RbacController(
-            service: $c->get(\Lodgik\Module\Rbac\RbacService::class),
+            $c->get(\Lodgik\Module\Rbac\RbacService::class)
         ),
     ]);
 };
