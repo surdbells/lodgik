@@ -250,11 +250,19 @@ final class PermissionMiddleware implements MiddlewareInterface
         '/api/rbac/my-permissions',   // Self-fetch after login
     ];
 
+    private RbacRepository $repo;
+    private RedisClient $redis;
+    private ?string $requiredPermission;
+
     public function __construct(
-        private readonly RbacRepository $repo,
-        private readonly RedisClient $redis,
-        private readonly ?string $requiredPermission = null,
-    ) {}
+        RbacRepository $repo,
+        RedisClient $redis,
+        ?string $requiredPermission = null,
+    ) {
+        $this->repo               = $repo;
+        $this->redis              = $redis;
+        $this->requiredPermission = $requiredPermission;
+    }
 
     public function process(Request $request, Handler $handler): Response
     {
