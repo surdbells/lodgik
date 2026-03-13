@@ -257,7 +257,7 @@ final class PermissionMiddleware implements MiddlewareInterface
     public function __construct(
         RbacRepository $repo,
         RedisClient $redis,
-        ?string $requiredPermission = null,
+        ?string $requiredPermission = null
     ) {
         $this->repo               = $repo;
         $this->redis              = $redis;
@@ -323,7 +323,7 @@ final class PermissionMiddleware implements MiddlewareInterface
                 $granted = json_decode($cached, true);
                 return in_array($permission, $granted, true);
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             // Redis down — fall through to DB
         }
 
@@ -332,7 +332,7 @@ final class PermissionMiddleware implements MiddlewareInterface
 
         try {
             $this->redis->setex($cacheKey, 60, json_encode($granted));
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {}
 
         return in_array($permission, $granted, true);
     }
