@@ -1,7 +1,6 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { ApiService } from './api.service';
 import { User } from '../models';
-import { environment } from '../../environments/environment';
 
 const ACCESS_TOKEN_KEY  = 'lodgik_access_token';
 const REFRESH_TOKEN_KEY = 'lodgik_refresh_token';
@@ -13,7 +12,7 @@ const BYPASS_ROLES = ['super_admin', 'property_admin'] as const;
 
 @Injectable({ providedIn: 'root' })
 export class TokenService {
-  private http = inject(HttpClient);
+  private api = inject(ApiService);
 
   private _user        = signal<User | null>(this.loadUser());
   private _permissions = signal<string[]>(this.loadPermissions());
@@ -84,7 +83,7 @@ export class TokenService {
 
     this.http
       .get<{ success: boolean; data: { permissions: string[] } }>(
-        `${environment.apiUrl}/rbac/my-permissions`,
+        '/rbac/my-permissions',
         {
           params: { property_id: propertyId },
           headers: { Authorization: `Bearer ${this.getAccessToken() ?? ''}` },
