@@ -66,7 +66,7 @@ export class FoliosPage implements OnInit {
     return [
       { label: 'View',         handler: (r) => this.router.navigate(['/folios', r.id]) },
       { label: 'Add Charge',   color: 'primary', handler: (r) => this.router.navigate(['/folios', r.id]), hidden: (_r) => !this.token.can('folios.add_charge') },
-      { label: 'Add Payment',  color: 'success', handler: (r) => this.router.navigate(['/folios', r.id]), hidden: (_r) => !this.token.can('folios.add_payment') },
+      { label: 'Add Payment',  color: 'primary', handler: (r) => this.router.navigate(['/folios', r.id]), hidden: (_r) => !this.token.can('folios.add_payment') },
       { label: 'Close Folio',  color: 'warning', handler: (r) => this.router.navigate(['/folios', r.id]), hidden: (r) => r.status === 'closed' || !this.token.can('folios.close') },
     ];
   }

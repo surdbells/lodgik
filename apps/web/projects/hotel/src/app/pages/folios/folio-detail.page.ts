@@ -3,7 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService, QrFileUploadComponent, UploadedFile, ReceiptActionsComponent, HasPermDirective, PermDisableDirective, TokenService } from '@lodgik/shared';
-import { AuthService, TokenService } from '@lodgik/shared';
+import { AuthService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-folio-detail',
