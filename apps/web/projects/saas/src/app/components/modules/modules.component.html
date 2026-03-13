@@ -1,0 +1,25 @@
+
+<section id="modules" aria-labelledby="modules-heading">
+  <div class="container">
+    <div class="modules-header">
+      <div class="modules-copy reveal">
+        <div class="label">Feature Modules</div>
+        <h2 class="section-title" id="modules-heading">
+          Every part of your hotel,<br/><em>covered</em>
+        </h2>
+        <p class="section-lead">Enable only the modules your property needs. Lodgik grows with you — add new capabilities as your hotel expands, without switching platforms.</p>
+      </div>
+      <div class="modules-count reveal d2" aria-label="43 total feature modules">
+        <div class="count-num">43</div>
+        <div class="count-sub">feature modules<br/>across all plans</div>
+      </div>
+    </div>
+
+    <div class="modules-pills reveal">
+      <div class="module-pill" *ngFor="let m of modules" [class]="'accent-' + m.accent">
+        <span class="pill-dot" aria-hidden="true"></span>
+        {{ m.name }}
+      </div>
+    </div>
+  </div>
+</section>

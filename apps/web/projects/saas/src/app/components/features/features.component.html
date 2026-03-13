@@ -1,0 +1,22 @@
+
+<section id="features" aria-labelledby="features-heading">
+  <div class="container">
+    <header class="section-intro reveal">
+      <div class="label label-gold">Core Features</div>
+      <h2 class="section-title" id="features-heading">
+        Everything your hotel needs,
+        <em>finally in one place</em>
+      </h2>
+      <p class="section-lead">No more juggling spreadsheets, WhatsApp groups, and disconnected tools. Lodgik handles every department from check-in to check-out.</p>
+    </header>
+
+    <div class="features-grid">
+      <article class="feature-card reveal" *ngFor="let f of features; let i = index"
+               [class]="'reveal d' + (i % 3)">
+        <div class="feature-icon" [class]="'fi-' + f.color" aria-hidden="true">{{ f.icon }}</div>
+        <h3>{{ f.title }}</h3>
+        <p>{{ f.desc }}</p>
+      </article>
+    </div>
+  </div>
+</section>
