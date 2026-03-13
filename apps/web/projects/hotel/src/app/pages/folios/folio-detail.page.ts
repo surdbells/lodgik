@@ -2,20 +2,20 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService, QrFileUploadComponent, UploadedFile, ReceiptActionsComponent } from '@lodgik/shared';
-import { AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService, QrFileUploadComponent, UploadedFile, ReceiptActionsComponent, HasPermDirective, PermDisableDirective, TokenService } from '@lodgik/shared';
+import { AuthService, TokenService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-folio-detail',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, PageHeaderComponent, LoadingSpinnerComponent, QrFileUploadComponent, ReceiptActionsComponent],
+  imports: [DatePipe, FormsModule, RouterLink, PageHeaderComponent, LoadingSpinnerComponent, QrFileUploadComponent, ReceiptActionsComponent, HasPermDirective, PermDisableDirective],
   template: `
     <ui-page-header [title]="folio()?.folio_number || 'Folio'" subtitle="Charges, payments and balance">
       <div class="flex gap-2">
         <a routerLink="/folios" class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">← Back</a>
         @if (folio()?.status === 'open') {
-          <button (click)="showChargeForm = true" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ Charge</button>
-          <button (click)="showPaymentForm = true" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700">+ Payment</button>
+          <button *hasPerm="'folios.add_charge'" (click)="showChargeForm = true" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ Charge</button>
+          <button *hasPerm="'folios.add_payment'" (click)="showPaymentForm = true" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700">+ Payment</button>
         }
       </div>
     </ui-page-header>
@@ -126,7 +126,7 @@ import { AuthService } from '@lodgik/shared';
               <p class="text-gray-400 text-sm py-4 text-center">No adjustments</p>
             }
             @if (folio()!.status === 'open') {
-              <button (click)="showAdjForm = true" class="mt-3 text-xs text-sage-600 hover:underline">+ Add Adjustment</button>
+              <button *hasPerm="'folios.add_adjustment'" (click)="showAdjForm = true" class="mt-3 text-xs text-sage-600 hover:underline">+ Add Adjustment</button>
             }
           </div>
 
@@ -135,8 +135,8 @@ import { AuthService } from '@lodgik/shared';
             <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5">
               <h3 class="text-sm font-semibold text-gray-700 mb-3">Actions</h3>
               <div class="space-y-2">
-                <button (click)="closeFolio()" class="w-full px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded-lg hover:bg-gray-800">Close Folio</button>
-                <button (click)="voidFolio()" class="w-full px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">Void Folio</button>
+                <button (click)="closeFolio()" [permDisable]="'folios.close'" class="w-full px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded-lg hover:bg-gray-800">Close Folio</button>
+                <button (click)="voidFolio()" [permDisable]="'folios.close'" class="w-full px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">Void Folio</button>
               </div>
             </div>
           }
@@ -176,7 +176,7 @@ import { AuthService } from '@lodgik/shared';
             </div>
             <div class="flex justify-end gap-2 mt-4">
               <button (click)="showChargeForm = false" class="px-4 py-2 text-sm text-gray-500 border rounded-lg">Cancel</button>
-              <button (click)="submitCharge()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg">Add</button>
+              <button (click)="submitCharge()" [permDisable]="'folios.add_charge'" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg">Add</button>
             </div>
           </div>
         </div>
@@ -208,7 +208,7 @@ import { AuthService } from '@lodgik/shared';
             </div>
             <div class="flex justify-end gap-2 mt-4">
               <button (click)="showPaymentForm = false" class="px-4 py-2 text-sm text-gray-500 border rounded-lg">Cancel</button>
-              <button (click)="submitPayment()" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg">Record</button>
+              <button (click)="submitPayment()" [permDisable]="'folios.add_payment'" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg">Record</button>
             </div>
           </div>
         </div>
@@ -229,7 +229,7 @@ import { AuthService } from '@lodgik/shared';
             </div>
             <div class="flex justify-end gap-2 mt-4">
               <button (click)="showAdjForm = false" class="px-4 py-2 text-sm text-gray-500 border rounded-lg">Cancel</button>
-              <button (click)="submitAdj()" class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg">Add</button>
+              <button (click)="submitAdj()" [permDisable]="'folios.add_adjustment'" class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg">Add</button>
             </div>
           </div>
         </div>

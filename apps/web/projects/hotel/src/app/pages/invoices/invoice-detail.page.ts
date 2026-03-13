@@ -5,12 +5,13 @@ import { FormsModule } from '@angular/forms';
 import {
   ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
   ConfirmDialogService, ConfirmDialogComponent, SearchableDropdownComponent,
+  HasPermDirective, PermDisableDirective, TokenService,
 } from '@lodgik/shared';
 
 @Component({
   selector: 'app-invoice-detail',
   standalone: true,
-  imports: [DatePipe, RouterLink, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, ConfirmDialogComponent],
+  imports: [DatePipe, RouterLink, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, ConfirmDialogComponent, HasPermDirective, PermDisableDirective],
   template: `
     <ui-confirm-dialog/>
 
@@ -18,12 +19,12 @@ import {
       <div class="flex gap-2 flex-wrap">
         <a routerLink="/invoices" class="px-3 py-2 text-sm border border-gray-300 rounded-xl hover:bg-gray-50">← Back</a>
         @if (invoice()?.status === 'issued') {
-          <button (click)="openPayModal()" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700">
+          <button (click)="openPayModal()" [permDisable]="'invoices.record_payment'" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700">
             💳 Record Payment
           </button>
         }
-        <button (click)="downloadPdf()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700">📄 PDF</button>
-        <button (click)="emailInvoice()" class="px-4 py-2 border border-sage-400 text-sage-700 text-sm font-medium rounded-xl hover:bg-sage-50">📧 Email</button>
+        <button (click)="downloadPdf()" [permDisable]="'invoices.download_pdf'" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700">📄 PDF</button>
+        <button (click)="emailInvoice()" [permDisable]="'invoices.email'" class="px-4 py-2 border border-sage-400 text-sage-700 text-sm font-medium rounded-xl hover:bg-sage-50">📧 Email</button>
       </div>
     </ui-page-header>
 
@@ -151,14 +152,14 @@ import {
           </div>
 
           @if (invoice()!.status === 'issued') {
-            <button (click)="openPayModal()"
+            <button (click)="openPayModal()" [permDisable]="'invoices.record_payment'"
               class="w-full px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors">
               💳 Record Payment
             </button>
           }
 
           @if (invoice()!.status !== 'void' && invoice()!.status !== 'paid') {
-            <button (click)="voidInvoice()"
+            <button (click)="voidInvoice()" [permDisable]="'invoices.void'"
               class="w-full px-4 py-2 border border-red-300 text-red-600 text-sm font-medium rounded-xl hover:bg-red-50 transition-colors">
               Void Invoice
             </button>
@@ -203,7 +204,7 @@ import {
             </div>
           </div>
           <div class="flex gap-2 mt-6">
-            <button (click)="submitPayment()" [disabled]="savingPayment()"
+            <button (click)="submitPayment()" [disabled]="savingPayment()" [permDisable]="'invoices.record_payment'"
               class="flex-1 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors">
               {{ savingPayment() ? 'Recording…' : 'Record Payment' }}
             </button>

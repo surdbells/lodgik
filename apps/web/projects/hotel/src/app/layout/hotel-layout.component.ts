@@ -368,6 +368,7 @@ export class HotelLayoutComponent implements OnInit {
       items: [
         { label: 'Properties', icon: 'building',    route: '/properties', requiredModule: 'multi_property', requiredRoles: ['property_admin'] },
         { label: 'Features',   icon: 'puzzle',      route: '/features',                                     requiredRoles: ['property_admin'] },
+        { label: 'Role Permissions', icon: 'shield-check',  route: '/settings/rbac',                                          requiredRoles: ['property_admin'] },
         { label: 'Apps',       icon: 'zap',         route: '/apps',                                         requiredRoles: ['property_admin'] },
         { label: 'Billing',    icon: 'credit-card', route: '/billing',                                      requiredRoles: ['property_admin'] },
       ],

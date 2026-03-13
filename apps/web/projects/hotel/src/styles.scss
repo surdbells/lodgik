@@ -148,3 +148,28 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .stagger-children > *:nth-child(4) { animation-delay: 0.12s; }
 .stagger-children > *:nth-child(5) { animation-delay: 0.15s; }
 .stagger-children > *:nth-child(6) { animation-delay: 0.18s; }
+
+/* ── Permission-disabled elements ─────────────────────────────────────────── */
+.perm-disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* Tooltip for perm-disabled — shown via [title] attribute */
+.perm-disabled[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: rgba(0,0,0,0.82);
+  color: #fff;
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 9999;
+}

@@ -17,6 +17,9 @@ export class AuthService {
         if (res.success && res.data) {
           this.token.setTokens(res.data.access_token, res.data.refresh_token);
           this.token.setUser(res.data.user);
+          // Fetch permissions immediately after login
+          const propertyId = res.data.user.property_id ?? '';
+          this.token.fetchPermissions(propertyId);
         }
       })
     );

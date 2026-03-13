@@ -1125,5 +1125,17 @@ return function (ContainerBuilder $builder): void {
             scanPointRepo: $c->get(\Lodgik\Repository\CardScanPointRepository::class),
             response:      $c->get(\Lodgik\Helper\ResponseHelper::class),
         ),
+
+        // ── RBAC ──────────────────────────────────────────────────────────────
+        \Lodgik\Module\Rbac\RbacRepository::class => fn(ContainerInterface $c) => new \Lodgik\Module\Rbac\RbacRepository(
+            conn: $c->get(\Doctrine\DBAL\Connection::class),
+        ),
+        \Lodgik\Module\Rbac\RbacService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Rbac\RbacService(
+            repo:   $c->get(\Lodgik\Module\Rbac\RbacRepository::class),
+            logger: $c->get(\Psr\Log\LoggerInterface::class),
+        ),
+        \Lodgik\Module\Rbac\RbacController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Rbac\RbacController(
+            service: $c->get(\Lodgik\Module\Rbac\RbacService::class),
+        ),
     ]);
 };

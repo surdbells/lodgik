@@ -1,15 +1,15 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService} from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService, HasPermDirective, PermDisableDirective, TokenService } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-payroll',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
+  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, HasPermDirective, PermDisableDirective],
   template: `
     <ui-page-header title="Payroll" icon="hand-coins" [breadcrumbs]="['Human Resources', 'Payroll']" subtitle="Monthly payroll processing & payslips">
-      <button (click)="showCreate = true" class="bg-sage-600 text-white px-4 py-2 text-sm rounded-xl hover:bg-sage-700 transition-colors">+ New Payroll</button>
+      <button *hasPerm="'payroll.run'" (click)="showCreate = true" class="bg-sage-600 text-white px-4 py-2 text-sm rounded-xl hover:bg-sage-700 transition-colors">+ New Payroll</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
@@ -35,16 +35,16 @@ import { AuthService } from '@lodgik/shared';
                 <td class="px-4 py-3 text-right font-medium text-green-600">₦{{ fmt(p.total_net) }}</td>
                 <td class="px-4 py-3">
                   @if (p.status === 'draft' || p.status === 'calculated') {
-                    <button (click)="calculate(p.id); $event.stopPropagation()" class="text-sage-600 hover:underline text-xs mr-2">Calculate</button>
+                    <button (click)="calculate(p.id); $event.stopPropagation()" [permDisable]="'payroll.run'" class="text-sage-600 hover:underline text-xs mr-2">Calculate</button>
                   }
                   @if (p.status === 'calculated') {
-                    <button (click)="review(p.id); $event.stopPropagation()" class="text-purple-600 hover:underline text-xs mr-2">Review</button>
+                    <button (click)="review(p.id); $event.stopPropagation()" [permDisable]="'payroll.run'" class="text-purple-600 hover:underline text-xs mr-2">Review</button>
                   }
                   @if (p.status === 'reviewed') {
-                    <button (click)="approve(p.id); $event.stopPropagation()" class="text-green-600 hover:underline text-xs mr-2">Approve</button>
+                    <button (click)="approve(p.id); $event.stopPropagation()" [permDisable]="'payroll.approve'" class="text-green-600 hover:underline text-xs mr-2">Approve</button>
                   }
                   @if (p.status === 'approved') {
-                    <button (click)="markPaid(p.id); $event.stopPropagation()" class="text-emerald-600 hover:underline text-xs">Mark Paid</button>
+                    <button (click)="markPaid(p.id); $event.stopPropagation()" [permDisable]="'payroll.approve'" class="text-emerald-600 hover:underline text-xs">Mark Paid</button>
                   }
                 </td>
               </tr>
@@ -111,7 +111,7 @@ import { AuthService } from '@lodgik/shared';
                 <td class="px-4 py-3 text-xs">{{ s.bank_name || '—' }}</td>
                 <td class="px-4 py-3">
                   <button (click)="showPayslipDetail(s)" class="text-sage-600 hover:underline text-xs mr-2">View</button>
-                  <button (click)="emailPayslip(s.id)" class="text-green-600 hover:underline text-xs">Email</button>
+                  <button (click)="emailPayslip(s.id)" [permDisable]="'payroll.view_payslips'" class="text-green-600 hover:underline text-xs">Email</button>
                 </td>
               </tr>
             }
@@ -133,7 +133,7 @@ import { AuthService } from '@lodgik/shared';
           </div>
           <div class="flex justify-end gap-2">
             <button (click)="showCreate = false" class="px-4 py-2 text-sm border rounded-lg">Cancel</button>
-            <button (click)="createPeriod()" class="px-4 py-2 text-sm bg-sage-600 text-white rounded-lg hover:bg-sage-700">Create & Calculate</button>
+            <button (click)="createPeriod()" [permDisable]="'payroll.run'" class="px-4 py-2 text-sm bg-sage-600 text-white rounded-lg hover:bg-sage-700">Create & Calculate</button>
           </div>
         </div>
       </div>
@@ -184,8 +184,9 @@ import { AuthService } from '@lodgik/shared';
   `,
 })
 export class PayrollPage implements OnInit {
-  private api = inject(ApiService);
-  private auth = inject(AuthService);
+  private api   = inject(ApiService);
+  private auth  = inject(AuthService);
+  private token = inject(TokenService);
   private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);

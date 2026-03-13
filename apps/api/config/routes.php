@@ -105,4 +105,7 @@ return function (App $app): void {
 
     // ── Phase 4: Events / Banquet Management ─────────────────────
     (require __DIR__ . '/../src/Module/Event/routes.php')($app);
+
+    // ── RBAC: Permission Management ───────────────────────────────
+    (require __DIR__ . '/../src/Module/Rbac/routes.php')($app);
 };

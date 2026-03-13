@@ -6,6 +6,7 @@ import {
   ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction,
   LoadingSpinnerComponent, StatsCardComponent, ToastService, ActivePropertyService,
   ConfirmDialogService, ConfirmDialogComponent, SearchableDropdownComponent,
+  HasPermDirective, PermDisableDirective, TokenService,
 } from '@lodgik/shared';
 
 @Component({
@@ -15,6 +16,7 @@ import {
     FormsModule,
     PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent,
     StatsCardComponent, ConfirmDialogComponent, SearchableDropdownComponent,
+    HasPermDirective, PermDisableDirective,
   ],
   template: `
     <ui-confirm-dialog/>
@@ -64,7 +66,7 @@ import {
             @if (selectedFolioPreview()!.folio_status !== 'closed') {
               <p class="mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">⚠️ Folio is <strong>{{ selectedFolioPreview()!.folio_status }}</strong> — only closed folios can be invoiced.</p>
             } @else {
-              <button (click)="createInvoice()" [disabled]="creatingInvoice()"
+              <button (click)="createInvoice()" [disabled]="creatingInvoice()" [permDisable]="'invoices.create'"
                 class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700 disabled:opacity-50 transition-colors">
                 {{ creatingInvoice() ? 'Generating…' : '🧾 Generate Invoice' }}
               </button>
@@ -123,7 +125,7 @@ import {
             </div>
           </div>
           <div class="flex gap-2 mt-6">
-            <button (click)="submitPayment()" [disabled]="recordingPayment()"
+            <button (click)="submitPayment()" [disabled]="recordingPayment()" [permDisable]="'invoices.record_payment'"
               class="flex-1 px-4 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700 disabled:opacity-50 transition-colors">
               {{ recordingPayment() ? 'Recording…' : 'Record Payment' }}
             </button>
@@ -137,6 +139,7 @@ import {
 export class InvoicesPage implements OnInit {
   private api            = inject(ApiService);
   private router         = inject(Router);
+  private token          = inject(TokenService);
   private toast          = inject(ToastService);
   private activeProperty = inject(ActivePropertyService);
   private confirm        = inject(ConfirmDialogService);
@@ -173,13 +176,15 @@ export class InvoicesPage implements OnInit {
     { key: 'invoice_date', label: 'Date',  render: (v: string) => v ? new Date(v).toLocaleDateString() : '—' },
   ];
 
-  actions: TableAction[] = [
-    { label: 'View',  handler: (r) => this.router.navigate(['/invoices', r.id]) },
-    { label: 'Pay',   handler: (r) => this.openPayModal(r), hidden: (r) => r.status !== 'issued' },
-    { label: 'Email', handler: (r) => this.emailInvoice(r) },
-    { label: 'PDF',   handler: (r) => this.downloadPdf(r.id) },
-    { label: 'Void',  handler: (r) => this.voidInvoice(r), hidden: (r) => r.status === 'void' || r.status === 'paid' },
-  ];
+  get actions(): TableAction[] {
+    return [
+      { label: 'View',  handler: (r) => this.router.navigate(['/invoices', r.id]) },
+      { label: 'Pay',   handler: (r) => this.openPayModal(r),  hidden: (r) => r.status !== 'issued'  || !this.token.can('invoices.record_payment') },
+      { label: 'Email', handler: (r) => this.emailInvoice(r),  hidden: (_r) => !this.token.can('invoices.email') },
+      { label: 'PDF',   handler: (r) => this.downloadPdf(r.id), hidden: (_r) => !this.token.can('invoices.download_pdf') },
+      { label: 'Void',  handler: (r) => this.voidInvoice(r),   hidden: (r) => r.status === 'void' || r.status === 'paid' || !this.token.can('invoices.void') },
+    ];
+  }
 
   ngOnInit(): void {
     this.propertyId = this.activeProperty.propertyId();

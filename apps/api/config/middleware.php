@@ -25,6 +25,16 @@ return function (App $app): void {
         jwt:    $container->get(\Lodgik\Service\JwtService::class),
     ));
 
+    // 0a. Permission enforcement (runs after AuditMiddleware, before route handlers)
+    // Gates all hotel API routes based on role + property-level permission overrides.
+    // Bypass roles (super_admin, property_admin) always pass.
+    // Redis-cached per (property_id + role) for 60s.
+    $app->add(new \Lodgik\Middleware\PermissionMiddleware(
+        repo:  $container->get(\Lodgik\Module\Rbac\RbacRepository::class),
+        redis: $container->get(\Predis\Client::class),
+        requiredPermission: null, // global mode — resolves from route map
+    ));
+
     // 1. Parse JSON request bodies
     $app->add(new JsonBodyParserMiddleware());
 

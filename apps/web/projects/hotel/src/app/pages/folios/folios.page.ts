@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService} from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService, TokenService } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -38,9 +38,10 @@ import { AuthService } from '@lodgik/shared';
 })
 export class FoliosPage implements OnInit {
   private api = inject(ApiService);
-  private auth = inject(AuthService);
-  private router = inject(Router);
+  private auth          = inject(AuthService);
+  private router         = inject(Router);
   private activeProperty = inject(ActivePropertyService);
+  private token          = inject(TokenService);
 
   loading = signal(true);
   folios = signal<any[]>([]);
@@ -61,9 +62,14 @@ export class FoliosPage implements OnInit {
     { key: 'created_at', label: 'Date', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
   ];
 
-  actions: TableAction[] = [
-    { label: 'View', handler: (r) => this.router.navigate(['/folios', r.id]) },
-  ];
+  get actions(): TableAction[] {
+    return [
+      { label: 'View',         handler: (r) => this.router.navigate(['/folios', r.id]) },
+      { label: 'Add Charge',   color: 'primary', handler: (r) => this.router.navigate(['/folios', r.id]), hidden: (_r) => !this.token.can('folios.add_charge') },
+      { label: 'Add Payment',  color: 'success', handler: (r) => this.router.navigate(['/folios', r.id]), hidden: (_r) => !this.token.can('folios.add_payment') },
+      { label: 'Close Folio',  color: 'warning', handler: (r) => this.router.navigate(['/folios', r.id]), hidden: (r) => r.status === 'closed' || !this.token.can('folios.close') },
+    ];
+  }
 
   ngOnInit(): void {
     this.propertyId = this.activeProperty.propertyId();

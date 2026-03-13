@@ -22,6 +22,7 @@ use Lodgik\Command\NightAuditCommand;
 use Lodgik\Command\NoonCheckoutCommand;
 use Lodgik\Command\LateCheckoutChargeCommand;
 use Lodgik\Command\VisitorOverstayCommand;
+use Lodgik\Command\RbacSeedCommand;
 use Lodgik\Module\Folio\FolioService;
 use Psr\Log\LoggerInterface;
 
@@ -114,6 +115,10 @@ $app->addCommands([
         em:                 $em,
         logger:             $logger,
         notificationService:$container->get(NotificationService::class),
+    ),
+    new RbacSeedCommand(
+        em:     $em,
+        logger: $logger,
     ),
 ]);
 

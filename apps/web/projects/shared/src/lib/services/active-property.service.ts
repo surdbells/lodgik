@@ -96,6 +96,9 @@ export class ActivePropertyService {
           this.token.setTokens(r.data.access_token, r.data.refresh_token);
           this.token.setUser(r.data.user);
 
+          // Refresh permissions for the new property
+          this.token.fetchPermissions(propertyId);
+
           // Update properties list to reflect new current
           this._properties.update(props => props.map(p => ({
             ...p,

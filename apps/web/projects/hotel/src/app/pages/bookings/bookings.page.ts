@@ -2,13 +2,13 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService, StatsCardComponent, ActivePropertyService} from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService, StatsCardComponent, ActivePropertyService, HasPermDirective, PermDisableDirective, TokenService } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-bookings',
   standalone: true,
-  imports: [FormsModule, RouterLink, DatePipe, DecimalPipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
+  imports: [FormsModule, RouterLink, DatePipe, DecimalPipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent, HasPermDirective, PermDisableDirective],
   template: `
     <ui-page-header title="Bookings" subtitle="Reservations, check-ins and check-outs">
       <div class="flex gap-2">
@@ -23,7 +23,7 @@ import { AuthService } from '@lodgik/shared';
             [class.bg-sage-600]="viewMode()==='gantt'" [class.text-white]="viewMode()==='gantt'"
             [class.bg-white]="viewMode()!=='gantt'" [class.text-gray-500]="viewMode()!=='gantt'">📊 Gantt</button>
         </div>
-        <a routerLink="/bookings/new" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Booking</a>
+        <a *hasPerm="'bookings.create'" routerLink="/bookings/new" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Booking</a>
       </div>
     </ui-page-header>
 
@@ -82,7 +82,7 @@ import { AuthService } from '@lodgik/shared';
         <div class="mt-3">
           <textarea [(ngModel)]="form.special_requests" placeholder="Special requests" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></textarea>
         </div>
-        <button (click)="createBooking()" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Create Booking</button>
+        <button (click)="createBooking()" [permDisable]="'bookings.create'" class="mt-3 px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Create Booking</button>
       </div>
     }
 
@@ -303,14 +303,14 @@ import { AuthService } from '@lodgik/shared';
           <div class="flex flex-wrap gap-2 mt-5">
             @if (detail.status === 'pending') {
               <button (click)="doConfirm(detail.id)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">Confirm</button>
-              <button (click)="doCancel(detail.id)" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Cancel</button>
+              <button (click)="doCancel(detail.id)" [permDisable]="'bookings.cancel'" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Cancel</button>
             }
             @if (detail.status === 'confirmed') {
-              <button (click)="doCheckIn(detail.id)" class="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">Check In</button>
-              <button (click)="doCancel(detail.id)" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Cancel</button>
+              <button (click)="doCheckIn(detail.id)" [permDisable]="'bookings.check_in'" class="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">Check In</button>
+              <button (click)="doCancel(detail.id)" [permDisable]="'bookings.cancel'" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Cancel</button>
             }
             @if (detail.status === 'checked_in') {
-              <button (click)="doCheckOut(detail.id)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Check Out</button>
+              <button (click)="doCheckOut(detail.id)" [permDisable]="'bookings.check_out'" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 transition-colors">Check Out</button>
             }
             <button (click)="showDetail = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">Close</button>
           </div>
@@ -323,7 +323,8 @@ export class BookingsPage implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
-  private auth = inject(AuthService);
+  private auth  = inject(AuthService);
+  private token = inject(TokenService);
   private router = inject(Router);
   private activeProperty = inject(ActivePropertyService);
 
@@ -445,13 +446,15 @@ export class BookingsPage implements OnInit {
     { key: 'total_amount', label: 'Total (₦)', render: (v: any) => `₦${Number(v).toLocaleString()}` },
   ];
 
-  actions: TableAction[] = [
-    { label: 'View', handler: (r) => this.router.navigate(['/bookings', r.id]) },
-    { label: 'Confirm', color: 'primary', handler: (r) => this.doConfirm(r.id), hidden: (r) => r.status !== 'pending' },
-    { label: 'Check In', color: 'primary', handler: (r) => this.doCheckIn(r.id), hidden: (r) => r.status !== 'confirmed' },
-    { label: 'Check Out', color: 'primary', handler: (r) => this.doCheckOut(r.id), hidden: (r) => r.status !== 'checked_in' },
-    { label: 'Cancel', color: 'danger', handler: (r) => this.doCancel(r.id), hidden: (r) => !['pending', 'confirmed'].includes(r.status) },
-  ];
+  get actions(): TableAction[] {
+    return [
+      { label: 'View',      handler: (r) => this.router.navigate(['/bookings', r.id]) },
+      { label: 'Confirm',   color: 'primary',  handler: (r) => this.doConfirm(r.id),   hidden: (r) => r.status !== 'pending' },
+      { label: 'Check In',  color: 'primary',  handler: (r) => this.doCheckIn(r.id),   hidden: (r) => r.status !== 'confirmed'  || !this.token.can('bookings.check_in') },
+      { label: 'Check Out', color: 'primary',  handler: (r) => this.doCheckOut(r.id),  hidden: (r) => r.status !== 'checked_in' || !this.token.can('bookings.check_out') },
+      { label: 'Cancel',    color: 'danger',   handler: (r) => this.doCancel(r.id),    hidden: (r) => !['pending','confirmed'].includes(r.status) || !this.token.can('bookings.cancel') },
+    ];
+  }
 
   ngOnInit(): void {
     const user = this.auth.currentUser;

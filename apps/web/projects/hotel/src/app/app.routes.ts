@@ -50,6 +50,11 @@ export const routes: Routes = [
         canActivate: [roleGuard('property_admin', 'manager')],
       },
       {
+        path: 'settings/rbac',
+        loadComponent: () => import('./pages/rbac/rbac.page').then(m => m.RbacPage),
+        canActivate: [roleGuard('property_admin')],
+      },
+      {
         path: 'features',
         loadComponent: () => import('./pages/features/features.page').then(m => m.FeaturesPage),
         canActivate: [roleGuard('property_admin')],
