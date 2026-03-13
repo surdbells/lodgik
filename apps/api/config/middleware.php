@@ -31,8 +31,8 @@ return function (App $app): void {
     // Redis-cached per (property_id + role) for 60s.
     $app->add(new \Lodgik\Middleware\PermissionMiddleware(
         $container->get(\Lodgik\Module\Rbac\RbacRepository::class),
-        $container->get(\Predis\Client::class)
-        // global mode - resolves permission from route map
+        $container->get(\Predis\Client::class),
+        $container->get(\Lodgik\Service\JwtService::class)
     ));
 
     // 1. Parse JSON request bodies

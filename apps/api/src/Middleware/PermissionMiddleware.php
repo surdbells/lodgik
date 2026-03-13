@@ -5,6 +5,7 @@ namespace Lodgik\Middleware;
 
 use Lodgik\Module\Rbac\RbacRepository;
 use Lodgik\Module\Rbac\RbacService;
+use Lodgik\Service\JwtService;
 use Predis\Client as RedisClient;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -12,51 +13,82 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface as Handler;
 use Slim\Psr7\Response as SlimResponse;
 
+/**
+ * Global permission middleware.
+ *
+ * Runs BEFORE per-route AuthMiddleware, so it cannot rely on request attributes
+ * set by that middleware. Instead it decodes the JWT directly from the
+ * Authorization header (same approach as AuditMiddleware).
+ *
+ * Bypass: super_admin and property_admin always pass through.
+ * Exempt: /api/auth, /api/health, /api/guest*, /api/subscriptions/webhook, etc.
+ * Unknown routes (no entry in the permission map) pass through to let the
+ * controller/route-level middleware decide.
+ */
 final class PermissionMiddleware implements MiddlewareInterface
 {
-    private RbacRepository $repo;
-    private RedisClient $redis;
+    private $repo;
+    private $redis;
+    private $jwt;
     private $requiredPermission;
 
     public function __construct(
         RbacRepository $repo,
         RedisClient $redis,
+        JwtService $jwt,
         $requiredPermission = null
     ) {
         $this->repo               = $repo;
         $this->redis              = $redis;
+        $this->jwt                = $jwt;
         $this->requiredPermission = $requiredPermission;
     }
 
     public function process(Request $request, Handler $handler): Response
     {
-        $role       = $request->getAttribute('auth.role');
-        $propertyId = $request->getAttribute('auth.property_id');
-        $path       = $request->getUri()->getPath();
-        $method     = $request->getMethod();
+        $path   = $request->getUri()->getPath();
+        $method = $request->getMethod();
 
+        // Always pass OPTIONS (preflight)
         if ($method === 'OPTIONS') {
             return $handler->handle($request);
         }
 
+        // Pass exempt prefixes without any token check
         foreach ($this->getExemptPrefixes() as $prefix) {
             if (strpos($path, $prefix) === 0) {
                 return $handler->handle($request);
             }
         }
 
+        // Decode JWT directly from Authorization header
+        $role       = null;
+        $propertyId = null;
+        $claims     = $this->decodeToken($request);
+
+        if ($claims !== null) {
+            $role       = $claims['role']        ?? null;
+            $propertyId = $claims['property_id'] ?? null;
+        }
+
+        // Bypass roles skip permission checks entirely
         if (in_array($role, RbacService::BYPASS_ROLES, true)) {
             return $handler->handle($request);
         }
 
-        if (!$role || !$propertyId) {
-            return $this->forbidden('Authentication context incomplete.');
+        // No valid token / missing fields — let downstream auth middleware
+        // return the proper 401. We only block with 403 when we have a
+        // valid identity but the permission is denied.
+        if ($role === null || $propertyId === null) {
+            return $handler->handle($request);
         }
 
+        // Resolve the required permission for this route
         $required = $this->requiredPermission !== null
             ? $this->requiredPermission
             : $this->resolveFromRoute($method, $path);
 
+        // Route not in the permission map — pass through
         if ($required === null) {
             return $handler->handle($request);
         }
@@ -71,6 +103,41 @@ final class PermissionMiddleware implements MiddlewareInterface
         return $handler->handle($request);
     }
 
+    // ─── JWT helpers ─────────────────────────────────────────────────────────
+
+    private function decodeToken(Request $request)
+    {
+        $authHeader = $request->getHeaderLine('Authorization');
+
+        if ($authHeader === '') {
+            $params     = $request->getServerParams();
+            $authHeader = $params['HTTP_AUTHORIZATION']
+                ?? $params['REDIRECT_HTTP_AUTHORIZATION']
+                ?? '';
+        }
+
+        if ($authHeader === '' || strpos($authHeader, 'Bearer ') !== 0) {
+            return null;
+        }
+
+        $token = substr($authHeader, 7);
+        if ($token === '') {
+            return null;
+        }
+
+        try {
+            $claims = $this->jwt->decode($token);
+            if (($claims['type'] ?? '') !== 'access') {
+                return null;
+            }
+            return $claims;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    // ─── Exempt prefixes ─────────────────────────────────────────────────────
+
     private function getExemptPrefixes()
     {
         return array(
@@ -82,6 +149,8 @@ final class PermissionMiddleware implements MiddlewareInterface
             '/api/rbac/my-permissions',
         );
     }
+
+    // ─── Permission map ──────────────────────────────────────────────────────
 
     private function getRoutePermissionMap()
     {
@@ -192,6 +261,8 @@ final class PermissionMiddleware implements MiddlewareInterface
         );
     }
 
+    // ─── Cache-backed grant check ─────────────────────────────────────────────
+
     private function isGranted($propertyId, $role, $permission)
     {
         $cacheKey = 'rbac:' . $propertyId . ':' . $role;
@@ -203,7 +274,7 @@ final class PermissionMiddleware implements MiddlewareInterface
                 return in_array($permission, $granted, true);
             }
         } catch (\Exception $e) {
-            // Redis down - fall through to DB
+            // Redis down — fall through to DB
         }
 
         $granted = $this->repo->getGrantedForRole($propertyId, $role);
@@ -216,6 +287,8 @@ final class PermissionMiddleware implements MiddlewareInterface
 
         return in_array($permission, $granted, true);
     }
+
+    // ─── Route matching ───────────────────────────────────────────────────────
 
     private function resolveFromRoute($method, $path)
     {
@@ -256,6 +329,8 @@ final class PermissionMiddleware implements MiddlewareInterface
         $regex  = '#^' . str_replace(array('\\*', '\\/'), array('[^/]+', '/'), $quoted) . '(/.*)?$#';
         return (bool) preg_match($regex, $path);
     }
+
+    // ─── Response helper ──────────────────────────────────────────────────────
 
     private function forbidden($message)
     {
