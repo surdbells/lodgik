@@ -65,6 +65,8 @@ final class RoomService
         $roomType->setMaxOccupancy($dto->maxOccupancy);
         $roomType->setAmenities($dto->amenities);
         $roomType->setSortOrder($dto->sortOrder);
+        // Default: VAT-inclusive (standard for Nigerian hotels)
+        $roomType->setPriceIncludesVat($dto->priceIncludesVat ?? true);
 
         $this->roomTypeRepo->save($roomType);
         $this->logger->info("Room type created: {$roomType->getName()}");
@@ -80,6 +82,7 @@ final class RoomService
         if ($dto->hourlyRate !== null) $roomType->setHourlyRate($dto->hourlyRate === '' ? null : $dto->hourlyRate);
         if ($dto->description !== null) $roomType->setDescription($dto->description);
         if ($dto->maxOccupancy !== null) $roomType->setMaxOccupancy($dto->maxOccupancy);
+        if (isset($dto->priceIncludesVat)) $roomType->setPriceIncludesVat($dto->priceIncludesVat);
         if ($dto->amenities !== null) $roomType->setAmenities($dto->amenities);
         if ($dto->sortOrder !== null) $roomType->setSortOrder($dto->sortOrder);
         if ($dto->isActive !== null) $roomType->setIsActive($dto->isActive);

@@ -15,6 +15,7 @@ final class UpdateRoomTypeRequest
         public readonly ?array $amenities = null,
         public readonly ?int $sortOrder = null,
         public readonly ?bool $isActive = null,
+        public readonly ?bool $priceIncludesVat = null,
     ) {}
 
     public function validate(): array
@@ -48,6 +49,7 @@ final class UpdateRoomTypeRequest
             amenities: array_key_exists('amenities', $data) ? $data['amenities'] : null,
             sortOrder: isset($data['sort_order']) ? (int) $data['sort_order'] : null,
             isActive: isset($data['is_active']) ? (bool) $data['is_active'] : null,
+            priceIncludesVat: array_key_exists('price_includes_vat', $data) ? (bool) $data['price_includes_vat'] : null,
         );
     }
 }

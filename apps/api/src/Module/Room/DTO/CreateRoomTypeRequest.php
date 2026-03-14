@@ -15,6 +15,7 @@ final class CreateRoomTypeRequest
         public readonly int $maxOccupancy = 2,
         public readonly ?array $amenities = null,
         public readonly int $sortOrder = 0,
+        public readonly bool $priceIncludesVat = true,
     ) {}
 
     public function validate(): array
@@ -51,6 +52,7 @@ final class CreateRoomTypeRequest
             maxOccupancy: (int) ($data['max_occupancy'] ?? 2),
             amenities: $data['amenities'] ?? null,
             sortOrder: (int) ($data['sort_order'] ?? 0),
+            priceIncludesVat: isset($data['price_includes_vat']) ? (bool) $data['price_includes_vat'] : true,
         );
     }
 }

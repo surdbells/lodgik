@@ -56,6 +56,14 @@ class RoomType implements TenantAware
     #[ORM\Column(name: 'is_active', type: Types::BOOLEAN, options: ['default' => true])]
     private bool $isActive = true;
 
+    /**
+     * When true, the base_rate already includes VAT.
+     * The invoice will extract VAT from the price rather than adding it on top.
+     * When false (default), VAT is added on top of the base_rate if VAT is enabled for the property.
+     */
+    #[ORM\Column(name: 'price_includes_vat', type: Types::BOOLEAN, options: ['default' => true])]
+    private bool $priceIncludesVat = true;
+
     public function __construct(string $name, string $propertyId, string $tenantId, string $baseRate)
     {
         $this->generateId();
@@ -96,4 +104,7 @@ class RoomType implements TenantAware
 
     public function isActive(): bool { return $this->isActive; }
     public function setIsActive(bool $active): void { $this->isActive = $active; }
+
+    public function isPriceIncludesVat(): bool { return $this->priceIncludesVat; }
+    public function setPriceIncludesVat(bool $v): void { $this->priceIncludesVat = $v; }
 }

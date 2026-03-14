@@ -81,20 +81,32 @@ final class InvoiceService
 
         $this->em->persist($invoice);
 
-        // Get charges and create invoice items
-        $charges = $this->chargeRepo->findByFolio($folio->getId());
-        $taxes = $this->taxRepo->findActiveTaxes($tenantId);
-        $vatRate = '0.00';
+        // ── Resolve VAT configuration ─────────────────────────────────────────
+        // 1. Property-level master switch: charge_vat_on_booking (default: true)
+        $chargeVat = (bool) ($property?->getSetting('charge_vat_on_booking', true) ?? true);
+
+        // 2. Global VAT rate from TaxConfiguration
+        $charges  = $this->chargeRepo->findByFolio($folio->getId());
+        $taxes    = $this->taxRepo->findActiveTaxes($tenantId);
+        $vatConfig = null;
         foreach ($taxes as $tax) {
-            if ($tax->getTaxKey() === 'vat') {
-                $vatRate = $tax->getRate();
+            if ($tax->getTaxKey() === 'vat' && $tax->isActive()) {
+                $vatConfig = $tax;
                 break;
             }
         }
 
+        $vatRate      = $vatConfig !== null ? (float) $vatConfig->getRate() : 0.0;
+        $vatInclusive = $vatConfig !== null ? $vatConfig->isInclusive() : true;
+
+        // If VAT is disabled at property level, zero out the rate
+        if (!$chargeVat) {
+            $vatRate = 0.0;
+        }
+
         $subtotal = 0.0;
         $taxTotal = 0.0;
-        $sort = 0;
+        $sort     = 0;
 
         foreach ($charges as $charge) {
             if ($charge->isVoided()) continue;
@@ -109,28 +121,48 @@ final class InvoiceService
             $item->setCategory($charge->getCategory()->value);
             $item->setSortOrder(++$sort);
 
-            // Apply VAT
-            $lineTotal = (float)$charge->getLineTotal();
-            $taxAmt = $lineTotal * (float)$vatRate / 100;
-            $item->setTaxRate($vatRate);
-            $item->setTaxAmount(number_format($taxAmt, 2, '.', ''));
+            $lineTotal = (float) $charge->getLineTotal();
+            $taxAmt    = 0.0;
 
-            $subtotal += $lineTotal;
+            if ($vatRate > 0) {
+                if ($vatInclusive) {
+                    // ── VAT-inclusive: price already contains VAT.
+                    // Extract VAT component: vatAmt = lineTotal - (lineTotal / 1.vatRate)
+                    // e.g. ₦10,750 inclusive of 7.5% → subtotal = ₦10,000, VAT = ₦750
+                    $exVat  = $lineTotal / (1 + $vatRate / 100);
+                    $taxAmt = $lineTotal - $exVat;
+                    // subtotal is ex-VAT; grand total stays the same as folio total
+                    $subtotal += $exVat;
+                } else {
+                    // ── VAT-exclusive: add VAT on top of line total
+                    $taxAmt    = $lineTotal * $vatRate / 100;
+                    $subtotal += $lineTotal;
+                }
+            } else {
+                // No VAT
+                $subtotal += $lineTotal;
+            }
+
             $taxTotal += $taxAmt;
+            $item->setTaxRate(number_format($vatRate, 2, '.', ''));
+            $item->setTaxAmount(number_format($taxAmt, 2, '.', ''));
 
             $this->em->persist($item);
         }
 
-        // Set totals
+        // ── Totals ────────────────────────────────────────────────────────────
+        // For VAT-inclusive: grand = subtotal + taxTotal = original folio total (no extra charge)
+        // For VAT-exclusive: grand = subtotal + taxTotal (may exceed folio total — intentional)
+        // For no VAT:        grand = subtotal
         $invoice->setSubtotal(number_format($subtotal, 2, '.', ''));
         $invoice->setTaxTotal(number_format($taxTotal, 2, '.', ''));
         $invoice->setDiscountTotal($folio->getTotalAdjustments());
-        $grand = $subtotal + $taxTotal - (float)$folio->getTotalAdjustments();
+        $grand = $subtotal + $taxTotal - (float) $folio->getTotalAdjustments();
         $invoice->setGrandTotal(number_format($grand, 2, '.', ''));
         $invoice->setAmountPaid($folio->getTotalPayments());
 
-        // If fully paid, mark as paid
-        if ((float)$folio->getTotalPayments() >= $grand) {
+        // Mark as paid if folio payments cover the grand total
+        if ((float) $folio->getTotalPayments() >= $grand - 0.01) {
             $invoice->setStatus('paid');
         }
 

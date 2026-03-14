@@ -427,6 +427,7 @@ final class RoomController
             'photos' => $rt->getPhotos(),
             'sort_order' => $rt->getSortOrder(),
             'is_active' => $rt->isActive(),
+            'price_includes_vat' => $rt->isPriceIncludesVat(),
             'created_at' => $rt->getCreatedAt()?->format('c'),
             'updated_at' => $rt->getUpdatedAt()?->format('c'),
         ];

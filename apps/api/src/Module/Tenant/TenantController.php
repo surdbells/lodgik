@@ -152,6 +152,8 @@ final class TenantController
             'require_payment_receipt',
             // New — Checkout discrepancy threshold
             'checkout_discrepancy_threshold_minutes',
+            // VAT settings
+            'charge_vat_on_booking',
         ];
 
         $property = $this->tenantService->getProperty($args['id']);

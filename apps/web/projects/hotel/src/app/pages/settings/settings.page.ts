@@ -161,6 +161,42 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
               </div>
             </div>
 
+            <!-- VAT & Tax Controls -->
+            <div class="space-y-4 lg:col-span-2 border-t border-gray-100 pt-5">
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">🧾 VAT & Tax Settings</p>
+
+              <!-- Master VAT switch -->
+              <div class="flex items-start justify-between gap-4 max-w-xl">
+                <div>
+                  <p class="text-sm font-medium text-gray-700">Charge VAT on Bookings</p>
+                  <p class="text-xs text-gray-400 mt-0.5">When disabled, no VAT is calculated or shown on invoices for this property</p>
+                </div>
+                <button type="button" (click)="ps.charge_vat_on_booking = !ps.charge_vat_on_booking"
+                  class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 cursor-pointer focus:outline-none"
+                  [class.bg-sage-600]="ps.charge_vat_on_booking" [class.bg-gray-200]="!ps.charge_vat_on_booking">
+                  <span class="inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200"
+                    [class.translate-x-5]="ps.charge_vat_on_booking" [class.translate-x-0]="!ps.charge_vat_on_booking"></span>
+                </button>
+              </div>
+
+              <!-- Inclusive / Exclusive info box -->
+              @if (ps.charge_vat_on_booking) {
+                <div class="max-w-xl bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm space-y-2">
+                  <p class="font-semibold text-amber-800">How VAT is applied to invoices</p>
+                  <p class="text-amber-700">
+                    The VAT mode (inclusive or exclusive) is configured per room type.
+                    For <strong>VAT-inclusive</strong> room types, the room price already contains VAT —
+                    the invoice will extract and display the VAT component without adding to the total.
+                    For <strong>VAT-exclusive</strong> room types, VAT is added on top of the room price on the invoice.
+                  </p>
+                  <p class="text-amber-600 text-xs">
+                    ✦ Most Nigerian hotels use <strong>VAT-inclusive</strong> pricing. This is the default for new room types.
+                    You can change this per room type in <strong>Rooms → Room Types</strong>.
+                  </p>
+                </div>
+              }
+            </div>
+
             <!-- Housekeeping Controls -->
             <div class="space-y-4 lg:col-span-2 border-t border-gray-100 pt-5">
               <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">🧹 Housekeeping Controls</p>
@@ -322,6 +358,8 @@ export class SettingsPage implements OnInit {
     market_purchase_require_dual_approval:   false,
     market_purchase_require_receipt_or_note: false,
     require_admin_approval_for_consumables:  false,
+    // VAT settings
+    charge_vat_on_booking:                   true,
   };
 
   ngOnInit(): void {
@@ -364,6 +402,7 @@ export class SettingsPage implements OnInit {
             market_purchase_require_dual_approval:   s.market_purchase_require_dual_approval   ?? false,
             market_purchase_require_receipt_or_note: s.market_purchase_require_receipt_or_note ?? false,
             require_admin_approval_for_consumables:  s.require_admin_approval_for_consumables  ?? false,
+            charge_vat_on_booking:                   s.charge_vat_on_booking                   ?? true,
           };
         }
       });
@@ -388,6 +427,7 @@ export class SettingsPage implements OnInit {
       market_purchase_require_dual_approval:   !!this.ps.market_purchase_require_dual_approval,
       market_purchase_require_receipt_or_note: !!this.ps.market_purchase_require_receipt_or_note,
       require_admin_approval_for_consumables:  !!this.ps.require_admin_approval_for_consumables,
+      charge_vat_on_booking:                   !!this.ps.charge_vat_on_booking,
     };
 
     this.api.patch(`/tenant/properties/${pid}/settings`, payload).subscribe({
