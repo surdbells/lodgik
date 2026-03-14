@@ -94,6 +94,16 @@ class Invoice
     #[ORM\Column(name: 'notes', type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
 
+    #[ORM\Column(name: 'payment_method', type: 'string', length: 30, nullable: true)]
+    private ?string $paymentMethod = null;
+
+    #[ORM\Column(name: 'payment_reference', type: 'string', length: 100, nullable: true)]
+    private ?string $paymentReference = null;
+
+    /** URL to uploaded bank transfer receipt image / PDF */
+    #[ORM\Column(name: 'receipt_url', type: Types::TEXT, nullable: true)]
+    private ?string $receiptUrl = null;
+
     public function __construct(string $propertyId, string $folioId, string $bookingId, string $guestId, string $invoiceNumber, string $guestName, string $tenantId)
     {
         $this->generateId();
@@ -173,7 +183,19 @@ class Invoice
             'bank_account_name' => $this->bankAccountName,
             'emailed_at' => $this->emailedAt?->format('c'),
             'notes' => $this->notes,
+            'payment_method' => $this->paymentMethod,
+            'payment_reference' => $this->paymentReference,
+            'receipt_url' => $this->receiptUrl,
             'created_at' => $this->createdAt->format('c'),
         ];
     }
+    public function getPaymentMethod(): ?string { return $this->paymentMethod; }
+    public function setPaymentMethod(?string $v): void { $this->paymentMethod = $v; }
+
+    public function getPaymentReference(): ?string { return $this->paymentReference; }
+    public function setPaymentReference(?string $v): void { $this->paymentReference = $v; }
+
+    public function getReceiptUrl(): ?string { return $this->receiptUrl; }
+    public function setReceiptUrl(?string $v): void { $this->receiptUrl = $v; }
+
 }

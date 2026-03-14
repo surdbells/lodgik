@@ -354,18 +354,23 @@ HTML;
         ?string $reference = null,
         ?float $amount = null,
         ?string $notes = null,
+        ?string $receiptUrl = null,
     ): Invoice {
         $invoice = $this->getById($invoiceId);
         if ($invoice->getStatus() === 'void') throw new \RuntimeException('Cannot pay a voided invoice');
 
-        $totalDue   = (float) $invoice->getGrandTotal();
+        $totalDue    = (float) $invoice->getGrandTotal();
         $alreadyPaid = (float) $invoice->getAmountPaid();
-        $paying     = $amount ?? ($totalDue - $alreadyPaid);
+        $paying      = $amount ?? ($totalDue - $alreadyPaid);
 
         $newPaid = min($alreadyPaid + $paying, $totalDue);
         $invoice->setAmountPaid((string) $newPaid);
+        $invoice->setPaymentMethod($paymentMethod);
+        if ($reference !== null) $invoice->setPaymentReference($reference);
+        if ($receiptUrl !== null) $invoice->setReceiptUrl($receiptUrl);
+        if ($notes !== null) $invoice->setNotes($notes);
 
-        if ($newPaid >= $totalDue) {
+        if ($newPaid >= $totalDue - 0.01) {
             $invoice->setStatus('paid');
         }
 

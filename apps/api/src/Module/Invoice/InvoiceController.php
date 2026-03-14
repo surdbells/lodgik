@@ -47,8 +47,28 @@ final class InvoiceController
     public function pdf(Request $request, Response $response, array $args): Response
     {
         $html = $this->invoiceService->generatePdfHtml($args['id']);
-        $response->getBody()->write($html);
-        return $response->withHeader('Content-Type', 'text/html; charset=UTF-8');
+
+        // Render as actual PDF via Dompdf
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->getOptions()->setChroot(['/']);
+        $dompdf->getOptions()->setIsRemoteEnabled(false);
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $pdf      = $dompdf->output();
+        $invoiceNo = 'invoice'; // fallback
+        try {
+            $inv = $this->invoiceService->getById($args['id']);
+            $invoiceNo = preg_replace('/[^A-Z0-9_-]/i', '-', $inv->getInvoiceNumber());
+        } catch (\Throwable) {}
+
+        $response->getBody()->write($pdf);
+        return $response
+            ->withHeader('Content-Type', 'application/pdf')
+            ->withHeader('Content-Disposition', "attachment; filename="{$invoiceNo}.pdf"")
+            ->withHeader('Content-Length', (string) strlen($pdf))
+            ->withHeader('Cache-Control', 'no-store, no-cache');
     }
 
     /** POST /api/invoices/{id}/email */
@@ -80,6 +100,7 @@ final class InvoiceController
                 $body['reference'] ?? null,
                 $amount,
                 $body['notes'] ?? null,
+                $body['receipt_url'] ?? null,
             );
             $detail = $this->invoiceService->getDetail($invoice->getId());
             return $this->response->success($response, $detail, 'Payment recorded');
