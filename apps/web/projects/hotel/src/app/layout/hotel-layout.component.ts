@@ -397,18 +397,18 @@ export class HotelLayoutComponent implements OnInit {
   }
 
   toggleGroup(index: number): void {
+    const total = this.visibleNavGroups().length;
     this.collapsedGroups.update(set => {
       const next = new Set(set);
-      // Accordion: if this section is already open, collapse it.
-      // Otherwise, collapse ALL sections then open only this one.
-      if (next.has(index)) {
-        next.delete(index);
+      if (!next.has(index)) {
+        // Section is currently OPEN — just collapse it
+        next.add(index);
       } else {
-        // Close every group first
-        const allIndices = Array.from({ length: this.visibleNavGroups().length }, (_, i) => i);
-        allIndices.forEach(i => next.add(i));
-        // Then open the clicked one
-        next.delete(index);
+        // Section is currently COLLAPSED — open it, collapse all others
+        for (let i = 0; i < total; i++) {
+          if (i === index) next.delete(i); // open clicked
+          else             next.add(i);    // collapse all others
+        }
       }
       return next;
     });
