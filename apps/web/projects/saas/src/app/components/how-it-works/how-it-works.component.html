@@ -1,15 +1,14 @@
-
 <section id="how" class="how-section">
   <div class="container">
-    <header class="section-header reveal" style="text-align:center;margin-bottom:3.5rem;">
-      <div class="badge-label primary section-eyebrow">How It Works</div>
-      <h2 class="section-heading">Up and running <em>in hours,</em> not weeks</h2>
+    <header class="reveal" style="text-align:center;margin-bottom:3rem;">
+      <div class="eyebrow green" style="margin-bottom:.8rem">How It Works</div>
+      <h2 class="section-heading">Up and running <em>in hours</em></h2>
     </header>
-    <div class="steps-grid">
+    <div class="steps">
       <div class="step reveal" *ngFor="let s of steps; let i=index" [class]="'reveal d'+i">
-        <div class="step-n" aria-hidden="true">{{ s.n }}</div>
-        <h3>{{ s.title }}</h3>
-        <p>{{ s.desc }}</p>
+        <div class="step-n">{{ s.n }}</div>
+        <h3>{{ s.t }}</h3>
+        <p>{{ s.d }}</p>
       </div>
     </div>
   </div>

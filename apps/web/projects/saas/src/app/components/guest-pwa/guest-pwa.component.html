@@ -1,75 +1,45 @@
-
 <section id="guest-pwa" class="pwa-section">
   <div class="container">
     <div class="pwa-inner">
-
-      <!-- Phones -->
-      <div class="phones-wrap reveal" aria-label="Guest portal on mobile phones">
-        <div class="phone tall" role="img" aria-label="Guest portal home screen">
-          <!-- REPLACE: <img src="/assets/screenshots/guest-home.png" alt="Guest portal home" /> -->
-          <div class="phone-notch"><div class="phone-notch-dot"></div></div>
-          <div class="phone-screen">
-            <div class="ps-top">
-              <div><div class="ps-greeting">Good evening,</div><div class="ps-name">Mr. Adewale</div></div>
-              <div class="ps-av"></div>
-            </div>
-            <div class="ps-bal">
-              <div class="ps-bal-lbl">Room 214 · Deluxe King</div>
-              <div class="ps-bal-amt">Balance: ₦0</div>
-              <div class="ps-bal-ok">✓ Paid in full</div>
-            </div>
-            <div class="ps-actions">
-              <div class="ps-act"><span>🍽️</span><small>Room Service</small></div>
-              <div class="ps-act"><span>💬</span><small>Chat</small></div>
-              <div class="ps-act"><span>📄</span><small>My Bill</small></div>
-              <div class="ps-act"><span>🛎️</span><small>Requests</small></div>
-              <div class="ps-act"><span>🗝️</span><small>Visitor Code</small></div>
-              <div class="ps-act"><span>⏰</span><small>Extend Stay</small></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="phone short" role="img" aria-label="Guest QR code access screen" style="position:relative;">
-          <!-- REPLACE: <img src="/assets/screenshots/guest-qr.png" alt="Guest QR code" /> -->
-          <div class="phone-notch"><div class="phone-notch-dot"></div></div>
-          <div class="phone-screen">
-            <div class="ps-qr-title">Access Code</div>
-            <div class="ps-qr-sub">Scan below or tap your room card</div>
-            <div class="ps-qr-box">
-              <div class="qr-grid">
-                <div class="qr-cell" *ngFor="let d of qrPattern" [class.dark]="d"></div>
-              </div>
-            </div>
-            <div class="ps-code">482 619</div>
-            <div class="ps-code-note">Or enter at guest.lodgik.app</div>
-          </div>
-          <div class="nfc-chip">📡 NFC Ready</div>
-        </div>
-      </div>
-
-      <!-- Copy -->
       <div class="pwa-copy reveal d2">
-        <div class="badge-label primary section-eyebrow">Guest Experience</div>
-        <h2 class="section-heading">
-          Your guests,<br/><em>always connected</em>
-        </h2>
-        <p class="section-sub">
-          The Lodgik Guest Portal gives every guest a personal mobile hotel experience — no app download required. Launch it in four ways:
-        </p>
-
-        <div class="pwa-methods">
-          <div class="method-row" *ngFor="let m of methods">
-            <div class="method-icon" aria-hidden="true">{{ m.icon }}</div>
-            <div>
-              <h4>{{ m.title }}</h4>
-              <p>{{ m.desc }}</p>
+        <div class="eyebrow green" style="margin-bottom:.8rem">Guest Experience</div>
+        <h2 class="section-heading">Your guests, <em>always connected</em></h2>
+        <p class="section-sub">The Lodgik Guest Portal gives every guest a personal mobile hotel experience — no app download required. Four ways to access it:</p>
+        <div class="methods">
+          <div class="method" *ngFor="let m of methods">
+            <div class="m-icon">{{ m.icon }}</div>
+            <div><h4>{{ m.title }}</h4><p>{{ m.desc }}</p></div>
+          </div>
+        </div>
+        <a href="https://guest.lodgik.app" class="btn btn-primary" style="margin-top:2rem;display:inline-flex;" rel="noopener">See Guest Portal Live</a>
+      </div>
+      <div class="pwa-phones reveal" aria-hidden="true">
+        <div class="phone p-tall">
+          <div class="ph-notch"></div>
+          <div class="ph-screen">
+            <div class="ps-header"><div><div class="ps-g">Good evening,</div><div class="ps-n">Mr. Adewale</div></div><div class="ps-av"></div></div>
+            <div class="ps-card"><div class="pc-room">Room 214 · Deluxe King</div><div class="pc-bal">Balance: <strong>₦0</strong></div><div class="pc-tag">Paid in full</div></div>
+            <div class="ps-grid">
+              <div class="pg-item"><span>🍽️</span><small>Room Service</small></div>
+              <div class="pg-item"><span>💬</span><small>Chat</small></div>
+              <div class="pg-item"><span>📄</span><small>My Bill</small></div>
+              <div class="pg-item"><span>🛎️</span><small>Requests</small></div>
+              <div class="pg-item"><span>🗝️</span><small>Visitor Code</small></div>
+              <div class="pg-item"><span>⏰</span><small>Extend Stay</small></div>
             </div>
           </div>
         </div>
-
-        <a href="https://guest.lodgik.app" class="btn btn-primary" style="margin-top:2rem;display:inline-flex;" rel="noopener">
-          See Guest Portal Live →
-        </a>
+        <div class="phone p-short">
+          <div class="ph-notch"></div>
+          <div class="ph-screen">
+            <div class="ps-title">Access Code</div>
+            <div class="ps-sub">Scan QR or tap your room card</div>
+            <div class="qr-box"><div class="qr-grid"><div class="qc" *ngFor="let d of qr" [class.f]="d"></div></div></div>
+            <div class="qr-code">482 619</div>
+            <div class="qr-hint">guest.lodgik.app</div>
+          </div>
+          <div class="nfc-tag">📡 NFC</div>
+        </div>
       </div>
     </div>
   </div>

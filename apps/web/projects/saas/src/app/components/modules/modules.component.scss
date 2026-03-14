@@ -1,28 +1,12 @@
-
-.modules-section { padding: clamp(4rem,8vw,7rem) 0; background: var(--bg-alt); }
-.modules-top {
-  display: grid; grid-template-columns: 1fr auto; gap: 3rem;
-  align-items: end; margin-bottom: 3rem;
+.modules-section { padding:clamp(4rem,8vw,7rem) 0; background:var(--bg-alt); }
+.modules-top { display:grid; grid-template-columns:1fr auto; gap:3rem; align-items:end; margin-bottom:2.5rem; }
+.count-block { display:flex; align-items:baseline; gap:10px; }
+.cnt { font-family:'Playfair Display',serif; font-size:clamp(2.8rem,5vw,4rem); font-weight:700; color:var(--primary); line-height:1; }
+.cnt-l { font-size:.82rem; color:var(--text-3); line-height:1.4; }
+.pills { display:flex; flex-wrap:wrap; gap:8px; }
+.pill { display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:var(--r); background:var(--bg); border:1px solid var(--border-light); font-size:.82rem; color:var(--text-2); transition:all .18s; cursor:default;
+  &.g-p:hover{background:var(--primary-subtle);border-color:var(--primary-border);color:var(--primary);}
+  &.g-s:hover{background:var(--accent-subtle);border-color:rgba(14,165,233,.25);color:var(--accent);}
 }
-.count-n {
-  font-family: 'Instrument Serif', serif;
-  font-size: clamp(3rem,5vw,4.5rem); color: var(--primary); line-height: 1; text-align: right;
-}
-.count-l { font-size: .84rem; color: var(--text-2); text-align: right; line-height: 1.5; }
-
-.pills { display: flex; flex-wrap: wrap; gap: 10px; }
-.pill {
-  display: flex; align-items: center; gap: 8px;
-  padding: 9px 17px; border-radius: 100px;
-  background: var(--bg); border: 1px solid var(--border-light);
-  font-size: .84rem; color: var(--text-2); transition: all .22s; cursor: default;
-  &:hover { color: var(--text); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-  &.accent-p:hover { border-color: var(--primary-border); background: var(--primary-subtle); color: var(--primary); }
-  &.accent-s:hover { border-color: var(--secondary-border); background: var(--secondary-subtle); color: var(--secondary); }
-}
-.dot {
-  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
-  .accent-p & { background: var(--primary); }
-  .accent-s & { background: var(--secondary); }
-}
-@media (max-width: 700px) { .modules-top { grid-template-columns: 1fr; } .count-n, .count-l { text-align: left; } }
+.dot { width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0; opacity:.6; }
+@media(max-width:680px){.modules-top{grid-template-columns:1fr;}}

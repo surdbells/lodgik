@@ -1,29 +1,13 @@
-
 @use '../../shared/btn.scss';
-
-.platform-section {
-  padding: clamp(4rem,8vw,7rem) 0;
-  background: var(--bg);
+.platform-section { padding:clamp(4rem,8vw,7rem) 0; background:var(--bg); }
+.apps-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
+.app-tile { background:var(--bg-alt); border:1px solid var(--border-light); border-radius:var(--r2); padding:1.3rem; transition:all .22s; display:flex; flex-direction:column; gap:7px; &:hover{border-color:var(--primary-border);box-shadow:var(--shadow-sm);transform:translateY(-2px);} }
+.at-icon { font-size:1.3rem; }
+.at-body h4 { font-size:.87rem; font-weight:700; color:var(--text); margin-bottom:3px; }
+.at-body p  { font-size:.76rem; color:var(--text-2); line-height:1.5; }
+.at-badge { align-self:flex-start; font-size:.6rem; font-weight:700; padding:3px 8px; border-radius:var(--r); border:1px solid; margin-top:auto;
+  &.web    {background:rgba(59,130,246,.06);color:#3B82F6;border-color:rgba(59,130,246,.2);}
+  &.android{background:rgba(34,197,94,.06);color:#16A34A;border-color:rgba(34,197,94,.2);}
+  &.desktop{background:rgba(168,85,247,.06);color:#9333EA;border-color:rgba(168,85,247,.2);}
 }
-.platform-inner {
-  display: grid; grid-template-columns: 1fr 1.2fr;
-  gap: 5rem; align-items: start;
-}
-.apps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.app-tile {
-  background: var(--bg-alt); border-radius: var(--r2); padding: 1.4rem;
-  border: 1px solid var(--border-light); transition: all .25s;
-  display: flex; flex-direction: column; gap: 8px;
-  &:hover { border-color: var(--primary-border); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
-}
-.at-icon { font-size: 1.4rem; }
-.at-body h4 { font-size: .9rem; font-weight: 600; color: var(--text); margin-bottom: 3px; }
-.at-body p  { font-size: .78rem; color: var(--text-2); line-height: 1.5; }
-.at-badge {
-  align-self: flex-start; font-size: .62rem; font-weight: 700; padding: 3px 9px;
-  border-radius: 100px; border: 1px solid; margin-top: auto;
-  &.web     { background: rgba(59,130,246,.07); color: #3B82F6; border-color: rgba(59,130,246,.2); }
-  &.android { background: rgba(34,197,94,.07);  color: #16A34A; border-color: rgba(34,197,94,.2);  }
-  &.desktop { background: rgba(168,85,247,.07); color: #9333EA; border-color: rgba(168,85,247,.2); }
-}
-@media (max-width: 900px) { .platform-inner { grid-template-columns: 1fr; } }
+@media(max-width:900px){.apps-grid{grid-template-columns:repeat(2,1fr);}}

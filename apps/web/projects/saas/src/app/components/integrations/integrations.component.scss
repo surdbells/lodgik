@@ -1,14 +1,11 @@
-
 @use '../../shared/btn.scss';
-.integ-section { padding: clamp(4rem,8vw,7rem) 0; background: var(--bg); }
-.integ-inner { display: grid; grid-template-columns: 1fr 1.4fr; gap: 5rem; align-items: center; }
-.integ-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
-.integ-card {
-  background: var(--bg-alt); border-radius: var(--r2); padding: 1.4rem;
-  border: 1px solid var(--border-light); text-align: center; transition: all .25s;
-  &:hover { border-color: var(--primary-border); transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.integ-section { padding:clamp(4rem,8vw,7rem) 0; background:var(--bg); }
+.integ-inner { display:grid; grid-template-columns:1fr 1.3fr; gap:5rem; align-items:center; }
+.integ-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem; }
+.integ-card { background:var(--bg-alt); border:1px solid var(--border-light); border-radius:var(--r2); padding:1.2rem; text-align:center; transition:all .22s;
+  &:hover{border-color:var(--primary-border);transform:translateY(-2px);box-shadow:var(--shadow-sm);}
 }
-.integ-icon { font-size: 1.8rem; margin-bottom: .6rem; }
-.integ-name { font-size: .84rem; font-weight: 600; color: var(--text); margin-bottom: 3px; }
-.integ-type { font-size: .72rem; color: var(--text-3); }
-@media (max-width: 860px) { .integ-inner { grid-template-columns: 1fr; } }
+.ii-icon { font-size:1.6rem; margin-bottom:.5rem; }
+.ii-name { font-size:.82rem; font-weight:700; color:var(--text); margin-bottom:2px; }
+.ii-type { font-size:.7rem; color:var(--text-3); }
+@media(max-width:860px){.integ-inner{grid-template-columns:1fr;}}

@@ -1,24 +1,25 @@
-
 <section id="features" class="features-section">
   <div class="container">
-    <header class="section-header reveal">
-      <div class="badge-label primary section-eyebrow">Core Features</div>
-      <h2 class="section-heading">
-        Everything your hotel needs,
-        <em>in one place</em>
-      </h2>
-      <p class="section-sub" style="max-width:560px;margin-left:auto;margin-right:auto;text-align:center;">
-        No more juggling spreadsheets, WhatsApp groups, and disconnected tools. Lodgik handles every department from check-in to check-out.
-      </p>
-    </header>
-
-    <div class="features-grid">
-      <article class="feature-card reveal" *ngFor="let f of features; let i=index" [class]="'reveal d'+(i%3)">
-        <div class="fc-icon" aria-hidden="true">{{ f.icon }}</div>
-        <h3>{{ f.title }}</h3>
-        <p>{{ f.desc }}</p>
-        <div class="fc-arrow" aria-hidden="true">→</div>
-      </article>
+    <div class="features-layout">
+      <div class="features-header reveal">
+        <div class="eyebrow green" style="margin-bottom:.8rem">Everything You Need</div>
+        <h2 class="section-heading">
+          Everything your hotel needs<br/><em>is right here</em>
+        </h2>
+        <p class="section-sub" style="max-width:380px;">
+          No more juggling spreadsheets, WhatsApp groups, and disconnected tools. Lodgik handles every department.
+        </p>
+        <a href="https://hotel.lodgik.co/register" class="btn btn-primary" style="margin-top:2rem;display:inline-flex;" rel="noopener">
+          Start Free Trial
+        </a>
+      </div>
+      <div class="features-grid">
+        <article class="feat-card reveal" *ngFor="let f of features; let i=index" [class]="'reveal d'+(i%3)">
+          <div class="feat-icon" aria-hidden="true">{{ f.icon }}</div>
+          <h3>{{ f.title }}</h3>
+          <p>{{ f.desc }}</p>
+        </article>
+      </div>
     </div>
   </div>
 </section>

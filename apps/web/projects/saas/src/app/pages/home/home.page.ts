@@ -1,4 +1,3 @@
-
 import { Component, AfterViewInit, OnDestroy } from '@angular/core';
 import { NavComponent }          from '../../components/nav/nav.component';
 import { HeroComponent }         from '../../components/hero/hero.component';
@@ -45,19 +44,19 @@ import { FooterComponent }       from '../../components/footer/footer.component'
     </main>
     <app-footer />
   `,
-  styles: [`main { display: block; }`]
+  styles: [':host{display:block;}']
 })
 export class HomePage implements AfterViewInit, OnDestroy {
-  private observer!: IntersectionObserver;
+  private obs!: IntersectionObserver;
 
   ngAfterViewInit(): void {
-    this.observer = new IntersectionObserver(
+    this.obs = new IntersectionObserver(
       entries => entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('visible'); this.observer.unobserve(e.target); }
+        if (e.isIntersecting) { e.target.classList.add('visible'); this.obs.unobserve(e.target); }
       }),
-      { threshold: 0.07, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.07, rootMargin: '0px 0px -30px 0px' }
     );
-    document.querySelectorAll('.reveal').forEach(el => this.observer.observe(el));
+    document.querySelectorAll('.reveal').forEach(el => this.obs.observe(el));
   }
-  ngOnDestroy(): void { this.observer?.disconnect(); }
+  ngOnDestroy(): void { this.obs?.disconnect(); }
 }

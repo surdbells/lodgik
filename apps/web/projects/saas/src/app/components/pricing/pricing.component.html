@@ -1,37 +1,34 @@
-
 <section id="pricing" class="pricing-section">
   <div class="container">
-    <header class="section-header reveal" style="text-align:center;margin-bottom:2.5rem;">
-      <div class="badge-label primary section-eyebrow">Pricing</div>
+    <header class="reveal" style="text-align:center;margin-bottom:2.5rem;">
+      <div class="eyebrow green" style="margin-bottom:.8rem">Pricing</div>
       <h2 class="section-heading">Plans for every <em>size of hotel</em></h2>
-      <p class="section-sub" style="max-width:440px;margin:0 auto;">Billed in Naira. No hidden fees. Cancel any time.</p>
+      <p class="section-sub" style="max-width:420px;margin:0 auto;">All prices in Naira. No hidden fees. Cancel any time.</p>
     </header>
-
-    <div class="billing-switch" role="group" aria-label="Billing period">
+    <div class="billing-toggle" role="group">
       <span [class.on]="!annual()">Monthly</span>
-      <button class="toggle" [class.active]="annual()" role="switch" [attr.aria-checked]="annual()" (click)="toggle()">
+      <button class="tog" [class.on]="annual()" (click)="toggleAnnual()" role="switch" [attr.aria-checked]="annual()">
         <span class="thumb"></span>
       </button>
       <span [class.on]="annual()">Annual</span>
-      <span class="save-tag">Save 20%</span>
+      <span class="save-pill">Save 20%</span>
     </div>
-
     <div class="plans reveal">
-      <div class="plan-card" *ngFor="let p of plans" [class.popular]="p.popular">
-        <div class="popular-tag" *ngIf="p.popular">Most Popular</div>
+      <div class="plan" *ngFor="let p of plans" [class.popular]="p.popular">
+        <div class="popular-chip" *ngIf="p.popular">Most Popular</div>
         <div class="plan-tier">{{ p.tier }}</div>
         <div class="plan-price" *ngIf="p.monthly">
           <sup>₦</sup>{{ price(p) }}<sub>/mo</sub>
         </div>
         <div class="plan-price custom" *ngIf="!p.monthly">Custom</div>
         <p class="plan-desc">{{ p.desc }}</p>
-        <ul class="plan-features">
+        <ul class="plan-feats">
           <li *ngFor="let f of p.features; let i=index" [class.dim]="isDim(p,i)">{{ f }}</li>
         </ul>
-        <a [href]="p.href" class="btn" [ngClass]="'btn ' + p.ctaClass"
-           [attr.rel]="p.href.startsWith('http') ? 'noopener' : null">{{ p.cta }}</a>
+        <a [href]="p.href" class="btn" [class.btn-primary]="p.popular" [class.btn-outline]="!p.popular"
+           [attr.rel]="p.href.startsWith('http')?'noopener':null">{{ p.cta }}</a>
       </div>
     </div>
-    <p class="pricing-note reveal">All plans include a 14-day free trial · No credit card required · <a href="mailto:hello@lodgik.co">Talk to us</a></p>
+    <p class="pricing-foot reveal">All plans include a 14-day free trial &nbsp;·&nbsp; No credit card required &nbsp;·&nbsp; <a href="mailto:hello@lodgik.co">Talk to us</a></p>
   </div>
 </section>

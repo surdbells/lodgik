@@ -1,18 +1,4 @@
-
-.logos-section {
-  padding: 2.5rem 0; background: var(--bg-alt);
-  border-bottom: 1px solid var(--border-light);
-}
-.logos-label {
-  text-align: center; font-size: .7rem; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--text-4); margin-bottom: 1.4rem;
-}
-.logos-row {
-  display: flex; align-items: center; justify-content: center;
-  gap: clamp(1.5rem,4vw,3rem); flex-wrap: wrap;
-}
-.logo-name {
-  font-family: 'Instrument Serif', serif; font-size: .92rem;
-  color: var(--text-4); white-space: nowrap;
-  transition: color .2s; &:hover { color: var(--text-2); }
-}
+.logos-section { padding:2.5rem 0; background:var(--bg-alt); border-bottom:1px solid var(--border-light); }
+.logos-label { text-align:center; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; color:var(--text-4); margin-bottom:1.2rem; }
+.logos-row { display:flex; align-items:center; justify-content:center; gap:clamp(1.5rem,4vw,3rem); flex-wrap:wrap; }
+.logo-name { font-size:.88rem; font-weight:600; color:var(--text-4); transition:color .18s; &:hover{color:var(--primary);} }

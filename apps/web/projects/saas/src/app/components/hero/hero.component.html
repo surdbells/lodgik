@@ -1,120 +1,104 @@
-
-<section id="hero" class="hero-wrap">
+<section id="hero" class="hero-section" aria-labelledby="hero-heading">
   <div class="container">
-    <!-- Floating pill nav spacer -->
-    <div style="height:88px"></div>
+    <div style="height:90px"></div>
+    <div class="hero-grid">
 
-    <!-- Hero card -->
-    <div class="hero-card" aria-labelledby="hero-heading">
-      <!-- Stars decoration -->
-      <span class="star s1" aria-hidden="true">✦</span>
-      <span class="star s2" aria-hidden="true">✦</span>
-      <span class="star s3" aria-hidden="true">✦</span>
-      <span class="star s4" aria-hidden="true">✦</span>
-      <span class="star s5" aria-hidden="true">✦</span>
+      <!-- Left: copy -->
+      <div class="hero-copy">
+        <div class="eyebrow green section-eyebrow" style="margin-bottom:.9rem">Built for African Hotels</div>
+        <h1 class="hero-h1" id="hero-heading">
+          <span class="text-primary">One Platform,</span><br/>
+          Complete Hotel Control
+        </h1>
+        <p class="hero-sub">
+          Lodgik unifies reservations, billing, housekeeping, F&amp;B, HR, and guest experience. Built for how Nigerian hotels actually operate — cash payments, NFC cards, PAYE payroll included.
+        </p>
 
-      <div class="hero-inner">
-        <!-- Copy -->
-        <div class="hero-copy">
-          <div class="badge-label white section-eyebrow">Built for African Hotels</div>
-          <h1 class="hero-heading" id="hero-heading">
-            The PMS that runs your hotel
-            <em>end to end</em>
-          </h1>
-          <p class="hero-sub">
-            Lodgik unifies reservations, billing, housekeeping, F&amp;B, HR, and guest experience — built specifically for how Nigerian and African hotels operate.
-          </p>
-          <div class="hero-cta">
-            <a href="https://hotel.lodgik.co/register" class="btn btn-white btn-xl" rel="noopener">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              Start Free — 14 Days
-            </a>
-            <a href="mailto:hello@lodgik.co" class="btn btn-outline-white btn-xl">Schedule a Demo</a>
+        <!-- Stat pair — index-12 style -->
+        <div class="hero-stats">
+          <div>
+            <div class="stat-n">400+</div>
+            <div class="stat-l">Hotel staff using Lodgik</div>
           </div>
-          <div class="hero-social-proof">
+          <div class="stat-divider" aria-hidden="true"></div>
+          <div>
+            <div class="stat-n">14</div>
+            <div class="stat-l">Day free trial, no card</div>
+          </div>
+        </div>
+
+        <!-- CTA box — index-12 floating card -->
+        <div class="hero-cta-box">
+          <a href="https://hotel.lodgik.co/register" class="btn btn-primary btn-lg" rel="noopener">
+            Start Free Trial
+          </a>
+          <div class="social-proof">
             <div class="avatars" aria-hidden="true">
               <span>AJ</span><span>BK</span><span>CO</span><span>DA</span>
             </div>
-            <p><strong>400+ hotel staff</strong> use Lodgik every day</p>
+            <span>400+ hotels trust Lodgik</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: product screenshot mockup -->
+      <div class="hero-visual" aria-hidden="true">
+        <!-- Floating graph cards — like index-12 hero-15-graph overlays -->
+        <div class="graph-card g1">
+          <div class="gc-label">Today's Check-ins</div>
+          <div class="gc-value">24</div>
+          <div class="gc-bar-mini">
+            <div class="bar" *ngFor="let b of bars; let i=index"
+                 [style.height.%]="b" [class.active]="i===11"></div>
+          </div>
+        </div>
+        <div class="graph-card g2">
+          <div class="gc-dot"></div>
+          <div>
+            <div class="gc-label">Occupancy Rate</div>
+            <div class="gc-value green">87%</div>
           </div>
         </div>
 
-        <!-- Dashboard mockup -->
-        <div class="hero-visual" aria-hidden="true">
-          <!-- Floating stat cards -->
-          <div class="stat-card stat-checkin">
-            <div class="sc-icon">📋</div>
-            <div>
-              <div class="sc-value">24</div>
-              <div class="sc-label">Check-ins today</div>
-            </div>
-            <div class="sc-trend">↑ 8</div>
+        <!-- Dashboard screen -->
+        <div class="screen" role="img" aria-label="Lodgik dashboard interface">
+          <!-- REPLACE: <img src="/assets/screenshots/dashboard.png" alt="Lodgik dashboard" /> -->
+          <div class="screen-chrome">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <div class="url-bar"></div>
           </div>
-          <div class="stat-card stat-revenue">
-            <div class="sc-icon">💰</div>
-            <div>
-              <div class="sc-value">₦4.7M</div>
-              <div class="sc-label">Revenue MTD</div>
+          <div class="screen-body">
+            <div class="mock-sidebar">
+              <div class="mock-logo"></div>
+              <div class="mock-item active"></div>
+              <div class="mock-item w75"></div>
+              <div class="mock-item w60"></div>
+              <div class="mock-item w80"></div>
+              <div class="mock-item w55"></div>
             </div>
-            <div class="sc-trend">↑ 12%</div>
-          </div>
-          <div class="stat-card stat-occ">
-            <div class="sc-icon">🏨</div>
-            <div>
-              <div class="sc-value">87%</div>
-              <div class="sc-label">Occupancy</div>
-            </div>
-            <div class="sc-trend up-icon">●</div>
-          </div>
-
-          <!-- Screen mockup -->
-          <div class="screen-mock" role="img" aria-label="Lodgik dashboard interface">
-            <!-- REPLACE: <img src="/assets/screenshots/dashboard.png" alt="Lodgik dashboard" /> -->
-            <div class="screen-topbar">
-              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-              <div class="mock-url"></div>
-            </div>
-            <div class="screen-body">
-              <div class="mock-sidebar">
-                <div class="mock-si active"></div>
-                <div class="mock-si w80"></div>
-                <div class="mock-si w65"></div>
-                <div class="mock-si w75"></div>
-                <div class="mock-si w55"></div>
-                <div class="mock-si w80"></div>
+            <div class="mock-content">
+              <div class="mock-kpis">
+                <div class="mock-kpi" *ngFor="let k of [0,1,2,3]">
+                  <div class="kpi-val" [class.green]="k===0 || k===2"></div>
+                  <div class="kpi-lbl"></div>
+                </div>
               </div>
-              <div class="mock-main">
-                <div class="mock-kpis">
-                  <div class="mock-kpi" *ngFor="let k of [1,2,3,4]; let i = index">
-                    <div class="kpi-n" [class.teal]="i%2===0"></div>
-                    <div class="kpi-l"></div>
-                  </div>
+              <div class="mock-chart">
+                <div class="chart-title"></div>
+                <div class="chart-bars">
+                  <div class="cbar" *ngFor="let b of bars; let i=index"
+                       [style.height.%]="b" [class.green]="i%3===0"></div>
                 </div>
-                <div class="mock-chart-area">
-                  <div class="mock-chart-lbl"></div>
-                  <div class="mock-bars">
-                    <div class="mock-bar" *ngFor="let h of bars; let i=index"
-                         [class.primary]="i%2!==0" [style.height.%]="h"></div>
-                  </div>
-                </div>
+              </div>
+              <div class="mock-table">
+                <div class="tr head"></div>
+                <div class="tr" *ngFor="let r of [1,2,3,4,5]"></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Logo strip inside card -->
-      <div class="hero-logos">
-        <span>Trusted by hotels across Nigeria</span>
-        <div class="hero-logo-row">
-          <div class="hl">Grand Palace Hotel</div>
-          <div class="hl">Royal Suites Abuja</div>
-          <div class="hl">Harbour View Lagos</div>
-          <div class="hl">The Meridian Inn</div>
-          <div class="hl">Oasis Resorts</div>
-          <div class="hl">Pinnacle Group</div>
-        </div>
-      </div>
     </div>
   </div>
 </section>
