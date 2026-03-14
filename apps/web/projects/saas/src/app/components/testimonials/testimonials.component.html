@@ -1,20 +1,18 @@
 
-<section id="testimonials" aria-labelledby="testi-heading">
+<section id="testimonials" class="testi-section">
   <div class="container">
-    <header class="testi-intro reveal">
-      <div class="label">Testimonials</div>
-      <h2 class="section-title" id="testi-heading">
-        Hotels that switched to <em>Lodgik</em>
-      </h2>
+    <header class="section-header reveal" style="text-align:center;margin-bottom:3.5rem;">
+      <div class="badge-label secondary section-eyebrow">Testimonials</div>
+      <h2 class="section-heading">Hotels that switched to <em>Lodgik</em></h2>
     </header>
     <div class="testi-grid">
-      <blockquote class="testi-card reveal" *ngFor="let t of testimonials; let i = index" [class]="'reveal d' + i">
+      <blockquote class="testi-card reveal" *ngFor="let t of testimonials; let i=index" [class]="'reveal d'+i">
         <div class="stars" [attr.aria-label]="t.stars + ' stars'">
-          <span *ngFor="let s of [].constructor(t.stars)">★</span>
+          <span *ngFor="let s of [].constructor(t.stars)" aria-hidden="true">★</span>
         </div>
         <p class="quote">"{{ t.quote }}"</p>
         <footer class="author">
-          <div class="avatar" aria-hidden="true">{{ t.initials }}</div>
+          <div class="av" aria-hidden="true">{{ t.initials }}</div>
           <div>
             <div class="author-name">{{ t.name }}</div>
             <div class="author-role">{{ t.role }}, {{ t.hotel }}</div>

@@ -1,21 +1,18 @@
 
-.logos-strip {
-  padding: 2.8rem 0;
-  border-top: 1px solid var(--border-subtle);
-  border-bottom: 1px solid var(--border-subtle);
+.logos-section {
+  padding: 2.5rem 0; background: var(--bg-alt);
+  border-bottom: 1px solid var(--border-light);
 }
-.strip-label {
-  text-align: center; font-size: 0.72rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--text-disabled); margin-bottom: 1.4rem;
+.logos-label {
+  text-align: center; font-size: .7rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text-4); margin-bottom: 1.4rem;
 }
-.strip-track {
+.logos-row {
   display: flex; align-items: center; justify-content: center;
-  gap: clamp(1.5rem, 4vw, 3.5rem); flex-wrap: wrap;
+  gap: clamp(1.5rem,4vw,3rem); flex-wrap: wrap;
 }
-.hotel-name {
-  font-family: 'Fraunces', serif; font-size: 0.95rem; font-weight: 600;
-  color: var(--text-muted); opacity: 0.55; letter-spacing: 0.03em;
-  white-space: nowrap; transition: opacity 0.2s;
-  &:hover { opacity: 0.85; }
+.logo-name {
+  font-family: 'Instrument Serif', serif; font-size: .92rem;
+  color: var(--text-4); white-space: nowrap;
+  transition: color .2s; &:hover { color: var(--text-2); }
 }

@@ -1,20 +1,24 @@
 
-<section id="integrations" aria-labelledby="integrations-heading">
+<section id="integrations" class="integ-section">
   <div class="container">
-    <div class="integrations-inner">
-      <div class="integrations-copy reveal">
-        <div class="label">Integrations</div>
-        <h2 class="section-title" id="integrations-heading">
+    <div class="integ-inner">
+      <div class="integ-copy reveal">
+        <div class="badge-label primary section-eyebrow">Integrations</div>
+        <h2 class="section-heading">
           Connected to the tools<br/><em>you already use</em>
         </h2>
-        <p class="section-lead">Lodgik integrates with the payment processors, messaging platforms, and third-party services that African hotels rely on — out of the box, with no configuration required.</p>
-        <a href="mailto:hello@lodgik.co" class="btn btn-outline" style="margin-top:2rem;display:inline-flex;">Request an Integration</a>
+        <p class="section-sub">
+          Lodgik integrates with the payment processors, messaging platforms, and services that African hotels rely on — out of the box, no configuration required.
+        </p>
+        <a href="mailto:hello@lodgik.co" class="btn btn-outline" style="margin-top:2rem;display:inline-flex;">
+          Request an Integration
+        </a>
       </div>
-      <div class="integrations-grid reveal d2">
-        <div class="int-card" *ngFor="let i of integrations">
-          <div class="int-icon" aria-hidden="true">{{ i.icon }}</div>
-          <div class="int-name">{{ i.name }}</div>
-          <div class="int-type">{{ i.type }}</div>
+      <div class="integ-grid reveal d2">
+        <div class="integ-card" *ngFor="let i of integrations">
+          <div class="integ-icon" aria-hidden="true">{{ i.icon }}</div>
+          <div class="integ-name">{{ i.name }}</div>
+          <div class="integ-type">{{ i.type }}</div>
         </div>
       </div>
     </div>

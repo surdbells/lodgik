@@ -1,25 +1,25 @@
 
-<section id="modules" aria-labelledby="modules-heading">
+<section id="modules" class="modules-section">
   <div class="container">
-    <div class="modules-header">
-      <div class="modules-copy reveal">
-        <div class="label">Feature Modules</div>
-        <h2 class="section-title" id="modules-heading">
+    <div class="modules-top">
+      <div class="reveal">
+        <div class="badge-label primary section-eyebrow">Feature Modules</div>
+        <h2 class="section-heading">
           Every part of your hotel,<br/><em>covered</em>
         </h2>
-        <p class="section-lead">Enable only the modules your property needs. Lodgik grows with you — add new capabilities as your hotel expands, without switching platforms.</p>
+        <p class="section-sub" style="max-width:420px;">
+          Enable only the modules your property needs. Lodgik grows with you without switching platforms.
+        </p>
       </div>
       <div class="modules-count reveal d2" aria-label="43 total feature modules">
-        <div class="count-num">43</div>
-        <div class="count-sub">feature modules<br/>across all plans</div>
+        <div class="count-n">43</div>
+        <div class="count-l">feature modules<br/>across all plans</div>
       </div>
     </div>
-
-    <div class="modules-pills reveal">
-      <div class="module-pill" *ngFor="let m of modules" [class]="'accent-' + m.accent">
-        <span class="pill-dot" aria-hidden="true"></span>
-        {{ m.name }}
-      </div>
+    <div class="pills reveal">
+      <span class="pill" *ngFor="let m of modules" [class]="'accent-'+m.accent">
+        <span class="dot" aria-hidden="true"></span>{{ m.name }}
+      </span>
     </div>
   </div>
 </section>

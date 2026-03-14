@@ -2,10 +2,9 @@
 <section class="stats-section" aria-label="Platform statistics">
   <div class="container">
     <div class="stats-grid">
-      <div class="stat-item reveal" *ngFor="let item of items; let i = index"
-           [class]="'reveal d' + i">
-        <div class="stat-num">{{ item.num }}</div>
-        <div class="stat-label">{{ item.label }}</div>
+      <div class="stat-item reveal" *ngFor="let s of items; let i=index" [class]="'reveal d'+i">
+        <div class="stat-n">{{ s.n }}</div>
+        <div class="stat-l">{{ s.l }}</div>
       </div>
     </div>
   </div>

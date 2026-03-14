@@ -2,23 +2,26 @@
 <footer role="contentinfo">
   <div class="container">
     <div class="footer-grid">
-
       <div class="footer-brand">
         <a href="/" class="footer-logo" aria-label="Lodgik Home">
-          <div class="logo-mark" aria-hidden="true">L</div>
+          <div class="logo-mark" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
           <span>Lodgik</span>
         </a>
         <p>All-in-one hotel management software built for African hotels. Reservations, billing, housekeeping, F&amp;B, HR &amp; guest experience in one platform.</p>
-        <div class="footer-socials" aria-label="Social media">
-          <a href="https://twitter.com/lodgikapp" class="social-link" aria-label="Follow on Twitter" rel="noopener">𝕏</a>
-          <a href="https://linkedin.com/company/lodgik" class="social-link" aria-label="Follow on LinkedIn" rel="noopener">in</a>
-          <a href="https://instagram.com/lodgikapp" class="social-link" aria-label="Follow on Instagram" rel="noopener">ig</a>
+        <div class="socials" aria-label="Social media links">
+          <a href="https://twitter.com/lodgikapp" class="soc" aria-label="Twitter" rel="noopener">𝕏</a>
+          <a href="https://linkedin.com/company/lodgik" class="soc" aria-label="LinkedIn" rel="noopener">in</a>
+          <a href="https://instagram.com/lodgikapp" class="soc" aria-label="Instagram" rel="noopener">ig</a>
         </div>
       </div>
 
-      <nav class="footer-col" aria-label="Product">
+      <nav class="footer-col" aria-label="Product links">
         <h5>Product</h5>
-        <ul role="list">
+        <ul>
           <li><a href="#features">Features</a></li>
           <li><a href="#platform">Platform & Apps</a></li>
           <li><a href="#guest-pwa">Guest Portal</a></li>
@@ -28,9 +31,9 @@
         </ul>
       </nav>
 
-      <nav class="footer-col" aria-label="Solutions">
+      <nav class="footer-col" aria-label="Solutions links">
         <h5>Solutions</h5>
-        <ul role="list">
+        <ul>
           <li><a href="/solutions/boutique">Boutique Hotels</a></li>
           <li><a href="/solutions/resort">Resorts</a></li>
           <li><a href="/solutions/guesthouse">Guest Houses</a></li>
@@ -39,9 +42,9 @@
         </ul>
       </nav>
 
-      <nav class="footer-col" aria-label="Resources">
+      <nav class="footer-col" aria-label="Resources links">
         <h5>Resources</h5>
-        <ul role="list">
+        <ul>
           <li><a href="/docs">Documentation</a></li>
           <li><a href="/blog">Blog</a></li>
           <li><a href="/guides/getting-started">Getting Started</a></li>
@@ -51,9 +54,9 @@
         </ul>
       </nav>
 
-      <nav class="footer-col" aria-label="Company">
+      <nav class="footer-col" aria-label="Company links">
         <h5>Company</h5>
-        <ul role="list">
+        <ul>
           <li><a href="/about">About Lodgik</a></li>
           <li><a href="/contact">Contact</a></li>
           <li><a href="mailto:hello@lodgik.co">hello&#64;lodgik.co</a></li>
@@ -62,11 +65,10 @@
           <li><a href="/status">System Status</a></li>
         </ul>
       </nav>
-
     </div>
 
     <div class="footer-bottom">
-      <p class="footer-copy">© {{ year }} Lodgik Ltd. All rights reserved. Built in Nigeria 🇳🇬</p>
+      <p>© {{ year }} Lodgik Ltd. All rights reserved. Built in Nigeria 🇳🇬</p>
       <div class="footer-legal">
         <a href="/privacy">Privacy Policy</a>
         <a href="/terms">Terms of Service</a>

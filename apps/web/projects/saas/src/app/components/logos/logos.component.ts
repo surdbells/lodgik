@@ -10,9 +10,5 @@ import { CommonModule } from '@angular/common';
   styleUrl: './logos.component.scss'
 })
 export class LogosComponent {
-  hotels = [
-    'Grand Palace Hotel', 'Royal Suites Abuja',
-    'Harbour View Lagos', 'The Meridian Inn',
-    'Oasis Resorts', 'Pinnacle Hotel Group'
-  ];
+  hotels = ['Grand Palace Hotel','Royal Suites Abuja','Harbour View Lagos','The Meridian Inn','Oasis Resorts','Pinnacle Hotel Group'];
 }

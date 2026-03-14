@@ -11,9 +11,9 @@ import { CommonModule } from '@angular/common';
 })
 export class StatsComponent {
   items = [
-    { num: '43', label: 'Feature modules across all plans' },
-    { num: '12', label: 'Apps — web, mobile & desktop' },
-    { num: '10', label: 'Staff roles with RBAC controls' },
-    { num: '14', label: 'Day free trial, no card needed' },
+    { n:'43', l:'Feature modules across all plans' },
+    { n:'12', l:'Apps — web, mobile & desktop' },
+    { n:'10', l:'Staff roles with RBAC controls' },
+    { n:'14', l:'Day free trial, no card needed' },
   ];
 }

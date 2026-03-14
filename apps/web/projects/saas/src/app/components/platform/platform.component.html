@@ -1,25 +1,29 @@
 
-<section id="platform" aria-labelledby="platform-heading">
+<section id="platform" class="platform-section">
   <div class="container">
     <div class="platform-inner">
       <div class="platform-copy reveal">
-        <div class="label label-teal">The Full Platform</div>
-        <h2 class="section-title" id="platform-heading">
+        <div class="badge-label primary section-eyebrow">The Full Platform</div>
+        <h2 class="section-heading">
           One platform.<br/><em>Every surface.</em>
         </h2>
-        <p class="section-lead">From the front desk web app to the kitchen display tablet, all 12 Lodgik apps share one database, one API, and one source of truth — so your entire hotel moves together.</p>
-        <p class="platform-note">Staff apps are distributed directly to hotel devices via the Lodgik App Distribution platform — no app store review delays. Upload a new version and your team has it in minutes.</p>
-        <div class="platform-cta">
-          <a href="https://hotel.lodgik.co" class="btn btn-outline" rel="noopener">View Hotel App →</a>
+        <p class="section-sub">
+          All 12 Lodgik apps share one database, one API, and one source of truth. Staff apps go directly to hotel devices — no app store review delays.
+        </p>
+        <div style="margin-top:2rem;display:flex;gap:10px;flex-wrap:wrap;">
+          <a href="https://hotel.lodgik.co" class="btn btn-primary" rel="noopener">Try Hotel App</a>
+          <a href="#guest-pwa" class="btn btn-outline">See Guest Portal</a>
         </div>
       </div>
 
       <div class="apps-grid reveal d2">
-        <div class="app-card" *ngFor="let app of apps">
-          <div class="app-icon" aria-hidden="true">{{ app.icon }}</div>
-          <h4>{{ app.title }}</h4>
-          <p>{{ app.desc }}</p>
-          <span class="app-badge" [class]="'badge-' + app.badgeClass">{{ app.badge }}</span>
+        <div class="app-tile" *ngFor="let a of apps">
+          <div class="at-icon" aria-hidden="true">{{ a.icon }}</div>
+          <div class="at-body">
+            <h4>{{ a.title }}</h4>
+            <p>{{ a.desc }}</p>
+          </div>
+          <span class="at-badge" [class]="a.cls">{{ a.badge }}</span>
         </div>
       </div>
     </div>

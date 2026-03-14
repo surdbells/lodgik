@@ -1,5 +1,5 @@
 
-import { Component, computed, HostListener, signal } from '@angular/core';
+import { Component, HostListener, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../../services/theme.service';
 
@@ -11,18 +11,17 @@ import { ThemeService } from '../../services/theme.service';
   styleUrl: './nav.component.scss'
 })
 export class NavComponent {
-  scrolled = signal(false);
-  menuOpen = signal(false);
-  readonly isDark = computed(() => this.themeService.theme() === 'dark');
-
-  constructor(private themeService: ThemeService) {}
+  scrolled  = signal(false);
+  menuOpen  = signal(false);
+  readonly isDark = computed(() => this.theme.theme() === 'dark');
+  constructor(private theme: ThemeService) {}
 
   @HostListener('window:scroll')
-  onScroll(): void { this.scrolled.set(window.scrollY > 40); }
+  onScroll(): void { this.scrolled.set(window.scrollY > 20); }
 
-  toggleTheme(): void { this.themeService.toggle(); }
-  toggleMenu(): void { this.menuOpen.update(v => !v); }
-  closeMenu(): void { this.menuOpen.set(false); }
+  toggleTheme(): void { this.theme.toggle(); }
+  toggleMenu():  void { this.menuOpen.update(v => !v); }
+  closeMenu():   void { this.menuOpen.set(false); }
 
   scrollTo(id: string): void {
     this.closeMenu();

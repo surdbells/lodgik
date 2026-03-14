@@ -1,3 +1,4 @@
+
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ThemeService } from './services/theme.service';
@@ -10,5 +11,5 @@ import { ThemeService } from './services/theme.service';
 })
 export class App implements OnInit {
   constructor(private theme: ThemeService) {}
-  ngOnInit(): void { /* ThemeService effect applies data-theme on construction */ }
+  ngOnInit(): void { /* ThemeService effect auto-applies data-theme */ }
 }

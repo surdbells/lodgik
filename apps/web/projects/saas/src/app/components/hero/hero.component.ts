@@ -10,5 +10,5 @@ import { CommonModule } from '@angular/common';
   styleUrl: './hero.component.scss'
 })
 export class HeroComponent {
-  bars = [45,62,38,78,55,85,48,70,42,92,60,75];
+  bars = [38,55,44,70,48,82,52,90,60,75,58,88];
 }

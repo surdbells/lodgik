@@ -1,3 +1,4 @@
+
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -19,16 +20,16 @@ payment record since switching.`,
     },
     {
       initials: 'BK', stars: 5,
-      quote: `The guest portal is something our guests genuinely love. They scan the QR on their
-welcome card, see their room charge in real time, and request room service without calling
-the front desk. It feels like a 5-star experience.`,
+      quote: `The guest portal is something our guests genuinely love. They scan the QR on the
+welcome card, see their room charge in real time, and request room service without
+calling the front desk. It feels like a 5-star experience.`,
       name: 'Blessing Kalu', role: 'Operations Director', hotel: 'Royal Suites — Abuja'
     },
     {
       initials: 'CO', stars: 5,
       quote: `Payroll used to take three days every month. Now it takes two hours. The Nigeria PAYE
-calculator handles everything automatically. I finally have time to manage my team instead
-of counting allowances manually.`,
+calculator handles everything automatically. I finally have time to manage my team
+instead of counting allowances manually.`,
       name: 'Chukwuma Obi', role: 'HR Manager', hotel: 'Harbour View Hotel — Port Harcourt'
     },
   ];

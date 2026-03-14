@@ -45,25 +45,19 @@ import { FooterComponent }       from '../../components/footer/footer.component'
     </main>
     <app-footer />
   `,
-  styles: [`
-    main { display: block; }
-  `]
+  styles: [`main { display: block; }`]
 })
 export class HomePage implements AfterViewInit, OnDestroy {
   private observer!: IntersectionObserver;
 
   ngAfterViewInit(): void {
     this.observer = new IntersectionObserver(
-      (entries) => entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('visible');
-          this.observer.unobserve(e.target);
-        }
+      entries => entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); this.observer.unobserve(e.target); }
       }),
-      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.07, rootMargin: '0px 0px -40px 0px' }
     );
     document.querySelectorAll('.reveal').forEach(el => this.observer.observe(el));
   }
-
   ngOnDestroy(): void { this.observer?.disconnect(); }
 }
