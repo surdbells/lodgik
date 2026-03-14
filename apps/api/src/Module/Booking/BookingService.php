@@ -874,4 +874,188 @@ final class BookingService
 
         return $booking;
     }
+    /**
+     * Change the room assigned to a booking (same type or upgrade only).
+     *
+     * Rules:
+     *  - Booking must be confirmed or checked_in
+     *  - New room must belong to same property and be available for the booking dates
+     *  - New room type sort_order must be >= current room type sort_order (no downgrades)
+     *  - If upgrade (higher sort_order / higher base rate), a pro-rata upgrade charge
+     *    is added to the folio: (newRate - currentRate) × remainingNights
+     *  - Old room is released; new room is set to reserved/occupied accordingly
+     *  - A BookingStatusLog entry is created for audit trail
+     */
+    public function changeRoom(
+        string $bookingId,
+        string $newRoomId,
+        ?string $userId = null,
+        ?string $reason = null
+    ): array {
+        $booking = $this->bookingRepo->find($bookingId);
+        if (!$booking) {
+            throw new \InvalidArgumentException('Booking not found');
+        }
+
+        $allowed = [BookingStatus::CONFIRMED, BookingStatus::CHECKED_IN];
+        if (!in_array($booking->getStatus(), $allowed, true)) {
+            throw new \DomainException('Room can only be changed for confirmed or checked-in bookings');
+        }
+
+        $oldRoomId = $booking->getRoomId();
+        if ($oldRoomId === $newRoomId) {
+            throw new \InvalidArgumentException('Guest is already assigned to that room');
+        }
+
+        // ── Validate new room ────────────────────────────────────────────────
+        $newRoom = $this->roomRepo->find($newRoomId);
+        if (!$newRoom || !$newRoom->isActive()) {
+            throw new \InvalidArgumentException('Room not found or inactive');
+        }
+        if ($newRoom->getPropertyId() !== $booking->getPropertyId()) {
+            throw new \InvalidArgumentException('Room does not belong to this property');
+        }
+        if ($this->bookingRepo->hasOverlap($newRoomId, $booking->getCheckIn(), $booking->getCheckOut(), $bookingId)) {
+            throw new \DomainException('Selected room is not available for the booking dates');
+        }
+
+        // ── Enforce same-or-higher room type ─────────────────────────────────
+        $newRoomType = $this->roomTypeRepo->find($newRoom->getRoomTypeId());
+        if (!$newRoomType) {
+            throw new \InvalidArgumentException('New room type not found');
+        }
+
+        $currentRoomType = null;
+        if ($oldRoomId) {
+            $oldRoom = $this->roomRepo->find($oldRoomId);
+            if ($oldRoom) {
+                $currentRoomType = $this->roomTypeRepo->find($oldRoom->getRoomTypeId());
+            }
+        }
+
+        if ($currentRoomType !== null && $newRoomType->getSortOrder() < $currentRoomType->getSortOrder()) {
+            throw new \DomainException(
+                "Cannot downgrade room type. Current type: {$currentRoomType->getName()}. "
+                . "Please select a room of the same type or higher."
+            );
+        }
+
+        // ── Pro-rata upgrade charge ──────────────────────────────────────────
+        $upgradeCharge  = null;
+        $remainingNights = 0;
+        $rateDifference  = 0.0;
+
+        $isUpgrade = $currentRoomType !== null
+            && $newRoomType->getSortOrder() > $currentRoomType->getSortOrder();
+
+        if ($isUpgrade) {
+            $newBaseRate     = (float) $newRoomType->getBaseRate();
+            $currentBaseRate = (float) $currentRoomType->getBaseRate();
+            $rateDifference  = $newBaseRate - $currentBaseRate;
+
+            if ($rateDifference > 0) {
+                // Remaining nights from today (or check-in) until checkout
+                $now       = new \DateTimeImmutable('today');
+                $checkOut  = $booking->getCheckOut();
+                $from      = max($now, $booking->getCheckIn()->modify('midnight'));
+                $diffDays  = (int) $from->diff($checkOut)->days;
+                $remainingNights = max(1, $diffDays);
+
+                $upgradeAmount = $rateDifference * $remainingNights;
+
+                // Post to folio if one exists
+                $folio = $this->folioService->getByBooking($bookingId);
+                if ($folio) {
+                    $description = sprintf(
+                        'Room upgrade: %s → %s (%d night%s × ₦%s/night difference)',
+                        $currentRoomType->getName(),
+                        $newRoomType->getName(),
+                        $remainingNights,
+                        $remainingNights === 1 ? '' : 's',
+                        number_format($rateDifference, 2)
+                    );
+                    $this->folioService->addCharge(
+                        $folio->getId(),
+                        'room',
+                        $description,
+                        (string) $rateDifference,
+                        $remainingNights,
+                        $userId,
+                        $reason
+                    );
+                }
+
+                $upgradeCharge = [
+                    'nights'          => $remainingNights,
+                    'rate_difference' => $rateDifference,
+                    'total'           => $upgradeAmount,
+                    'from_type'       => $currentRoomType->getName(),
+                    'to_type'         => $newRoomType->getName(),
+                ];
+            }
+        }
+
+        // ── Release old room ─────────────────────────────────────────────────
+        if (!empty($oldRoom)) {
+            $oldStatus     = $oldRoom->getStatus();
+            $releaseStatus = ($booking->getStatus() === BookingStatus::CHECKED_IN)
+                ? RoomStatus::VACANT_DIRTY
+                : RoomStatus::VACANT_CLEAN;
+
+            if ($this->roomStateMachine->canTransition($oldRoom->getStatus(), $releaseStatus)) {
+                $oldRoom->setStatus($releaseStatus);
+                $log = new RoomStatusLog($oldRoom->getId(), $oldStatus, $releaseStatus, $booking->getTenantId());
+                $this->em->persist($log);
+                $this->em->persist($oldRoom);
+            }
+        }
+
+        // ── Assign new room ──────────────────────────────────────────────────
+        $booking->setRoomId($newRoomId);
+
+        $newRoomOldStatus = $newRoom->getStatus();
+        $targetRoomStatus = ($booking->getStatus() === BookingStatus::CHECKED_IN)
+            ? RoomStatus::OCCUPIED
+            : RoomStatus::RESERVED;
+
+        if ($this->roomStateMachine->canTransition($newRoom->getStatus(), $targetRoomStatus)) {
+            $newRoom->setStatus($targetRoomStatus);
+            $newRoomLog = new RoomStatusLog($newRoom->getId(), $newRoomOldStatus, $targetRoomStatus, $booking->getTenantId());
+            $this->em->persist($newRoomLog);
+            $this->em->persist($newRoom);
+        }
+
+        // ── Audit log ────────────────────────────────────────────────────────
+        $oldRoomNum = isset($oldRoom) ? $oldRoom->getRoomNumber() : 'unassigned';
+        $note = "Room changed: {$oldRoomNum} → {$newRoom->getRoomNumber()}";
+        if ($isUpgrade && $rateDifference > 0) {
+            $note .= " (upgrade, ₦" . number_format($rateDifference * $remainingNights, 2) . " added to folio)";
+        }
+        if ($reason) {
+            $note .= ". Reason: {$reason}";
+        }
+
+        $statusLog = new BookingStatusLog(
+            $booking->getId(),
+            $booking->getStatus(),
+            $booking->getStatus(),
+            $userId,
+            $note,
+            $booking->getTenantId(),
+        );
+        $this->em->persist($statusLog);
+        $this->em->flush();
+
+        $this->logger->info(
+            "[ChangeRoom] Booking {$bookingId}: {$oldRoomNum} → {$newRoom->getRoomNumber()}"
+            . ($upgradeCharge ? " | upgrade charge ₦" . number_format($upgradeCharge['total'], 2) : '')
+            . " | staff={$userId}"
+        );
+
+        return [
+            'booking'        => $booking,
+            'upgrade_charge' => $upgradeCharge,
+        ];
+    }
+
 }

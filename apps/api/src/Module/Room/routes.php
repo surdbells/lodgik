@@ -28,6 +28,7 @@ return function (App $app): void {
         $group->get('', [RoomController::class, 'listRooms']);
         $group->get('/status-counts', [RoomController::class, 'statusCounts']);
         $group->get('/available', [RoomController::class, 'available']);
+        $group->get('/available-for-change', [RoomController::class, 'availableForChange']);
         $group->get('/floors', [RoomController::class, 'floors']);
         $group->post('', [RoomController::class, 'createRoom']);
         $group->post('/bulk-create', [RoomController::class, 'bulkCreateRooms']);

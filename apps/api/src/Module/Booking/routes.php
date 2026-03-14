@@ -43,6 +43,7 @@ return function (App $app): void {
     // Separate group so the role restriction is narrower than general booking ops.
     $app->group('/api/bookings', function (RouteCollectorProxy $group) {
         $group->patch('/{id}/shadow-rate', [BookingController::class, 'setShadowRate']);
+        $group->post('/{id}/change-room',   [BookingController::class, 'changeRoom']);
     })
         ->add(new RoleMiddleware(['property_admin']))
         ->add(TenantMiddleware::class)

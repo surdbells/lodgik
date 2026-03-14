@@ -422,6 +422,55 @@ final class BookingController
      * @param array<string,array> $guestMap  keyed by guest_id
      * @param array<string,array> $roomMap   keyed by room_id
      */
+    /** POST /api/bookings/{id}/change-room */
+    public function changeRoom(Request $request, Response $response, array $args): Response
+    {
+        $body   = (array) $request->getParsedBody();
+        $userId = $request->getAttribute('auth.user_id');
+
+        if (empty($body['room_id'])) {
+            return $this->response->validationError($response, ['room_id' => 'room_id is required']);
+        }
+
+        try {
+            $result = $this->bookingService->changeRoom(
+                $args['id'],
+                $body['room_id'],
+                $userId,
+                $body['reason'] ?? null,
+            );
+
+            /** @var \Lodgik\Entity\Booking $booking */
+            $booking = $result['booking'];
+            $charge  = $result['upgrade_charge'];
+
+            $message = $charge !== null && $charge['rate_difference'] > 0
+                ? sprintf(
+                    'Room changed successfully. Upgrade charge of ₦%s added to folio (%d night%s × ₦%s difference).',
+                    number_format($charge['total'], 2),
+                    $charge['nights'],
+                    $charge['nights'] === 1 ? '' : 's',
+                    number_format($charge['rate_difference'], 2)
+                )
+                : 'Room changed successfully';
+
+            return $this->response->success(
+                $response,
+                [
+                    'booking'        => $this->serializeEnriched($booking),
+                    'upgrade_charge' => $charge,
+                ],
+                $message
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $this->response->validationError($response, ['error' => $e->getMessage()]);
+        } catch (\DomainException $e) {
+            return $this->response->error($response, $e->getMessage(), 409);
+        } catch (\RuntimeException $e) {
+            return $this->response->validationError($response, ['error' => $e->getMessage()]);
+        }
+    }
+
     private function serialize(Booking $b, array $guestMap = [], array $roomMap = []): array
     {
         $guest = $guestMap[$b->getGuestId()] ?? null;

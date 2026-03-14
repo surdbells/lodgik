@@ -26,7 +26,7 @@ import {
     @if (!loading() && booking()) {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <!-- ── Main Info ─────────────────────────────────────── -->
+        <!--  Main Info  -->
         <div class="lg:col-span-2 space-y-6">
 
           <!-- Status Banner -->
@@ -97,6 +97,11 @@ import {
                 class="px-5 py-2.5 bg-gray-50 text-gray-600 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors">
                 Mark No-Show
               </button>
+              <!-- Change Room (confirmed) -->
+              <button (click)="openChangeRoom()"
+                class="px-5 py-2.5 bg-violet-50 text-violet-700 border border-violet-200 text-sm font-medium rounded-lg hover:bg-violet-100 transition-colors flex items-center gap-2">
+                🔄 Change Room
+              </button>
             }
             @if (booking()!.status === 'checked_in') {
               <button (click)="doCheckOut()"
@@ -119,6 +124,11 @@ import {
               <button (click)="openExtendStay()"
                 class="px-5 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 text-sm font-medium rounded-lg hover:bg-amber-100 transition-colors flex items-center gap-2">
                 📅 Extend Stay
+              </button>
+              <!-- Change Room -->
+              <button (click)="openChangeRoom()"
+                class="px-5 py-2.5 bg-violet-50 text-violet-700 border border-violet-200 text-sm font-medium rounded-lg hover:bg-violet-100 transition-colors flex items-center gap-2">
+                🔄 Change Room
               </button>
               @if (!activeCard()) {
                 <button (click)="issueGuestCard()" [disabled]="issuingCard()"
@@ -159,7 +169,7 @@ import {
           }
         </div>
 
-        <!-- ── Timeline Sidebar ───────────────────────────────── -->
+        <!--  Timeline Sidebar  -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 self-start">
           <h3 class="text-sm font-semibold text-gray-700 mb-4">Timeline</h3>
           <div class="space-y-0">
@@ -195,7 +205,7 @@ import {
           </div>
         </div>
 
-        <!-- ── Invoice Rate Override (property_admin only) ──────── -->
+        <!--  Invoice Rate Override (property_admin only)  -->
         @if (tokenSvc.role() === 'property_admin') {
           <div class="bg-white rounded-xl border border-amber-200 shadow-card p-5 self-start">
             <div class="flex items-center gap-2 mb-1">
@@ -316,10 +326,10 @@ import {
       </div>
     }
 
-    <!-- ══════════════════════════════════════════════════════════
+    <!-- 
          GUEST ACCESS MODAL
          Shown after check-in — staff sees code + QR to hand to guest.
-         ══════════════════════════════════════════════════════════ -->
+          -->
     @if (showAccessModal()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4"
            (click)="closeAccessModal()">
@@ -424,7 +434,7 @@ import {
       </div>
     }
 
-    <!-- ── Guest Card Info Modal ──────────────────────────────── -->
+    <!--  Guest Card Info Modal  -->
     @if (showCardModal() && activeCard()) {
       <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -474,7 +484,7 @@ import {
       </div>
     }
 
-    <!-- ── Extend Stay Modal ─────────────────────────────────── -->
+    <!--  Extend Stay Modal  -->
     @if (showExtendStay()) {
       <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
            (click)="showExtendStay.set(false)">
@@ -532,6 +542,186 @@ import {
           </div>
         </div>
       </div>
+
+    <!-- 
+         CHANGE ROOM MODAL
+     -->
+    @if (showChangeRoom()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4"
+           style="background:rgba(0,0,0,0.5)">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+
+          <!-- Header -->
+          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div>
+              <h3 class="text-base font-semibold text-gray-900">Change Room</h3>
+              <p class="text-xs text-gray-400 mt-0.5">
+                Current: Room {{ booking()!.room_number || '—' }}
+                &nbsp;·&nbsp; Same type or upgrade only
+              </p>
+            </div>
+            <button (click)="showChangeRoom.set(false)"
+              class="text-gray-400 hover:text-gray-600 text-xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100">×</button>
+          </div>
+
+          <!-- Body -->
+          <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+            @if (changeRoomLoading()) {
+              <div class="flex items-center justify-center py-12 text-gray-400 text-sm gap-2">
+                <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Loading available rooms…
+              </div>
+            }
+
+            @if (!changeRoomLoading() && changeRoomRooms().length === 0) {
+              <div class="text-center py-12">
+                <div class="text-4xl mb-3">🏨</div>
+                <p class="text-sm font-medium text-gray-700">No available rooms</p>
+                <p class="text-xs text-gray-400 mt-1">No rooms of the same type or higher are currently available for this booking's dates.</p>
+              </div>
+            }
+
+            @if (!changeRoomLoading() && changeRoomRooms().length > 0) {
+
+              @if (sameTypeRooms().length > 0) {
+                <div>
+                  <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Same Room Type</p>
+                  <div class="space-y-2">
+                    @for (room of sameTypeRooms(); track room.id) {
+                      <label class="flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all"
+                             [class.border-violet-400]="selectedRoomId() === room.id"
+                             [class.bg-violet-50]="selectedRoomId() === room.id"
+                             [class.border-gray-200]="selectedRoomId() !== room.id">
+                        <input type="radio" name="room_select" [value]="room.id"
+                               [checked]="selectedRoomId() === room.id"
+                               (change)="selectedRoomId.set(room.id)"
+                               class="mt-0.5 accent-violet-600" />
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold text-gray-900">Room {{ room.room_number }}</span>
+                            <span class="text-sm font-medium text-gray-700">₦{{ (+room.base_rate).toLocaleString() }}/night</span>
+                          </div>
+                          <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span class="text-xs text-gray-400">{{ room.room_type_name }}</span>
+                            @if (room.floor) {
+                              <span class="text-xs text-gray-300">·</span>
+                              <span class="text-xs text-gray-400">Floor {{ room.floor }}</span>
+                            }
+                            <span class="text-xs text-gray-300">·</span>
+                            <span class="text-xs text-gray-400">Max {{ room.max_occupancy }} guests</span>
+                          </div>
+                        </div>
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (upgradeRooms().length > 0) {
+                <div>
+                  <p class="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-2">⬆ Upgrades Available</p>
+                  <div class="space-y-2">
+                    @for (room of upgradeRooms(); track room.id) {
+                      <label class="flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all"
+                             [class.border-amber-400]="selectedRoomId() === room.id"
+                             [class.bg-amber-50]="selectedRoomId() === room.id"
+                             [class.border-gray-200]="selectedRoomId() !== room.id">
+                        <input type="radio" name="room_select" [value]="room.id"
+                               [checked]="selectedRoomId() === room.id"
+                               (change)="selectedRoomId.set(room.id)"
+                               class="mt-0.5 accent-amber-500" />
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between gap-2 flex-wrap">
+                            <span class="text-sm font-semibold text-gray-900">Room {{ room.room_number }}</span>
+                            <div class="flex items-center gap-1.5">
+                              <span class="text-sm font-medium text-gray-700">₦{{ (+room.base_rate).toLocaleString() }}/night</span>
+                              <span class="text-xs font-semibold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full">
+                                +₦{{ (+room.rate_difference).toLocaleString() }}/night
+                              </span>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span class="text-xs text-gray-400">{{ room.room_type_name }}</span>
+                            @if (room.floor) {
+                              <span class="text-xs text-gray-300">·</span>
+                              <span class="text-xs text-gray-400">Floor {{ room.floor }}</span>
+                            }
+                            <span class="text-xs text-gray-300">·</span>
+                            <span class="text-xs text-gray-400">Max {{ room.max_occupancy }} guests</span>
+                          </div>
+                          @if (room.upgrade_total > 0 && selectedRoomId() === room.id) {
+                            <div class="mt-2.5 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                              <p class="text-xs text-amber-700 font-medium">
+                                Upgrade charge preview:
+                                {{ room.remaining_nights }} night{{ room.remaining_nights === 1 ? '' : 's' }}
+                                × ₦{{ (+room.rate_difference).toLocaleString() }}
+                                = <strong>₦{{ (+room.upgrade_total).toLocaleString() }}</strong>
+                              </p>
+                              <p class="text-xs text-amber-600 mt-0.5">Added to guest folio automatically on confirmation.</p>
+                            </div>
+                          }
+                        </div>
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+
+              <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">
+                  Reason for room change <span class="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <input type="text"
+                       [value]="changeRoomReason()"
+                       (input)="changeRoomReason.set($any($event.target).value)"
+                       placeholder="e.g. Guest request, maintenance issue, complimentary upgrade…"
+                       class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400" />
+              </div>
+            }
+          </div>
+
+          <!-- Footer -->
+          <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+            <div class="text-xs">
+              @if (selectedRoomInfo() && selectedRoomInfo().is_upgrade && selectedRoomInfo().upgrade_total > 0) {
+                <span class="text-amber-600 font-medium">
+                  ₦{{ (+selectedRoomInfo().upgrade_total).toLocaleString() }} upgrade charge will be added to folio
+                </span>
+              } @else if (selectedRoomId()) {
+                <span class="text-emerald-600 font-medium">No extra charge — same room type</span>
+              } @else {
+                <span class="text-gray-400">Select a room above</span>
+              }
+            </div>
+            <div class="flex gap-2">
+              <button (click)="showChangeRoom.set(false)"
+                class="px-4 py-2.5 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button (click)="submitChangeRoom()"
+                [disabled]="!selectedRoomId() || changingRoom()"
+                class="px-5 py-2.5 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors">
+                @if (changingRoom()) {
+                  <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  Changing Room…
+                } @else {
+                  🔄 Confirm Room Change
+                }
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    }
+
     }
   `,
 })
@@ -545,21 +735,21 @@ export class BookingDetailPage implements OnInit {
   private confirm = inject(ConfirmDialogService);
   tokenSvc        = inject(TokenService);
 
-  // ── Core state ──────────────────────────────────────────────
+  //  Core state 
   loading       = signal(true);
   booking       = signal<any>(null);
   statusHistory = signal<any[]>([]);
   folioId       = signal('');
   invoiceId     = signal('');
 
-  // ── Shadow rate (Invoice Override) state ─────────────────────
+  //  Shadow rate (Invoice Override) state 
   showShadowForm  = signal(false);
   shadowRate      = signal(0);
   shadowTotal     = signal(0);
   savingShadow    = signal(false);
   shadowFormError = signal<string | null>(null);
 
-  // ── Guest Access modal state ─────────────────────────────────
+  //  Guest Access modal state 
   showAccessModal = signal(false);
   loadingAccess   = signal(false);
   accessError     = signal<string | null>(null);
@@ -576,6 +766,27 @@ export class BookingDetailPage implements OnInit {
   extendingStay     = signal(false);
   extendCheckoutDate = signal('');
   extendReason       = signal('');
+
+  // Change room state
+  showChangeRoom     = signal(false);
+  changingRoom       = signal(false);
+  changeRoomRooms    = signal<any[]>([]);
+  changeRoomLoading  = signal(false);
+  selectedRoomId     = signal('');
+  changeRoomReason   = signal('');
+  changeRoomResult   = signal<any | null>(null);
+
+  readonly sameTypeRooms = computed(() =>
+    this.changeRoomRooms().filter(r => !r.is_upgrade)
+  );
+
+  readonly upgradeRooms = computed(() =>
+    this.changeRoomRooms().filter(r => r.is_upgrade)
+  );
+
+  readonly selectedRoomInfo = computed(() =>
+    this.changeRoomRooms().find(r => r.id === this.selectedRoomId()) ?? null
+  );
 
   readonly minExtendDate = computed(() => {
     const b = this.booking();
@@ -609,7 +820,7 @@ export class BookingDetailPage implements OnInit {
 
   private bookingId = '';
 
-  // ── Lifecycle ─────────────────────────────────────────────────
+  //  Lifecycle 
   ngOnInit(): void {
     this.bookingId = this.route.snapshot.paramMap.get('id') ?? '';
     if (this.bookingId) this.loadBooking();
@@ -643,7 +854,7 @@ export class BookingDetailPage implements OnInit {
     });
   }
 
-  // ── Booking actions ───────────────────────────────────────────
+  //  Booking actions 
   async doCheckIn(): Promise<void> {
     const ok = await this.confirm.confirm({ title: 'Check In', message: 'Check in this guest?', variant: 'info' });
     if (!ok) return;
@@ -669,7 +880,7 @@ export class BookingDetailPage implements OnInit {
     });
   }
 
-  // ── Extend Stay ───────────────────────────────────────────────
+  //  Extend Stay 
   openExtendStay(): void {
     this.extendCheckoutDate.set('');
     this.extendReason.set('');
@@ -718,7 +929,7 @@ export class BookingDetailPage implements OnInit {
     });
   }
 
-  // ── Guest Access modal ────────────────────────────────────────
+  //  Guest Access modal 
   openGuestAccess(): void {
     this.showAccessModal.set(true);
     this.accessData.set(null);
@@ -813,7 +1024,7 @@ export class BookingDetailPage implements OnInit {
     win.focus();
   }
 
-  // ── QR Code renderer (pure canvas — no external library) ──────
+  //  QR Code renderer (pure canvas — no external library) 
   private renderQr(data: string): void {
     const canvas = this.qrCanvasRef?.nativeElement;
     if (!canvas) return;
@@ -881,7 +1092,59 @@ export class BookingDetailPage implements OnInit {
     }
   }
 
-  // ── Status helpers ────────────────────────────────────────────
+  //  Status helpers 
+  //  Change Room 
+  openChangeRoom(): void {
+    const b = this.booking();
+    if (!b) return;
+    this.selectedRoomId.set('');
+    this.changeRoomReason.set('');
+    this.changeRoomResult.set(null);
+    this.showChangeRoom.set(true);
+    this.changeRoomLoading.set(true);
+    this.changeRoomRooms.set([]);
+
+    this.api.get('/rooms/available-for-change', {
+      booking_id:  b.id,
+      property_id: b.property_id,
+    }).subscribe(r => {
+      this.changeRoomRooms.set(r.success ? (r.data ?? []) : []);
+      this.changeRoomLoading.set(false);
+    });
+  }
+
+  submitChangeRoom(): void {
+    const roomId = this.selectedRoomId();
+    const b      = this.booking();
+    if (!roomId || !b) return;
+
+    this.changingRoom.set(true);
+    this.api.post(`/bookings/${b.id}/change-room`, {
+      room_id: roomId,
+      reason:  this.changeRoomReason() || null,
+    }).subscribe(r => {
+      this.changingRoom.set(false);
+      if (r.success) {
+        this.showChangeRoom.set(false);
+        const charge = r.data?.upgrade_charge;
+        if (charge && charge.rate_difference > 0) {
+          this.toast.success(
+            `Room changed to ${r.data.booking.room_number}. ` +
+            `Upgrade charge of ₦${(+charge.total).toLocaleString()} ` +
+            `(${charge.nights} night${charge.nights === 1 ? '' : 's'} × ₦${(+charge.rate_difference).toLocaleString()}) ` +
+            `added to folio.`
+          );
+        } else {
+          this.toast.success(`Room changed to ${r.data?.booking?.room_number ?? roomId} successfully.`);
+        }
+        this.loadBooking();
+      } else {
+        const msg = r.message ?? 'Failed to change room';
+        this.toast.error(msg);
+      }
+    });
+  }
+
   statusLabel(status: string): string {
     return ({
       pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked In',
@@ -896,7 +1159,7 @@ export class BookingDetailPage implements OnInit {
     } as Record<string, string>)[status] ?? '#6b7280';
   }
 
-  // ── Guest Card Methods ────────────────────────────────────────
+  //  Guest Card Methods 
   loadActiveCard(): void {
     if (!this.bookingId) return;
     this.api.get(`/cards?booking_id=${this.bookingId}&status=active&limit=1`).subscribe({
@@ -954,7 +1217,7 @@ export class BookingDetailPage implements OnInit {
     });
   }
 
-  // ── Shadow Rate (Invoice Override) ────────────────────────────
+  //  Shadow Rate (Invoice Override) 
 
   cancelShadowForm(): void {
     this.showShadowForm.set(false);

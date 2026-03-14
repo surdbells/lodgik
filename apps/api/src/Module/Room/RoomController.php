@@ -325,6 +325,30 @@ final class RoomController
 
     // ─── Amenities ────────────────────────────────────────────
 
+    /**
+     * GET /api/rooms/available-for-change?booking_id=&property_id=
+     * Returns rooms of same or higher type, available for the booking's dates.
+     * Excludes the currently assigned room.
+     * Enriches each room with its room type name and base_rate for display.
+     */
+    public function availableForChange(Request $request, Response $response): Response
+    {
+        $params     = $request->getQueryParams();
+        $bookingId  = $params['booking_id']  ?? null;
+        $propertyId = $params['property_id'] ?? null;
+
+        if (!$bookingId || !$propertyId) {
+            return $this->response->validationError($response, [
+                'booking_id'  => 'Required',
+                'property_id' => 'Required',
+            ]);
+        }
+
+        $rooms = $this->roomService->getRoomsForChange($bookingId, $propertyId);
+
+        return $this->response->success($response, $rooms);
+    }
+
     /** GET /api/amenities */
     public function listAmenities(Request $request, Response $response): Response
     {

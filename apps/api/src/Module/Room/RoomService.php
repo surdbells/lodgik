@@ -322,4 +322,121 @@ final class RoomService
         $this->amenityRepo->save($amenity);
         return $amenity;
     }
+    /**
+     * Get rooms available for a room change on a given booking.
+     * Returns only rooms of the same type or higher (by sort_order),
+     * that are not currently assigned to any overlapping booking,
+     * and are in VACANT_CLEAN status.
+     * Enriches each room with room_type_name and base_rate.
+     */
+    public function getRoomsForChange(string $bookingId, string $propertyId): array
+    {
+        // Load the booking to know its dates and current room
+        $booking = $this->em->find(\Lodgik\Entity\Booking::class, $bookingId);
+        if (!$booking) {
+            return [];
+        }
+
+        $currentRoomId   = $booking->getRoomId();
+        $currentSortOrder = 0;
+
+        if ($currentRoomId) {
+            $currentRoom = $this->roomRepo->find($currentRoomId);
+            if ($currentRoom) {
+                $currentType = $this->em->find(\Lodgik\Entity\RoomType::class, $currentRoom->getRoomTypeId());
+                if ($currentType) {
+                    $currentSortOrder = $currentType->getSortOrder();
+                }
+            }
+        }
+
+        // Get all available (VACANT_CLEAN) rooms for this property
+        $result = $this->roomRepo->listRooms(
+            propertyId: $propertyId,
+            status: \Lodgik\Enum\RoomStatus::VACANT_CLEAN->value,
+            activeOnly: true,
+            page: 1,
+            limit: 500,
+        );
+
+        $rooms = [];
+        foreach ($result['items'] as $room) {
+            // Exclude current room
+            if ($room->getId() === $currentRoomId) {
+                continue;
+            }
+
+            // Load room type
+            $roomType = $this->em->find(\Lodgik\Entity\RoomType::class, $room->getRoomTypeId());
+            if (!$roomType) {
+                continue;
+            }
+
+            // Only same or higher type
+            if ($roomType->getSortOrder() < $currentSortOrder) {
+                continue;
+            }
+
+            // Check no booking overlap for this room during the booking's dates
+            $bookingRepo = $this->em->getRepository(\Lodgik\Entity\Booking::class);
+            // Use a raw DQL overlap check
+            $overlap = $this->em->createQuery(
+                "SELECT COUNT(b.id) FROM Lodgik\Entity\Booking b
+                 WHERE b.roomId = :roomId
+                   AND b.id != :bookingId
+                   AND b.status NOT IN ('cancelled','no_show','checked_out')
+                   AND b.checkIn < :checkOut
+                   AND b.checkOut > :checkIn"
+            )
+            ->setParameter('roomId',    $room->getId())
+            ->setParameter('bookingId', $bookingId)
+            ->setParameter('checkOut',  $booking->getCheckOut())
+            ->setParameter('checkIn',   $booking->getCheckIn())
+            ->getSingleScalarResult();
+
+            if ($overlap > 0) {
+                continue;
+            }
+
+            $currentTypeRate = $currentRoomId
+                ? ((float) ($this->em->find(\Lodgik\Entity\RoomType::class, $room->getRoomTypeId())?->getBaseRate() ?? 0))
+                : 0.0;
+
+            $isUpgrade   = $roomType->getSortOrder() > $currentSortOrder;
+            $rateDiff    = (float) $roomType->getBaseRate() - (float) ($currentType?->getBaseRate() ?? 0);
+
+            // Remaining nights for pro-rata preview
+            $now            = new \DateTimeImmutable('today');
+            $checkOut       = $booking->getCheckOut();
+            $from           = max($now, $booking->getCheckIn()->modify('midnight'));
+            $remainingNights = max(1, (int) $from->diff($checkOut)->days);
+
+            $rooms[] = [
+                'id'              => $room->getId(),
+                'room_number'     => $room->getRoomNumber(),
+                'floor'           => $room->getFloor(),
+                'status'          => $room->getStatus()->value,
+                'status_label'    => $room->getStatus()->label(),
+                'room_type_id'    => $roomType->getId(),
+                'room_type_name'  => $roomType->getName(),
+                'base_rate'       => $roomType->getBaseRate(),
+                'max_occupancy'   => $roomType->getMaxOccupancy(),
+                'is_upgrade'      => $isUpgrade,
+                'rate_difference' => max(0, $rateDiff),
+                'upgrade_total'   => max(0.0, $rateDiff * $remainingNights),
+                'remaining_nights'=> $remainingNights,
+                'amenities'       => $room->getAmenities(),
+            ];
+        }
+
+        // Sort: same type first, then upgrades by sort_order, then by room number
+        usort($rooms, fn($a, $b) =>
+            [$a['is_upgrade'] ? 1 : 0, $a['base_rate'], $a['room_number']]
+            <=>
+            [$b['is_upgrade'] ? 1 : 0, $b['base_rate'], $b['room_number']]
+        );
+
+        return $rooms;
+    }
+
 }
