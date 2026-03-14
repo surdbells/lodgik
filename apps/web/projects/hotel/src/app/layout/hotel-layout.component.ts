@@ -85,7 +85,9 @@ interface NavGroup {
             @if (!collapsed()) {
               <div class="flex items-center justify-between px-5 pt-5 pb-1.5 cursor-pointer select-none group/hdr"
                    (click)="toggleGroup(gi)">
-                <span class="text-[11px] font-bold tracking-[0.06em] uppercase text-gray-400 font-heading">
+                <span class="text-[11px] font-bold tracking-[0.06em] uppercase font-heading transition-colors duration-150"
+                      [class.text-gray-900]="!isGroupCollapsed(gi)"
+                      [class.text-gray-400]="isGroupCollapsed(gi)">
                   {{ group.label }}
                 </span>
                 <lucide-icon name="chevron-down" [size]="12"
@@ -397,10 +399,16 @@ export class HotelLayoutComponent implements OnInit {
   toggleGroup(index: number): void {
     this.collapsedGroups.update(set => {
       const next = new Set(set);
+      // Accordion: if this section is already open, collapse it.
+      // Otherwise, collapse ALL sections then open only this one.
       if (next.has(index)) {
         next.delete(index);
       } else {
-        next.add(index);
+        // Close every group first
+        const allIndices = Array.from({ length: this.visibleNavGroups().length }, (_, i) => i);
+        allIndices.forEach(i => next.add(i));
+        // Then open the clicked one
+        next.delete(index);
       }
       return next;
     });

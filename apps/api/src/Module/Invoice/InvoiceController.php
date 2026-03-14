@@ -66,7 +66,7 @@ final class InvoiceController
         $response->getBody()->write($pdf);
         return $response
             ->withHeader('Content-Type', 'application/pdf')
-            ->withHeader('Content-Disposition', "attachment; filename="{$invoiceNo}.pdf"")
+            ->withHeader('Content-Disposition', "attachment; filename=\"{$invoiceNo}.pdf\"")
             ->withHeader('Content-Length', (string) strlen($pdf))
             ->withHeader('Cache-Control', 'no-store, no-cache');
     }
