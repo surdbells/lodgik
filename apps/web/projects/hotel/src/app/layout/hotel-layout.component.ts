@@ -225,7 +225,7 @@ export class HotelLayoutComponent implements OnInit {
   collapsed = signal(false);
   notificationCount = signal(0);
 
-  private collapsedGroups = signal<Set<number>>(new Set([2, 4, 5, 6, 7, 8]));
+  private collapsedGroups = signal<Set<number>>(new Set([0,1,2,3,4,5,6,7,8,9,10,11]));
 
   propertyName = computed(() => this.activeProperty.propertyName());
   propertyInitial = computed(() => this.propertyName().charAt(0).toUpperCase());
@@ -417,17 +417,7 @@ export class HotelLayoutComponent implements OnInit {
   ngOnInit(): void {
     this.featureService.load();
     this.activeProperty.load();
-    const path = this.router.url;
-    const visible = this.visibleNavGroups();
-    visible.forEach((g, i) => {
-      if (g.items.some(item => path.startsWith(item.route))) {
-        this.collapsedGroups.update(set => {
-          const next = new Set(set);
-          next.delete(i);
-          return next;
-        });
-      }
-    });
+
     this.loadNotificationCount();
     // Poll every 60 seconds
     setInterval(() => this.loadNotificationCount(), 60_000);
