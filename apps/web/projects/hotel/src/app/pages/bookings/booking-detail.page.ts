@@ -543,9 +543,9 @@ import {
         </div>
       </div>
 
-    <!-- 
-         CHANGE ROOM MODAL
-     -->
+    }
+
+    <!-- CHANGE ROOM MODAL -->
     @if (showChangeRoom()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4"
            style="background:rgba(0,0,0,0.5)">
@@ -720,8 +720,6 @@ import {
 
         </div>
       </div>
-    }
-
     }
   `,
 })
