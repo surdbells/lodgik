@@ -82,8 +82,15 @@ final class CreateBookingRequest
 
     public function parseDate(string $value): ?\DateTimeImmutable
     {
-        return \DateTimeImmutable::createFromFormat('Y-m-d H:i', $value)
-            ?: (\DateTimeImmutable::createFromFormat('Y-m-d', $value) ?: null);
+        $v = trim($value);
+        $v = preg_replace('/T/', ' ', $v);                   // ISO T → space
+        $v = preg_replace('/\.\d+Z?$/', '', $v);           // strip ms
+        $v = preg_replace('/[+-]\d{2}:\d{2}$/', '', $v);  // strip tz
+        $v = rtrim($v, 'Z');
+        return \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $v)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d H:i', $v)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d', $v)
+            ?: null;
     }
 
     public static function fromArray(array $data): self

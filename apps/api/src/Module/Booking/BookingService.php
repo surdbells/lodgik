@@ -755,8 +755,8 @@ final class BookingService
         }
 
         $bt = BookingType::from($bookingType);
-        $ci = \DateTimeImmutable::createFromFormat('Y-m-d H:i', $checkIn) ?: \DateTimeImmutable::createFromFormat('Y-m-d', $checkIn);
-        $co = \DateTimeImmutable::createFromFormat('Y-m-d H:i', $checkOut) ?: \DateTimeImmutable::createFromFormat('Y-m-d', $checkOut);
+        $ci = self::parseFlexibleDate($checkIn);
+        $co = self::parseFlexibleDate($checkOut);
 
         if ($ci === false || $co === false) {
             throw new \InvalidArgumentException('Invalid date format');
@@ -794,9 +794,7 @@ final class BookingService
         }
 
         // Parse new checkout
-        $newCheckout = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $newCheckoutDate)
-            ?: \DateTimeImmutable::createFromFormat('Y-m-d H:i', $newCheckoutDate)
-            ?: \DateTimeImmutable::createFromFormat('Y-m-d', $newCheckoutDate);
+        $newCheckout = self::parseFlexibleDate($newCheckoutDate);
 
         if ($newCheckout === false) {
             throw new \InvalidArgumentException('Invalid new_checkout_date format. Use Y-m-d or Y-m-d H:i:s.');
@@ -1058,6 +1056,31 @@ final class BookingService
             'booking'        => $booking,
             'upgrade_charge' => $upgradeCharge,
         ];
+    }
+
+    /**
+     * Parse a date string in any of the common formats the frontend sends:
+     *   2026-03-15          (date only)
+     *   2026-03-15 14:00    (space separator)
+     *   2026-03-15T14:00    (ISO datetime-local, T separator)
+     *   2026-03-15T14:00:00 (full ISO)
+     *   2026-03-15T14:00:00Z (UTC ISO)
+     */
+    private static function parseFlexibleDate(string $value): ?\DateTimeImmutable
+    {
+        $value = trim($value);
+        if ($value === '') return null;
+
+        // Normalise: replace T with space, strip trailing Z or timezone offset
+        $normalised = preg_replace('/T/', ' ', $value);
+        $normalised = preg_replace('/\.\d+Z?$/', '', $normalised);   // strip milliseconds
+        $normalised = preg_replace('/[+-]\d{2}:\d{2}$/', '', $normalised); // strip tz offset
+        $normalised = rtrim($normalised, 'Z');
+
+        return \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $normalised)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d H:i',   $normalised)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d',       $normalised)
+            ?: null;
     }
 
 }
