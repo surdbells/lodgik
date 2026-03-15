@@ -183,4 +183,22 @@ final class BookingRepository extends BaseRepository
         ";
         return $conn->fetchAllAssociative($sql, ['pid' => $propertyId, 's' => $s, 'limit' => $limit]);
     }
+    /**
+     * Find the currently active booking for a room (checked_in or reserved).
+     * Used to enrich room grid with guest/checkout data.
+     */
+    public function findActiveByRoom(string $roomId): ?\Lodgik\Entity\Booking
+    {
+        return $this->createQueryBuilder('b')
+            ->where('b.roomId = :room')
+            ->andWhere('b.status IN (:statuses)')
+            ->andWhere('b.deletedAt IS NULL')
+            ->setParameter('room', $roomId)
+            ->setParameter('statuses', ['checked_in', 'confirmed', 'reserved'])
+            ->orderBy('b.checkIn', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
 }

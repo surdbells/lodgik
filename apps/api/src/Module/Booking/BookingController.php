@@ -26,6 +26,7 @@ final class BookingController
         private readonly ?\Lodgik\Repository\GuestAccessCodeRepository $accessCodeRepo = null,
         private readonly ?GuestRepository $guestRepo = null,
         private readonly ?RoomRepository  $roomRepo  = null,
+        private readonly ?\Lodgik\Repository\FolioRepository $folioRepo = null,
     ) {}
 
     /** GET /api/bookings */
@@ -468,6 +469,107 @@ final class BookingController
             return $this->response->error($response, $e->getMessage(), 409);
         } catch (\RuntimeException $e) {
             return $this->response->validationError($response, ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * GET /api/bookings/checkout-tracker?property_id=
+     * Returns all checked-in bookings with live checkout countdown data.
+     * Used by the front-desk checkout tracker dashboard.
+     */
+    public function checkoutTracker(Request $request, Response $response): Response
+    {
+        $propertyId = $request->getQueryParams()['property_id'] ?? null;
+        if (!$propertyId) {
+            return $this->response->validationError($response, ['property_id' => 'Required']);
+        }
+
+        $bookings = $this->bookingService->getCheckedIn($propertyId);
+        [$guestMap, $roomMap] = $this->buildEnrichmentMaps($bookings);
+
+        $now    = new \DateTimeImmutable();
+        $items  = [];
+
+        foreach ($bookings as $b) {
+            $base      = $this->serialize($b, $guestMap, $roomMap);
+            $checkOut  = $b->getCheckOut();
+            $checkIn   = $b->getCheckedInAt() ?? $b->getCheckIn();
+
+            $totalSecs     = max(1, $checkOut->getTimestamp() - $checkIn->getTimestamp());
+            $remaining     = $checkOut->getTimestamp() - $now->getTimestamp();
+            $progressPct   = (int) min(100, max(0, round(($now->getTimestamp() - $checkIn->getTimestamp()) / $totalSecs * 100)));
+
+            // Color tier based on time remaining
+            $remainingMins = (int) floor($remaining / 60);
+            if ($remaining <= 0) {
+                $colorTier = 'overdue';     // past checkout
+            } elseif ($remainingMins <= 15) {
+                $colorTier = 'critical';    // ≤ 15 min
+            } elseif ($remainingMins <= 30) {
+                $colorTier = 'urgent';      // ≤ 30 min
+            } elseif ($remainingMins <= 60) {
+                $colorTier = 'warning';     // ≤ 1 hr
+            } elseif ($remainingMins <= 120) {
+                $colorTier = 'caution';     // ≤ 2 hrs
+            } elseif ($remainingMins <= 180) {
+                $colorTier = 'notice';      // ≤ 3 hrs
+            } else {
+                $colorTier = 'ok';          // > 3 hrs
+            }
+
+            // Folio balance
+            $folioBalance = null;
+            try {
+                $folio = $this->folioRepo->findByBooking($b->getId());
+                if ($folio) {
+                    $folioBalance = [
+                        'id'      => $folio->getId(),
+                        'balance' => (float)$folio->getBalance(),
+                        'status'  => $folio->getStatus(),
+                    ];
+                }
+            } catch (\Throwable) {}
+
+            $items[] = array_merge($base, [
+                'seconds_to_checkout' => $remaining,
+                'minutes_to_checkout' => $remainingMins,
+                'progress_pct'        => $progressPct,
+                'color_tier'          => $colorTier,
+                'is_overdue'          => $remaining <= 0,
+                'folio'               => $folioBalance,
+            ]);
+        }
+
+        // Sort: overdue first, then by soonest checkout
+        usort($items, fn($a, $b) => $a['seconds_to_checkout'] <=> $b['seconds_to_checkout']);
+
+        return $this->response->success($response, $items);
+    }
+
+    /**
+     * POST /api/bookings/{id}/notify-guest
+     * Send a notification to the guest via SMS, email, and/or WhatsApp.
+     * Body: { channels: ['sms','email','whatsapp'], message: string, subject?: string }
+     */
+    public function notifyGuest(Request $request, Response $response, array $args): Response
+    {
+        $body     = (array)($request->getParsedBody() ?? []);
+        $channels = (array)($body['channels'] ?? ['sms']);
+        $message  = trim($body['message'] ?? '');
+        $subject  = trim($body['subject'] ?? 'Message from the hotel');
+        $userId   = $request->getAttribute('auth.user_id');
+
+        if (empty($message)) {
+            return $this->response->validationError($response, ['message' => 'Message is required']);
+        }
+
+        try {
+            $result = $this->bookingService->notifyGuest($args['id'], $channels, $message, $subject, $userId);
+            return $this->response->success($response, $result, 'Notification sent');
+        } catch (\InvalidArgumentException $e) {
+            return $this->response->validationError($response, ['error' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            return $this->response->error($response, $e->getMessage(), 500);
         }
     }
 

@@ -49,6 +49,7 @@ final class BookingService
         private readonly ?\Lodgik\Repository\PropertyRepository $propertyRepo = null,
         private readonly ?\Lodgik\Service\TermiiService $termii = null,
         private readonly ?\Lodgik\Module\Notification\NotificationService $notificationService = null,
+        private readonly ?\Lodgik\Service\ZeptoMailService $mailService = null,
     ) {}
 
     // ═══ List / Get ════════════════════════════════════════════
@@ -94,6 +95,18 @@ final class BookingService
     public function getToday(string $propertyId): array
     {
         return $this->bookingRepo->getToday($propertyId);
+    }
+
+    /** @return Booking[] All currently checked-in bookings for a property */
+    public function getCheckedIn(string $propertyId): array
+    {
+        $result = $this->bookingRepo->listBookings(
+            propertyId: $propertyId,
+            status: \Lodgik\Enum\BookingStatus::CHECKED_IN->value,
+            page: 1,
+            limit: 500,
+        );
+        return $result['items'];
     }
 
     /** @return Booking[] */
@@ -1082,6 +1095,76 @@ final class BookingService
             ?: \DateTimeImmutable::createFromFormat('Y-m-d H:i',   $normalised)
             ?: \DateTimeImmutable::createFromFormat('Y-m-d',       $normalised)
             ?: null;
+    }
+
+    /**
+     * Send a guest notification via configured channels.
+     * Channels: 'sms', 'email', 'whatsapp'
+     */
+    public function notifyGuest(
+        string $bookingId,
+        array  $channels,
+        string $message,
+        string $subject = 'Message from the hotel',
+        ?string $userId = null
+    ): array {
+        $booking = $this->bookingRepo->find($bookingId);
+        if (!$booking) {
+            throw new \InvalidArgumentException('Booking not found');
+        }
+
+        $guest = $this->guestRepo->find($booking->getGuestId());
+        if (!$guest) {
+            throw new \InvalidArgumentException('Guest not found');
+        }
+
+        $sent   = [];
+        $failed = [];
+
+        foreach ($channels as $channel) {
+            try {
+                switch ($channel) {
+                    case 'sms':
+                    case 'whatsapp':
+                        if ($this->termii !== null && $guest->getPhone()) {
+                            $this->termii->send($guest->getPhone(), $message);
+                            $sent[] = $channel;
+                        } else {
+                            $failed[] = $channel . ' (not configured or guest has no phone)';
+                        }
+                        break;
+
+                    case 'email':
+                        if ($guest->getEmail()) {
+                            if ($this->mailService !== null) {
+                                $this->mailService->send(
+                                    $guest->getEmail(),
+                                    $guest->getFullName(),
+                                    $subject,
+                                    '<p>' . nl2br(htmlspecialchars($message)) . '</p>',
+                                );
+                                $sent[] = 'email';
+                            } else {
+                                $failed[] = 'email (mail service not configured)';
+                            }
+                        } else {
+                            $failed[] = 'email (guest has no email)';
+                        }
+                        break;
+                }
+            } catch (\Throwable $e) {
+                $failed[] = $channel . ': ' . $e->getMessage();
+                $this->logger->warning("[NotifyGuest] Channel {$channel} failed: " . $e->getMessage());
+            }
+        }
+
+        $this->logger->info("[NotifyGuest] Booking {$bookingId}: sent=" . implode(',', $sent) . " staff={$userId}");
+
+        return [
+            'sent'   => $sent,
+            'failed' => $failed,
+            'guest'  => ['name' => $guest->getFullName(), 'phone' => $guest->getPhone(), 'email' => $guest->getEmail()],
+        ];
     }
 
 }

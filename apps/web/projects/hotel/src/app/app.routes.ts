@@ -98,6 +98,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/bookings/new-booking.page').then(m => m.NewBookingPage),
       },
       {
+        path: 'bookings/checkout-tracker',
+        loadComponent: () => import('./pages/bookings/checkout-tracker.page').then(m => m.CheckoutTrackerPage),
+      },
+      {
         path: 'bookings/:id',
         loadComponent: () => import('./pages/bookings/booking-detail.page').then(m => m.BookingDetailPage),
       },

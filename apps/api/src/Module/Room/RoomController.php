@@ -24,6 +24,8 @@ final class RoomController
     public function __construct(
         private readonly RoomService $roomService,
         private readonly ResponseHelper $response,
+        private readonly ?\Lodgik\Repository\BookingRepository $bookingRepo = null,
+        private readonly ?\Lodgik\Repository\GuestRepository $guestRepo = null,
     ) {}
 
     // ─── Room Types ────────────────────────────────────────────
@@ -435,20 +437,59 @@ final class RoomController
 
     private function serializeRoom(Room $r): array
     {
-        return [
-            'id' => $r->getId(),
-            'property_id' => $r->getPropertyId(),
+        $base = [
+            'id'           => $r->getId(),
+            'property_id'  => $r->getPropertyId(),
             'room_type_id' => $r->getRoomTypeId(),
-            'room_number' => $r->getRoomNumber(),
-            'floor' => $r->getFloor(),
-            'status' => $r->getStatus()->value,
+            'room_number'  => $r->getRoomNumber(),
+            'floor'        => $r->getFloor(),
+            'status'       => $r->getStatus()->value,
             'status_label' => $r->getStatus()->label(),
             'status_color' => $r->getStatus()->color(),
-            'notes' => $r->getNotes(),
-            'amenities' => $r->getAmenities(),
-            'is_active' => $r->isActive(),
-            'created_at' => $r->getCreatedAt()?->format('c'),
-            'updated_at' => $r->getUpdatedAt()?->format('c'),
+            'notes'        => $r->getNotes(),
+            'amenities'    => $r->getAmenities(),
+            'is_active'    => $r->isActive(),
+            'created_at'   => $r->getCreatedAt()?->format('c'),
+            'updated_at'   => $r->getUpdatedAt()?->format('c'),
         ];
+
+        // Enrich with active booking data if room is occupied/reserved
+        if (in_array($r->getStatus()->value, ['occupied', 'reserved', 'checked_in'], true)) {
+            try {
+                $booking = $this->bookingRepo->findActiveByRoom($r->getId());
+                if ($booking !== null) {
+                    $now           = new \DateTimeImmutable();
+                    $checkOut      = $booking->getCheckOut();
+                    $secsRemaining = $checkOut->getTimestamp() - $now->getTimestamp();
+
+                    // Fetch guest name
+                    $guest     = $this->guestRepo?->find($booking->getGuestId());
+                    $guestName = $guest?->getFullName() ?? null;
+
+                    $base['current_booking'] = [
+                        'id'                  => $booking->getId(),
+                        'booking_ref'         => $booking->getBookingRef(),
+                        'booking_type'        => $booking->getBookingType()->value,
+                        'booking_type_label'  => $booking->getBookingType()->label(),
+                        'status'              => $booking->getStatus()->value,
+                        'guest_id'            => $booking->getGuestId(),
+                        'guest_name'          => $guestName,
+                        'guest_phone'         => $guest?->getPhone(),
+                        'check_in'            => $booking->getCheckIn()->format('c'),
+                        'check_out'           => $checkOut->format('c'),
+                        'checked_in_at'       => $booking->getCheckedInAt()?->format('c'),
+                        'adults'              => $booking->getAdults(),
+                        'children'            => $booking->getChildren(),
+                        'total_amount'        => $booking->getTotalAmount(),
+                        'seconds_to_checkout' => $secsRemaining,
+                        'is_overdue'          => $secsRemaining < 0,
+                    ];
+                }
+            } catch (\Throwable) {
+                // Enrichment failure must never break the room list
+            }
+        }
+
+        return $base;
     }
 }

@@ -14,6 +14,7 @@ return function (App $app): void {
         // ── Static GET routes MUST come before /{id} ─────────────────
         $group->get('', [BookingController::class, 'list']);
         $group->get('/today', [BookingController::class, 'today']);
+        $group->get('/checkout-tracker', [BookingController::class, 'checkoutTracker']);
         $group->get('/calendar', [BookingController::class, 'calendar']);
         $group->get('/overdue', [BookingController::class, 'overdue']);
         $group->get('/search', [BookingController::class, 'search']);
@@ -44,6 +45,7 @@ return function (App $app): void {
     $app->group('/api/bookings', function (RouteCollectorProxy $group) {
         $group->patch('/{id}/shadow-rate', [BookingController::class, 'setShadowRate']);
         $group->post('/{id}/change-room',   [BookingController::class, 'changeRoom']);
+        $group->post('/{id}/notify-guest',   [BookingController::class, 'notifyGuest']);
     })
         ->add(new RoleMiddleware(['property_admin']))
         ->add(TenantMiddleware::class)

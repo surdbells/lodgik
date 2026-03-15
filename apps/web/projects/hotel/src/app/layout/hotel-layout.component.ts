@@ -257,8 +257,10 @@ export class HotelLayoutComponent implements OnInit {
       label: 'Daily Operation',
       items: [
         { label: 'Dashboard', icon: 'layout-dashboard', route: '/dashboard' },
-        { label: 'Bookings',  icon: 'clipboard-list',   route: '/bookings' },
-        { label: 'Rooms',     icon: 'bed-double',        route: '/rooms' },
+        { label: 'Bookings',          icon: 'clipboard-list',   route: '/bookings' },
+        { label: 'Checkout Tracker',  icon: 'clock',             route: '/bookings/checkout-tracker',
+          requiredRoles: ['property_admin','manager','front_desk'] },
+        { label: 'Rooms',             icon: 'bed-double',        route: '/rooms' },
         { label: 'Room Types',icon: 'tag',               route: '/room-types' },
         { label: 'Guests',    icon: 'user-round',        route: '/guests' },
       ],
