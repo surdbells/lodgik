@@ -563,14 +563,17 @@ export class NewBookingPage implements OnInit {
 
   // ── Property settings ────────────────────────────────────────────────────
   loadPropertySettings(): void {
-    if (!this.propertyId) { this.buildBookingTypes(); return; }
-    this.api.get(`/tenant/properties/${this.propertyId}`).subscribe(r => {
+    // Build immediately with defaults so tiles show without waiting for API
+    this.buildBookingTypes();
+    if (!this.propertyId) return;
+    this.api.get(`/properties/${this.propertyId}`).subscribe(r => {
       if (r.success && r.data?.settings) {
         const s = r.data.settings;
         this.checkoutTimeStr = s.checkout_time ?? '12:00';
         this.halfDayHours    = +(s.half_day_hours ?? 6);
+        // Rebuild with real settings
+        this.buildBookingTypes();
       }
-      this.buildBookingTypes();
     });
   }
 
