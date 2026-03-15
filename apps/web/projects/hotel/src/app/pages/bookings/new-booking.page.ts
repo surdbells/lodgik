@@ -186,15 +186,15 @@ interface BookingTypeOption {
           @for (bt of bookingTypes(); track bt.value) {
             <button (click)="selectBookingType(bt)"
               class="flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-all active:scale-95"
-              [class.border-sage-500]="booking.booking_type === bt.value"
-              [class.bg-sage-50]="booking.booking_type === bt.value"
-              [class.border-gray-200]="booking.booking_type !== bt.value"
-              [class.hover:border-gray-300]="booking.booking_type !== bt.value">
+              [class.border-sage-500]="bookingType() === bt.value"
+              [class.bg-sage-50]="bookingType() === bt.value"
+              [class.border-gray-200]="bookingType() !== bt.value"
+              [class.hover:border-gray-300]="bookingType() !== bt.value">
               <span class="text-xl">{{ bt.icon }}</span>
-              <span class="text-sm font-bold" [class.text-sage-700]="booking.booking_type === bt.value" [class.text-gray-700]="booking.booking_type !== bt.value">
+              <span class="text-sm font-bold" [class.text-sage-700]="bookingType() === bt.value" [class.text-gray-700]="bookingType() !== bt.value">
                 {{ bt.label }}
               </span>
-              <span class="text-[11px] leading-tight" [class.text-sage-500]="booking.booking_type === bt.value" [class.text-gray-400]="booking.booking_type !== bt.value">
+              <span class="text-[11px] leading-tight" [class.text-sage-500]="bookingType() === bt.value" [class.text-gray-400]="bookingType() !== bt.value">
                 {{ bt.desc }}
               </span>
             </button>
@@ -504,6 +504,7 @@ export class NewBookingPage implements OnInit {
   readonly Math = Math;
 
   step          = signal(1);
+  bookingType   = signal('lodge');
   submitting    = signal(false);
   loadingRooms  = signal(false);
   availableRooms = signal<any[]>([]);
@@ -551,7 +552,7 @@ export class NewBookingPage implements OnInit {
   });
 
   selectedType = computed(() =>
-    this.bookingTypes().find(bt => bt.value === this.booking.booking_type) ?? null
+    this.bookingTypes().find(bt => bt.value === this.bookingType()) ?? null
   );
 
   ngOnInit(): void {
@@ -626,22 +627,20 @@ export class NewBookingPage implements OnInit {
   }
 
   setDefaultCheckIn(): void {
-    const now = new Date();
-    const y   = now.getFullYear();
-    const m   = String(now.getMonth() + 1).padStart(2, '0');
-    const d   = String(now.getDate()).padStart(2, '0');
-    this.booking.check_in = `${y}-${m}-${d}T14:00`;
+    // Default to current time — guest can check in at any time
+    this.booking.check_in = this.toDateTimeLocal(new Date());
     this.onCheckInChange();
   }
 
   selectBookingType(bt: BookingTypeOption): void {
     this.booking.booking_type = bt.value;
+    this.bookingType.set(bt.value);
     this.onCheckInChange();
   }
 
   onCheckInChange(): void {
     if (!this.booking.check_in) return;
-    const bt = this.selectedType();
+    const bt = this.bookingTypes().find(b => b.value === this.bookingType());
     if (!bt) return;
 
     if (bt.hourly) {
