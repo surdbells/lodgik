@@ -758,12 +758,13 @@ final class BookingService
         $ci = self::parseFlexibleDate($checkIn);
         $co = self::parseFlexibleDate($checkOut);
 
-        if ($ci === false || $co === false) {
+        if ($ci === null || $co === null) {
             throw new \InvalidArgumentException('Invalid date format');
         }
 
-        return $halfDayHours2 = (int) ($property?->getSetting('half_day_hours', 6) ?? 6);
-        $this->rateCalc->calculate($roomType, $bt, $ci, $co, $discount, $halfDayHours2);
+        // No property context available in previewRate — use default half_day_hours
+        $halfDayHours2 = 6;
+        return $this->rateCalc->calculate($roomType, $bt, $ci, $co, $discount, $halfDayHours2);
     }
 
     // ═══ Stay Extension ════════════════════════════════════════
