@@ -39,21 +39,13 @@ final class CreateBookingRequest
         }
         if (trim($this->checkIn) === '') {
             $errors['check_in'] = 'Check-in date/time is required';
-        } else {
-            $ci = \DateTimeImmutable::createFromFormat('Y-m-d H:i', $this->checkIn)
-                ?: \DateTimeImmutable::createFromFormat('Y-m-d', $this->checkIn);
-            if ($ci === false) {
-                $errors['check_in'] = 'Invalid check-in format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM';
-            }
+        } elseif ($this->parseDate($this->checkIn) === null) {
+            $errors['check_in'] = 'Invalid check-in format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM';
         }
         if (trim($this->checkOut) === '') {
             $errors['check_out'] = 'Check-out date/time is required';
-        } else {
-            $co = \DateTimeImmutable::createFromFormat('Y-m-d H:i', $this->checkOut)
-                ?: \DateTimeImmutable::createFromFormat('Y-m-d', $this->checkOut);
-            if ($co === false) {
-                $errors['check_out'] = 'Invalid check-out format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM';
-            }
+        } elseif ($this->parseDate($this->checkOut) === null) {
+            $errors['check_out'] = 'Invalid check-out format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM';
         }
         if (empty($errors['check_in']) && empty($errors['check_out'])) {
             $ci = $this->parseDate($this->checkIn);
