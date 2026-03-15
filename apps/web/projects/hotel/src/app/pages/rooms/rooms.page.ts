@@ -486,6 +486,7 @@ export class RoomsPage implements OnInit {
   statusCounts = signal<any>({});
   viewMode     = signal<'grid' | 'list'>('grid');
   panelRoom    = signal<any>(null);
+  filterState  = signal({ status: '', room_type_id: '', floor: '', search: '' });
 
   showAdd    = false;
   showBulk   = false;
@@ -493,7 +494,7 @@ export class RoomsPage implements OnInit {
   editForm:  any = null;
   propertyId = '';
 
-  filters = { status: '', room_type_id: '', floor: '', search: '' };
+  filters = { status: '', room_type_id: '', floor: '', search: '' };  // ngModel target
   addForm: any = { room_type_id: '', room_number: '', floor: null, notes: '', amenities: [] as string[] };
   bulkForm: any = { room_type_id: '', floor: 1, start_number: 101, count: 10 };
 
@@ -527,11 +528,12 @@ export class RoomsPage implements OnInit {
   };
 
   filtered = computed(() => {
+    const f = this.filterState();
     let r = this.rooms();
-    if (this.filters.status)       r = r.filter(rm => rm.status === this.filters.status);
-    if (this.filters.room_type_id) r = r.filter(rm => rm.room_type_id === this.filters.room_type_id);
-    if (this.filters.floor)        r = r.filter(rm => String(rm.floor) === String(this.filters.floor));
-    if (this.filters.search)       r = r.filter(rm => rm.room_number?.toLowerCase().includes(this.filters.search.toLowerCase()));
+    if (f.status)       r = r.filter(rm => rm.status === f.status);
+    if (f.room_type_id) r = r.filter(rm => rm.room_type_id === f.room_type_id);
+    if (f.floor)        r = r.filter(rm => String(rm.floor) === String(f.floor));
+    if (f.search)       r = r.filter(rm => rm.room_number?.toLowerCase().includes(f.search.toLowerCase()));
     return r;
   });
 
@@ -590,7 +592,10 @@ export class RoomsPage implements OnInit {
     });
   }
 
-  applyFilters(): void {}   // computed handles reactively
+  applyFilters(): void {
+    // Sync ngModel plain object into signal so computed() re-runs
+    this.filterState.set({ ...this.filters });
+  }
 
   openRoomPanel(room: any): void { this.panelRoom.set(room); }
 

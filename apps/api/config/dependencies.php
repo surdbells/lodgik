@@ -622,6 +622,7 @@ return function (ContainerBuilder $builder): void {
                 accessCodeRepo:  $c->get(GuestAccessCodeRepository::class),
                 guestRepo:       $c->get(GuestRepository::class),
                 roomRepo:        $c->get(RoomRepository::class),
+                folioRepo:       $c->get(FolioRepository::class),
             );
         },
 
