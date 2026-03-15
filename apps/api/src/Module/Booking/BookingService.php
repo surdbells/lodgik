@@ -159,7 +159,8 @@ final class BookingService
         }
 
         // Calculate rate
-        $calc = $this->rateCalc->calculate($roomType, $bookingType, $checkIn, $checkOut, $dto->discountAmount);
+        $calc = $halfDayHours = (int) ($property?->getSetting('half_day_hours', 6) ?? 6);
+        $this->rateCalc->calculate($roomType, $bookingType, $checkIn, $checkOut, $dto->discountAmount, $halfDayHours);
 
         // Generate reference
         $ref = $this->bookingRepo->generateRef($tenantId);
@@ -761,7 +762,8 @@ final class BookingService
             throw new \InvalidArgumentException('Invalid date format');
         }
 
-        return $this->rateCalc->calculate($roomType, $bt, $ci, $co, $discount);
+        return $halfDayHours2 = (int) ($property?->getSetting('half_day_hours', 6) ?? 6);
+        $this->rateCalc->calculate($roomType, $bt, $ci, $co, $discount, $halfDayHours2);
     }
 
     // ═══ Stay Extension ════════════════════════════════════════

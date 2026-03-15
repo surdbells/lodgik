@@ -154,6 +154,8 @@ final class TenantController
             'checkout_discrepancy_threshold_minutes',
             // VAT settings
             'charge_vat_on_booking',
+            // Booking time settings
+            'half_day_hours',
         ];
 
         $property = $this->tenantService->getProperty($args['id']);

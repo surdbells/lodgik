@@ -12,6 +12,7 @@ final class RateCalculator
     /**
      * Calculate booking total.
      *
+     * @param int $halfDayHours   Hours for half-day bookings (from property settings, default 6)
      * @return array{rate: string, nights: int, hours: int|null, subtotal: string, discount: string, total: string}
      */
     public function calculate(
@@ -20,9 +21,10 @@ final class RateCalculator
         \DateTimeImmutable $checkIn,
         \DateTimeImmutable $checkOut,
         string $discountAmount = '0.00',
+        int $halfDayHours = 6,
     ): array {
         if ($bookingType->isHourly()) {
-            return $this->calculateHourly($roomType, $bookingType, $checkIn, $checkOut, $discountAmount);
+            return $this->calculateHourly($roomType, $bookingType, $checkIn, $checkOut, $discountAmount, $halfDayHours);
         }
 
         return $this->calculateNightly($roomType, $checkIn, $checkOut, $discountAmount);
@@ -34,18 +36,22 @@ final class RateCalculator
         \DateTimeImmutable $checkOut,
         string $discountAmount,
     ): array {
-        $nights = max(1, $checkIn->diff($checkOut)->days);
-        $rate = $roomType->getBaseRate();
+        // Count nights: difference between calendar dates (time is irrelevant)
+        $checkInDay  = new \DateTimeImmutable($checkIn->format('Y-m-d'));
+        $checkOutDay = new \DateTimeImmutable($checkOut->format('Y-m-d'));
+        $nights      = max(1, $checkInDay->diff($checkOutDay)->days);
+
+        $rate     = $roomType->getBaseRate();
         $subtotal = $this->mul($rate, (string) $nights);
-        $total = $this->sub($subtotal, $discountAmount);
+        $total    = $this->sub($subtotal, $discountAmount);
 
         return [
-            'rate' => $rate,
-            'nights' => $nights,
-            'hours' => null,
+            'rate'     => $rate,
+            'nights'   => $nights,
+            'hours'    => null,
             'subtotal' => $subtotal,
             'discount' => $discountAmount,
-            'total' => $this->cmp($total, '0') >= 0 ? $total : '0.00',
+            'total'    => $this->cmp($total, '0') >= 0 ? $total : '0.00',
         ];
     }
 
@@ -55,29 +61,37 @@ final class RateCalculator
         \DateTimeImmutable $checkIn,
         \DateTimeImmutable $checkOut,
         string $discountAmount,
+        int $halfDayHours,
     ): array {
         $hourlyRate = $roomType->getHourlyRate();
-        if ($hourlyRate === null || $hourlyRate === '0.00') {
+        if ($hourlyRate === null || (float) $hourlyRate === 0.0) {
+            // Fall back: derive hourly from nightly ÷ 24
             $hourlyRate = $this->div($roomType->getBaseRate(), '24');
         }
 
-        $hours = $bookingType->durationHours() ?? (int) ceil(($checkOut->getTimestamp() - $checkIn->getTimestamp()) / 3600);
-        $hours = max(1, $hours);
+        // Determine hours
+        if ($bookingType === \Lodgik\Enum\BookingType::HALF_DAY) {
+            $hours = $halfDayHours;
+        } elseif ($bookingType->durationHours() !== null) {
+            $hours = $bookingType->durationHours();
+        } else {
+            $hours = max(1, (int) ceil(($checkOut->getTimestamp() - $checkIn->getTimestamp()) / 3600));
+        }
 
         $subtotal = $this->mul($hourlyRate, (string) $hours);
-        $total = $this->sub($subtotal, $discountAmount);
+        $total    = $this->sub($subtotal, $discountAmount);
 
         return [
-            'rate' => $hourlyRate,
-            'nights' => 0,
-            'hours' => $hours,
+            'rate'     => $hourlyRate,
+            'nights'   => 0,
+            'hours'    => $hours,
             'subtotal' => $subtotal,
             'discount' => $discountAmount,
-            'total' => $this->cmp($total, '0') >= 0 ? $total : '0.00',
+            'total'    => $this->cmp($total, '0') >= 0 ? $total : '0.00',
         ];
     }
 
-    // ─── Pure PHP decimal math (no bcmath dependency) ─────
+    // ─── Pure PHP decimal math ─────────────────────────────
 
     private function mul(string $a, string $b): string
     {
@@ -91,13 +105,11 @@ final class RateCalculator
 
     private function div(string $a, string $b): string
     {
-        return number_format((float) $a / (float) $b, 2, '.', '');
+        return number_format((float) $a / max(0.001, (float) $b), 2, '.', '');
     }
 
     private function cmp(string $a, string $b): int
     {
-        $fa = (float) $a;
-        $fb = (float) $b;
-        return $fa <=> $fb;
+        return (float) $a <=> (float) $b;
     }
 }
