@@ -292,7 +292,22 @@ final class BookingService
         // Update booking
         $oldStatus = $booking->getStatus();
         $booking->setStatus(BookingStatus::CHECKED_IN);
-        $booking->setCheckedInAt(new \DateTimeImmutable());
+        $now = new \DateTimeImmutable();
+        $booking->setCheckedInAt($now);
+
+        // For hourly booking types (Short Rest, Half Day), recalculate check_in and
+        // check_out from the ACTUAL check-in time — not the originally booked time.
+        // This ensures the checkout countdown is correct regardless of when the guest arrives.
+        if ($booking->getBookingType()->isHourly()) {
+            $durationHours = $booking->getDurationHours();
+            if ($durationHours === null || $durationHours <= 0) {
+                // Fall back to enum default
+                $durationHours = $booking->getBookingType()->durationHours() ?? 1;
+            }
+            $actualCheckOut = $now->modify("+{$durationHours} hours");
+            $booking->setCheckIn($now);
+            $booking->setCheckOut($actualCheckOut);
+        }
 
         // Log status change
         $log = new BookingStatusLog($booking->getId(), $oldStatus, BookingStatus::CHECKED_IN, $booking->getTenantId());
