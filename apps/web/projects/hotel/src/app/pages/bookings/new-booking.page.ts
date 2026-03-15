@@ -183,7 +183,7 @@ interface BookingTypeOption {
         <!-- Booking type: large tap tiles -->
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Booking Type</p>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          @for (bt of bookingTypes; track bt.value) {
+          @for (bt of bookingTypes(); track bt.value) {
             <button (click)="selectBookingType(bt)"
               class="flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-all active:scale-95"
               [class.border-sage-500]="booking.booking_type === bt.value"
@@ -534,7 +534,7 @@ export class NewBookingPage implements OnInit {
     { num: 6, label: 'Confirm' },
   ];
 
-  bookingTypes: BookingTypeOption[] = [];
+  bookingTypes = signal<BookingTypeOption[]>([]);
 
   booking: any = {
     guest_id: '', room_id: '', booking_type: 'lodge',
@@ -551,7 +551,7 @@ export class NewBookingPage implements OnInit {
   });
 
   selectedType = computed(() =>
-    this.bookingTypes.find(bt => bt.value === this.booking.booking_type) ?? null
+    this.bookingTypes().find(bt => bt.value === this.booking.booking_type) ?? null
   );
 
   ngOnInit(): void {
@@ -575,7 +575,7 @@ export class NewBookingPage implements OnInit {
   }
 
   buildBookingTypes(): void {
-    this.bookingTypes = [
+    this.bookingTypes.set([
       {
         value: 'lodge', label: 'Lodge', icon: '🌙', hourly: false,
         desc: `Overnight stay · Checkout ${this.checkoutTimeStr} noon`,
@@ -600,7 +600,7 @@ export class NewBookingPage implements OnInit {
         value: 'corporate', label: 'Corporate', icon: '🏢', hourly: false,
         desc: `Corporate account · Checkout ${this.checkoutTimeStr} noon`,
       },
-    ];
+    ]);
     // Set default check-in to today 2pm if not already set
     if (!this.booking.check_in) this.setDefaultCheckIn();
   }
