@@ -172,8 +172,8 @@ final class BookingService
         }
 
         // Calculate rate
-        $calc = $halfDayHours = (int) ($property?->getSetting('half_day_hours', 6) ?? 6);
-        $this->rateCalc->calculate($roomType, $bookingType, $checkIn, $checkOut, $dto->discountAmount, $halfDayHours);
+        $halfDayHours = (int) ($property?->getSetting('half_day_hours', 6) ?? 6);
+        $calc = $this->rateCalc->calculate($roomType, $bookingType, $checkIn, $checkOut, $dto->discountAmount, $halfDayHours);
 
         // Generate reference
         $ref = $this->bookingRepo->generateRef($tenantId);
