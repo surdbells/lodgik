@@ -258,7 +258,7 @@ export class HotelLayoutComponent implements OnInit {
       items: [
         { label: 'Dashboard', icon: 'layout-dashboard', route: '/dashboard' },
         { label: 'Bookings',          icon: 'clipboard-list',   route: '/bookings' },
-        { label: 'Live Room Monitor',  icon: 'monitor',           route: '/bookings/checkout-tracker',
+        { label: 'Live Room Monitor',  icon: 'activity',          route: '/bookings/checkout-tracker',
           requiredRoles: ['property_admin','manager','front_desk'] },
         { label: 'Guest Validation',    icon: 'user-check',        route: '/bookings/guest-validation',
           requiredRoles: ['property_admin','manager','front_desk'] },
