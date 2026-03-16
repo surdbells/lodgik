@@ -902,6 +902,15 @@ final class BookingService
             $this->logger->warning("[ExtendCheckout] Could not post folio charge: {$e->getMessage()}");
         }
 
+        // Extend guest portal access code expiry to match new checkout
+        if ($this->guestAuthService !== null) {
+            try {
+                $this->guestAuthService->extendAccessCode($bookingId, $newCheckout);
+            } catch (\Throwable $e) {
+                $this->logger->warning("[ExtendCheckout] Could not extend guest access code: {$e->getMessage()}");
+            }
+        }
+
         $this->em->flush();
 
         // Notify guest

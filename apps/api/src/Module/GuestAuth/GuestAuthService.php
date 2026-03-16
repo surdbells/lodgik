@@ -49,9 +49,12 @@ final class GuestAuthService
         // Generate unique code within tenant
         $code = $this->generateUniqueCode($tenantId);
 
-        // Expires when booking check-out is due (or 30 days max)
-        $booking = $this->bookingRepo->find($bookingId);
-        $expiresAt = $booking ? $booking->getCheckOut() : new \DateTimeImmutable('+30 days');
+        // Expires 14 days after checkout to allow lost & found reporting.
+        // For hourly bookings, checkout could be same day — 14 days ensures guest
+        // can still log a lost item after the stay.
+        $booking   = $this->bookingRepo->find($bookingId);
+        $checkOut  = $booking?->getCheckOut() ?? new \DateTimeImmutable();
+        $expiresAt = $checkOut->modify('+14 days');
 
         $ac = new GuestAccessCode($bookingId, $guestId, $propertyId, $code, $expiresAt, $tenantId);
         $ac->setRoomId($roomId);
@@ -290,4 +293,18 @@ final class GuestAuthService
             'property_id' => $session->getPropertyId(),
         ];
     }
+    /**
+     * Extend the active guest access code for a booking to +14 days after new checkout.
+     * Called when a lodge stay is extended so the guest portal remains accessible.
+     */
+    public function extendAccessCode(string $bookingId, \DateTimeImmutable $newCheckout): void
+    {
+        $ac = $this->codeRepo->findActiveByBooking($bookingId);
+        if ($ac === null) {
+            return; // no active code — nothing to extend
+        }
+        $ac->setExpiresAt($newCheckout->modify('+14 days'));
+        $this->em->flush();
+    }
+
 }
