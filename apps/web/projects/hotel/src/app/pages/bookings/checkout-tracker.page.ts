@@ -172,11 +172,15 @@ const TIER_CONFIG: Record<string, { bg: string; border: string; badge: string; t
               [class]="'bg-white border-gray-200 ' + tierCfg(b).text + ' hover:bg-white'">
               📣 Notify
             </button>
-            <!-- Extend stay -->
-            <button (click)="openExtendUpsell(b)" *hasPerm="'bookings.extend_stay'"
-              class="flex-1 py-2 text-[11px] font-semibold rounded-lg bg-white border border-gray-200 text-sage-700 hover:bg-sage-50 transition-colors">
-              ⏰ Extend
-            </button>
+            <!-- Extend stay — lodge bookings only -->
+            @if (isLodge(b)) {
+              <button (click)="openExtendUpsell(b)" *hasPerm="'bookings.extend_stay'"
+                class="flex-1 py-2 text-[11px] font-semibold rounded-lg bg-white border border-gray-200 text-sage-700 hover:bg-sage-50 transition-colors">
+                ⏰ Extend
+              </button>
+            } @else {
+              <div class="flex-1"></div>
+            }
             <!-- View booking -->
             <a [routerLink]="['/bookings', b.id]"
               class="flex-1 py-2 text-[11px] font-semibold rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors text-center">
@@ -394,6 +398,10 @@ export class CheckoutTrackerPage implements OnInit, OnDestroy {
     if (!dt) return '—';
     const d = new Date(dt);
     return d.toLocaleString('en-NG', { weekday:'short', hour:'2-digit', minute:'2-digit', hour12:true, day:'numeric', month:'short' });
+  }
+
+  isLodge(b: TrackerBooking): boolean {
+    return ['lodge', 'corporate', 'overnight'].includes(b.booking_type);
   }
 
   toggleChannel(ch: string): void {

@@ -822,12 +822,33 @@ final class BookingService
             throw new \InvalidArgumentException('Can only extend a currently checked-in booking.');
         }
 
-        // Parse new checkout
-        $newCheckout = self::parseFlexibleDate($newCheckoutDate);
+        // Only Lodge (overnight) booking types can be extended.
+        // Hourly types (Short Rest, Half Day) have a fixed duration tied to check-in time.
+        if (!$booking->getBookingType()->isLodge()) {
+            throw new \InvalidArgumentException(
+                'Stay extensions are only available for Lodge bookings. ' .
+                'Hourly bookings (Short Rest, Half Day) cannot be extended — ' .
+                'create a new booking for additional time.'
+            );
+        }
 
-        if ($newCheckout === false) {
+        // Parse new checkout date.
+        // The frontend sends a date-only string (Y-m-d). We apply the property's
+        // configured checkout time (default 12:00 noon) so the resulting datetime
+        // matches the standard lodge checkout time.
+        $parsedDate = self::parseFlexibleDate($newCheckoutDate);
+        if ($parsedDate === null) {
             throw new \InvalidArgumentException('Invalid new_checkout_date format. Use Y-m-d or Y-m-d H:i:s.');
         }
+
+        // Apply property checkout time to the date
+        $checkoutTime = '12:00';
+        if ($this->propertyRepo !== null) {
+            $property = $this->propertyRepo->find($booking->getPropertyId());
+            $checkoutTime = $property?->getSetting('checkout_time', '12:00') ?? '12:00';
+        }
+        [$ch, $cm] = array_map('intval', explode(':', $checkoutTime . ':00'));
+        $newCheckout = $parsedDate->setTime($ch, $cm, 0);
 
         $originalCheckout = $booking->getCheckOut();
 
@@ -841,8 +862,10 @@ final class BookingService
             throw new \DomainException('Room is not available for the requested extension period — another booking exists.');
         }
 
-        // Calculate extra nights and charge
-        $extraNights    = max(1, (int) $originalCheckout->diff($newCheckout)->days);
+        // Calculate extra nights (calendar day difference, ignoring time)
+        $origDay   = new \DateTimeImmutable($originalCheckout->format('Y-m-d'));
+        $newDay    = new \DateTimeImmutable($newCheckout->format('Y-m-d'));
+        $extraNights = max(1, (int) $origDay->diff($newDay)->days);
         $ratePerNight   = (float) $booking->getRatePerNight();
         $extraAmount    = $extraNights * $ratePerNight;
         $newTotal       = (float) $booking->getTotalAmount() + $extraAmount;

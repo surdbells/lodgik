@@ -120,11 +120,13 @@ import {
                 </svg>
                 Guest PWA Access
               </button>
-              <!-- Extend Stay -->
-              <button (click)="openExtendStay()"
-                class="px-5 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 text-sm font-medium rounded-lg hover:bg-amber-100 transition-colors flex items-center gap-2">
-                📅 Extend Stay
-              </button>
+              <!-- Extend Stay — lodge bookings only -->
+              @if (isLodgeBooking()) {
+                <button (click)="openExtendStay()"
+                  class="px-5 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 text-sm font-medium rounded-lg hover:bg-amber-100 transition-colors flex items-center gap-2">
+                  📅 Extend Stay
+                </button>
+              }
               <!-- Change Room -->
               <button (click)="openChangeRoom()"
                 class="px-5 py-2.5 bg-violet-50 text-violet-700 border border-violet-200 text-sm font-medium rounded-lg hover:bg-violet-100 transition-colors flex items-center gap-2">
@@ -876,6 +878,11 @@ export class BookingDetailPage implements OnInit {
       if (r.success) { this.toast.success('Guest checked out!'); this.loadBooking(); }
       else this.toast.error(r.message || 'Failed');
     });
+  }
+
+  isLodgeBooking(): boolean {
+    const t = this.booking()?.booking_type ?? '';
+    return ['lodge', 'corporate', 'overnight'].includes(t);
   }
 
   //  Extend Stay 
