@@ -95,6 +95,7 @@ class VisitorAccessCode implements TenantAware
     public function setRoomNumber(?string $v): void { $this->roomNumber = $v; }
     public function getValidFrom(): \DateTimeImmutable { return $this->validFrom; }
     public function getValidUntil(): \DateTimeImmutable { return $this->validUntil; }
+    public function setValidUntil(\DateTimeImmutable $v): void { $this->validUntil = $v; }
     public function getStatus(): string { return $this->status; }
     public function getCheckedInAt(): ?\DateTimeImmutable { return $this->checkedInAt; }
     public function getCheckedOutAt(): ?\DateTimeImmutable { return $this->checkedOutAt; }

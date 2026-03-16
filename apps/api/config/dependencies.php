@@ -907,7 +907,13 @@ return function (ContainerBuilder $builder): void {
             logger: $c->get(LoggerInterface::class),
         ),
         \Lodgik\Module\Security\SecurityController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Security\SecurityController(
-            service: $c->get(\Lodgik\Module\Security\SecurityService::class),
+            service:     $c->get(\Lodgik\Module\Security\SecurityService::class),
+            bookingRepo: $c->get(\Lodgik\Repository\BookingRepository::class),
+            guestRepo:   $c->get(\Lodgik\Repository\GuestRepository::class),
+            roomRepo:    $c->get(\Lodgik\Repository\RoomRepository::class),
+            termii:      $c->get(\Lodgik\Service\TermiiService::class),
+            mailService: $c->get(\Lodgik\Service\ZeptoMailService::class),
+            chatService: $c->get(\Lodgik\Module\Chat\ChatService::class),
         ),
 
         // Phase 7: Room Controls

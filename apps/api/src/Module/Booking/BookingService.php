@@ -1120,6 +1120,27 @@ final class BookingService
     }
 
     /**
+     * Extend all active visitor access codes for a booking to a new checkout time.
+     * Called when a stay is extended so visitor codes don't expire before check-out.
+     */
+    private function extendVisitorCodesForBooking(string $bookingId, \DateTimeImmutable $newCheckout): void
+    {
+        try {
+            /** @var \Lodgik\Entity\VisitorAccessCode[] $codes */
+            $codes = $this->em->getRepository(\Lodgik\Entity\VisitorAccessCode::class)
+                ->findBy(['bookingId' => $bookingId, 'status' => 'active']);
+            foreach ($codes as $vc) {
+                if ($vc->getValidUntil() < $newCheckout) {
+                    $vc->setValidUntil($newCheckout);
+                    $this->em->persist($vc);
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning("[ExtendCheckout] Visitor code extension failed: {$e->getMessage()}");
+        }
+    }
+
+    /**
      * Parse a date string in any of the common formats the frontend sends:
      *   2026-03-15          (date only)
      *   2026-03-15 14:00    (space separator)

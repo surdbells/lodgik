@@ -207,6 +207,42 @@ import {
           </div>
         </div>
 
+        <!--  Visitor Codes  -->
+        @if (booking()!.status === 'checked_in' || booking()!.status === 'checked_out') {
+          <div class="bg-white rounded-xl border border-gray-100 shadow-card p-5 self-start">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-gray-700">Visitor Codes</h3>
+              <a routerLink="/bookings/guest-validation"
+                class="text-xs text-sage-600 border border-sage-200 px-2.5 py-1 rounded-lg hover:bg-sage-50">
+                Validate →
+              </a>
+            </div>
+            @if (loadingVisitorCodes()) {
+              <div class="text-center py-4"><div class="w-5 h-5 border-2 border-sage-300 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
+            } @else if (visitorCodes().length === 0) {
+              <p class="text-xs text-gray-400 py-2">No visitor codes generated for this booking.</p>
+            } @else {
+              <div class="space-y-2">
+                @for (vc of visitorCodes(); track vc.id) {
+                  <div class="flex items-center justify-between px-3 py-2 rounded-lg border text-xs"
+                       [class]="vc.status === 'active' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'">
+                    <div>
+                      <span class="font-mono font-bold" [class]="vc.status === 'active' ? 'text-blue-700' : 'text-gray-500'">
+                        {{ vc.code }}
+                      </span>
+                      <span class="ml-2 text-gray-600">{{ vc.visitor_name }}</span>
+                    </div>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium capitalize"
+                          [class]="vc.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-500'">
+                      {{ vc.status }}
+                    </span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
         <!--  Invoice Rate Override (property_admin only)  -->
         @if (tokenSvc.role() === 'property_admin') {
           <div class="bg-white rounded-xl border border-amber-200 shadow-card p-5 self-start">
@@ -758,6 +794,8 @@ export class BookingDetailPage implements OnInit {
 
   // Guest card state
   activeCard      = signal<any | null>(null);
+  visitorCodes    = signal<any[]>([]);
+  loadingVisitorCodes = signal(false);
   showCardModal   = signal(false);
   issuingCard     = signal(false);
 
@@ -832,6 +870,7 @@ export class BookingDetailPage implements OnInit {
       if (r.success) {
         this.booking.set(r.data);
         this.loadHistory();
+    this.loadVisitorCodes();
         this.loadFolioAndInvoice();
         this.loadActiveCard();
       }
@@ -842,6 +881,14 @@ export class BookingDetailPage implements OnInit {
   loadHistory(): void {
     this.api.get(`/bookings/${this.bookingId}/status-history`).subscribe(r => {
       if (r.success) this.statusHistory.set(r.data ?? []);
+    });
+  }
+
+  loadVisitorCodes(): void {
+    this.loadingVisitorCodes.set(true);
+    this.api.get('/security/visitor-codes', { booking_id: this.bookingId }).subscribe(r => {
+      if (r.success) this.visitorCodes.set(r.data ?? []);
+      this.loadingVisitorCodes.set(false);
     });
   }
 

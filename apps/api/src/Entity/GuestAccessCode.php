@@ -71,6 +71,7 @@ class GuestAccessCode implements TenantAware
     public function isActive(): bool { return $this->isActive; }
     public function setIsActive(bool $v): void { $this->isActive = $v; }
     public function getExpiresAt(): \DateTimeImmutable { return $this->expiresAt; }
+    public function setExpiresAt(\DateTimeImmutable $v): void { $this->expiresAt = $v; }
     public function getLastUsedAt(): ?\DateTimeImmutable { return $this->lastUsedAt; }
     public function setLastUsedAt(?\DateTimeImmutable $v): void { $this->lastUsedAt = $v; }
 

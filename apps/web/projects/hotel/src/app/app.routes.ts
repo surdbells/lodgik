@@ -102,6 +102,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/bookings/checkout-tracker.page').then(m => m.CheckoutTrackerPage),
       },
       {
+        path: 'bookings/guest-validation',
+        loadComponent: () => import('./pages/bookings/additional-guest-validation.page').then(m => m.AdditionalGuestValidationPage),
+      },
+      {
         path: 'bookings/:id',
         loadComponent: () => import('./pages/bookings/booking-detail.page').then(m => m.BookingDetailPage),
       },

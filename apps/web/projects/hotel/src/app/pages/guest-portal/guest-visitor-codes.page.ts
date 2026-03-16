@@ -35,7 +35,12 @@ import { GuestThemeService } from '../../services/guest-theme.service';
       <!-- Create form -->
       @if (showForm()) {
         <div class="rounded-2xl p-5 mb-5" [class]="th.card()">
-          <h3 class="text-sm font-bold mb-4" [class]="th.text()">New Visitor Code</h3>
+          <h3 class="text-sm font-bold mb-3" [class]="th.text()">New Visitor Code</h3>
+          @if (checkoutDisplay()) {
+            <div class="mb-3 px-3 py-2 rounded-xl text-xs" [class]="th.badge()">
+              ⏰ Your stay ends {{ checkoutDisplay() }}
+            </div>
+          }
 
           <div class="space-y-3">
             <div>
@@ -51,19 +56,20 @@ import { GuestThemeService } from '../../services/guest-theme.service';
                 placeholder="+234..." class="w-full rounded-xl px-3 py-2.5 text-sm" [class]="th.input()">
               <p class="text-[11px] mt-1" [class]="th.subtle()">They'll receive the code via SMS if provided</p>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block mb-1" [class]="th.inputLabel()">Valid From *</label>
-                <input type="datetime-local"
-                  (input)="setField('valid_from', $any($event.target).value)"
-                  class="w-full rounded-xl px-3 py-2.5 text-sm" [class]="th.input()">
-              </div>
-              <div>
-                <label class="block mb-1" [class]="th.inputLabel()">Valid Until *</label>
-                <input type="datetime-local"
-                  (input)="setField('valid_until', $any($event.target).value)"
-                  class="w-full rounded-xl px-3 py-2.5 text-sm" [class]="th.input()">
-              </div>
+            <!-- Validity window — auto-filled from booking, editable -->
+            <div>
+              <label class="block mb-1" [class]="th.inputLabel()">Valid From</label>
+              <input type="datetime-local" [value]="form().valid_from"
+                (input)="setField('valid_from', $any($event.target).value)"
+                class="w-full rounded-xl px-3 py-2.5 text-sm" [class]="th.input()">
+              <p class="text-[11px] mt-1" [class]="th.subtle()">Defaults to now</p>
+            </div>
+            <div>
+              <label class="block mb-1" [class]="th.inputLabel()">Valid Until</label>
+              <input type="datetime-local" [value]="form().valid_until"
+                (input)="setField('valid_until', $any($event.target).value)"
+                class="w-full rounded-xl px-3 py-2.5 text-sm" [class]="th.input()">
+              <p class="text-[11px] mt-1" [class]="th.subtle()">Defaults to your checkout time</p>
             </div>
             <div>
               <label class="block mb-1" [class]="th.inputLabel()">Purpose (optional)</label>
@@ -171,8 +177,8 @@ import { GuestThemeService } from '../../services/guest-theme.service';
   `,
 })
 export default class GuestVisitorCodesPage implements OnInit {
-  private api = inject(GuestApiService);
-  readonly th = inject(GuestThemeService);
+  private api    = inject(GuestApiService);
+  readonly th    = inject(GuestThemeService);
 
   readonly ArrowLeftIcon   = ArrowLeft;
   readonly UsersIcon       = Users;
@@ -192,7 +198,33 @@ export default class GuestVisitorCodesPage implements OnInit {
   formError  = signal('');
   form       = signal({ visitor_name: '', visitor_phone: '', valid_from: '', valid_until: '', purpose: '' });
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+    // Pre-fill form dates from booking stored in session
+    const session = this.getSession();
+    const now     = this.toLocal(new Date());
+    const checkout = session?.booking?.check_out;
+    const coStr   = checkout
+      ? this.toLocal(new Date(checkout))
+      : this.toLocal(new Date(Date.now() + 6 * 3600 * 1000));
+    this.form.update(f => ({ ...f, valid_from: now, valid_until: coStr }));
+  }
+
+  checkoutDisplay(): string {
+    const co = this.getSession()?.booking?.check_out;
+    if (!co) return '';
+    return new Date(co).toLocaleDateString('en-NG', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', hour12:true });
+  }
+
+  private getSession(): any {
+    try { return JSON.parse(localStorage.getItem('guest_session') ?? 'null'); } catch { return null; }
+  }
+
+  private toLocal(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+         + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
 
   setField(key: string, value: string): void {
     this.form.update(f => ({ ...f, [key]: value }));
