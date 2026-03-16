@@ -35,7 +35,7 @@ const TIER_CONFIG: Record<string, { bg: string; border: string; badge: string; t
   standalone: true,
   imports: [RouterLink, DecimalPipe, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, HasPermDirective],
   template: `
-    <ui-page-header title="Checkout Tracker" icon="clock" subtitle="Live countdown for all checked-in guests">
+    <ui-page-header title="Live Room Monitor" icon="monitor" subtitle="Live countdown for all checked-in guests">
       <div class="flex items-center gap-2">
         <div class="flex items-center gap-1.5 text-xs text-gray-400">
           <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
