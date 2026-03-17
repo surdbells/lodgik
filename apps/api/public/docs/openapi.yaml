@@ -2815,24 +2815,167 @@ paths:
       tags:
       - Health
       operationId: healthCheck
-      summary: System health check
+      summary: Basic health check
+      description: Returns API status and timestamp. No authentication required.
       security: []
       responses:
-        '401':
-          $ref: '#/components/responses/Unauthorized'
         '200':
-          $ref: '#/components/responses/Success'
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      status: { type: string, example: ok }
+                      service: { type: string, example: lodgik-api }
+                      timestamp: { type: string, format: date-time }
+        '503':
+          description: API unhealthy
   /api/health/detailed:
     get:
       tags:
       - Health
       operationId: healthDetailed
-      summary: Detailed health check with dependency status
+      summary: Comprehensive system health check
+      description: |
+        Returns detailed status of all system components and external services.
+        Requires no authentication (public endpoint). Used by the dashboard System tab.
+
+        **Checks included:**
+        - `api` — version, environment
+        - `database` — PostgreSQL connectivity, latency, version
+        - `redis` — Redis connectivity, latency, memory usage
+        - `email` — ZeptoMail API reachability, from address
+        - `sms` — Termii SMS channel, account balance
+        - `whatsapp` — Termii WhatsApp channel, account balance
+        - `paystack` — Paystack API connectivity, account balance
+        - `fcm` — Firebase Cloud Messaging key presence
+        - `apns` — Apple Push Notifications key file presence
+        - `storage` — Disk usage percentage, free/used GB
+        - `system` — PHP version, memory limit, timezone
+        - `cron` — Scheduled job last-run times inferred from DB logs
+
+        **Status values:** `ok` | `warning` | `degraded` | `error` | `not_configured` | `unknown`
+
+        **Overall status:** `ok` | `degraded` | `error`
+        Returns HTTP 503 when overall status is `error`.
+      security: []
       responses:
-        '401':
-          $ref: '#/components/responses/Unauthorized'
         '200':
-          $ref: '#/components/responses/Success'
+          description: Health check result (ok or degraded)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [ok, degraded, error]
+                      service: { type: string }
+                      uptime: { type: string, example: '3d 12h' }
+                      timestamp: { type: string, format: date-time }
+                      checks:
+                        type: object
+                        properties:
+                          api:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              version: { type: string }
+                              env: { type: string }
+                          database:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              latency_ms: { type: number }
+                              database: { type: string }
+                              version: { type: string }
+                          redis:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              latency_ms: { type: number }
+                              version: { type: string }
+                              memory: { type: string }
+                          email:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              provider: { type: string, example: ZeptoMail }
+                              from_address: { type: string }
+                              latency_ms: { type: number }
+                          sms:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              provider: { type: string, example: Termii }
+                              channel: { type: string, example: SMS }
+                              balance: { type: string, example: '₦500.00' }
+                              latency_ms: { type: number }
+                          whatsapp:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              provider: { type: string, example: Termii }
+                              channel: { type: string, example: WhatsApp }
+                              balance: { type: string }
+                          paystack:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              provider: { type: string, example: Paystack }
+                              balance: { type: string }
+                              latency_ms: { type: number }
+                          fcm:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              provider: { type: string, example: 'Firebase FCM' }
+                              configured: { type: boolean }
+                          apns:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              provider: { type: string, example: 'Apple APNs' }
+                              key_id: { type: string }
+                              team_id: { type: string }
+                              key_file: { type: string }
+                          storage:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              path: { type: string }
+                              total_gb: { type: number }
+                              used_gb: { type: number }
+                              free_gb: { type: number }
+                              used_pct: { type: number }
+                          system:
+                            type: object
+                            properties:
+                              status: { type: string }
+                              php_version: { type: string }
+                              php_sapi: { type: string }
+                              memory_limit: { type: string }
+                              timezone: { type: string }
+                          cron:
+                            type: object
+                            additionalProperties:
+                              type: object
+                              properties:
+                                name: { type: string }
+                                status: { type: string }
+                                schedule: { type: string }
+                                last_run: { type: string, nullable: true }
+        '503':
+          description: System error (core service unreachable)
   /api/merchant/bank:
     post:
       tags:

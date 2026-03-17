@@ -31,7 +31,7 @@ import { catchError } from 'rxjs/operators';
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 
-type DashTab = 'overview' | 'operations' | 'analytics' | 'finance';
+type DashTab = 'overview' | 'operations' | 'analytics' | 'finance' | 'system';
 
 interface Tab {
   id: DashTab;
@@ -46,6 +46,7 @@ const TABS: Tab[] = [
   { id: 'operations',  label: 'Operations',  icon: 'activity',          featureKey: 'basic_analytics',    featureTier: 'All Plans'  },
   { id: 'analytics',   label: 'Analytics',   icon: 'bar-chart-2',       featureKey: 'advanced_analytics', featureTier: 'Business+'  },
   { id: 'finance',     label: 'Finance',     icon: 'circle-dollar-sign',featureKey: 'advanced_analytics', featureTier: 'Business+'  },
+  { id: 'system',      label: 'System',      icon: 'server',            featureKey: 'basic_analytics',    featureTier: 'All Plans'  },
 ];
 
 @Component({
@@ -593,6 +594,163 @@ const TABS: Tab[] = [
 
     </div>
 
+
+      <!-- ── System Health Tab ──────────────────────────────────────────── -->
+      @if (activeTab() === 'system') {
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-xs text-gray-400">
+              @if (health()) {
+                <span class="w-2 h-2 rounded-full inline-block" [class]="healthStatusDot(health().status)"></span>
+                System {{ health().status === 'ok' ? 'Healthy' : health().status === 'degraded' ? 'Degraded' : 'Error' }}
+                &nbsp;·&nbsp; Uptime {{ health().uptime }}
+                &nbsp;·&nbsp; {{ health().timestamp | date:'HH:mm:ss' }}
+              }
+            </div>
+            <button (click)="loadHealth()" [disabled]="healthLoading()"
+              class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+              ↺ Refresh
+            </button>
+          </div>
+
+          @if (healthLoading() && !health()) {
+            <div class="text-center py-16 text-gray-400 text-sm">Loading system status…</div>
+          }
+
+          @if (health()) {
+            <!-- Overall banner -->
+            <div class="flex items-center gap-3 px-5 py-3 rounded-xl border"
+                 [class]="health().status === 'ok'
+                   ? 'bg-emerald-50 border-emerald-200'
+                   : health().status === 'degraded'
+                     ? 'bg-amber-50 border-amber-200'
+                     : 'bg-red-50 border-red-300'">
+              <span class="text-xl">{{ health().status === 'ok' ? '✅' : health().status === 'degraded' ? '⚠️' : '❌' }}</span>
+              <div>
+                <p class="text-sm font-bold" [class]="health().status === 'ok' ? 'text-emerald-800' : 'text-amber-800'">
+                  Lodgik API — {{ health().checks.api?.version }} ({{ health().checks.api?.env }})
+                </p>
+                <p class="text-xs text-gray-500 mt-0.5">
+                  PHP {{ health().checks.system?.php_version }}
+                  · Redis {{ health().checks.redis?.version }}
+                  · DB {{ health().checks.database?.version }}
+                </p>
+              </div>
+            </div>
+
+            <!-- External Services -->
+            <div>
+              <h3 class="text-sm font-bold text-gray-700 mb-3">External Services</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                @for (svc of serviceEntries(); track svc.key) {
+                  <div class="bg-white rounded-xl border shadow-card p-4"
+                       [class]="svc.data.status === 'ok' ? 'border-gray-100'
+                              : svc.data.status === 'not_configured' ? 'border-gray-100'
+                              : 'border-amber-200'">
+                    <div class="flex items-start justify-between mb-2">
+                      <div>
+                        <p class="text-sm font-bold text-gray-800">{{ serviceLabel(svc.key) }}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">{{ svc.data.provider || svc.key }}</p>
+                      </div>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap" [class]="healthStatusClass(svc.data.status)">
+                        {{ healthStatusIcon(svc.data.status) }} {{ titleCase(svc.data.status) }}
+                      </span>
+                    </div>
+                    <div class="space-y-1 text-xs text-gray-500">
+                      @if (svc.data.latency_ms) { <div class="flex justify-between"><span>Latency</span><span class="font-medium">{{ svc.data.latency_ms }}ms</span></div> }
+                      @if (svc.data.balance)    { <div class="flex justify-between"><span>Balance</span><span class="font-medium text-emerald-700">{{ svc.data.balance }}</span></div> }
+                      @if (svc.data.channel)    { <div class="flex justify-between"><span>Channel</span><span class="font-medium">{{ svc.data.channel }}</span></div> }
+                      @if (svc.data.sender_id)  { <div class="flex justify-between"><span>Sender ID</span><span class="font-medium">{{ svc.data.sender_id }}</span></div> }
+                      @if (svc.data.from_address) { <div class="flex justify-between"><span>From</span><span class="font-medium truncate max-w-40">{{ svc.data.from_address }}</span></div> }
+                      @if (svc.data.message)    { <div class="text-amber-600 mt-1 text-[11px]">{{ svc.data.message }}</div> }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Infrastructure row -->
+            <div>
+              <h3 class="text-sm font-bold text-gray-700 mb-3">Infrastructure</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <!-- Database -->
+                <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4">
+                  <div class="flex justify-between items-center mb-2">
+                    <p class="text-sm font-bold text-gray-800">PostgreSQL</p>
+                    <span class="w-2.5 h-2.5 rounded-full" [class]="healthStatusDot(health().checks.database?.status)"></span>
+                  </div>
+                  <div class="space-y-1 text-xs text-gray-500">
+                    <div class="flex justify-between"><span>Latency</span><span>{{ health().checks.database?.latency_ms }}ms</span></div>
+                    <div class="flex justify-between"><span>Database</span><span>{{ health().checks.database?.database }}</span></div>
+                  </div>
+                </div>
+                <!-- Redis -->
+                <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4">
+                  <div class="flex justify-between items-center mb-2">
+                    <p class="text-sm font-bold text-gray-800">Redis</p>
+                    <span class="w-2.5 h-2.5 rounded-full" [class]="healthStatusDot(health().checks.redis?.status)"></span>
+                  </div>
+                  <div class="space-y-1 text-xs text-gray-500">
+                    <div class="flex justify-between"><span>Latency</span><span>{{ health().checks.redis?.latency_ms }}ms</span></div>
+                    <div class="flex justify-between"><span>Memory</span><span>{{ health().checks.redis?.memory }}</span></div>
+                    <div class="flex justify-between"><span>Version</span><span>{{ health().checks.redis?.version }}</span></div>
+                  </div>
+                </div>
+                <!-- Storage -->
+                <div class="bg-white rounded-xl border shadow-card p-4"
+                     [class]="(health().checks.storage?.used_pct || 0) > 80 ? 'border-amber-200' : 'border-gray-100'">
+                  <div class="flex justify-between items-center mb-2">
+                    <p class="text-sm font-bold text-gray-800">Disk Storage</p>
+                    <span class="w-2.5 h-2.5 rounded-full" [class]="healthStatusDot(health().checks.storage?.status)"></span>
+                  </div>
+                  <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                    <div class="h-full rounded-full"
+                         [style.width.%]="health().checks.storage?.used_pct || 0"
+                         [class]="(health().checks.storage?.used_pct || 0) > 80 ? 'bg-red-400' : 'bg-emerald-400'"></div>
+                  </div>
+                  <div class="space-y-1 text-xs text-gray-500">
+                    <div class="flex justify-between"><span>Used</span><span>{{ health().checks.storage?.used_pct }}% ({{ health().checks.storage?.used_gb }}GB)</span></div>
+                    <div class="flex justify-between"><span>Free</span><span class="text-emerald-700">{{ health().checks.storage?.free_gb }}GB</span></div>
+                    <div class="flex justify-between"><span>Total</span><span>{{ health().checks.storage?.total_gb }}GB</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cron Jobs -->
+            <div>
+              <h3 class="text-sm font-bold text-gray-700 mb-3">Scheduled Jobs (Cron)</h3>
+              <div class="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-gray-100 bg-gray-50">
+                      <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Job</th>
+                      <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Schedule</th>
+                      <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Run</th>
+                      <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (job of cronEntries(); track job.key) {
+                      <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3 text-sm font-medium text-gray-800">{{ job.data.name }}</td>
+                        <td class="px-4 py-3 font-mono text-xs text-gray-400 hidden sm:table-cell">{{ job.data.schedule }}</td>
+                        <td class="px-4 py-3 text-xs text-gray-500">{{ job.data.last_run ? formatDate(job.data.last_run) : '—' }}</td>
+                        <td class="px-4 py-3">
+                          <span class="px-2 py-0.5 rounded-full text-[11px] font-bold" [class]="healthStatusClass(job.data.status)">
+                            {{ healthStatusIcon(job.data.status) }} {{ titleCase(job.data.status) }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
     <!-- ═══ UPGRADE CTA TEMPLATE ═══════════════════════════════════ -->
     <ng-template #upgradeCta let-tab="tab">
       <div class="bg-gradient-to-br from-gray-50 to-amber-50 rounded-2xl border border-amber-200 p-10 text-center max-w-md mx-auto mt-4">
@@ -865,8 +1023,69 @@ export class DashboardPage implements OnInit, OnDestroy {
   private lazyLoadActiveTab(pid: string): void {
     const tab = this.activeTab();
     if (tab === 'operations')             this.loadOps(pid);
+    if (tab === 'system')                 this.loadHealth();
     if (tab === 'finance')                this.loadFinance(pid);
     if (tab === 'analytics')              this.loadAnalytics(pid);
+  }
+
+  health        = signal<any>(null);
+  healthLoading = signal(false);
+
+  serviceEntries = computed(() => {
+    const checks = this.health()?.checks ?? {};
+    const serviceKeys = ['email', 'sms', 'whatsapp', 'paystack', 'fcm', 'apns'];
+    return serviceKeys.map(k => ({ key: k, data: checks[k] ?? { status: 'unknown' } }));
+  });
+
+  cronEntries = computed(() => {
+    const cron = this.health()?.checks?.cron ?? {};
+    return Object.entries(cron).map(([k, v]) => ({ key: k, data: v as any }));
+  });
+
+  serviceLabel(key: string): string {
+    const labels: Record<string, string> = {
+      email: 'Email', sms: 'SMS', whatsapp: 'WhatsApp',
+      paystack: 'Paystack Billing', fcm: 'Firebase Push', apns: 'Apple Push (APNs)',
+    };
+    return labels[key] ?? key;
+  }
+
+  titleCase(s: string): string { return s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ') : ''; }
+
+  formatDate(dt: string): string {
+    if (!dt) return '—';
+    return new Date(dt).toLocaleString('en-NG', {
+      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true,
+    });
+  }
+
+  loadHealth(): void {
+    this.healthLoading.set(true);
+    this.api.get('/health/detailed').subscribe(r => {
+      if (r.success) this.health.set(r.data);
+      this.healthLoading.set(false);
+    });
+  }
+
+  healthStatusClass(status: string): string {
+    if (status === 'ok') return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+    if (status === 'warning' || status === 'degraded') return 'bg-amber-100 text-amber-700 border border-amber-200';
+    if (status === 'not_configured') return 'bg-gray-100 text-gray-500 border border-gray-200';
+    return 'bg-red-100 text-red-700 border border-red-200';
+  }
+
+  healthStatusDot(status: string): string {
+    if (status === 'ok') return 'bg-emerald-500';
+    if (status === 'warning' || status === 'degraded') return 'bg-amber-400';
+    if (status === 'not_configured') return 'bg-gray-300';
+    return 'bg-red-500';
+  }
+
+  healthStatusIcon(status: string): string {
+    if (status === 'ok') return '✓';
+    if (status === 'warning' || status === 'degraded') return '⚠';
+    if (status === 'not_configured') return '—';
+    return '✗';
   }
 
   private loadOps(pid: string): void {

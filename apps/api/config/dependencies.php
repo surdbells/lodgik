@@ -230,6 +230,14 @@ return function (ContainerBuilder $builder): void {
             return new RedisClient($parameters, $options);
         },
 
+        \Lodgik\Module\Health\HealthController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Health\HealthController(
+            response: $c->get(ResponseHelper::class),
+            em:       $c->get(EntityManagerInterface::class),
+            redis:    $c->get(RedisClient::class),
+            termii:   $c->get(TermiiService::class),
+            mail:     $c->get(ZeptoMailService::class),
+        ),
+
         // ─── Helpers ───────────────────────────────────────────────
         ResponseHelper::class => function (): ResponseHelper {
             return new ResponseHelper();
