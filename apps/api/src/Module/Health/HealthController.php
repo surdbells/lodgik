@@ -170,15 +170,36 @@ final class HealthController
 
     private function checkEmail(): array
     {
-        $apiKey  = getenv('ZEPTOMAIL_API_KEY')  ?: '';
-        $apiUrl  = getenv('ZEPTOMAIL_API_URL')  ?: '';
-        $from    = getenv('ZEPTOMAIL_FROM_ADDRESS') ?: '';
-
-        if (!$apiKey || $apiKey === 'Zoho-enczapikey <your-send-mail-token>') {
-            return ['status' => 'not_configured', 'provider' => 'ZeptoMail', 'message' => 'API key not set'];
+        // ZeptoMail key is stored in the platform settings DB (via admin panel),
+        // not necessarily in the env var. Use ZeptoMailService to resolve the key
+        // the same way the mailer itself does.
+        if ($this->mail === null) {
+            return ['status' => 'not_configured', 'provider' => 'ZeptoMail', 'message' => 'Service not injected'];
         }
 
-        // Live ping: call ZeptoMail accounts endpoint (no email sent)
+        // Reflect to call resolveApiKey() (private) — or just send a test ping using the resolved key
+        // by calling a harmless info endpoint.
+        // We use reflection only to read the key; no email is sent.
+        try {
+            $ref    = new \ReflectionClass($this->mail);
+            $method = $ref->getMethod('resolveApiKey');
+            $method->setAccessible(true);
+            $apiKey = $method->invoke($this->mail);
+
+            $fromMethod = $ref->getMethod('resolveFromEmail');
+            $fromMethod->setAccessible(true);
+            $fromEmail = $fromMethod->invoke($this->mail);
+        } catch (\Throwable) {
+            // Fallback: env var
+            $apiKey   = getenv('ZEPTOMAIL_API_KEY') ?: '';
+            $fromEmail = getenv('ZEPTOMAIL_FROM_EMAIL') ?: getenv('ZEPTOMAIL_FROM_ADDRESS') ?: '';
+        }
+
+        if (!$apiKey || str_contains($apiKey, '<your-send-mail-token>')) {
+            return ['status' => 'not_configured', 'provider' => 'ZeptoMail', 'message' => 'API key not configured in admin settings'];
+        }
+
+        // Live ping
         try {
             $ctx = stream_context_create(['http' => [
                 'method'  => 'GET',
@@ -186,21 +207,19 @@ final class HealthController
                 'timeout' => 5,
                 'ignore_errors' => true,
             ]]);
-            $start    = microtime(true);
-            $raw      = @file_get_contents('https://api.zeptomail.com/v1.1/accounts', false, $ctx);
+            $start     = microtime(true);
+            @file_get_contents('https://api.zeptomail.com/v1.1/accounts', false, $ctx);
             $latencyMs = round((microtime(true) - $start) * 1000, 2);
-            $code     = (int) preg_replace('/.*HTTP\/\d\.\d (\d{3}).*/s', '$1', $http_response_header[0] ?? '0');
-
-            // 200 or 401 means API is reachable; 401 = wrong key but service up
+            $code      = (int) preg_replace('/.*HTTP\/\d\.\d (\d{3}).*/s', '$1', $http_response_header[0] ?? '0');
             $reachable = in_array($code, [200, 201, 400, 401, 403], true);
 
             return [
                 'status'        => $reachable ? 'ok' : 'error',
                 'provider'      => 'ZeptoMail',
-                'from_address'  => $from,
+                'from_address'  => $fromEmail,
                 'latency_ms'    => $latencyMs,
-                'api_url'       => $apiUrl,
                 'configured'    => true,
+                'key_source'    => 'admin_settings',
             ];
         } catch (\Throwable) {
             return ['status' => 'error', 'provider' => 'ZeptoMail', 'message' => 'API unreachable'];
