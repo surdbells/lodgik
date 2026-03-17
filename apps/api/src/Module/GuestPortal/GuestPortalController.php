@@ -238,7 +238,7 @@ final class GuestPortalController
         $this->chatService->sendMessage(
             bookingId:  $bookingId,
             propertyId: $propertyId,
-            senderType: 'system',
+            senderType: 'staff',
             senderId:   'system',
             senderName: 'Lodgik',
             message:    "✅ Visitor code generated for {$visitorName}: *{$codeStr}*. " .

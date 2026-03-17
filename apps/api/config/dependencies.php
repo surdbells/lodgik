@@ -609,8 +609,11 @@ return function (ContainerBuilder $builder): void {
                 guestAuthService: $c->get(GuestAuthService::class),
                 housekeepingService: $c->get(\Lodgik\Module\Housekeeping\HousekeepingService::class),
                 // Card enforcement — enables per-property gate issuance requirement
-                propertyRepo: $c->get(\Lodgik\Repository\PropertyRepository::class),
-                cardRepo: $c->get(\Lodgik\Repository\GuestCardRepository::class),
+                propertyRepo:        $c->get(\Lodgik\Repository\PropertyRepository::class),
+                cardRepo:            $c->get(\Lodgik\Repository\GuestCardRepository::class),
+                termii:              $c->get(\Lodgik\Service\TermiiService::class),
+                notificationService: $c->get(\Lodgik\Module\Notification\NotificationService::class),
+                mailService:         $c->get(\Lodgik\Service\ZeptoMailService::class),
             );
         },
 
