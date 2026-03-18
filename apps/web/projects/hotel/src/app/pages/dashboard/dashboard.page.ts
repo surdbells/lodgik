@@ -31,7 +31,7 @@ import { catchError } from 'rxjs/operators';
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 
-type DashTab = 'overview' | 'operations' | 'analytics' | 'finance' | 'system';
+type DashTab = 'overview' | 'operations' | 'analytics' | 'finance';
 
 interface Tab {
   id: DashTab;
@@ -46,7 +46,6 @@ const TABS: Tab[] = [
   { id: 'operations',  label: 'Operations',  icon: 'activity',          featureKey: 'basic_analytics',    featureTier: 'All Plans'  },
   { id: 'analytics',   label: 'Analytics',   icon: 'bar-chart-2',       featureKey: 'advanced_analytics', featureTier: 'Business+'  },
   { id: 'finance',     label: 'Finance',     icon: 'circle-dollar-sign',featureKey: 'advanced_analytics', featureTier: 'Business+'  },
-  { id: 'system',      label: 'System',      icon: 'server',            featureKey: 'basic_analytics',    featureTier: 'All Plans'  },
 ];
 
 @Component({
@@ -197,6 +196,71 @@ const TABS: Tab[] = [
               </div>
             </div>
           }
+
+          <!-- ── Alert Bar: Overdue checkouts + dirty rooms + pending arrivals ── -->
+          @if ((overdueCheckouts().length > 0) || (kpi().rooms?.dirty > 0) || (kpi().pending_check_ins > 0)) {
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+              @if (overdueCheckouts().length > 0) {
+                <a routerLink="/bookings/checkout-tracker"
+                  class="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors">
+                  <span class="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center text-red-600 text-lg flex-shrink-0">⚠</span>
+                  <div>
+                    <p class="text-sm font-bold text-red-800">{{ overdueCheckouts().length }} Overdue Checkout{{ overdueCheckouts().length !== 1 ? 's' : '' }}</p>
+                    <p class="text-xs text-red-500 mt-0.5">Requires immediate attention</p>
+                  </div>
+                  <span class="ml-auto text-red-400 text-xs">→</span>
+                </a>
+              }
+              @if (kpi().rooms?.dirty > 0) {
+                <a routerLink="/rooms"
+                  class="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors">
+                  <span class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 text-lg flex-shrink-0">🧹</span>
+                  <div>
+                    <p class="text-sm font-bold text-amber-800">{{ kpi().rooms?.dirty }} Dirty Room{{ kpi().rooms?.dirty !== 1 ? 's' : '' }}</p>
+                    <p class="text-xs text-amber-500 mt-0.5">Awaiting housekeeping</p>
+                  </div>
+                  <span class="ml-auto text-amber-400 text-xs">→</span>
+                </a>
+              }
+              @if (kpi().pending_check_ins > 0) {
+                <a routerLink="/bookings"
+                  class="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors">
+                  <span class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 text-lg flex-shrink-0">🏨</span>
+                  <div>
+                    <p class="text-sm font-bold text-blue-800">{{ kpi().pending_check_ins }} Expected Arrival{{ kpi().pending_check_ins !== 1 ? 's' : '' }}</p>
+                    <p class="text-xs text-blue-500 mt-0.5">Confirmed, not yet checked in</p>
+                  </div>
+                  <span class="ml-auto text-blue-400 text-xs">→</span>
+                </a>
+              }
+            </div>
+          }
+
+          <!-- ── Key metrics row ── -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 text-sm">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4">
+              <p class="text-xs text-gray-400 mb-1">ADR</p>
+              <p class="text-xl font-black text-gray-900">₦{{ (+kpi().adr || 0).toLocaleString() }}</p>
+              <p class="text-[11px] text-gray-400 mt-1">Avg daily rate</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4">
+              <p class="text-xs text-gray-400 mb-1">RevPAR</p>
+              <p class="text-xl font-black text-gray-900">₦{{ (+kpi().revpar || 0).toLocaleString() }}</p>
+              <p class="text-[11px] text-gray-400 mt-1">Revenue per room</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4">
+              <p class="text-xs text-gray-400 mb-1">Available</p>
+              <p class="text-xl font-black text-emerald-600">{{ kpi().rooms?.available || 0 }}</p>
+              <p class="text-[11px] text-gray-400 mt-1">Clean & ready</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4">
+              <p class="text-xs text-gray-400 mb-1">Out of Order</p>
+              <p class="text-xl font-black" [class]="(kpi().rooms?.out_of_order || 0) > 0 ? 'text-red-500' : 'text-gray-300'">
+                {{ (kpi().rooms?.out_of_order || 0) + (kpi().rooms?.maintenance || 0) }}
+              </p>
+              <p class="text-[11px] text-gray-400 mt-1">OOO + Maintenance</p>
+            </div>
+          </div>
 
           <!-- Activity feed + quick actions -->
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -595,162 +659,6 @@ const TABS: Tab[] = [
     </div>
 
 
-      <!-- ── System Health Tab ──────────────────────────────────────────── -->
-      @if (activeTab() === 'system') {
-        <div class="space-y-5">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-xs text-gray-400">
-              @if (health()) {
-                <span class="w-2 h-2 rounded-full inline-block" [class]="healthStatusDot(health().status)"></span>
-                System {{ health().status === 'ok' ? 'Healthy' : health().status === 'degraded' ? 'Degraded' : 'Error' }}
-                &nbsp;·&nbsp; Uptime {{ health().uptime }}
-                &nbsp;·&nbsp; {{ health().timestamp | date:'HH:mm:ss' }}
-              }
-            </div>
-            <button (click)="loadHealth()" [disabled]="healthLoading()"
-              class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50">
-              ↺ Refresh
-            </button>
-          </div>
-
-          @if (healthLoading() && !health()) {
-            <div class="text-center py-16 text-gray-400 text-sm">Loading system status…</div>
-          }
-
-          @if (health()) {
-            <!-- Overall banner -->
-            <div class="flex items-center gap-3 px-5 py-3 rounded-xl border"
-                 [class]="health().status === 'ok'
-                   ? 'bg-emerald-50 border-emerald-200'
-                   : health().status === 'degraded'
-                     ? 'bg-amber-50 border-amber-200'
-                     : 'bg-red-50 border-red-300'">
-              <span class="text-xl">{{ health().status === 'ok' ? '✅' : health().status === 'degraded' ? '⚠️' : '❌' }}</span>
-              <div>
-                <p class="text-sm font-bold" [class]="health().status === 'ok' ? 'text-emerald-800' : 'text-amber-800'">
-                  Lodgik API — {{ health().checks.api?.version }} ({{ health().checks.api?.env }})
-                </p>
-                <p class="text-xs text-gray-500 mt-0.5">
-                  PHP {{ health().checks.system?.php_version }}
-                  · Redis {{ health().checks.redis?.version }}
-                  · DB {{ health().checks.database?.version }}
-                </p>
-              </div>
-            </div>
-
-            <!-- External Services -->
-            <div>
-              <h3 class="text-sm font-bold text-gray-700 mb-3">External Services</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                @for (svc of serviceEntries(); track svc.key) {
-                  <div class="bg-white rounded-xl border shadow-card p-4"
-                       [class]="svc.data.status === 'ok' ? 'border-gray-100'
-                              : svc.data.status === 'not_configured' ? 'border-gray-100'
-                              : 'border-amber-200'">
-                    <div class="flex items-start justify-between mb-2">
-                      <div>
-                        <p class="text-sm font-bold text-gray-800">{{ serviceLabel(svc.key) }}</p>
-                        <p class="text-xs text-gray-400 mt-0.5">{{ svc.data.provider || svc.key }}</p>
-                      </div>
-                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap" [class]="healthStatusClass(svc.data.status)">
-                        {{ healthStatusIcon(svc.data.status) }} {{ titleCase(svc.data.status) }}
-                      </span>
-                    </div>
-                    <div class="space-y-1 text-xs text-gray-500">
-                      @if (svc.data.latency_ms) { <div class="flex justify-between"><span>Latency</span><span class="font-medium">{{ svc.data.latency_ms }}ms</span></div> }
-                      @if (svc.data.balance)    { <div class="flex justify-between"><span>Balance</span><span class="font-medium text-emerald-700">{{ svc.data.balance }}</span></div> }
-                      @if (svc.data.channel)    { <div class="flex justify-between"><span>Channel</span><span class="font-medium">{{ svc.data.channel }}</span></div> }
-                      @if (svc.data.sender_id)  { <div class="flex justify-between"><span>Sender ID</span><span class="font-medium">{{ svc.data.sender_id }}</span></div> }
-                      @if (svc.data.from_address) { <div class="flex justify-between"><span>From</span><span class="font-medium truncate max-w-40">{{ svc.data.from_address }}</span></div> }
-                      @if (svc.data.message)    { <div class="text-amber-600 mt-1 text-[11px]">{{ svc.data.message }}</div> }
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-
-            <!-- Infrastructure row -->
-            <div>
-              <h3 class="text-sm font-bold text-gray-700 mb-3">Infrastructure</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <!-- Database -->
-                <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4">
-                  <div class="flex justify-between items-center mb-2">
-                    <p class="text-sm font-bold text-gray-800">PostgreSQL</p>
-                    <span class="w-2.5 h-2.5 rounded-full" [class]="healthStatusDot(health().checks.database?.status)"></span>
-                  </div>
-                  <div class="space-y-1 text-xs text-gray-500">
-                    <div class="flex justify-between"><span>Latency</span><span>{{ health().checks.database?.latency_ms }}ms</span></div>
-                    <div class="flex justify-between"><span>Database</span><span>{{ health().checks.database?.database }}</span></div>
-                  </div>
-                </div>
-                <!-- Redis -->
-                <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4">
-                  <div class="flex justify-between items-center mb-2">
-                    <p class="text-sm font-bold text-gray-800">Redis</p>
-                    <span class="w-2.5 h-2.5 rounded-full" [class]="healthStatusDot(health().checks.redis?.status)"></span>
-                  </div>
-                  <div class="space-y-1 text-xs text-gray-500">
-                    <div class="flex justify-between"><span>Latency</span><span>{{ health().checks.redis?.latency_ms }}ms</span></div>
-                    <div class="flex justify-between"><span>Memory</span><span>{{ health().checks.redis?.memory }}</span></div>
-                    <div class="flex justify-between"><span>Version</span><span>{{ health().checks.redis?.version }}</span></div>
-                  </div>
-                </div>
-                <!-- Storage -->
-                <div class="bg-white rounded-xl border shadow-card p-4"
-                     [class]="(health().checks.storage?.used_pct || 0) > 80 ? 'border-amber-200' : 'border-gray-100'">
-                  <div class="flex justify-between items-center mb-2">
-                    <p class="text-sm font-bold text-gray-800">Disk Storage</p>
-                    <span class="w-2.5 h-2.5 rounded-full" [class]="healthStatusDot(health().checks.storage?.status)"></span>
-                  </div>
-                  <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
-                    <div class="h-full rounded-full"
-                         [style.width.%]="health().checks.storage?.used_pct || 0"
-                         [class]="(health().checks.storage?.used_pct || 0) > 80 ? 'bg-red-400' : 'bg-emerald-400'"></div>
-                  </div>
-                  <div class="space-y-1 text-xs text-gray-500">
-                    <div class="flex justify-between"><span>Used</span><span>{{ health().checks.storage?.used_pct }}% ({{ health().checks.storage?.used_gb }}GB)</span></div>
-                    <div class="flex justify-between"><span>Free</span><span class="text-emerald-700">{{ health().checks.storage?.free_gb }}GB</span></div>
-                    <div class="flex justify-between"><span>Total</span><span>{{ health().checks.storage?.total_gb }}GB</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Cron Jobs -->
-            <div>
-              <h3 class="text-sm font-bold text-gray-700 mb-3">Scheduled Jobs (Cron)</h3>
-              <div class="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden">
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr class="border-b border-gray-100 bg-gray-50">
-                      <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Job</th>
-                      <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Schedule</th>
-                      <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Run</th>
-                      <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (job of cronEntries(); track job.key) {
-                      <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                        <td class="px-4 py-3 text-sm font-medium text-gray-800">{{ job.data.name }}</td>
-                        <td class="px-4 py-3 font-mono text-xs text-gray-400 hidden sm:table-cell">{{ job.data.schedule }}</td>
-                        <td class="px-4 py-3 text-xs text-gray-500">{{ job.data.last_run ? formatDate(job.data.last_run) : '—' }}</td>
-                        <td class="px-4 py-3">
-                          <span class="px-2 py-0.5 rounded-full text-[11px] font-bold" [class]="healthStatusClass(job.data.status)">
-                            {{ healthStatusIcon(job.data.status) }} {{ titleCase(job.data.status) }}
-                          </span>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          }
-        </div>
-      }
-
     <!-- ═══ UPGRADE CTA TEMPLATE ═══════════════════════════════════ -->
     <ng-template #upgradeCta let-tab="tab">
       <div class="bg-gradient-to-br from-gray-50 to-amber-50 rounded-2xl border border-amber-200 p-10 text-center max-w-md mx-auto mt-4">
@@ -792,6 +700,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   // Operations tab
   hkSummary = signal<any | null>(null);
+  overdueCheckouts = signal<any[]>([]);
   srSummary = signal<any | null>(null);
 
   // Finance tab
@@ -997,6 +906,8 @@ export class DashboardPage implements OnInit, OnDestroy {
         this.loading.set(false);
         // Eager-load the active tab's data
         this.lazyLoadActiveTab(pid);
+        // Load overdue checkouts for alert bar
+        this.loadOverdueCheckouts(pid);
       },
       error: () => this.loading.set(false),
     });
@@ -1023,7 +934,6 @@ export class DashboardPage implements OnInit, OnDestroy {
   private lazyLoadActiveTab(pid: string): void {
     const tab = this.activeTab();
     if (tab === 'operations')             this.loadOps(pid);
-    if (tab === 'system')                 this.loadHealth();
     if (tab === 'finance')                this.loadFinance(pid);
     if (tab === 'analytics')              this.loadAnalytics(pid);
   }
@@ -1086,6 +996,12 @@ export class DashboardPage implements OnInit, OnDestroy {
     if (status === 'warning' || status === 'degraded') return '⚠';
     if (status === 'not_configured') return '—';
     return '✗';
+  }
+
+  loadOverdueCheckouts(pid: string): void {
+    this.api.get('/bookings/checkout-tracker', { property_id: pid }).subscribe(r => {
+      if (r.success) this.overdueCheckouts.set((r.data ?? []).filter((b: any) => b.is_overdue));
+    });
   }
 
   private loadOps(pid: string): void {

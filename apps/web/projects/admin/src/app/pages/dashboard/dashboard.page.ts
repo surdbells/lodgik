@@ -93,6 +93,104 @@ import { LineChartComponent, DonutChartComponent, BarChartComponent, SparklineCh
         </div>
       </div>
     }
+
+      <!-- ── System Health ── -->
+      <div class="mt-8">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-gray-800">System Health</h2>
+          <button (click)="loadHealth()" [disabled]="healthLoading()"
+            class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center gap-1.5">
+            <span [class.animate-spin]="healthLoading()">↺</span> Refresh
+          </button>
+        </div>
+        @if (!health() && !healthLoading()) {
+          <button (click)="loadHealth()" class="w-full py-6 border border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:bg-gray-50">
+            Click to load system status
+          </button>
+        }
+        @if (healthLoading() && !health()) {
+          <div class="text-center py-8 text-gray-400 text-sm">Checking all services…</div>
+        }
+        @if (health()) {
+          <div class="flex items-center gap-3 px-4 py-3 rounded-xl border mb-4"
+               [class]="health().status==='ok'?'bg-emerald-50 border-emerald-200':health().status==='degraded'?'bg-amber-50 border-amber-200':'bg-red-50 border-red-300'">
+            <span class="text-lg">{{ health().status==='ok'?'✅':health().status==='degraded'?'⚠️':'❌' }}</span>
+            <div>
+              <p class="text-sm font-bold" [class]="health().status==='ok'?'text-emerald-800':'text-amber-800'">
+                Lodgik API {{ health().checks.api?.version }} · {{ health().status.toUpperCase() }} · Uptime {{ health().uptime }}
+              </p>
+              <p class="text-xs text-gray-500 mt-0.5">PHP {{ health().checks.system?.php_version }} · Redis {{ health().checks.redis?.version }} · {{ fmtTime(health().timestamp) }}</p>
+            </div>
+          </div>
+
+          <!-- Services -->
+          <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+            @for (svc of serviceEntries(); track svc.key) {
+              <div class="bg-white rounded-xl border shadow-card p-3" [class]="svc.data.status!=='ok'&&svc.data.status!=='not_configured'?'border-amber-200':'border-gray-100'">
+                <div class="flex justify-between items-start mb-1">
+                  <p class="text-xs font-bold text-gray-800">{{ serviceLabel(svc.key) }}</p>
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full" [class]="hsc(svc.data.status)">{{ hsi(svc.data.status) }} {{ tc(svc.data.status) }}</span>
+                </div>
+                <div class="text-[11px] text-gray-500 space-y-0.5">
+                  @if (svc.data.latency_ms) { <div>{{ svc.data.latency_ms }}ms</div> }
+                  @if (svc.data.balance)    { <div class="text-emerald-700">{{ svc.data.balance }}</div> }
+                  @if (svc.data.from_address) { <div class="truncate">{{ svc.data.from_address }}</div> }
+                  @if (svc.data.message)    { <div class="text-amber-600">{{ svc.data.message }}</div> }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Infrastructure + Cron side by side -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Infra -->
+            <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4">
+              <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Infrastructure</p>
+              <div class="space-y-3">
+                @if (health().checks.database) {
+                  <div class="flex justify-between items-center text-xs">
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" [class]="hsd(health().checks.database.status)"></span><span class="font-medium">PostgreSQL</span></div>
+                    <span class="text-gray-500">{{ health().checks.database.latency_ms }}ms · {{ health().checks.database.database }}</span>
+                  </div>
+                }
+                @if (health().checks.redis) {
+                  <div class="flex justify-between items-center text-xs">
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" [class]="hsd(health().checks.redis.status)"></span><span class="font-medium">Redis</span></div>
+                    <span class="text-gray-500">{{ health().checks.redis.latency_ms }}ms · {{ health().checks.redis.memory }}</span>
+                  </div>
+                }
+                @if (health().checks.storage) {
+                  <div>
+                    <div class="flex justify-between text-xs mb-1">
+                      <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" [class]="hsd(health().checks.storage.status)"></span><span class="font-medium">Disk</span></div>
+                      <span class="text-gray-500">{{ health().checks.storage.used_pct }}% · {{ health().checks.storage.free_gb }}GB free</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div class="h-full rounded-full" [style.width.%]="health().checks.storage.used_pct" [class]="(health().checks.storage.used_pct||0)>80?'bg-red-400':'bg-emerald-400'"></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+            <!-- Cron -->
+            <div class="bg-white rounded-xl border border-gray-100 shadow-card p-4">
+              <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Scheduled Jobs</p>
+              <div class="space-y-2">
+                @for (job of cronEntries(); track job.key) {
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-700 truncate max-w-48">{{ job.data.name }}</span>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                      <span class="text-gray-400 font-mono hidden sm:inline">{{ job.data.schedule }}</span>
+                      <span class="px-1.5 py-0.5 rounded text-[10px] font-bold" [class]="hsc(job.data.status)">{{ hsi(job.data.status) }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
   `,
 })
 export class DashboardPage implements OnInit {
@@ -153,5 +251,25 @@ export class DashboardPage implements OnInit {
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  health        = signal<any>(null);
+  healthLoading = signal(false);
+  serviceEntries = () => {
+    const checks = this.health()?.checks ?? {};
+    return ['email','sms','whatsapp','paystack','fcm','apns']
+      .map(k => ({ key: k, data: checks[k] ?? { status: 'unknown' } }));
+  };
+  cronEntries = () => Object.entries(this.health()?.checks?.cron ?? {}).map(([k,v]) => ({ key: k, data: v as any }));
+  serviceLabel(k: string): string { return ({email:'Email',sms:'SMS',whatsapp:'WhatsApp',paystack:'Paystack Billing',fcm:'Firebase Push',apns:'Apple Push (APNs)'})[k as keyof object] ?? k; }
+  hsc(s: string): string { return s==='ok'?'bg-emerald-100 text-emerald-700 border border-emerald-200':s==='warning'||s==='degraded'?'bg-amber-100 text-amber-700 border border-amber-200':s==='not_configured'?'bg-gray-100 text-gray-500 border border-gray-200':'bg-red-100 text-red-700 border border-red-200'; }
+  hsd(s: string): string { return s==='ok'?'bg-emerald-500':s==='warning'||s==='degraded'?'bg-amber-400':s==='not_configured'?'bg-gray-300':'bg-red-500'; }
+  hsi(s: string): string { return s==='ok'?'✓':s==='warning'||s==='degraded'?'⚠':s==='not_configured'?'—':'✗'; }
+  tc(s: string): string { return s?s.charAt(0).toUpperCase()+s.slice(1).replace(/_/g,' '):''; }
+  fd(dt: string): string { return dt?new Date(dt).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true}):'—'; }
+  fmtTime(dt: string): string { return dt?new Date(dt).toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):''; }
+  loadHealth(): void {
+    this.healthLoading.set(true);
+    this.api.get('/health/detailed').subscribe(r => { if (r.success) this.health.set(r.data); this.healthLoading.set(false); });
   }
 }
