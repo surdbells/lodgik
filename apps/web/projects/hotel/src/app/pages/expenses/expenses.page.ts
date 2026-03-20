@@ -1,11 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, AuthService, StatsCardComponent, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, QrFileUploadComponent, ReceiptActionsComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, AuthService, StatsCardComponent, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, QrFileUploadComponent, ReceiptActionsComponent, AmountInputDirective } from '@lodgik/shared';
 
 @Component({
   selector: 'app-expenses',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ConfirmDialogComponent, QrFileUploadComponent, ReceiptActionsComponent],
+  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ConfirmDialogComponent, QrFileUploadComponent, ReceiptActionsComponent, AmountInputDirective],
   template: `
     <ui-confirm-dialog/>
     <ui-page-header title="Expenses" icon="receipt" [breadcrumbs]="['Finance', 'Expenses']" subtitle="Track and approve operational expenses">

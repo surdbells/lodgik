@@ -824,6 +824,8 @@ return function (ContainerBuilder $builder): void {
             em:                    $c->get(EntityManagerInterface::class),
             termii:                $c->get(TermiiService::class),
             loyaltyService:        $c->get(\Lodgik\Module\Loyalty\LoyaltyService::class),
+            posService:            $c->get(\Lodgik\Module\Pos\PosService::class),
+            logger:                $c->get(LoggerInterface::class),
         ),
 
         ServiceRequestService::class => fn(ContainerInterface $c) => new ServiceRequestService(

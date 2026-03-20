@@ -125,7 +125,7 @@ import { GuestThemeService } from '../../services/guest-theme.service';
         @for (code of codes(); track code.id) {
           <div class="rounded-2xl p-4 mb-3" [class]="th.card()">
             <!-- Code + status -->
-            <div class="flex items-start justify-between mb-3">
+            <div class="flex items-start justify-between mb-2">
               <div>
                 <div class="text-2xl font-black font-mono tracking-widest text-amber-400">
                   {{ code.code }}
@@ -146,6 +146,30 @@ import { GuestThemeService } from '../../services/guest-theme.service';
                 }
               </div>
             </div>
+
+            <!-- Copy + Share actions -->
+            @if (code.status === 'active') {
+              <div class="flex gap-2 mb-3">
+                <button (click)="copyCode(code)"
+                  class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                  [class]="copiedId() === code.id ? 'bg-emerald-500 text-white' : th.badge()">
+                  @if (copiedId() === code.id) {
+                    ✓ Copied!
+                  } @else {
+                    <lucide-icon [img]="QrCodeIcon" class="w-3.5 h-3.5"></lucide-icon>
+                    Copy Code
+                  }
+                </button>
+                @if (canShare) {
+                  <button (click)="shareCode(code)"
+                    class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                    [class]="th.badge()">
+                    <lucide-icon [img]="UsersIcon" class="w-3.5 h-3.5"></lucide-icon>
+                    Share
+                  </button>
+                }
+              </div>
+            }
 
             <!-- Details -->
             <div class="space-y-1.5">
@@ -192,6 +216,8 @@ export default class GuestVisitorCodesPage implements OnInit {
   readonly PhoneIcon       = Phone;
 
   codes      = signal<any[]>([]);
+  copiedId   = signal<string | null>(null);
+  canShare   = 'share' in navigator;
   loading    = signal(true);
   showForm   = signal(false);
   creating   = signal(false);
@@ -267,6 +293,27 @@ export default class GuestVisitorCodesPage implements OnInit {
         this.formError.set(e?.error?.error?.message ?? 'Failed to generate code');
       },
     });
+  }
+
+  copyCode(code: any): void {
+    const text = `Visitor Code: ${code.code}\nFor: ${code.visitor_name}\nValid: ${code.valid_from} – ${code.valid_until}`;
+    navigator.clipboard.writeText(text).then(() => {
+      this.copiedId.set(code.id);
+      setTimeout(() => this.copiedId.set(null), 2500);
+    }).catch(() => {
+      // Fallback: select the code text
+      this.copiedId.set(code.id);
+      setTimeout(() => this.copiedId.set(null), 2500);
+    });
+  }
+
+  shareCode(code: any): void {
+    const session = (() => { try { return JSON.parse(localStorage.getItem('guest_session') ?? 'null'); } catch { return null; } })();
+    const hotel = session?.property?.name ?? 'the hotel';
+    navigator.share({
+      title: `Visitor Code for ${hotel}`,
+      text: `Your visitor code is: ${code.code}\nPresent this at the front desk.\nValid: ${code.valid_from} – ${code.valid_until}`,
+    }).catch(() => {});
   }
 
   revoke(id: string): void {

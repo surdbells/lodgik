@@ -2,11 +2,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
-import {
-  ApiService, PageHeaderComponent, LoadingSpinnerComponent,
-  ToastService, ActivePropertyService,
-} from '@lodgik/shared';
-import { AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ActivePropertyService, AuthService, AmountInputDirective } from '@lodgik/shared';
 
 // Booking type definitions
 interface BookingTypeOption {
@@ -22,7 +18,7 @@ interface BookingTypeOption {
 @Component({
   selector: 'app-new-booking',
   standalone: true,
-  imports: [FormsModule, DecimalPipe, RouterLink, PageHeaderComponent, LoadingSpinnerComponent],
+  imports: [FormsModule, DecimalPipe, RouterLink, PageHeaderComponent, LoadingSpinnerComponent, AmountInputDirective],
   template: `
     <ui-page-header title="New Booking" subtitle="Create a reservation">
       <a routerLink="/bookings" class="px-4 py-2 text-sm border border-gray-300 rounded-xl hover:bg-gray-50">← Cancel</a>
@@ -342,7 +338,7 @@ interface BookingTypeOption {
                 class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white">
               <div class="relative">
                 <span class="absolute left-2 top-2 text-xs text-gray-400">₦</span>
-                <input [(ngModel)]="addon.amount" type="number" placeholder="0"
+                <input uiAmount [(ngModel)]="addon.amount" type="text" placeholder="0"
                   class="w-28 pl-6 pr-2 py-2 border border-gray-200 rounded-lg text-sm bg-white">
               </div>
               <div class="flex items-center border border-gray-200 rounded-lg bg-white overflow-hidden">
@@ -396,7 +392,7 @@ interface BookingTypeOption {
           }
           <div class="pt-2">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">Discount (₦)</label>
-            <input [(ngModel)]="booking.discount_amount" type="number" min="0" (ngModelChange)="previewRate()"
+            <input uiAmount [(ngModel)]="booking.discount_amount" type="text" min="0" (ngModelChange)="previewRate()"
               class="w-48 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
           </div>
           @if (+booking.discount_amount > 0) {

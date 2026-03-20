@@ -14,6 +14,7 @@ const QUICK_ACTIONS = [
   { label: 'My Bill',       icon: 'receipt',      route: '/guest/folio',          color: 'text-amber-400' },
   { label: 'Room Service',  icon: 'bell',         route: '/guest/services',       color: 'text-amber-400' },
   { label: 'Chat Staff',    icon: 'chat',         route: '/guest/chat',           color: 'text-amber-400' },
+  { label: 'Restaurant',     icon: 'utensils',     route: '/guest/restaurant',     color: 'text-orange-400' },
   { label: 'Visitors',      icon: 'users',        route: '/guest/visitor-codes',  color: 'text-blue-400'  },
   { label: 'Extend Stay',   icon: 'calendar',     route: '/guest/stay-extension', color: 'text-purple-400' },
   { label: 'Room Controls', icon: 'sliders',      route: '/guest/room-controls',  color: 'text-emerald-400' },

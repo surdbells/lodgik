@@ -334,6 +334,7 @@ export class CheckoutTrackerPage implements OnInit, OnDestroy {
   extendNotifyGuest = true;
 
   private pollInterval: any;
+  isFullscreen = signal(false);
 
   notifyChannelOptions = [
     { value: 'sms',      icon: '💬', label: 'SMS' },
@@ -368,8 +369,25 @@ export class CheckoutTrackerPage implements OnInit, OnDestroy {
       .filter(t => t.count > 0);
   });
 
-  ngOnInit(): void { this.load(); this.pollInterval = setInterval(() => this.load(), 60_000); }
-  ngOnDestroy(): void { if (this.pollInterval) clearInterval(this.pollInterval); }
+  ngOnInit(): void {
+    this.load();
+    this.pollInterval = setInterval(() => this.load(), 60_000);
+    document.addEventListener('fullscreenchange', this._fsListener);
+  }
+  ngOnDestroy(): void {
+    if (this.pollInterval) clearInterval(this.pollInterval);
+    document.removeEventListener('fullscreenchange', this._fsListener);
+  }
+
+  private _fsListener = () => this.isFullscreen.set(!!document.fullscreenElement);
+
+  toggleFullscreen(): void {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }
 
   load(): void {
     const pid = this.activeProperty.propertyId();

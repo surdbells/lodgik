@@ -14,6 +14,7 @@ export * from './lib/components';
 export { FeatureGateDirective } from './lib/directives/feature-gate.directive';
 export { HasPermDirective }     from './lib/directives/has-perm.directive';
 export { PermDisableDirective } from './lib/directives/perm-disable.directive';
+export { AmountInputDirective } from './lib/directives/amount-input.directive';
 
 // Pipes
 export { TimeAgoPipe, FileSizePipe, TruncatePipe, StatusVariantPipe } from './lib/pipes';

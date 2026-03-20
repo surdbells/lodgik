@@ -402,6 +402,22 @@ export const routes: Routes = [
   // Must be BEFORE the wildcard route or Angular matches '**' first and redirects
   // to '' (the authGuard shell) → admin login page.
   {
+    path: 'tablet',
+    loadComponent: () => import('./pages/tablet-pwa/tablet-layout.component').then(m => m.TabletLayoutComponent),
+    children: [
+      { path: '', redirectTo: 'idle', pathMatch: 'full' },
+      { path: 'idle',         loadComponent: () => import('./pages/tablet-pwa/tablet-idle.page').then(m => m.TabletIdlePage) },
+      { path: 'setup',        loadComponent: () => import('./pages/tablet-pwa/tablet-setup.page').then(m => m.TabletSetupPage) },
+      { path: 'home',         loadComponent: () => import('./pages/tablet-pwa/tablet-home.page').then(m => m.TabletHomePage) },
+      { path: 'room-service', loadComponent: () => import('./pages/tablet-pwa/tablet-room-service.page').then(m => m.TabletRoomServicePage) },
+      { path: 'bill',         loadComponent: () => import('./pages/tablet-pwa/tablet-bill.page').then(m => m.TabletBillPage) },
+      { path: 'chat',         loadComponent: () => import('./pages/tablet-pwa/tablet-chat.page').then(m => m.TabletChatPage) },
+      { path: 'controls',     loadComponent: () => import('./pages/tablet-pwa/tablet-controls.page').then(m => m.TabletControlsPage) },
+      { path: 'info',         loadComponent: () => import('./pages/tablet-pwa/tablet-info.page').then(m => m.TabletInfoPage) },
+      { path: 'spa',          loadComponent: () => import('./pages/guest-portal/guest-spa.page') },
+    ],
+  },
+  {
     path: 'guest',
     loadComponent: () => import('./pages/guest-portal/guest-layout.component').then(m => m.GuestLayoutComponent),
     children: [
@@ -419,6 +435,7 @@ export const routes: Routes = [
       { path: 'hotel-info',     loadComponent: () => import('./pages/guest-portal/guest-hotel-info.page') },
       { path: 'spa',            loadComponent: () => import('./pages/guest-portal/guest-spa.page') },
       { path: 'preferences',    loadComponent: () => import('./pages/guest-portal/guest-preferences.page') },
+      { path: 'restaurant',     loadComponent: () => import('./pages/guest-portal/guest-restaurant.page') },
     ],
   },
 

@@ -37,13 +37,36 @@ import {
               </option>
             }
           </select>
-          <select [(ngModel)]="orderForm.order_type" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+          <select [(ngModel)]="orderForm.order_type" (ngModelChange)="onOrderTypeChange()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
             <option value="dine_in">Dine In</option>
             <option value="takeaway">Takeaway</option>
-            <option value="room_service">Room Service</option>
+            <option value="room_service">Room Service 🛎</option>
           </select>
-          <input [(ngModel)]="orderForm.guest_name" placeholder="Guest name (optional)"
-            class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+          @if (orderForm.order_type === 'room_service') {
+            <!-- Room service: search checked-in guests -->
+            <div class="relative">
+              <input [(ngModel)]="roomServiceSearch" (ngModelChange)="searchCheckedIn()"
+                [placeholder]="orderForm.booking_id ? '✓ ' + orderForm.guest_name : 'Search room or guest…'"
+                class="w-full px-3 py-2 border rounded-lg text-sm"
+                [class.border-sage-400]="orderForm.booking_id"
+                [class.border-gray-200]="!orderForm.booking_id">
+              @if (checkedInResults().length > 0) {
+                <div class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                  @for (b of checkedInResults(); track b.id) {
+                    <button (click)="selectRoomServiceGuest(b)"
+                      class="w-full text-left px-3 py-2.5 text-sm hover:bg-sage-50 border-b border-gray-50 last:border-0">
+                      <span class="font-semibold">Room {{ b.room_number }}</span>
+                      <span class="text-gray-500 ml-2">{{ b.guest_name }}</span>
+                      <span class="text-xs text-gray-400 ml-2">{{ b.booking_type_label }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <input [(ngModel)]="orderForm.guest_name" placeholder="Guest name (optional)"
+              class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+          }
         </div>
         <div class="flex gap-2 mt-3">
           <button (click)="createOrder()" [disabled]="creatingOrder()"
@@ -269,7 +292,10 @@ export class PosPage implements OnInit {
   editingTable: any = null;
 
   tableForm: any = { number: '', seats: 4, section: 'restaurant', status: 'available' };
-  orderForm: any = { table_id: '', order_type: 'dine_in', guest_name: '' };
+  orderForm: any = { table_id: '', order_type: 'dine_in', guest_name: '', booking_id: '' };
+  roomServiceSearch = '';
+  checkedInResults = signal<any[]>([]);
+  private rsTimer: any;
 
   availableTables = computed(() => this.tables().filter(t => t.status === 'available').length);
   todayRevenue = computed(() => this.orders().reduce((s: number, o: any) => s + (+o.total_amount || 0), 0));
@@ -341,6 +367,34 @@ export class PosPage implements OnInit {
   }
 
   // ── Orders ─────────────────────────────────────────────────────
+  onOrderTypeChange(): void {
+    this.orderForm.booking_id = '';
+    this.orderForm.guest_name = '';
+    this.roomServiceSearch = '';
+    this.checkedInResults.set([]);
+  }
+
+  searchCheckedIn(): void {
+    clearTimeout(this.rsTimer);
+    if (this.roomServiceSearch.length < 1) { this.checkedInResults.set([]); return; }
+    this.rsTimer = setTimeout(() => {
+      this.api.get('/bookings/checkout-tracker', { property_id: this.pid }).subscribe((r: any) => {
+        const q = this.roomServiceSearch.toLowerCase();
+        const results = (r.data ?? []).filter((b: any) =>
+          b.room_number?.toLowerCase().includes(q) || b.guest_name?.toLowerCase().includes(q)
+        );
+        this.checkedInResults.set(results.slice(0, 8));
+      });
+    }, 250);
+  }
+
+  selectRoomServiceGuest(b: any): void {
+    this.orderForm.booking_id = b.id;
+    this.orderForm.guest_name = b.guest_name;
+    this.roomServiceSearch = '';
+    this.checkedInResults.set([]);
+  }
+
   createOrder() {
     if (this.creatingOrder()) return;
     this.creatingOrder.set(true);
@@ -350,7 +404,8 @@ export class PosPage implements OnInit {
         if (r.success || r.data) {
           this.toast.success('Order created');
           this.showOrderForm = false;
-          this.orderForm = { table_id: '', order_type: 'dine_in', guest_name: '' };
+          this.orderForm = { table_id: '', order_type: 'dine_in', guest_name: '', booking_id: '' };
+          this.roomServiceSearch = '';
           this.load();
         } else {
           this.toast.error(r.message || 'Failed to create order');

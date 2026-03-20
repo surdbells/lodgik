@@ -6,7 +6,7 @@ import {
   ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
   ConfirmDialogService, ConfirmDialogComponent,
   HasPermDirective, PermDisableDirective, TokenService,
-  QrFileUploadComponent,
+  QrFileUploadComponent, AmountInputDirective,
 } from '@lodgik/shared';
 import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
@@ -18,7 +18,7 @@ import { HttpClient } from '@angular/common/http';
     DatePipe, RouterLink, FormsModule,
     PageHeaderComponent, LoadingSpinnerComponent, ConfirmDialogComponent,
     HasPermDirective, PermDisableDirective,
-    QrFileUploadComponent,
+    QrFileUploadComponent, AmountInputDirective,
   ],
   template: `
     <ui-confirm-dialog/>

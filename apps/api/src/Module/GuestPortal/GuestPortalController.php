@@ -15,6 +15,7 @@ use Lodgik\Module\RoomControl\RoomControlService;
 use Lodgik\Module\Security\SecurityService;
 use Lodgik\Module\ServiceRequest\ServiceRequestService;
 use Lodgik\Module\Spa\SpaService;
+use Psr\Log\LoggerInterface;
 use Lodgik\Repository\BookingRepository;
 use Lodgik\Repository\GuestRepository;
 use Lodgik\Repository\PropertyBankAccountRepository;
@@ -47,6 +48,8 @@ final class GuestPortalController
         private readonly EntityManagerInterface        $em,
         private readonly TermiiService                 $termii,
         private readonly \Lodgik\Module\Loyalty\LoyaltyService $loyaltyService,
+        private readonly \Lodgik\Module\Pos\PosService $posService,
+        private readonly ?LoggerInterface $logger = null,
     ) {}
 
     // ─────────────────────────────────────────────────────────────
@@ -662,3 +665,166 @@ final class GuestPortalController
         return JsonResponse::ok($res, $prefs->toArray(), 'Preferences saved');
     }
 }
+
+    // ═══ Restaurant / Room Service ══════════════════════════════════════════
+
+    /**
+     * GET /api/guest/menu
+     * Returns POS products grouped by category for the guest's property.
+     * Public to the authenticated guest — no items hidden.
+     */
+    public function restaurantMenu(Request $req, Response $res): Response
+    {
+        $propertyId = $req->getAttribute('guest.property_id');
+        $tenantId   = $req->getAttribute('guest.tenant_id');
+
+        // Fetch active categories
+        $cats = $this->em->createQueryBuilder()
+            ->select('c')
+            ->from(\Lodgik\Entity\PosCategory::class, 'c')
+            ->where('c.propertyId = :pid')
+            ->andWhere('c.isActive = true')
+            ->orderBy('c.sortOrder', 'ASC')
+            ->setParameter('pid', $propertyId)
+            ->getQuery()
+            ->getArrayResult();
+
+        // Fetch active products with prices
+        $products = $this->em->createQueryBuilder()
+            ->select('p')
+            ->from(\Lodgik\Entity\PosProduct::class, 'p')
+            ->where('p.propertyId = :pid')
+            ->andWhere('p.isActive = true')
+            ->andWhere('p.isAvailable = true')
+            ->orderBy('p.name', 'ASC')
+            ->setParameter('pid', $propertyId)
+            ->getQuery()
+            ->getArrayResult();
+
+        // Group products by category
+        $grouped = [];
+        foreach ($cats as $cat) {
+            $grouped[] = [
+                'id'       => $cat['id'],
+                'name'     => $cat['name'],
+                'icon'     => $cat['icon'] ?? null,
+                'products' => array_values(array_filter($products, fn($p) => $p['categoryId'] === $cat['id'])),
+            ];
+        }
+
+        // Products with no category
+        $catIds   = array_column($cats, 'id');
+        $uncategorized = array_values(array_filter($products, fn($p) => !in_array($p['categoryId'], $catIds, true)));
+        if ($uncategorized) {
+            $grouped[] = ['id' => null, 'name' => 'Other', 'icon' => null, 'products' => $uncategorized];
+        }
+
+        // Filter out empty categories
+        $grouped = array_values(array_filter($grouped, fn($g) => !empty($g['products'])));
+
+        return JsonResponse::ok($res, $grouped);
+    }
+
+    /**
+     * POST /api/guest/room-service/orders
+     * Guest places a room service order from their PWA.
+     * Auto-creates a POS order of type 'room_service', links booking,
+     * and immediately posts to the guest folio.
+     */
+    public function placeRoomServiceOrder(Request $req, Response $res): Response
+    {
+        $guestId    = $req->getAttribute('guest.guest_id');
+        $bookingId  = $req->getAttribute('guest.booking_id');
+        $propertyId = $req->getAttribute('guest.property_id');
+        $tenantId   = $req->getAttribute('guest.tenant_id');
+
+        $body  = (array)($req->getParsedBody() ?? []);
+        $items = (array)($body['items'] ?? []);
+        $notes = trim($body['notes'] ?? '');
+
+        if (empty($items)) {
+            return JsonResponse::validationError($res, ['items' => 'At least one item is required']);
+        }
+
+        // Validate each item has product_id and quantity
+        foreach ($items as $i => $item) {
+            if (empty($item['product_id']))     return JsonResponse::validationError($res, ["items.{$i}.product_id" => 'Required']);
+            if (empty($item['quantity']) || (int)$item['quantity'] < 1) return JsonResponse::validationError($res, ["items.{$i}.quantity" => 'Must be >= 1']);
+        }
+
+        // Get guest name for the order
+        $guest     = $this->guestRepo->find($guestId);
+        $guestName = $guest?->getFullName() ?? 'Guest';
+
+        // Get booking room number
+        $booking  = $this->bookingRepo->find($bookingId);
+        $roomId   = $booking?->getRoomId();
+        $room     = $roomId ? $this->em->find(\Lodgik\Entity\Room::class, $roomId) : null;
+        $roomNum  = $room?->getRoomNumber() ?? '';
+
+        try {
+            // Create the POS order
+            $order = $this->posService->createOrder($propertyId, $tenantId, [
+                'order_type'  => 'room_service',
+                'booking_id'  => $bookingId,
+                'guest_name'  => $guestName,
+                'room_number' => $roomNum,
+                'notes'       => $notes,
+                'served_by'   => 'guest_app',
+            ]);
+
+            // Add each item
+            foreach ($items as $item) {
+                $this->posService->addItem(
+                    $order->getId(),
+                    $item['product_id'],
+                    (int)$item['quantity'],
+                    $tenantId,
+                    $item['notes'] ?? null,
+                    1
+                );
+            }
+
+            // Auto-post to folio so it appears on the guest's bill immediately
+            $this->posService->postToFolio($order->getId(), $bookingId);
+
+            // Notify kitchen via chat message
+            try {
+                $this->chatService->sendMessage(
+                    bookingId:  $bookingId,
+                    propertyId: $propertyId,
+                    senderType: 'staff',
+                    senderId:   'room_service',
+                    senderName: 'Room Service',
+                    message:    "🍽 New room service order from {$guestName} (Room {$roomNum}). Order #{$order->getOrderNumber()}. Check kitchen queue.",
+                    tenantId:   $tenantId,
+                );
+            } catch (\Throwable) {}
+
+            return JsonResponse::created($res, $order->toArray(), 'Room service order placed');
+        } catch (\Throwable $e) {
+            return JsonResponse::error($res, $e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * GET /api/guest/room-service/orders
+     * Returns the guest's room service orders for the current booking.
+     */
+    public function listMyOrders(Request $req, Response $res): Response
+    {
+        $bookingId = $req->getAttribute('guest.booking_id');
+
+        $orders = $this->em->createQueryBuilder()
+            ->select('o')
+            ->from(\Lodgik\Entity\PosOrder::class, 'o')
+            ->where('o.bookingId = :bid')
+            ->andWhere("o.orderType = 'room_service'")
+            ->orderBy('o.createdAt', 'DESC')
+            ->setMaxResults(20)
+            ->setParameter('bid', $bookingId)
+            ->getQuery()
+            ->getArrayResult();
+
+        return JsonResponse::ok($res, $orders);
+    }

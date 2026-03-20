@@ -65,7 +65,7 @@ final class LoyaltyService
       if (isset($data['special_occasions'])) $p->setSpecialOccasions($data['special_occasions']); if (!empty($data['communication_preference'])) $p->setCommunicationPreference($data['communication_preference']);
       if (!empty($data['notes'])) $p->setNotes($data['notes']); if (isset($data['vip_status'])) $p->setVipStatus((bool)$data['vip_status']);
       if (!empty($data['preferred_language'])) $p->setPreferredLanguage($data['preferred_language']);
-      if (!$p->getId()) $this->em->persist($p); $this->em->flush(); return $p; }
+      $this->em->persist($p); $this->em->flush(); return $p; }
 
     public function listAllPreferences(string $tenantId): array
     {

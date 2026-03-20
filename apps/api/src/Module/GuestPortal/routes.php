@@ -56,6 +56,11 @@ return function (App $app): void {
         $g->get('/gym/class-bookings',                 [GuestPortalController::class, 'listGymClassBookings']);
         $g->delete('/gym/class-bookings/{id}',         [GuestPortalController::class, 'cancelGymClassBooking']);
 
+        // ── Restaurant / Room Service ──────────────────────────────────
+        $g->get('/menu',                               [GuestPortalController::class, 'restaurantMenu']);
+        $g->get('/room-service/orders',                [GuestPortalController::class, 'listMyOrders']);
+        $g->post('/room-service/orders',               [GuestPortalController::class, 'placeRoomServiceOrder']);
+
         // ── Guest Preferences ─────────────────────────────────────
         $g->get('/preferences',                        [GuestPortalController::class, 'getPreferences']);
         $g->put('/preferences',                        [GuestPortalController::class, 'updatePreferences']);

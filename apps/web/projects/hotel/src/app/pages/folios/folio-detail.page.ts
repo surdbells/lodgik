@@ -2,13 +2,12 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService, QrFileUploadComponent, UploadedFile, ReceiptActionsComponent, HasPermDirective, PermDisableDirective, TokenService } from '@lodgik/shared';
-import { AuthService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ConfirmDialogService, ActivePropertyService, QrFileUploadComponent, UploadedFile, ReceiptActionsComponent, HasPermDirective, PermDisableDirective, TokenService, AmountInputDirective, AuthService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-folio-detail',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, PageHeaderComponent, LoadingSpinnerComponent, QrFileUploadComponent, ReceiptActionsComponent, HasPermDirective, PermDisableDirective],
+  imports: [DatePipe, FormsModule, RouterLink, PageHeaderComponent, LoadingSpinnerComponent, QrFileUploadComponent, ReceiptActionsComponent, HasPermDirective, PermDisableDirective, AmountInputDirective],
   template: `
     <ui-page-header [title]="folio()?.folio_number || 'Folio'" subtitle="Charges, payments and balance">
       <div class="flex gap-2">
@@ -170,7 +169,7 @@ import { AuthService } from '@lodgik/shared';
               </select>
               <input [(ngModel)]="chargeForm.description" placeholder="Description" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               <div class="grid grid-cols-2 gap-3">
-                <input [(ngModel)]="chargeForm.amount" type="number" placeholder="Amount (₦)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+                <input uiAmount [(ngModel)]="chargeForm.amount" type="text" placeholder="Amount (₦)" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
                 <input [(ngModel)]="chargeForm.quantity" type="number" min="1" placeholder="Qty" class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               </div>
             </div>
@@ -191,7 +190,7 @@ import { AuthService } from '@lodgik/shared';
               <select [(ngModel)]="payForm.payment_method" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
                 <option value="cash">Cash</option><option value="bank_transfer">Bank Transfer</option><option value="pos_card">POS Card</option>
               </select>
-              <input [(ngModel)]="payForm.amount" type="number" placeholder="Amount (₦)" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              <input uiAmount [(ngModel)]="payForm.amount" type="text" placeholder="Amount (₦)" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               @if (payForm.payment_method === 'bank_transfer') {
                 <input [(ngModel)]="payForm.sender_name" placeholder="Sender Name" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
                 <input [(ngModel)]="payForm.transfer_reference" placeholder="Transfer Reference" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
@@ -224,7 +223,7 @@ import { AuthService } from '@lodgik/shared';
                 <option value="discount">Discount</option><option value="refund">Refund</option><option value="correction">Correction</option><option value="comp">Complimentary</option>
               </select>
               <input [(ngModel)]="adjForm.description" placeholder="Description" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
-              <input [(ngModel)]="adjForm.amount" type="number" placeholder="Amount (₦)" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
+              <input uiAmount [(ngModel)]="adjForm.amount" type="text" placeholder="Amount (₦)" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50">
               <textarea [(ngModel)]="adjForm.reason" placeholder="Reason" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50"></textarea>
             </div>
             <div class="flex justify-end gap-2 mt-4">

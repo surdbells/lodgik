@@ -198,6 +198,23 @@ interface NavGroup {
         </main>
       </div>
     </div>
+
+    <!-- ── Floating Chat Bubble ─────────────────────────────────────── -->
+    @if (chatUnreadCount() >= 0) {
+      <a routerLink="/chat"
+        class="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95"
+        style="background:linear-gradient(135deg,#466846,#5a825a)"
+        title="Guest Chat {{ chatUnreadCount() > 0 ? '(' + chatUnreadCount() + ' unread)' : '' }}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+        @if (chatUnreadCount() > 0) {
+          <span class="absolute -top-1 -right-1 min-w-[22px] h-[22px] flex items-center justify-center text-[11px] font-black bg-red-500 text-white rounded-full px-1.5 shadow-lg border-2 border-white animate-pulse">
+            {{ chatUnreadCount() > 99 ? '99+' : chatUnreadCount() }}
+          </span>
+        }
+      </a>
+    }
   `,
   styles: [`
     :host ::ng-deep a.sidebar-active {
@@ -208,6 +225,7 @@ interface NavGroup {
     :host ::ng-deep a.sidebar-active lucide-icon {
       opacity: 1;
     }
+
   `],
 })
 export class HotelLayoutComponent implements OnInit {
@@ -224,6 +242,8 @@ export class HotelLayoutComponent implements OnInit {
 
   collapsed = signal(false);
   notificationCount = signal(0);
+  chatUnreadCount   = signal(0);
+  showChatBubble    = signal(true);
 
   private collapsedGroups = signal<Set<number>>(new Set([0,1,2,3,4,5,6,7,8,9,10,11]));
 
@@ -423,8 +443,46 @@ export class HotelLayoutComponent implements OnInit {
     this.activeProperty.load();
 
     this.loadNotificationCount();
-    // Poll every 60 seconds
+    this.loadChatUnread();
+    // Poll every 30 seconds for chat, 60 for notifications
     setInterval(() => this.loadNotificationCount(), 60_000);
+    setInterval(() => this.loadChatUnread(), 30_000);
+  }
+
+  private lastChatUnread = 0;
+
+  private loadChatUnread(): void {
+    const pid = this.activeProperty.propertyId();
+    if (!pid) return;
+    this.api.get('/chat/active', { property_id: pid }).subscribe({
+      next: (r: any) => {
+        const chats: any[] = r?.data ?? [];
+        const total = chats.reduce((sum: number, ch: any) => sum + (ch.unread_count ?? 0), 0);
+        this.chatUnreadCount.set(total);
+        // Play sound if new messages arrived
+        if (total > this.lastChatUnread && this.lastChatUnread >= 0 && document.hidden) {
+          this.playChatSound();
+        }
+        this.lastChatUnread = total;
+      },
+      error: () => {},
+    });
+  }
+
+  private playChatSound(): void {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch { /* audio not supported */ }
   }
 
   private loadNotificationCount(): void {
