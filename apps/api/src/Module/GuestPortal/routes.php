@@ -21,6 +21,7 @@ return function (App $app): void {
         $g->get('/chat/messages',                      [GuestPortalController::class, 'chatMessages']);
         $g->post('/chat/send',                         [GuestPortalController::class, 'chatSend']);
         $g->post('/chat/read',                         [GuestPortalController::class, 'chatMarkRead']);
+        $g->get('/chat/unread',                        [GuestPortalController::class, 'chatUnreadCount']);
 
         // ── Visitor Codes ────────────────────────────────────────
         $g->get('/visitor-codes',                      [GuestPortalController::class, 'listVisitorCodes']);

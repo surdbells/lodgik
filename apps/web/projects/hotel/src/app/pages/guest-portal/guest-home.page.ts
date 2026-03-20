@@ -132,9 +132,14 @@ const QUICK_ACTIONS = [
         <div class="grid grid-cols-4 gap-2.5">
           @for (a of actions; track a.route) {
             <a [routerLink]="a.route"
-               class="rounded-2xl p-3 flex flex-col items-center gap-1.5 transition-all active:scale-95"
+               class="rounded-2xl p-3 flex flex-col items-center gap-1.5 transition-all active:scale-95 relative"
                [class]="th.cardHover()">
               <lucide-icon [img]="iconFor(a.icon)" class="w-5 h-5" [class]="a.color"></lucide-icon>
+              @if (a.icon === 'chat' && chatUnread() > 0) {
+                <span class="absolute top-1.5 right-1.5 min-w-[16px] h-4 flex items-center justify-center text-[9px] font-black bg-red-500 text-white rounded-full px-1 leading-none">
+                  {{ chatUnread() > 9 ? '9+' : chatUnread() }}
+                </span>
+              }
               <span class="text-[10px] font-medium text-center leading-tight" [class]="th.muted()">{{ a.label }}</span>
             </a>
           }
@@ -166,8 +171,10 @@ export default class GuestHomePage implements OnInit {
 
   readonly actions = QUICK_ACTIONS;
 
-  session = signal<any | null>(null);
-  folio   = signal<any | null>(null);
+  session      = signal<any | null>(null);
+  folio        = signal<any | null>(null);
+  chatUnread   = signal(0);
+  private chatTimer: any;
   loading = signal(true);
 
   readonly greeting = computed(() => {
@@ -199,10 +206,21 @@ export default class GuestHomePage implements OnInit {
     return map[key] ?? Info;
   }
 
+  ngOnDestroy(): void { clearInterval(this.chatTimer); }
+
   ngOnInit(): void {
     const stored = localStorage.getItem('guest_session');
     if (stored) { try { this.session.set(JSON.parse(stored)); } catch {} }
     this.loadFolio();
+    this.loadChatUnread();
+    this.chatTimer = setInterval(() => this.loadChatUnread(), 20_000);
+  }
+
+  private loadChatUnread(): void {
+    this.guestApi.get('/guest/chat/unread').subscribe({
+      next: (r: any) => this.chatUnread.set(r?.data?.unread ?? 0),
+      error: () => {},
+    });
   }
 
   fmt(v: number | string): string {

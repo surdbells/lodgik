@@ -165,6 +165,14 @@ final class GuestPortalController
         return JsonResponse::ok($res, null, 'Messages marked as read');
     }
 
+    /** GET /api/guest/chat/unread — count of staff messages not yet read by guest */
+    public function chatUnreadCount(Request $req, Response $res): Response
+    {
+        $bookingId = $req->getAttribute('guest.booking_id');
+        $count     = $this->chatService->getUnreadCount($bookingId, 'guest');
+        return JsonResponse::ok($res, ['unread' => $count]);
+    }
+
     // ─────────────────────────────────────────────────────────────
     // VISITOR CODES
     // ─────────────────────────────────────────────────────────────

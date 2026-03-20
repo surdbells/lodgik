@@ -170,7 +170,8 @@ export default class GuestChatPage implements OnInit, OnDestroy, AfterViewChecke
         this.messages.set(r.data ?? []);
         this.loading.set(false);
         this.shouldScrollBottom = true;
-        if ((r.data ?? []).some((m: any) => m.sender_type !== 'guest')) {
+        // Mark as read only when page is visible (user is actively viewing)
+        if (showLoader && (r.data ?? []).some((m: any) => m.sender_type !== 'guest')) {
           this.guestApi.post('/guest/chat/read', {}).subscribe();
         }
       },

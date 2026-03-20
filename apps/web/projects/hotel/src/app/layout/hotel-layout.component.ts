@@ -24,7 +24,7 @@ interface NavGroup {
   imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
   providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(LODGIK_ICONS) }],
   template: `
-    <div class="flex h-screen overflow-hidden bg-[#f9fafb]">
+    <div class="flex h-screen overflow-hidden bg-[#f9fafb]" (click)="unlockAudio()">
 
       <!-- ═══ Sidebar ═══ -->
       <aside class="bg-white border-r border-gray-100 flex flex-col shrink-0 h-screen overflow-hidden transition-all duration-300"
@@ -449,7 +449,19 @@ export class HotelLayoutComponent implements OnInit {
     setInterval(() => this.loadChatUnread(), 30_000);
   }
 
-  private lastChatUnread = 0;
+  private lastChatUnread = -1;   // -1 = not yet initialised; avoids false sound on first load
+  private audioCtx: AudioContext | null = null;
+  private audioUnlocked = false;
+
+  /** Call once on first user gesture to unlock AudioContext (browser policy). */
+  unlockAudio(): void {
+    if (this.audioUnlocked) return;
+    try {
+      this.audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+      this.audioUnlocked = true;
+    } catch {}
+  }
 
   private loadChatUnread(): void {
     const pid = this.activeProperty.propertyId();
@@ -459,8 +471,8 @@ export class HotelLayoutComponent implements OnInit {
         const chats: any[] = r?.data ?? [];
         const total = chats.reduce((sum: number, ch: any) => sum + (ch.unread_count ?? 0), 0);
         this.chatUnreadCount.set(total);
-        // Play sound if new messages arrived
-        if (total > this.lastChatUnread && this.lastChatUnread >= 0 && document.hidden) {
+        // Sound on new messages — skip very first poll (lastChatUnread === -1)
+        if (this.lastChatUnread >= 0 && total > this.lastChatUnread) {
           this.playChatSound();
         }
         this.lastChatUnread = total;
@@ -471,18 +483,25 @@ export class HotelLayoutComponent implements OnInit {
 
   private playChatSound(): void {
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
+      if (!this.audioCtx) {
+        this.audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const ctx = this.audioCtx;
+      if (ctx.state === 'suspended') { ctx.resume(); }
+
+      // Two-tone ping: 880 Hz → 1100 Hz
+      const t = ctx.currentTime;
+      const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.3);
-    } catch { /* audio not supported */ }
+      osc.frequency.setValueAtTime(880,  t);
+      osc.frequency.setValueAtTime(1100, t + 0.12);
+      gain.gain.setValueAtTime(0.25, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      osc.start(t);
+      osc.stop(t + 0.4);
+    } catch { /* audio blocked or unsupported */ }
   }
 
   private loadNotificationCount(): void {
