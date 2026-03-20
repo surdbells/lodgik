@@ -693,7 +693,6 @@ final class GuestPortalController
             ->select('p')
             ->from(\Lodgik\Entity\PosProduct::class, 'p')
             ->where('p.propertyId = :pid')
-            ->andWhere('p.isActive = true')
             ->andWhere('p.isAvailable = true')
             ->orderBy('p.name', 'ASC')
             ->setParameter('pid', $propertyId)

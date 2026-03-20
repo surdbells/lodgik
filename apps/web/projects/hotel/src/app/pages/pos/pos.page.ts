@@ -15,65 +15,150 @@ import {
     <ui-page-header title="Bar & Restaurant" subtitle="POS, table management, and kitchen display">
       <div class="flex gap-2">
         <button (click)="openTableModal()" class="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">+ Add Table</button>
-        <button (click)="showOrderForm = !showOrderForm; showTableForm = false"
+        <button (click)="openOrderBuilder()"
           class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">
-          {{ showOrderForm ? 'Cancel' : '+ New Order' }}
+          + New Order
         </button>
       </div>
     </ui-page-header>
 
     <ui-loading [loading]="loading()"></ui-loading>
 
-    <!-- New Order Form -->
-    @if (showOrderForm) {
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
-        <h3 class="text-sm font-semibold text-gray-700 mb-3">New Order</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <select [(ngModel)]="orderForm.table_id" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
-            <option value="">Select Table</option>
-            @for (t of tables(); track t.id) {
-              <option [value]="t.id" [disabled]="t.status === 'occupied'">
-                {{ t.number }} ({{ t.seats }} seats) {{ t.status === 'occupied' ? '— occupied' : '' }}
-              </option>
+    <!-- ── Full-Screen Order Builder ───────────────────────────────── -->
+    @if (showOrderBuilder()) {
+      <div class="fixed inset-0 z-50 flex" style="background:rgba(0,0,0,.45)">
+        <!-- Left: Menu (62%) -->
+        <div class="flex flex-col bg-white" style="width:62%">
+          <div class="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
+            <button (click)="closeOrderBuilder()" class="w-9 h-9 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-500 flex items-center justify-center text-lg">✕</button>
+            <span class="font-bold text-gray-900 flex-1">New Order</span>
+            <select [(ngModel)]="orderForm.order_type" (ngModelChange)="onOrderTypeChange()"
+              class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+              <option value="dine_in">🍽 Dine In</option>
+              <option value="takeaway">🥡 Takeaway</option>
+              <option value="room_service">🛎 Room Service</option>
+            </select>
+            @if (orderForm.order_type === 'dine_in') {
+              <select [(ngModel)]="orderForm.table_id" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                <option value="">No Table</option>
+                @for (t of tables(); track t.id) {
+                  <option [value]="t.id">Table {{ t.number }}</option>
+                }
+              </select>
             }
-          </select>
-          <select [(ngModel)]="orderForm.order_type" (ngModelChange)="onOrderTypeChange()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
-            <option value="dine_in">Dine In</option>
-            <option value="takeaway">Takeaway</option>
-            <option value="room_service">Room Service 🛎</option>
-          </select>
-          @if (orderForm.order_type === 'room_service') {
-            <!-- Room service: search checked-in guests -->
-            <div class="relative">
-              <input [(ngModel)]="roomServiceSearch" (ngModelChange)="searchCheckedIn()"
-                [placeholder]="orderForm.booking_id ? '✓ ' + orderForm.guest_name : 'Search room or guest…'"
-                class="w-full px-3 py-2 border rounded-lg text-sm"
-                [class.border-sage-400]="orderForm.booking_id"
-                [class.border-gray-200]="!orderForm.booking_id">
-              @if (checkedInResults().length > 0) {
-                <div class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
-                  @for (b of checkedInResults(); track b.id) {
-                    <button (click)="selectRoomServiceGuest(b)"
-                      class="w-full text-left px-3 py-2.5 text-sm hover:bg-sage-50 border-b border-gray-50 last:border-0">
-                      <span class="font-semibold">Room {{ b.room_number }}</span>
-                      <span class="text-gray-500 ml-2">{{ b.guest_name }}</span>
-                      <span class="text-xs text-gray-400 ml-2">{{ b.booking_type_label }}</span>
-                    </button>
+            @if (orderForm.order_type === 'room_service') {
+              <div class="relative">
+                <input [(ngModel)]="roomServiceSearch" (ngModelChange)="searchCheckedIn()"
+                  [placeholder]="orderForm.booking_id ? '✓ ' + orderForm.guest_name : 'Search room / guest…'"
+                  class="border rounded-lg px-3 py-2 text-sm w-44"
+                  [class]="orderForm.booking_id ? 'border-sage-400 bg-sage-50' : 'border-gray-200'">
+                @if (checkedInResults().length) {
+                  <div class="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                    @for (b of checkedInResults(); track b.id) {
+                      <button (click)="selectRoomServiceGuest(b)"
+                        class="w-full text-left px-3 py-2.5 text-sm hover:bg-sage-50 border-b border-gray-50 last:border-0">
+                        <span class="font-semibold">Room {{ b.room_number }}</span>
+                        <span class="text-gray-400 ml-1.5 text-xs">{{ b.guest_name }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+            @if (orderForm.order_type === 'takeaway') {
+              <input [(ngModel)]="orderForm.guest_name" placeholder="Customer name"
+                class="border border-gray-200 rounded-lg px-3 py-2 text-sm w-36">
+            }
+          </div>
+          <!-- Category tabs -->
+          <div class="flex gap-1.5 overflow-x-auto px-5 py-2.5 border-b border-gray-100 flex-shrink-0">
+            <button (click)="activeCat.set('')"
+              class="flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors"
+              [class]="!activeCat() ? 'bg-sage-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">All</button>
+            @for (cat of menuCats(); track cat.id) {
+              <button (click)="activeCat.set(cat.id)"
+                class="flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors"
+                [class]="activeCat() === cat.id ? 'bg-sage-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+                {{ cat.name }}
+              </button>
+            }
+          </div>
+          <!-- Products -->
+          <div class="flex-1 overflow-y-auto p-4">
+            @if (menuLoading()) {
+              <div class="flex justify-center pt-10"><div class="w-6 h-6 border-2 border-sage-300 border-t-transparent rounded-full animate-spin"></div></div>
+            }
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              @for (p of filteredProducts(); track p.id) {
+                <button (click)="addToCart(p)"
+                  class="relative text-left border rounded-2xl p-4 transition-all active:scale-95 hover:border-sage-300 hover:shadow-sm"
+                  [class]="getQty(p.id) > 0 ? 'border-sage-400 bg-sage-50 shadow-sm' : 'border-gray-100 bg-white'">
+                  @if (getQty(p.id) > 0) {
+                    <span class="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-sage-600 text-white text-xs font-black flex items-center justify-center">{{ getQty(p.id) }}</span>
                   }
-                </div>
+                  <p class="text-sm font-semibold text-gray-800 leading-snug pr-7">{{ p.name }}</p>
+                  @if (p.description) { <p class="text-xs text-gray-400 mt-1 line-clamp-2">{{ p.description }}</p> }
+                  <p class="text-sm font-bold text-sage-700 mt-2">₦{{ (+p.price || 0).toLocaleString() }}</p>
+                </button>
+              }
+              @if (!menuLoading() && filteredProducts().length === 0) {
+                <div class="col-span-3 text-center py-10 text-gray-400 text-sm">No items in this category</div>
               }
             </div>
-          } @else {
-            <input [(ngModel)]="orderForm.guest_name" placeholder="Guest name (optional)"
-              class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
-          }
+          </div>
         </div>
-        <div class="flex gap-2 mt-3">
-          <button (click)="createOrder()" [disabled]="creatingOrder()"
-            class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700 disabled:opacity-50">
-            {{ creatingOrder() ? 'Creating...' : 'Create Order' }}
-          </button>
-          <button (click)="showOrderForm = false" class="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
+
+        <!-- Right: Cart (38%) -->
+        <div class="flex flex-col bg-gray-50 border-l border-gray-200" style="flex:1">
+          <div class="px-5 py-3.5 border-b border-gray-200 flex-shrink-0">
+            <p class="font-bold text-gray-900">Order Summary</p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ cartCount() }} item{{ cartCount() !== 1 ? 's' : '' }}</p>
+          </div>
+          <div class="flex-1 overflow-y-auto px-4 py-3">
+            @if (cart().length === 0) {
+              <div class="text-center py-10 text-gray-400"><div class="text-4xl mb-2">🛒</div><p class="text-sm">Tap items to add</p></div>
+            }
+            @for (item of cart(); track item.product_id) {
+              <div class="bg-white rounded-xl border border-gray-100 p-3 mb-2">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <p class="text-sm font-medium text-gray-800 flex-1 leading-snug">{{ item.name }}</p>
+                  <button (click)="removeFromCart(item.product_id)"
+                    class="w-5 h-5 rounded-full bg-gray-100 text-gray-400 text-xs flex items-center justify-center hover:bg-red-100 hover:text-red-500 flex-shrink-0">✕</button>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <button (click)="decQty(item.product_id)"
+                      class="w-7 h-7 rounded-full border border-gray-200 text-gray-600 text-sm flex items-center justify-center hover:bg-gray-50 active:scale-90">−</button>
+                    <span class="text-sm font-bold w-4 text-center">{{ item.quantity }}</span>
+                    <button (click)="incQty(item.product_id)"
+                      class="w-7 h-7 rounded-full bg-sage-100 text-sage-700 text-sm flex items-center justify-center hover:bg-sage-200 active:scale-90">+</button>
+                  </div>
+                  <p class="text-sm font-bold text-gray-900">₦{{ (+item.price * item.quantity).toLocaleString() }}</p>
+                </div>
+                <input [(ngModel)]="item.note" placeholder="Kitchen note…"
+                  class="mt-2 w-full text-xs px-2 py-1.5 border border-gray-100 rounded-lg bg-gray-50 text-gray-500 focus:outline-none focus:border-sage-300">
+              </div>
+            }
+          </div>
+          <div class="px-5 py-4 border-t border-gray-200 bg-white flex-shrink-0">
+            <input [(ngModel)]="orderNote" placeholder="Order note…"
+              class="w-full text-xs px-3 py-2 border border-gray-200 rounded-xl mb-3 text-gray-600 focus:outline-none focus:border-sage-300">
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-sm text-gray-500">Subtotal</span>
+              <span class="text-2xl font-black text-gray-900">₦{{ cartSubtotal().toLocaleString() }}</span>
+            </div>
+            <button (click)="placeOrder()" [disabled]="cart().length === 0 || placingOrder()"
+              class="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-95 disabled:opacity-40"
+              [class]="cart().length > 0 ? 'bg-sage-600 text-white hover:bg-sage-700' : 'bg-gray-200 text-gray-400'">
+              @if (placingOrder()) {
+                <span class="flex items-center justify-center gap-2">
+                  <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> Placing…
+                </span>
+              } @else {
+                🛎 Place Order · ₦{{ cartSubtotal().toLocaleString() }}
+              }
+            </button>
+          </div>
         </div>
       </div>
     }
@@ -287,18 +372,35 @@ export class PosPage implements OnInit {
   orders = signal<any[]>([]);
   kitchenQueue = signal<any[]>([]);
 
-  showTableForm = false;
-  showOrderForm = false;
+  showTableForm   = false;
+  showOrderBuilder = signal(false);
   editingTable: any = null;
 
   tableForm: any = { number: '', seats: 4, section: 'restaurant', status: 'available' };
   orderForm: any = { table_id: '', order_type: 'dine_in', guest_name: '', booking_id: '' };
+  orderNote       = '';
   roomServiceSearch = '';
-  checkedInResults = signal<any[]>([]);
+  checkedInResults  = signal<any[]>([]);
   private rsTimer: any;
 
+  // Menu / cart for order builder
+  menuCats     = signal<any[]>([]);
+  menuProducts = signal<any[]>([]);
+  menuLoading  = signal(false);
+  activeCat    = signal('');
+  cart         = signal<any[]>([]);
+  placingOrder = signal(false);
+
+  filteredProducts = computed(() => {
+    const cat = this.activeCat();
+    const products = this.menuProducts();
+    return cat ? products.filter(p => p.category_id === cat) : products;
+  });
+  cartCount    = computed(() => this.cart().reduce((s, i) => s + i.quantity, 0));
+  cartSubtotal = computed(() => this.cart().reduce((s, i) => s + (+i.price * i.quantity), 0));
+
   availableTables = computed(() => this.tables().filter(t => t.status === 'available').length);
-  todayRevenue = computed(() => this.orders().reduce((s: number, o: any) => s + (+o.total_amount || 0), 0));
+  todayRevenue    = computed(() => this.orders().reduce((s: number, o: any) => s + (+o.total_amount || 0), 0));
 
   get pid() { return this.activeProperty.propertyId(); }
 
@@ -395,24 +497,97 @@ export class PosPage implements OnInit {
     this.checkedInResults.set([]);
   }
 
-  createOrder() {
-    if (this.creatingOrder()) return;
-    this.creatingOrder.set(true);
-    this.api.post('/pos/orders', { ...this.orderForm, property_id: this.pid }).subscribe({
+  openOrderBuilder(): void {
+    this.cart.set([]);
+    this.orderNote = '';
+    this.orderForm = { table_id: '', order_type: 'dine_in', guest_name: '', booking_id: '' };
+    this.activeCat.set('');
+    this.showOrderBuilder.set(true);
+    if (this.menuProducts().length === 0) this.loadMenu();
+  }
+
+  closeOrderBuilder(): void {
+    this.showOrderBuilder.set(false);
+    this.cart.set([]);
+  }
+
+  loadMenu(): void {
+    this.menuLoading.set(true);
+    this.api.get('/pos/categories', { property_id: this.pid }).subscribe({
+      next: (r: any) => this.menuCats.set(r.data ?? []),
+    });
+    this.api.get('/pos/products', { property_id: this.pid }).subscribe({
+      next: (r: any) => { this.menuProducts.set(r.data ?? []); this.menuLoading.set(false); },
+      error: () => this.menuLoading.set(false),
+    });
+  }
+
+  getQty(productId: string): number {
+    return this.cart().find(i => i.product_id === productId)?.quantity ?? 0;
+  }
+
+  addToCart(p: any): void {
+    this.cart.update(items => {
+      const existing = items.find(i => i.product_id === p.id);
+      if (existing) return items.map(i => i.product_id === p.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...items, { product_id: p.id, name: p.name, price: p.price, quantity: 1, note: '' }];
+    });
+  }
+
+  incQty(productId: string): void {
+    this.cart.update(items => items.map(i => i.product_id === productId ? { ...i, quantity: i.quantity + 1 } : i));
+  }
+
+  decQty(productId: string): void {
+    this.cart.update(items =>
+      items.map(i => i.product_id === productId ? { ...i, quantity: i.quantity - 1 } : i)
+           .filter(i => i.quantity > 0)
+    );
+  }
+
+  removeFromCart(productId: string): void {
+    this.cart.update(items => items.filter(i => i.product_id !== productId));
+  }
+
+  placeOrder(): void {
+    if (this.cart().length === 0 || this.placingOrder()) return;
+    this.placingOrder.set(true);
+
+    // Step 1: create order header
+    this.api.post('/pos/orders', { ...this.orderForm, notes: this.orderNote, property_id: this.pid }).subscribe({
       next: (r: any) => {
-        this.creatingOrder.set(false);
-        if (r.success || r.data) {
-          this.toast.success('Order created');
-          this.showOrderForm = false;
-          this.orderForm = { table_id: '', order_type: 'dine_in', guest_name: '', booking_id: '' };
-          this.roomServiceSearch = '';
-          this.load();
-        } else {
+        if (!r.success && !r.data) {
+          this.placingOrder.set(false);
           this.toast.error(r.message || 'Failed to create order');
+          return;
         }
+        const orderId = r.data?.id ?? r.data;
+        // Step 2: add all items
+        const addCalls = this.cart().map(item =>
+          this.api.post(`/pos/orders/${orderId}/items`, {
+            product_id: item.product_id,
+            quantity: item.quantity,
+            notes: item.note || null,
+          }).toPromise()
+        );
+        Promise.all(addCalls).then(() => {
+          // Step 3: if room service, auto-post to folio
+          if (this.orderForm.order_type === 'room_service' && this.orderForm.booking_id) {
+            this.api.post(`/pos/orders/${orderId}/post-to-folio`, {}).subscribe({ error: () => {} });
+          }
+          this.placingOrder.set(false);
+          this.toast.success(`Order #${r.data?.order_number ?? ''} placed — ${this.cartCount()} items`);
+          this.closeOrderBuilder();
+          this.load();
+        }).catch(() => {
+          this.placingOrder.set(false);
+          this.toast.error('Order created but some items failed to add');
+          this.closeOrderBuilder();
+          this.load();
+        });
       },
       error: (e: any) => {
-        this.creatingOrder.set(false);
+        this.placingOrder.set(false);
         this.toast.error(e?.error?.message || 'Failed to create order');
       },
     });
