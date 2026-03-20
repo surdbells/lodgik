@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { TabletService } from './tablet.service';
+import { GuestApiService } from '../../services/guest-api.service';
 
 @Component({ selector: 'app-tablet-chat', standalone: true, imports: [FormsModule],
   template: `
@@ -45,7 +45,7 @@ import { TabletService } from './tablet.service';
 export class TabletChatPage implements OnInit, OnDestroy {
   @ViewChild('msgList') msgList!: ElementRef;
   readonly router = inject(Router);
-  private svc     = inject(TabletService);
+  private svc     = inject(GuestApiService);
 
   messages = signal<any[]>([]);
   draft    = '';
@@ -54,7 +54,7 @@ export class TabletChatPage implements OnInit, OnDestroy {
   private timer: any;
 
   ngOnInit(): void {
-    this.bookingId = this.svc.guestData()?.booking?.id ?? '';
+    try { this.bookingId = JSON.parse(localStorage.getItem('guest_session') ?? '{}')?.booking?.id ?? ''; } catch {}
     this.load();
     this.timer = setInterval(() => this.load(), 10_000);
   }
@@ -62,7 +62,7 @@ export class TabletChatPage implements OnInit, OnDestroy {
 
   private load(): void {
     if (!this.bookingId) return;
-    this.svc.get(`/chat/messages/${this.bookingId}`).subscribe({
+    this.svc.get('/guest/chat/messages').subscribe({
       next: (r: any) => {
         this.messages.set(r.data ?? []);
         setTimeout(() => { if (this.msgList) this.msgList.nativeElement.scrollTop = this.msgList.nativeElement.scrollHeight; }, 50);
@@ -76,7 +76,7 @@ export class TabletChatPage implements OnInit, OnDestroy {
     const msg = this.draft.trim();
     this.draft = '';
     this.sending.set(true);
-    this.svc.post('/chat/messages', { booking_id: this.bookingId, message: msg, sender_type: 'guest' }).subscribe({
+    this.svc.post('/guest/chat/send', { message: msg }).subscribe({
       next: () => { this.sending.set(false); this.load(); },
       error: () => this.sending.set(false),
     });

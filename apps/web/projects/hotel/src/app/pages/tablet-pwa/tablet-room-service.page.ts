@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { TabletService } from './tablet.service';
+import { GuestApiService } from '../../services/guest-api.service';
 
 @Component({ selector: 'app-tablet-room-service', standalone: true, imports: [FormsModule],
   template: `
@@ -130,7 +130,7 @@ import { TabletService } from './tablet.service';
 })
 export class TabletRoomServicePage implements OnInit {
   readonly router = inject(Router);
-  private svc     = inject(TabletService);
+  private svc     = inject(GuestApiService);
 
   menu      = signal<any[]>([]);
   loading   = signal(true);
@@ -151,8 +151,7 @@ export class TabletRoomServicePage implements OnInit {
   cartTotal = computed(() => this.cart().reduce((s, i) => s + (+i.price * i.quantity), 0));
 
   ngOnInit(): void {
-    const d = this.svc.guestData();
-    this.roomNum.set(d?.room?.room_number ?? '');
+    try { this.roomNum.set(JSON.parse(localStorage.getItem('guest_session') ?? '{}')?.room?.room_number ?? ''); } catch {}
     this.svc.get('/guest/menu').subscribe({
       next: (r: any) => { this.menu.set(r.data ?? r ?? []); this.loading.set(false); },
       error: () => this.loading.set(false),

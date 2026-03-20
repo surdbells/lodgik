@@ -159,9 +159,13 @@ export class GuestLoginPage implements OnInit {
 
   phone = '';
   private tenantSlug = '';
+  private returnTo = '/guest/home';
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
+      if (params['returnTo']) {
+        this.returnTo = params['returnTo'];
+      }
       if (params['t']) {
         this.tenantSlug = params['t'];
         localStorage.setItem('lodgik_tenant_slug', this.tenantSlug);
@@ -206,7 +210,7 @@ export class GuestLoginPage implements OnInit {
     this.loading.set(true); this.error.set(null);
     this.api.post<any>('/guest-auth/access-code', { code, tenant_slug: this.tenantSlug }).subscribe({
       next: (r: any) => {
-        if (r.success) { this.storeSession(r.data); this.router.navigate(['/guest/home']); }
+        if (r.success) { this.storeSession(r.data); this.router.navigate([this.returnTo]); }
         else { this.error.set(r.message ?? 'Invalid access code.'); this.codeDigits = ['', '', '', '', '', '']; this.focusDigit('d', 0); }
         this.loading.set(false);
       },
@@ -251,7 +255,7 @@ export class GuestLoginPage implements OnInit {
     this.loading.set(true); this.error.set(null);
     this.api.post<any>('/guest-auth/otp/verify', { phone: this.phone.trim(), otp, tenant_slug: this.tenantSlug }).subscribe({
       next: (r: any) => {
-        if (r.success) { this.storeSession(r.data); this.router.navigate(['/guest/home']); }
+        if (r.success) { this.storeSession(r.data); this.router.navigate([this.returnTo]); }
         else { this.error.set(r.message ?? 'Incorrect OTP.'); this.otpDigits = ['', '', '', '', '', '']; this.focusDigit('o', 0); }
         this.loading.set(false);
       },

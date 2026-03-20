@@ -407,7 +407,6 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'idle', pathMatch: 'full' },
       { path: 'idle',         loadComponent: () => import('./pages/tablet-pwa/tablet-idle.page').then(m => m.TabletIdlePage) },
-      { path: 'setup',        loadComponent: () => import('./pages/tablet-pwa/tablet-setup.page').then(m => m.TabletSetupPage) },
       { path: 'home',         loadComponent: () => import('./pages/tablet-pwa/tablet-home.page').then(m => m.TabletHomePage) },
       { path: 'room-service', loadComponent: () => import('./pages/tablet-pwa/tablet-room-service.page').then(m => m.TabletRoomServicePage) },
       { path: 'bill',         loadComponent: () => import('./pages/tablet-pwa/tablet-bill.page').then(m => m.TabletBillPage) },

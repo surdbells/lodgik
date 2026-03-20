@@ -16,6 +16,7 @@ interface TrackerBooking {
   check_in: string; check_out: string; checked_in_at: string;
   seconds_to_checkout: number; minutes_to_checkout: number;
   progress_pct: number; color_tier: string; is_overdue: boolean;
+  tier_label: string; time_remaining_label: string;
   total_amount: string; folio: { id: string; balance: number; status: string } | null;
   adults: number; children: number;
 }
@@ -35,6 +36,61 @@ const TIER_CONFIG: Record<string, { bg: string; border: string; badge: string; t
   standalone: true,
   imports: [RouterLink, DecimalPipe, FormsModule, PageHeaderComponent, LoadingSpinnerComponent, HasPermDirective],
   template: `
+    <!-- Fullscreen overlay — covers sidebar + topbar when fullscreen active -->
+    @if (isFullscreen()) {
+      <div class="fixed inset-0 z-[9999] bg-gray-950 flex flex-col overflow-hidden">
+        <!-- Fullscreen header -->
+        <div class="flex items-center justify-between px-5 py-3 bg-gray-900 border-b border-gray-800 flex-shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span class="text-white font-bold text-sm">Live Room Monitor</span>
+            <span class="text-gray-400 text-xs">{{ bookings().length }} rooms checked in</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-gray-400 text-xs">Auto-refreshes every 60s</span>
+            <button (click)="load()" class="px-3 py-1.5 text-xs border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800">↺ Refresh</button>
+            <button (click)="toggleFullscreen()" class="px-3 py-1.5 text-xs border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M15 9h4.5M15 9V4.5M15 15v4.5M15 15h4.5M9 15H4.5M9 15v4.5"/></svg>
+              Exit Fullscreen
+            </button>
+          </div>
+        </div>
+
+        <!-- Fullscreen room grid -->
+        @if (loading()) {
+          <div class="flex-1 flex items-center justify-center">
+            <div class="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        }
+        @if (!loading()) {
+          <div class="flex-1 overflow-y-auto p-4">
+            @if (bookings().length === 0) {
+              <div class="flex items-center justify-center h-full text-gray-500 text-sm">No guests currently checked in</div>
+            }
+            <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              @for (b of bookings(); track b.id) {
+                <div class="rounded-2xl border p-4 flex flex-col gap-2 cursor-pointer transition-all hover:scale-[1.02]"
+                     [style.border-color]="tierColor(b)"
+                     [style.background]="tierBg(b)"
+                     (click)="openNotify(b)">
+                  <div class="flex items-start justify-between">
+                    <span class="text-2xl font-black" [style.color]="tierColor(b)">{{ b.room_number }}</span>
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" [style.background]="tierColor(b)">
+                      {{ tierCfg(b) ? colorTierLabel(b) : '' }}
+                    </span>
+                  </div>
+                  <p class="text-sm font-semibold text-white/90 leading-tight truncate">{{ b.guest_name }}</p>
+                  <p class="text-xs text-white/50">{{ timeLabel(b) }}</p>
+                  <p class="text-[11px] text-white/40 uppercase tracking-wide">{{ b.booking_type_label }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Normal view (hidden when fullscreen) -->
     <ui-page-header title="Live Room Monitor" icon="monitor" subtitle="Live countdown for all checked-in guests">
       <div class="flex items-center gap-2">
         <div class="flex items-center gap-1.5 text-xs text-gray-400">
@@ -411,6 +467,39 @@ export class CheckoutTrackerPage implements OnInit, OnDestroy {
   applyFilters(): void {}  // computed handles it reactively
 
   tierCfg(b: TrackerBooking) { return TIER_CONFIG[b.color_tier] ?? TIER_CONFIG['ok']; }
+
+  private static readonly TIER_HEX: Record<string, { color: string; bg: string }> = {
+    overdue:  { color: '#ef4444', bg: 'rgba(239,68,68,0.15)'   },
+    critical: { color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
+    urgent:   { color: '#f97316', bg: 'rgba(249,115,22,0.12)'  },
+    warning:  { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)'  },
+    caution:  { color: '#eab308', bg: 'rgba(234,179,8,0.12)'   },
+    notice:   { color: '#60a5fa', bg: 'rgba(96,165,250,0.12)'  },
+    ok:       { color: '#34d399', bg: 'rgba(52,211,153,0.10)'  },
+  };
+
+  colorTierLabel(b: TrackerBooking): string {
+    const labels: Record<string, string> = {
+      overdue: 'Overdue', critical: '< 15m', urgent: '< 30m',
+      warning: '< 1h', caution: '< 2h', notice: '< 4h', ok: 'On time',
+    };
+    return labels[b.color_tier] ?? b.color_tier;
+  }
+
+  timeLabel(b: TrackerBooking): string {
+    if (b.is_overdue) return 'Overdue';
+    const m = b.minutes_to_checkout;
+    if (m < 60) return `${m}m left`;
+    return `${Math.floor(m / 60)}h ${m % 60}m left`;
+  }
+
+  tierColor(b: TrackerBooking): string {
+    return CheckoutTrackerPage.TIER_HEX[b.color_tier]?.color ?? '#34d399';
+  }
+
+  tierBg(b: TrackerBooking): string {
+    return CheckoutTrackerPage.TIER_HEX[b.color_tier]?.bg ?? 'rgba(52,211,153,0.10)';
+  }
 
   countdownDisplay(seconds: number): string {
     const abs = Math.abs(seconds);

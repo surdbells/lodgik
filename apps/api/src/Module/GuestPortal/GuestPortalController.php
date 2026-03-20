@@ -161,7 +161,7 @@ final class GuestPortalController
     /** POST /api/guest/chat/read */
     public function chatMarkRead(Request $req, Response $res): Response
     {
-        $this->chatService->markRead($req->getAttribute('guest.booking_id'), 'staff');
+        $this->chatService->markRead($req->getAttribute('guest.booking_id'), 'guest');
         return JsonResponse::ok($res, null, 'Messages marked as read');
     }
 

@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TabletService } from './tablet.service';
+import { GuestApiService } from '../../services/guest-api.service';
 
 @Component({ selector: 'app-tablet-controls', standalone: true, imports: [],
   template: `
@@ -13,14 +13,14 @@ import { TabletService } from './tablet.service';
       <div class="flex-1 overflow-y-auto p-6">
         <!-- DND + Clean -->
         <div class="grid grid-cols-2 gap-4 mb-6">
-          <button (click)="toggle('dnd')"
+          <button (click)="toggleDnd()"
             class="p-6 rounded-3xl flex flex-col items-center gap-3 border-2 transition-all active:scale-95"
-            [class]="controls().dnd ? 'bg-red-900/30 border-red-600' : 'bg-slate-900 border-slate-800'">
+            [class]="dnd() ? 'bg-red-900/30 border-red-600' : 'bg-slate-900 border-slate-800'">
             <span class="text-5xl">🚫</span>
             <p class="text-white font-bold">Do Not Disturb</p>
             <span class="text-sm font-medium px-3 py-1 rounded-full"
-                  [class]="controls().dnd ? 'bg-red-700 text-white' : 'bg-slate-700 text-slate-400'">
-              {{ controls().dnd ? 'ON' : 'OFF' }}
+                  [class]="dnd() ? 'bg-red-700 text-white' : 'bg-slate-700 text-slate-400'">
+              {{ dnd() ? 'ON' : 'OFF' }}
             </span>
           </button>
           <button (click)="requestClean()"
@@ -31,47 +31,44 @@ import { TabletService } from './tablet.service';
           </button>
         </div>
 
-        <!-- Thermostat -->
+        <!-- Make-up room -->
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 mb-4">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-              <span class="text-3xl">🌡️</span>
-              <p class="text-white font-bold text-lg">Temperature</p>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl">🛏</span>
+              <div>
+                <p class="text-white font-bold">Room Make-Up</p>
+                <p class="text-slate-400 text-sm">Request fresh towels & linens</p>
+              </div>
             </div>
-            <p class="text-violet-400 font-black text-3xl">{{ controls().temperature }}°C</p>
-          </div>
-          <div class="flex items-center gap-4">
-            <button (click)="adj('temperature', -1)" class="w-12 h-12 rounded-full bg-slate-700 text-white text-2xl font-bold flex items-center justify-center active:scale-90 transition-all">−</button>
-            <div class="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-blue-500 to-red-500 rounded-full transition-all"
-                   [style.width.%]="((controls().temperature - 16) / (30 - 16)) * 100"></div>
-            </div>
-            <button (click)="adj('temperature', 1)" class="w-12 h-12 rounded-full bg-slate-700 text-white text-2xl font-bold flex items-center justify-center active:scale-90 transition-all">+</button>
-          </div>
-          <div class="flex justify-between text-slate-500 text-xs mt-1 px-16">
-            <span>16°C</span><span>30°C</span>
+            <button (click)="requestMakeUp()"
+              class="px-5 py-2.5 bg-violet-600 text-white rounded-xl font-semibold text-sm active:scale-95 transition-all">
+              Request
+            </button>
           </div>
         </div>
 
-        <!-- Lights -->
+        <!-- Maintenance -->
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-              <span class="text-3xl">💡</span>
-              <p class="text-white font-bold text-lg">Lighting</p>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl">🔧</span>
+              <div>
+                <p class="text-white font-bold">Report Issue</p>
+                <p class="text-slate-400 text-sm">Maintenance request</p>
+              </div>
             </div>
-            <p class="text-amber-400 font-black text-2xl">{{ controls().brightness }}%</p>
-          </div>
-          <div class="flex items-center gap-4">
-            <span class="text-2xl">🌑</span>
-            <input type="range" [value]="controls().brightness" min="0" max="100"
-              class="flex-1 h-2 accent-amber-400" (input)="onBrightness($any($event.target).value)">
-            <span class="text-2xl">☀️</span>
+            <button (click)="reportMaintenance()"
+              class="px-5 py-2.5 bg-amber-600 text-white rounded-xl font-semibold text-sm active:scale-95 transition-all">
+              Report
+            </button>
           </div>
         </div>
 
         @if (toast()) {
-          <div class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-700 text-white px-6 py-3 rounded-xl text-sm font-medium shadow-xl">{{ toast() }}</div>
+          <div class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-700 text-white px-6 py-3 rounded-xl text-sm font-medium shadow-xl z-50">
+            {{ toast() }}
+          </div>
         }
       </div>
     </div>
@@ -79,48 +76,50 @@ import { TabletService } from './tablet.service';
 })
 export class TabletControlsPage implements OnInit {
   readonly router = inject(Router);
-  private svc     = inject(TabletService);
-  controls = signal({ dnd: false, temperature: 22, brightness: 70 });
-  toast    = signal('');
-  private bookingId = '';
+  private svc     = inject(GuestApiService);
+
+  dnd   = signal(false);
+  toast = signal('');
 
   ngOnInit(): void {
-    this.bookingId = this.svc.guestData()?.booking?.id ?? '';
-    this.svc.get('/room-control/status', { booking_id: this.bookingId }).subscribe({
-      next: (r: any) => { if (r.success) this.controls.set({ dnd: r.data?.dnd_active ?? false, temperature: r.data?.temperature ?? 22, brightness: r.data?.brightness ?? 70 }); },
+    this.svc.get('/guest/room-controls/status').subscribe({
+      next: (r: any) => { if (r.success) this.dnd.set(r.data?.dnd_active ?? false); },
       error: () => {},
     });
   }
 
-  toggle(key: 'dnd'): void {
-    const val = !this.controls()[key];
-    this.controls.update(c => ({ ...c, [key]: val }));
-    this.svc.post('/room-control/update', { booking_id: this.bookingId, [key]: val }).subscribe({
-      next: () => this.flash(`${key === 'dnd' ? 'Do Not Disturb' : key} ${val ? 'enabled' : 'disabled'}`),
-      error: () => {},
+  toggleDnd(): void {
+    const val = !this.dnd();
+    this.dnd.set(val);
+    this.svc.post('/guest/room-controls/dnd', { active: val }).subscribe({
+      next: () => this.flash(`Do Not Disturb ${val ? 'enabled' : 'disabled'}`),
+      error: () => { this.dnd.set(!val); this.flash('Failed to update'); },
     });
-  }
-
-  adj(key: 'temperature', delta: number): void {
-    const val = Math.min(30, Math.max(16, this.controls()[key] + delta));
-    this.controls.update(c => ({ ...c, [key]: val }));
-    this.svc.post('/room-control/update', { booking_id: this.bookingId, [key]: val }).subscribe({ error: () => {} });
-  }
-
-  sync(): void {
-    this.svc.post('/room-control/update', { booking_id: this.bookingId, brightness: this.controls().brightness }).subscribe({ error: () => {} });
   }
 
   requestClean(): void {
-    this.svc.post('/service-requests', { booking_id: this.bookingId, category: 'housekeeping', title: 'Room Cleaning', description: 'Guest requested room cleaning from tablet' }).subscribe({
-      next: () => this.flash('Housekeeping has been notified'),
+    this.svc.post('/guest/service-requests', {
+      category: 'housekeeping',
+      title: 'Room Cleaning',
+      description: 'Guest requested room cleaning from in-room tablet',
+    }).subscribe({
+      next: () => this.flash('🧹 Housekeeping has been notified'),
       error: () => this.flash('Request sent'),
     });
   }
 
-  onBrightness(v: string): void {
-    this.controls.update(c => ({ ...c, brightness: +v }));
-    this.sync();
+  requestMakeUp(): void {
+    this.svc.post('/guest/room-controls/make-up', {}).subscribe({
+      next: () => this.flash('🛏 Room make-up request sent'),
+      error: () => this.flash('Request sent'),
+    });
+  }
+
+  reportMaintenance(): void {
+    this.svc.post('/guest/room-controls/maintenance', { description: 'Reported from in-room tablet' }).subscribe({
+      next: () => this.flash('🔧 Maintenance team has been notified'),
+      error: () => this.flash('Request sent'),
+    });
   }
 
   private flash(msg: string): void {

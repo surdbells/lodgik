@@ -1,6 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TabletService } from './tablet.service';
 
 const TILES = [
   { icon: '🛎', label: 'Room Service',  sub: 'Food, drinks & more',  route: '/tablet/room-service',  color: 'from-orange-600 to-amber-500' },
@@ -55,7 +54,6 @@ const TILES = [
 })
 export class TabletHomePage implements OnInit {
   private router = inject(Router);
-  readonly svc   = inject(TabletService);
   tiles = TILES;
   time  = signal('');
   guestName    = signal('Guest');
@@ -68,14 +66,14 @@ export class TabletHomePage implements OnInit {
   ngOnInit(): void {
     this.tick();
     this.clockTimer = setInterval(() => this.tick(), 60_000);
-    const d = this.svc.guestData();
-    if (d) {
-      this.guestName.set(d.guest?.first_name ?? 'Guest');
+    try {
+      const d = JSON.parse(localStorage.getItem('guest_session') ?? '{}');
+      this.guestName.set(d.guest?.first_name ?? d.first_name ?? 'Guest');
       this.roomNum.set(d.room?.room_number ?? '');
-      this.bookingRef.set(d.booking?.booking_ref ?? '');
+      this.bookingRef.set(d.booking?.booking_ref ?? d.booking_ref ?? '');
       this.checkoutDate.set(d.booking?.check_out ? new Date(d.booking.check_out).toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short' }) : '');
       this.hotelName.set(d.property?.name ?? 'Lodgik Hotel');
-    }
+    } catch {}
   }
 
   ngOnDestroy(): void { clearInterval(this.clockTimer); }
