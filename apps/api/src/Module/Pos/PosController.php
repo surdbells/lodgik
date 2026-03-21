@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Lodgik\Module\Pos;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Lodgik\Util\JsonResponse;
 
 final class PosController
 {
-    public function __construct(private readonly PosService $service) {}
+    public function __construct(
+        private readonly PosService              $service,
+        private readonly EntityManagerInterface  $em,
+    ) {}
 
     // Tables
     public function listTables(Request $req, Response $res): Response
@@ -216,4 +220,68 @@ final class PosController
         try { $this->service->deleteProduct($args['id']); return JsonResponse::ok($res, null, 'Product deleted'); }
         catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 400); }
     }
+
+    // ── Section Prices ──────────────────────────────────────────────────────
+
+    public function listSectionPrices(Request $req, Response $res): Response
+    {
+        $pid = $req->getQueryParams()['property_id'] ?? '';
+        if (!$pid) return JsonResponse::error($res, 'property_id required', 422);
+        $prices = $this->em->getRepository(\Lodgik\Entity\PosSectionPrice::class)
+            ->findBy(['propertyId' => $pid], ['section' => 'ASC']);
+        return JsonResponse::ok($res, array_map(fn($p) => $p->toArray(), $prices));
+    }
+
+    public function saveSectionPrice(Request $req, Response $res, array $args = []): Response
+    {
+        $pid  = $req->getAttribute('auth.property_id') ?? '';
+        $tid  = $req->getAttribute('auth.tenant_id');
+        $body = (array) ($req->getParsedBody() ?? []);
+        $id   = $args['id'] ?? null;
+
+        if (!$body['product_id'] ?? '') return JsonResponse::validationError($res, ['product_id' => 'Required']);
+        if (!$body['section']     ?? '') return JsonResponse::validationError($res, ['section'     => 'Required']);
+        if (!isset($body['price']))      return JsonResponse::validationError($res, ['price'       => 'Required']);
+
+        $propId = $body['property_id'] ?? $pid;
+
+        if ($id) {
+            $sp = $this->em->find(\Lodgik\Entity\PosSectionPrice::class, $id);
+            if (!$sp) return JsonResponse::error($res, 'Not found', 404);
+            $sp->setPrice((string) $body['price']);
+            if (isset($body['note'])) $sp->setNote($body['note']);
+        } else {
+            // Check for existing (upsert)
+            $sp = $this->em->getRepository(\Lodgik\Entity\PosSectionPrice::class)->findOneBy([
+                'productId'  => $body['product_id'],
+                'section'    => $body['section'],
+                'propertyId' => $propId,
+            ]);
+            if ($sp) {
+                $sp->setPrice((string) $body['price']);
+                if (isset($body['note'])) $sp->setNote($body['note']);
+            } else {
+                $product = $this->em->find(\Lodgik\Entity\PosProduct::class, $body['product_id']);
+                $sp = new \Lodgik\Entity\PosSectionPrice(
+                    $propId, $tid, $body['product_id'],
+                    $product?->getName() ?? '', $body['section'], (string) $body['price']
+                );
+                if (isset($body['note'])) $sp->setNote($body['note']);
+                $this->em->persist($sp);
+            }
+        }
+
+        $this->em->flush();
+        return JsonResponse::ok($res, $sp->toArray(), 'Section price saved');
+    }
+
+    public function deleteSectionPrice(Request $req, Response $res, array $args): Response
+    {
+        $sp = $this->em->find(\Lodgik\Entity\PosSectionPrice::class, $args['id']);
+        if (!$sp) return JsonResponse::error($res, 'Not found', 404);
+        $this->em->remove($sp);
+        $this->em->flush();
+        return JsonResponse::ok($res, null, 'Section price deleted');
+    }
+
 }

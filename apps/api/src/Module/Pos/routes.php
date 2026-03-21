@@ -32,6 +32,10 @@ return function (App $app): void {
         $g->post('/orders/{id}/cancel', [PosController::class, 'cancelOrder']);
         $g->post('/orders/{id}/post-to-folio', [PosController::class, 'postToFolio']);
         $g->get('/kitchen/queue', [PosController::class, 'kitchenQueue']);
+        $g->get('/section-prices',        [PosController::class, 'listSectionPrices']);
+        $g->post('/section-prices',       [PosController::class, 'saveSectionPrice']);
+        $g->put('/section-prices/{id}',   [PosController::class, 'saveSectionPrice']);
+        $g->delete('/section-prices/{id}',[PosController::class, 'deleteSectionPrice']);
 
         // ── Recipes & Food Cost ──────────────────────────────────────
         // Static routes before variable routes (FastRoute rule)

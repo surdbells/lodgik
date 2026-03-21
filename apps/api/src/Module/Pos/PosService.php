@@ -9,6 +9,8 @@ use Lodgik\Entity\PosTable;
 use Lodgik\Entity\PosCategory;
 use Lodgik\Entity\PosProduct;
 use Lodgik\Entity\PosOrder;
+use Lodgik\Entity\PosSectionPrice;
+use Lodgik\Entity\PosTable;
 use Lodgik\Entity\PosOrderItem;
 use Lodgik\Enum\PosOrderStatus;
 use Lodgik\Module\Folio\FolioService;
@@ -147,7 +149,21 @@ final class PosService
         $order = $this->em->find(PosOrder::class, $orderId) ?? throw new \RuntimeException('Order not found');
         $product = $this->em->find(PosProduct::class, $productId) ?? throw new \RuntimeException('Product not found');
 
-        $item = new PosOrderItem($orderId, $productId, $product->getName(), $quantity, $product->getPrice(), $tenantId);
+        // Resolve section-specific price if the order has a table in a priced section
+        $resolvedPrice = $product->getPrice();
+        $order = $this->em->find(PosOrder::class, $orderId);
+        if ($order?->getTableId()) {
+            $table = $this->em->find(PosTable::class, $order->getTableId());
+            if ($table) {
+                $sectionPrice = $this->em->getRepository(PosSectionPrice::class)->findOneBy([
+                    'productId'  => $productId,
+                    'section'    => $table->getSection(),
+                    'propertyId' => $order->getPropertyId(),
+                ]);
+                if ($sectionPrice) $resolvedPrice = $sectionPrice->getPrice();
+            }
+        }
+        $item = new PosOrderItem($orderId, $productId, $product->getName(), $quantity, $resolvedPrice, $tenantId);
         $item->setRequiresKitchen($product->getRequiresKitchen());
         if ($notes) $item->setNotes($notes);
         $item->setSplitGroup($splitGroup);

@@ -16,6 +16,7 @@ use Lodgik\Module\Security\SecurityService;
 use Lodgik\Module\ServiceRequest\ServiceRequestService;
 use Lodgik\Module\Spa\SpaService;
 use Psr\Log\LoggerInterface;
+use Lodgik\Module\GuestPortal\GuestStayNotificationService;
 use Lodgik\Repository\BookingRepository;
 use Lodgik\Repository\GuestRepository;
 use Lodgik\Repository\PropertyBankAccountRepository;
@@ -834,4 +835,64 @@ final class GuestPortalController
 
         return JsonResponse::ok($res, $orders);
     }
+
+    // ═══ Stay Notifications ═══════════════════════════════════════════════
+
+    /** GET /api/guest/stay-notifications */
+    public function listStayNotifications(Request $req, Response $res): Response
+    {
+        if (!$this->notifService) return JsonResponse::error($res, 'Service unavailable', 503);
+        $items = $this->notifService->list($req->getAttribute('guest.booking_id'));
+        return JsonResponse::ok($res, array_map(fn($n) => $n->toArray(), $items));
+    }
+
+    /** POST /api/guest/stay-notifications  |  PUT /api/guest/stay-notifications/{id} */
+    public function saveStayNotification(Request $req, Response $res, array $args = []): Response
+    {
+        if (!$this->notifService) return JsonResponse::error($res, 'Service unavailable', 503);
+        $body = (array) ($req->getParsedBody() ?? []);
+        if (empty($body['contact_name'])) return JsonResponse::validationError($res, ['contact_name' => 'Required']);
+        if (empty($body['contact_email']) && empty($body['contact_phone'])) {
+            return JsonResponse::validationError($res, ['contact' => 'At least one of contact_email or contact_phone is required']);
+        }
+        try {
+            $n = $this->notifService->save(
+                bookingId:  $req->getAttribute('guest.booking_id'),
+                guestId:    $req->getAttribute('guest.guest_id'),
+                tenantId:   $req->getAttribute('guest.tenant_id'),
+                propertyId: $req->getAttribute('guest.property_id'),
+                data:       $body,
+                existingId: $args['id'] ?? null,
+            );
+            return JsonResponse::ok($res, $n->toArray(), 'Contact saved');
+        } catch (\RuntimeException $e) {
+            return JsonResponse::error($res, $e->getMessage(), 400);
+        }
+    }
+
+    /** DELETE /api/guest/stay-notifications/{id} */
+    public function deleteStayNotification(Request $req, Response $res, array $args): Response
+    {
+        if (!$this->notifService) return JsonResponse::error($res, 'Service unavailable', 503);
+        try {
+            $this->notifService->delete($args['id'], $req->getAttribute('guest.booking_id'));
+            return JsonResponse::ok($res, null, 'Contact removed');
+        } catch (\RuntimeException $e) {
+            return JsonResponse::error($res, $e->getMessage(), 404);
+        }
+    }
+
+    /** POST /api/guest/stay-notifications/{id}/send */
+    public function sendStayNotification(Request $req, Response $res, array $args): Response
+    {
+        if (!$this->notifService) return JsonResponse::error($res, 'Service unavailable', 503);
+        try {
+            $channels = $this->notifService->send($args['id'], $req->getAttribute('guest.booking_id'));
+            if (empty($channels)) return JsonResponse::error($res, 'No valid channels configured for this contact (need email or phone)', 422);
+            return JsonResponse::ok($res, ['channels_sent' => $channels], 'Notification sent via ' . implode(', ', $channels));
+        } catch (\RuntimeException $e) {
+            return JsonResponse::error($res, $e->getMessage(), 400);
+        }
+    }
+
 }

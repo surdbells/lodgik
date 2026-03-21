@@ -16,6 +16,7 @@ const QUICK_ACTIONS = [
   { label: 'Chat Staff',    icon: 'chat',         route: '/guest/chat',           color: 'text-amber-400' },
   { label: 'Restaurant',     icon: 'utensils',     route: '/guest/restaurant',     color: 'text-orange-400' },
   { label: 'Visitors',      icon: 'users',        route: '/guest/visitor-codes',  color: 'text-blue-400'  },
+  { label: 'Notify Contacts', icon: 'shield',    route: '/guest/stay-notifications', color: 'text-green-400' },
   { label: 'Extend Stay',   icon: 'calendar',     route: '/guest/stay-extension', color: 'text-purple-400' },
   { label: 'Room Controls', icon: 'sliders',      route: '/guest/room-controls',  color: 'text-emerald-400' },
   { label: 'Lost & Found',  icon: 'searchx',      route: '/guest/lost-found',     color: 'text-pink-400'  },

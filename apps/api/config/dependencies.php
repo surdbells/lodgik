@@ -828,6 +828,12 @@ return function (ContainerBuilder $builder): void {
             logger:                $c->get(LoggerInterface::class),
         ),
 
+        \Lodgik\Module\GuestPortal\GuestStayNotificationService::class => fn(ContainerInterface $c) => new \Lodgik\Module\GuestPortal\GuestStayNotificationService(
+            em:     $c->get(EntityManagerInterface::class),
+            termii: $c->get(TermiiService::class),
+            mail:   $c->get(ZeptoMailService::class),
+        ),
+
         ServiceRequestService::class => fn(ContainerInterface $c) => new ServiceRequestService(
             em:             $c->get(EntityManagerInterface::class),
             repo:           $c->get(ServiceRequestRepository::class),
@@ -909,6 +915,7 @@ return function (ContainerBuilder $builder): void {
         ),
         \Lodgik\Module\Pos\PosController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\PosController(
             service: $c->get(\Lodgik\Module\Pos\PosService::class),
+            em:      $c->get(EntityManagerInterface::class),
         ),
         \Lodgik\Module\Pos\RecipeController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\RecipeController(
             service: $c->get(\Lodgik\Module\Pos\RecipeService::class),

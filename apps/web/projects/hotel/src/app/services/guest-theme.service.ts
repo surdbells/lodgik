@@ -123,4 +123,24 @@ export class GuestThemeService {
   readonly backBtn = computed(() =>
     this.isDark() ? 'text-white/50 hover:text-white' : 'text-gray-400 hover:text-gray-700'
   );
+  readonly cardBg = computed(() =>
+    this.isDark() ? 'bg-slate-900' : 'bg-white'
+  );
+
+  readonly primaryBtn = computed(() =>
+    'bg-amber-400 text-slate-900 font-bold hover:bg-amber-300 active:scale-95'
+  );
+
+  readonly dashedBtn = computed(() =>
+    this.isDark()
+      ? 'border-white/20 text-white/50 hover:text-white hover:border-white/40'
+      : 'border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400'
+  );
+
+  readonly dangerOutline = computed(() =>
+    this.isDark()
+      ? 'border-red-500/40 text-red-400 hover:bg-red-900/20'
+      : 'border-red-300 text-red-500 hover:bg-red-50'
+  );
+
 }
