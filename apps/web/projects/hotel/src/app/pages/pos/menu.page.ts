@@ -182,6 +182,10 @@ interface StockItem { id: string; sku: string; name: string; }
                     }
                   </div>
                   <div class="flex gap-2 pt-1 border-t border-gray-50">
+                    <button (click)="openSectionPriceModal(p)"
+                      class="p-1.5 text-violet-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors" title="Section Prices">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.55 0 1.05.22 1.41.59l7 7c.36.36.59.86.59 1.41s-.22 1.05-.59 1.41l-5 5c-.36.36-.86.59-1.41.59s-1.05-.22-1.41-.59l-7-7C4.22 9.05 4 8.55 4 8V4a1 1 0 011-1z"/></svg>
+                    </button>
                     <button (click)="openProductModal(p)"
                       class="flex-1 text-xs py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
                       Edit
@@ -345,6 +349,89 @@ interface StockItem { id: string; sku: string; name: string; }
         </div>
       </div>
     }
+
+    <!-- Section Price Modal -->
+    @if (showSectionPriceModal()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
+          <div class="flex items-center justify-between p-5 border-b border-gray-100">
+            <div>
+              <h3 class="font-bold text-gray-900">Section Prices</h3>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Override the default price per section/area. Used when the same item costs differently in different areas.
+              </p>
+            </div>
+            <button (click)="closeSectionPriceModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400">✕</button>
+          </div>
+          <div class="p-5">
+            <!-- Existing section prices -->
+            @if (sectionPrices().length > 0) {
+              <div class="mb-5">
+                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">All Section Price Overrides</h4>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                  @for (sp of sectionPrices(); track sp.id) {
+                    <div class="flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100 text-sm">
+                      <div>
+                        <span class="font-semibold text-gray-800 truncate max-w-36 block">{{ sp.product_name }}</span>
+                        <span class="text-xs text-violet-600 font-medium">{{ sectionLabel(sp.section) }}</span>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <span class="font-bold text-gray-900">₦{{ (+sp.price).toLocaleString() }}</span>
+                        <button (click)="deleteSectionPrice(sp.id)"
+                          class="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded-lg hover:bg-red-50">✕</button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Add new override -->
+            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Add Override</h4>
+            <div class="space-y-3">
+              <!-- Product selector -->
+              <div>
+                <label class="text-xs font-medium text-gray-700 block mb-1">Menu Item</label>
+                <select [(ngModel)]="sectionPriceForm.product_id" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
+                  <option value="">Select item…</option>
+                  @for (p of products(); track p.id) {
+                    <option [value]="p.id">{{ p.name }} — ₦{{ (+p.price).toLocaleString() }}</option>
+                  }
+                </select>
+              </div>
+              <!-- Section -->
+              <div>
+                <label class="text-xs font-medium text-gray-700 block mb-1">Section / Area</label>
+                <select [(ngModel)]="sectionPriceForm.section" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
+                  <option value="">Select section…</option>
+                  @for (s of SECTIONS; track s.key) {
+                    <option [value]="s.key">{{ s.label }}</option>
+                  }
+                </select>
+              </div>
+              <!-- Override price -->
+              <div>
+                <label class="text-xs font-medium text-gray-700 block mb-1">Override Price (₦)</label>
+                <input [(ngModel)]="sectionPriceForm.price" type="number" min="0" placeholder="e.g. 12000"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
+              </div>
+              <!-- Note -->
+              <div>
+                <label class="text-xs font-medium text-gray-700 block mb-1">Note (optional)</label>
+                <input [(ngModel)]="sectionPriceForm.note" placeholder="e.g. Service charge included"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
+              </div>
+              <button (click)="saveSectionPriceEntry()"
+                [disabled]="!sectionPriceForm.product_id || !sectionPriceForm.section || !sectionPriceForm.price || savingSectionPrice()"
+                class="w-full py-3 bg-violet-600 text-white font-semibold text-sm rounded-xl hover:bg-violet-700 disabled:opacity-40 transition-colors">
+                {{ savingSectionPrice() ? 'Saving…' : 'Add Section Price' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
   `,
 })
 export class MenuPage implements OnInit {
@@ -380,6 +467,23 @@ export class MenuPage implements OnInit {
     { key: 'items' as const, label: 'Menu Items' },
   ];
 
+  // ── Section pricing ───────────────────────────────────────────────
+  sectionPrices         = signal<any[]>([]);
+  showSectionPriceModal = signal(false);
+  savingSectionPrice    = signal(false);
+  sectionPriceForm: any = { product_id: '', product_name: '', section: '', price: null, note: '' };
+
+  readonly SECTIONS = [
+    { key: 'restaurant',       label: 'Restaurant'       },
+    { key: 'bar',              label: 'Bar'               },
+    { key: 'pool',             label: 'Pool Area'         },
+    { key: 'private_lounge',   label: 'Private Lounge'   },
+    { key: 'executive_lounge', label: 'Executive Lounge' },
+    { key: 'rooftop',          label: 'Rooftop'          },
+    { key: 'vip',              label: 'VIP Section'      },
+    { key: 'takeaway',         label: 'Takeaway'         },
+  ];
+
   filteredStockItems = computed(() => {
     const q = this.stockSearch.toLowerCase();
     const items = this.stockItems();
@@ -400,7 +504,7 @@ export class MenuPage implements OnInit {
     return cat ? all.filter(p => p.category_id === cat) : all;
   });
 
-  ngOnInit() { this.load(); }
+  ngOnInit() { this.load(); this.loadSectionPrices(); }
 
   load() {
     const pid = this.activeProperty.propertyId();
@@ -488,6 +592,57 @@ export class MenuPage implements OnInit {
   }
 
   closeProductModal() { this.showProductModal.set(false); this.editingProduct.set(null); }
+
+  loadSectionPrices(): void {
+    const pid = this.activeProperty.propertyId();
+    this.api.get('/pos/section-prices', { property_id: pid }).subscribe({
+      next: (r: any) => this.sectionPrices.set(r.data ?? []),
+    });
+  }
+
+  openSectionPriceModal(product?: any): void {
+    this.sectionPriceForm = {
+      product_id: product?.id ?? '',
+      product_name: product?.name ?? '',
+      section: '',
+      price: null,
+      note: '',
+    };
+    this.showSectionPriceModal.set(true);
+    if (this.sectionPrices().length === 0) this.loadSectionPrices();
+  }
+
+  closeSectionPriceModal(): void { this.showSectionPriceModal.set(false); }
+
+  saveSectionPriceEntry(): void {
+    if (!this.sectionPriceForm.product_id || !this.sectionPriceForm.section || !this.sectionPriceForm.price) return;
+    this.savingSectionPrice.set(true);
+    this.api.post('/pos/section-prices', {
+      ...this.sectionPriceForm,
+      property_id: this.activeProperty.propertyId(),
+    }).subscribe({
+      next: () => {
+        this.savingSectionPrice.set(false);
+        this.loadSectionPrices();
+        this.sectionPriceForm = { product_id: '', product_name: '', section: '', price: null, note: '' };
+      },
+      error: () => this.savingSectionPrice.set(false),
+    });
+  }
+
+  deleteSectionPrice(id: string): void {
+    this.api.delete(`/pos/section-prices/${id}`).subscribe({
+      next: () => this.loadSectionPrices(),
+    });
+  }
+
+  sectionLabel(key: string): string {
+    return this.SECTIONS.find(s => s.key === key)?.label ?? key;
+  }
+
+  pricesForProduct(productId: string): any[] {
+    return this.sectionPrices().filter(sp => sp.product_id === productId);
+  }
 
   saveProduct() {
     if (!this.productForm.category_id || !this.productForm.name.trim() || this.productForm.price_naira < 0) return;

@@ -2,12 +2,18 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 const TILES = [
-  { icon: '🛎', label: 'Room Service',  sub: 'Food, drinks & more',  route: '/tablet/room-service',  color: 'from-orange-600 to-amber-500' },
-  { icon: '💬', label: 'Chat Staff',    sub: 'Message the front desk', route: '/tablet/chat',           color: 'from-blue-600 to-blue-500'   },
-  { icon: '🧾', label: 'My Bill',       sub: 'View charges & balance', route: '/tablet/bill',           color: 'from-emerald-700 to-emerald-500' },
-  { icon: '🚿', label: 'Room Controls', sub: 'AC, lights, DND',       route: '/tablet/controls',       color: 'from-violet-600 to-violet-500' },
-  { icon: 'ℹ️', label: 'Hotel Info',    sub: 'Services & facilities',  route: '/tablet/info',           color: 'from-cyan-700 to-cyan-500'   },
-  { icon: '🌿', label: 'Spa & Wellness',sub: 'Book treatments',        route: '/tablet/spa',            color: 'from-rose-700 to-rose-500'   },
+  { icon: '🛎', label: 'Room Service',    sub: 'Order food & drinks',      route: '/tablet/room-service',       color: 'from-orange-600 to-amber-500'   },
+  { icon: '💬', label: 'Chat Staff',      sub: 'Message front desk',       route: '/tablet/chat',               color: 'from-blue-600 to-blue-500'      },
+  { icon: '🧾', label: 'My Bill',         sub: 'View charges & balance',   route: '/tablet/folio',              color: 'from-emerald-700 to-emerald-500' },
+  { icon: '🚿', label: 'Room Controls',   sub: 'DND, housekeeping',        route: '/tablet/controls',           color: 'from-violet-600 to-violet-500'  },
+  { icon: '🌿', label: 'Spa & Wellness',  sub: 'Book treatments',          route: '/tablet/spa',                color: 'from-rose-700 to-rose-500'      },
+  { icon: 'ℹ️', label: 'Hotel Info',      sub: 'Services & facilities',    route: '/tablet/info',               color: 'from-cyan-700 to-cyan-500'      },
+  { icon: '🔔', label: 'Stay Alert',      sub: 'Notify trusted contacts',  route: '/tablet/stay-notifications', color: 'from-amber-700 to-amber-500'    },
+  { icon: '🗝',  label: 'Visitor Codes',  sub: 'Guest access codes',       route: '/tablet/visitor-codes',      color: 'from-indigo-700 to-indigo-500'  },
+  { icon: '📅', label: 'Extend Stay',     sub: 'Request extension',        route: '/tablet/stay-extension',     color: 'from-teal-700 to-teal-500'      },
+  { icon: '🔍', label: 'Lost & Found',    sub: 'Report lost items',        route: '/tablet/lost-found',         color: 'from-gray-700 to-gray-500'      },
+  { icon: '⚙️', label: 'Preferences',     sub: 'Room & stay preferences',  route: '/tablet/preferences',        color: 'from-slate-700 to-slate-500'    },
+  { icon: '🚪', label: 'Check Out',       sub: 'Request checkout',         route: '/tablet/checkout',           color: 'from-red-700 to-red-500'        },
 ];
 
 @Component({ selector: 'app-tablet-home', standalone: true, imports: [],
@@ -26,7 +32,7 @@ const TILES = [
       </div>
 
       <!-- Tile grid — landscape 3×2 -->
-      <div class="flex-1 grid grid-cols-3 grid-rows-2 gap-4 px-8 pb-6 overflow-hidden">
+      <div class="flex-1 grid grid-cols-3 grid-rows-4 gap-3 px-6 pb-4 overflow-auto">
         @for (tile of tiles; track tile.route) {
           <button (click)="nav(tile.route)"
             class="relative rounded-3xl p-6 flex flex-col justify-between bg-gradient-to-br text-left active:scale-95 transition-all overflow-hidden shadow-xl"
