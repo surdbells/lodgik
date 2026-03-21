@@ -10,7 +10,6 @@ use Lodgik\Entity\PosCategory;
 use Lodgik\Entity\PosProduct;
 use Lodgik\Entity\PosOrder;
 use Lodgik\Entity\PosSectionPrice;
-use Lodgik\Entity\PosTable;
 use Lodgik\Entity\PosOrderItem;
 use Lodgik\Enum\PosOrderStatus;
 use Lodgik\Module\Folio\FolioService;
