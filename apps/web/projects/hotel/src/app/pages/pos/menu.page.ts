@@ -353,81 +353,105 @@ interface StockItem { id: string; sku: string; name: string; }
     <!-- Section Price Modal -->
     @if (showSectionPriceModal()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
-          <div class="flex items-center justify-between p-5 border-b border-gray-100">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+
+          <!-- Header -->
+          <div class="flex items-start justify-between p-5 border-b border-gray-100 flex-shrink-0">
             <div>
-              <h3 class="font-bold text-gray-900">Section Prices</h3>
-              <p class="text-xs text-gray-500 mt-0.5">
-                Override the default price per section/area. Used when the same item costs differently in different areas.
+              <h3 class="font-bold text-gray-900 text-base">Section Pricing</h3>
+              @if (pricingProduct()) {
+                <p class="text-sm text-violet-700 font-semibold mt-0.5">{{ pricingProduct()!.name }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">Default price: ₦{{ formatPrice(pricingProduct()!.price) }}</p>
+              }
+              <p class="text-xs text-gray-400 mt-1">
+                Set a different price per section. Leave blank to use the default price.
               </p>
             </div>
-            <button (click)="closeSectionPriceModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400">✕</button>
+            <button (click)="closeSectionPriceModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 flex-shrink-0">✕</button>
           </div>
-          <div class="p-5">
-            <!-- Existing section prices -->
-            @if (sectionPrices().length > 0) {
-              <div class="mb-5">
-                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">All Section Price Overrides</h4>
-                <div class="space-y-2 max-h-48 overflow-y-auto">
-                  @for (sp of sectionPrices(); track sp.id) {
-                    <div class="flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100 text-sm">
-                      <div>
-                        <span class="font-semibold text-gray-800 truncate max-w-36 block">{{ sp.product_name }}</span>
-                        <span class="text-xs text-violet-600 font-medium">{{ sectionLabel(sp.section) }}</span>
-                      </div>
-                      <div class="flex items-center gap-3">
-                        <span class="font-bold text-gray-900">₦{{ formatPrice(sp.price) }}</span>
-                        <button (click)="deleteSectionPrice(sp.id)"
-                          class="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded-lg hover:bg-red-50">✕</button>
-                      </div>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
 
-            <!-- Add new override -->
-            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Add Override</h4>
-            <div class="space-y-3">
-              <!-- Product selector -->
-              <div>
-                <label class="text-xs font-medium text-gray-700 block mb-1">Menu Item</label>
-                <select [(ngModel)]="sectionPriceForm.product_id" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
-                  <option value="">Select item…</option>
-                  @for (p of products(); track p.id) {
-                    <option [value]="p.id">{{ p.name }} — ₦{{ formatPrice(p.price) }}</option>
-                  }
-                </select>
-              </div>
-              <!-- Section -->
-              <div>
-                <label class="text-xs font-medium text-gray-700 block mb-1">Section / Area</label>
-                <select [(ngModel)]="sectionPriceForm.section" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
-                  <option value="">Select section…</option>
-                  @for (s of SECTIONS; track s.key) {
-                    <option [value]="s.key">{{ s.label }}</option>
-                  }
-                </select>
-              </div>
-              <!-- Override price -->
-              <div>
-                <label class="text-xs font-medium text-gray-700 block mb-1">Override Price (₦)</label>
-                <input [(ngModel)]="sectionPriceForm.price" type="number" min="0" placeholder="e.g. 12000"
-                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
-              </div>
-              <!-- Note -->
-              <div>
-                <label class="text-xs font-medium text-gray-700 block mb-1">Note (optional)</label>
-                <input [(ngModel)]="sectionPriceForm.note" placeholder="e.g. Service charge included"
-                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
-              </div>
-              <button (click)="saveSectionPriceEntry()"
-                [disabled]="!sectionPriceForm.product_id || !sectionPriceForm.section || !sectionPriceForm.price || savingSectionPrice()"
-                class="w-full py-3 bg-violet-600 text-white font-semibold text-sm rounded-xl hover:bg-violet-700 disabled:opacity-40 transition-colors">
-                {{ savingSectionPrice() ? 'Saving…' : 'Add Section Price' }}
-              </button>
+          <!-- Product selector (when opened from header button, no product pre-selected) -->
+          @if (!pricingProduct()) {
+            <div class="px-5 pt-4 flex-shrink-0">
+              <label class="text-xs font-medium text-gray-700 block mb-1">Select Menu Item</label>
+              <select (change)="selectPricingProduct($any($event.target).value)"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
+                <option value="">Choose an item…</option>
+                @for (p of products(); track p.id) {
+                  <option [value]="p.id">{{ p.name }} — ₦{{ formatPrice(p.price) }}</option>
+                }
+              </select>
             </div>
-          </div>
+          }
+
+          <!-- Section price grid -->
+          @if (pricingProduct()) {
+            <div class="flex-1 overflow-y-auto px-5 py-4">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-gray-100">
+                    <th class="text-left pb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Section / Area</th>
+                    <th class="text-right pb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Price (₦)</th>
+                    <th class="w-10 pb-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (s of SECTIONS; track s.key) {
+                    <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <td class="py-3 pr-4">
+                        <div class="flex items-center gap-2">
+                          <span class="w-2 h-2 rounded-full flex-shrink-0"
+                            [class]="sectionPriceForRow(pricingProduct()!.id, s.key) ? 'bg-violet-500' : 'bg-gray-200'"></span>
+                          <span class="font-medium text-gray-800">{{ s.label }}</span>
+                          @if (!sectionPriceForRow(pricingProduct()!.id, s.key)) {
+                            <span class="text-[10px] text-gray-400">default</span>
+                          }
+                        </div>
+                      </td>
+                      <td class="py-3 text-right">
+                        @if (editingRow() === s.key) {
+                          <input #rowInput
+                            [value]="rowInputValue(pricingProduct()!.id, s.key)"
+                            (keydown.enter)="saveRow(pricingProduct()!.id, s.key, rowInput.value)"
+                            (keydown.escape)="editingRow.set(null)"
+                            (blur)="saveRow(pricingProduct()!.id, s.key, rowInput.value)"
+                            type="number" min="0" placeholder="{{ formatPrice(pricingProduct()!.price) }}"
+                            class="w-36 text-right border border-violet-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 bg-violet-50">
+                        } @else {
+                          <button (click)="editingRow.set(s.key)"
+                            class="text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors text-right w-36"
+                            [class]="sectionPriceForRow(pricingProduct()!.id, s.key)
+                              ? 'text-violet-700 bg-violet-50 hover:bg-violet-100'
+                              : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'">
+                            {{ sectionPriceForRow(pricingProduct()!.id, s.key)
+                                ? '₦' + formatPrice(sectionPriceForRow(pricingProduct()!.id, s.key)!.price)
+                                : '+ Set price' }}
+                          </button>
+                        }
+                      </td>
+                      <td class="py-3 pl-2">
+                        @if (sectionPriceForRow(pricingProduct()!.id, s.key)) {
+                          <button (click)="deleteSectionPrice(sectionPriceForRow(pricingProduct()!.id, s.key)!.id)"
+                            class="w-6 h-6 rounded-full text-gray-300 hover:text-red-400 hover:bg-red-50 text-xs flex items-center justify-center transition-colors">✕</button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              <p class="text-xs text-gray-400 mt-3">
+                💡 Click any price to edit inline. Press Enter or click away to save. ✕ to remove override.
+              </p>
+            </div>
+
+            <!-- Summary footer -->
+            <div class="flex-shrink-0 border-t border-gray-100 px-5 py-3 bg-gray-50 rounded-b-2xl">
+              <div class="flex gap-6 text-xs text-gray-500">
+                <span>Default: <strong class="text-gray-800">₦{{ formatPrice(pricingProduct()!.price) }}</strong></span>
+                <span>Overrides set: <strong class="text-violet-700">{{ pricesForProduct(pricingProduct()!.id).length }} / {{ SECTIONS.length }}</strong></span>
+              </div>
+            </div>
+          }
         </div>
       </div>
     }
@@ -471,7 +495,6 @@ export class MenuPage implements OnInit {
   sectionPrices         = signal<any[]>([]);
   showSectionPriceModal = signal(false);
   savingSectionPrice    = signal(false);
-  sectionPriceForm: any = { product_id: '', product_name: '', section: '', price: null, note: '' };
 
   readonly SECTIONS = [
     { key: 'restaurant',       label: 'Restaurant'       },
@@ -594,6 +617,9 @@ export class MenuPage implements OnInit {
 
   closeProductModal() { this.showProductModal.set(false); this.editingProduct.set(null); }
 
+  pricingProduct = signal<any | null>(null);
+  editingRow     = signal<string | null>(null);
+
   loadSectionPrices(): void {
     const pid = this.activeProperty.propertyId();
     this.api.get('/pos/section-prices', { property_id: pid }).subscribe({
@@ -602,33 +628,52 @@ export class MenuPage implements OnInit {
   }
 
   openSectionPriceModal(product?: any): void {
-    this.sectionPriceForm = {
-      product_id: product?.id ?? '',
-      product_name: product?.name ?? '',
-      section: '',
-      price: null,
-      note: '',
-    };
+    this.pricingProduct.set(product ?? null);
+    this.editingRow.set(null);
     this.showSectionPriceModal.set(true);
-    if (this.sectionPrices().length === 0) this.loadSectionPrices();
+    this.loadSectionPrices();
   }
 
-  closeSectionPriceModal(): void { this.showSectionPriceModal.set(false); }
+  closeSectionPriceModal(): void {
+    this.showSectionPriceModal.set(false);
+    this.pricingProduct.set(null);
+    this.editingRow.set(null);
+  }
 
-  saveSectionPriceEntry(): void {
-    if (!this.sectionPriceForm.product_id || !this.sectionPriceForm.section || !this.sectionPriceForm.price) return;
-    this.savingSectionPrice.set(true);
+  selectPricingProduct(productId: string): void {
+    const p = this.products().find(x => x.id === productId) ?? null;
+    this.pricingProduct.set(p);
+    this.editingRow.set(null);
+  }
+
+  sectionPriceForRow(productId: string, section: string): any | null {
+    return this.sectionPrices().find(sp => sp.product_id === productId && sp.section === section) ?? null;
+  }
+
+  rowInputValue(productId: string, section: string): string {
+    const sp = this.sectionPriceForRow(productId, section);
+    return sp ? String(parseInt(sp.price, 10) / 100) : '';
+  }
+
+  saveRow(productId: string, section: string, rawValue: string): void {
+    this.editingRow.set(null);
+    const naira = parseFloat(rawValue);
+    if (isNaN(naira) || naira <= 0) {
+      // Empty or zero — remove override if one exists
+      const existing = this.sectionPriceForRow(productId, section);
+      if (existing) this.deleteSectionPrice(existing.id);
+      return;
+    }
+    const product = this.products().find(p => p.id === productId);
     this.api.post('/pos/section-prices', {
-      ...this.sectionPriceForm,
-      price: Math.round(Number(this.sectionPriceForm.price) * 100),
+      product_id: productId,
+      product_name: product?.name ?? '',
+      section,
+      price: Math.round(naira * 100),
       property_id: this.activeProperty.propertyId(),
     }).subscribe({
-      next: () => {
-        this.savingSectionPrice.set(false);
-        this.loadSectionPrices();
-        this.sectionPriceForm = { product_id: '', product_name: '', section: '', price: null, note: '' };
-      },
-      error: () => this.savingSectionPrice.set(false),
+      next: () => this.loadSectionPrices(),
+      error: () => {},
     });
   }
 
@@ -645,6 +690,9 @@ export class MenuPage implements OnInit {
   pricesForProduct(productId: string): any[] {
     return this.sectionPrices().filter(sp => sp.product_id === productId);
   }
+
+  // Legacy – kept for compatibility with old saveSectionPriceEntry calls if any remain
+  saveSectionPriceEntry(): void {}
 
   saveProduct() {
     if (!this.productForm.category_id || !this.productForm.name.trim() || this.productForm.price_naira < 0) return;
