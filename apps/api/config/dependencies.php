@@ -622,6 +622,7 @@ return function (ContainerBuilder $builder): void {
                 termii:              $c->get(\Lodgik\Service\TermiiService::class),
                 notificationService: $c->get(\Lodgik\Module\Notification\NotificationService::class),
                 mailService:         $c->get(\Lodgik\Service\ZeptoMailService::class),
+                financeService:      $c->get(\Lodgik\Module\Finance\FinanceService::class),
             );
         },
 

@@ -364,6 +364,35 @@ final class BookingService
             }
         }
 
+        // Auto-create police report (Nigeria Form C compliance)
+        if ($this->financeService !== null) {
+            try {
+                $prGuest  = $this->guestRepo->find($booking->getGuestId());
+                $prRoom   = $booking->getRoomId() ? $this->roomRepo->find($booking->getRoomId()) : null;
+                $prRoom   = $prRoom?->getRoomNumber() ?? '';
+                $this->financeService->createPoliceReport(
+                    $booking->getPropertyId(),
+                    $booking->getId(),
+                    $booking->getGuestId(),
+                    $prGuest?->getFullName() ?? 'Unknown Guest',
+                    $booking->getCheckIn()->format('Y-m-d'),
+                    $booking->getTenantId(),
+                    [
+                        'departure_date'      => $booking->getCheckOut()->format('Y-m-d'),
+                        'room_number'         => $prRoom,
+                        'nationality'         => $prGuest?->getNationality() ?? null,
+                        'id_type'             => $prGuest?->getIdType() ?? null,
+                        'id_number'           => $prGuest?->getIdNumber() ?? null,
+                        'phone'               => $prGuest?->getPhone() ?? null,
+                        'email'               => $prGuest?->getEmail() ?? null,
+                        'accompanying_persons'=> max(0, ($booking->getAdults() + $booking->getChildren()) - 1),
+                    ]
+                );
+            } catch (\Throwable $e) {
+                $this->logger->error("Police report auto-create failed: {$e->getMessage()}");
+            }
+        }
+
         return $booking;
     }
 
