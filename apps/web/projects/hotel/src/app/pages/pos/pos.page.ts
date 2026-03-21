@@ -39,12 +39,17 @@ import {
               <option value="room_service">🛎 Room Service</option>
             </select>
             @if (orderForm.order_type === 'dine_in') {
-              <select [(ngModel)]="orderForm.table_id" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+              <select [(ngModel)]="orderForm.table_id" (ngModelChange)="loadSectionPrices()" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
                 <option value="">No Table</option>
                 @for (t of tables(); track t.id) {
-                  <option [value]="t.id">Table {{ t.number }}</option>
+                  <option [value]="t.id">Table {{ t.number }}{{ t.section ? ' · ' + t.section : '' }}</option>
                 }
               </select>
+              @if (selectedTableSection() && sectionPrices().length > 0) {
+                <span class="text-xs bg-violet-100 text-violet-700 px-2 py-1 rounded-lg font-medium flex-shrink-0">
+                  🏷 {{ selectedTableSection() }} pricing
+                </span>
+              }
             }
             @if (orderForm.order_type === 'room_service') {
               <div class="relative">
@@ -98,7 +103,15 @@ import {
                   }
                   <p class="text-sm font-semibold text-gray-800 leading-snug pr-7">{{ p.name }}</p>
                   @if (p.description) { <p class="text-xs text-gray-400 mt-1 line-clamp-2">{{ p.description }}</p> }
-                  <p class="text-sm font-bold text-sage-700 mt-2">₦{{ (+p.price / 100 || 0).toLocaleString('en-NG', {minimumFractionDigits: 0}) }}</p>
+                  @if (effectivePrice(p.id, p.price) !== +p.price) {
+                    <div class="mt-1.5 flex items-center gap-1.5">
+                      <span class="text-xs text-gray-400 line-through">₦{{ fmtKobo(+p.price) }}</span>
+                      <span class="text-sm font-bold text-violet-600">₦{{ fmtKobo(effectivePrice(p.id, p.price)) }}</span>
+                      <span class="text-[10px] bg-violet-100 text-violet-600 px-1.5 rounded font-medium">{{ selectedTableSection() }}</span>
+                    </div>
+                  } @else {
+                    <p class="text-sm font-bold text-sage-700 mt-2">₦{{ fmtKobo(+p.price) }}</p>
+                  }
                 </button>
               }
               @if (!menuLoading() && filteredProducts().length === 0) {
@@ -133,7 +146,7 @@ import {
                     <button (click)="incQty(item.product_id)"
                       class="w-7 h-7 rounded-full bg-sage-100 text-sage-700 text-sm flex items-center justify-center hover:bg-sage-200 active:scale-90">+</button>
                   </div>
-                  <p class="text-sm font-bold text-gray-900">₦{{ ((+item.price * item.quantity) / 100).toLocaleString('en-NG', {minimumFractionDigits: 0}) }}</p>
+                  <p class="text-sm font-bold text-gray-900">₦{{ fmtKobo(effectivePrice(item.product_id, item.price) * item.quantity) }}</p>
                 </div>
                 <input [(ngModel)]="item.note" placeholder="Kitchen note…"
                   class="mt-2 w-full text-xs px-2 py-1.5 border border-gray-100 rounded-lg bg-gray-50 text-gray-500 focus:outline-none focus:border-sage-300">
@@ -395,13 +408,46 @@ export class PosPage implements OnInit {
   cart         = signal<any[]>([]);
   placingOrder = signal(false);
 
+  sectionPrices = signal<any[]>([]);
+
+  /** Load section prices whenever menu or table changes */
+  loadSectionPrices(): void {
+    this.api.get('/pos/section-prices', { property_id: this.pid }).subscribe({
+      next: (r: any) => this.sectionPrices.set(r.data ?? []),
+      error: () => {},
+    });
+  }
+
+  /** Returns the effective price (kobo) for a product given current table selection */
+  effectivePrice(productId: string, defaultPrice: string): number {
+    const tableId = this.orderForm.table_id;
+    if (!tableId) return +defaultPrice;
+    const table = this.tables().find((t: any) => t.id === tableId);
+    if (!table) return +defaultPrice;
+    const sp = this.sectionPrices().find(
+      (s: any) => s.product_id === productId && s.section === table.section
+    );
+    return sp ? +sp.price : +defaultPrice;
+  }
+
+  /** Returns naira string for display */
+  fmtKobo(kobo: number): string {
+    return (kobo / 100).toLocaleString('en-NG', { minimumFractionDigits: 0 });
+  }
+
+  /** Section label for the selected table */
+  selectedTableSection(): string | null {
+    const t = this.tables().find((t: any) => t.id === this.orderForm.table_id);
+    return t?.section ?? null;
+  }
+
   filteredProducts = computed(() => {
     const cat = this.activeCat();
     const products = this.menuProducts();
     return cat ? products.filter(p => p.category_id === cat) : products;
   });
   cartCount    = computed(() => this.cart().reduce((s, i) => s + i.quantity, 0));
-  cartSubtotal = computed(() => Math.round(this.cart().reduce((s, i) => s + (+i.price * i.quantity), 0)) / 100);
+  cartSubtotal = computed(() => this.cart().reduce((s, i) => s + (this.effectivePrice(i.product_id, i.price) * i.quantity), 0) / 100);
 
   availableTables = computed(() => this.tables().filter(t => t.status === 'available').length);
   todayRevenue    = computed(() => this.orders().reduce((s: number, o: any) => s + (+o.total_amount || 0), 0));
@@ -508,6 +554,7 @@ export class PosPage implements OnInit {
     this.activeCat.set('');
     this.showOrderBuilder.set(true);
     if (this.menuProducts().length === 0) this.loadMenu();
+    this.loadSectionPrices();
   }
 
   closeOrderBuilder(): void {
