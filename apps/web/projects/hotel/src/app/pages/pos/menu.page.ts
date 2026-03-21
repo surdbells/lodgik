@@ -376,7 +376,7 @@ interface StockItem { id: string; sku: string; name: string; }
                         <span class="text-xs text-violet-600 font-medium">{{ sectionLabel(sp.section) }}</span>
                       </div>
                       <div class="flex items-center gap-3">
-                        <span class="font-bold text-gray-900">₦{{ (+sp.price).toLocaleString() }}</span>
+                        <span class="font-bold text-gray-900">₦{{ formatPrice(sp.price) }}</span>
                         <button (click)="deleteSectionPrice(sp.id)"
                           class="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded-lg hover:bg-red-50">✕</button>
                       </div>
@@ -395,7 +395,7 @@ interface StockItem { id: string; sku: string; name: string; }
                 <select [(ngModel)]="sectionPriceForm.product_id" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
                   <option value="">Select item…</option>
                   @for (p of products(); track p.id) {
-                    <option [value]="p.id">{{ p.name }} — ₦{{ (+p.price).toLocaleString() }}</option>
+                    <option [value]="p.id">{{ p.name }} — ₦{{ formatPrice(p.price) }}</option>
                   }
                 </select>
               </div>
@@ -476,11 +476,12 @@ export class MenuPage implements OnInit {
   readonly SECTIONS = [
     { key: 'restaurant',       label: 'Restaurant'       },
     { key: 'bar',              label: 'Bar'               },
-    { key: 'pool',             label: 'Pool Area'         },
-    { key: 'private_lounge',   label: 'Private Lounge'   },
+    { key: 'poolside',         label: 'Poolside'          },
+    { key: 'terrace',          label: 'Terrace'           },
+    { key: 'private',          label: 'Private Dining'   },
     { key: 'executive_lounge', label: 'Executive Lounge' },
-    { key: 'rooftop',          label: 'Rooftop'          },
     { key: 'vip',              label: 'VIP Section'      },
+    { key: 'rooftop',          label: 'Rooftop'          },
     { key: 'takeaway',         label: 'Takeaway'         },
   ];
 
@@ -619,6 +620,7 @@ export class MenuPage implements OnInit {
     this.savingSectionPrice.set(true);
     this.api.post('/pos/section-prices', {
       ...this.sectionPriceForm,
+      price: Math.round(Number(this.sectionPriceForm.price) * 100),
       property_id: this.activeProperty.propertyId(),
     }).subscribe({
       next: () => {

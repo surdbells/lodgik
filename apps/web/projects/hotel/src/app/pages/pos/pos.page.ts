@@ -98,7 +98,7 @@ import {
                   }
                   <p class="text-sm font-semibold text-gray-800 leading-snug pr-7">{{ p.name }}</p>
                   @if (p.description) { <p class="text-xs text-gray-400 mt-1 line-clamp-2">{{ p.description }}</p> }
-                  <p class="text-sm font-bold text-sage-700 mt-2">₦{{ (+p.price || 0).toLocaleString() }}</p>
+                  <p class="text-sm font-bold text-sage-700 mt-2">₦{{ (+p.price / 100 || 0).toLocaleString('en-NG', {minimumFractionDigits: 0}) }}</p>
                 </button>
               }
               @if (!menuLoading() && filteredProducts().length === 0) {
@@ -133,7 +133,7 @@ import {
                     <button (click)="incQty(item.product_id)"
                       class="w-7 h-7 rounded-full bg-sage-100 text-sage-700 text-sm flex items-center justify-center hover:bg-sage-200 active:scale-90">+</button>
                   </div>
-                  <p class="text-sm font-bold text-gray-900">₦{{ (+item.price * item.quantity).toLocaleString() }}</p>
+                  <p class="text-sm font-bold text-gray-900">₦{{ ((+item.price * item.quantity) / 100).toLocaleString('en-NG', {minimumFractionDigits: 0}) }}</p>
                 </div>
                 <input [(ngModel)]="item.note" placeholder="Kitchen note…"
                   class="mt-2 w-full text-xs px-2 py-1.5 border border-gray-100 rounded-lg bg-gray-50 text-gray-500 focus:outline-none focus:border-sage-300">
@@ -331,6 +331,10 @@ import {
                   <option value="poolside">Poolside</option>
                   <option value="terrace">Terrace</option>
                   <option value="private">Private Dining</option>
+                  <option value="executive_lounge">Executive Lounge</option>
+                  <option value="vip">VIP Section</option>
+                  <option value="rooftop">Rooftop</option>
+                  <option value="takeaway">Takeaway</option>
                 </select>
               </div>
             </div>
@@ -397,7 +401,7 @@ export class PosPage implements OnInit {
     return cat ? products.filter(p => p.category_id === cat) : products;
   });
   cartCount    = computed(() => this.cart().reduce((s, i) => s + i.quantity, 0));
-  cartSubtotal = computed(() => this.cart().reduce((s, i) => s + (+i.price * i.quantity), 0));
+  cartSubtotal = computed(() => Math.round(this.cart().reduce((s, i) => s + (+i.price * i.quantity), 0)) / 100);
 
   availableTables = computed(() => this.tables().filter(t => t.status === 'available').length);
   todayRevenue    = computed(() => this.orders().reduce((s: number, o: any) => s + (+o.total_amount || 0), 0));
