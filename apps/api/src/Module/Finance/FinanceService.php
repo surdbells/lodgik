@@ -301,8 +301,15 @@ final class FinanceService
       if ($to) $qb->andWhere('p.arrivalDate <= :t')->setParameter('t', $to);
       return array_map(fn($r) => $r->toArray(), $qb->getQuery()->getResult()); }
 
+    public function policeReportExistsForBooking(string $bid): bool
+    { return (bool) $this->em->getRepository(PoliceReport::class)->findOneBy(['bookingId' => $bid]); }
+
     public function createPoliceReport(string $pid, string $bid, string $gid, string $gname, string $arr, string $tid, array $x = []): PoliceReport
-    { $r = new PoliceReport($pid, $bid, $gid, $gname, new \DateTimeImmutable($arr), $tid);
+    { // Idempotent: skip silently if a report already exists for this booking
+      if ($this->policeReportExistsForBooking($bid)) {
+          return $this->em->getRepository(PoliceReport::class)->findOneBy(['bookingId' => $bid]);
+      }
+      $r = new PoliceReport($pid, $bid, $gid, $gname, new \DateTimeImmutable($arr), $tid);
       foreach (['nationality','id_type','id_number','address','phone','email','purpose_of_visit','room_number','vehicle_plate'] as $f) { if (!empty($x[$f])) { $m = 'set' . str_replace('_', '', ucwords($f, '_')); $r->$m($x[$f]); } }
       if (!empty($x['departure_date'])) $r->setDepartureDate(new \DateTimeImmutable($x['departure_date']));
       if (isset($x['accompanying_persons'])) $r->setAccompanyingPersons((int)$x['accompanying_persons']);

@@ -484,6 +484,37 @@ final class BookingService
             }
         }
 
+        // Safety-net: create police report if one was never created at check-in.
+        // Covers bookings that were checked in before the financeService was wired,
+        // and any edge case where the check-in report creation failed silently.
+        if ($this->financeService !== null && !$this->financeService->policeReportExistsForBooking($booking->getId())) {
+            try {
+                $coGuest = $this->guestRepo->find($booking->getGuestId());
+                $coRoom  = $booking->getRoomId() ? $this->roomRepo->find($booking->getRoomId()) : null;
+                $coRoomNum = $coRoom?->getRoomNumber() ?? '';
+                $this->financeService->createPoliceReport(
+                    $booking->getPropertyId(),
+                    $booking->getId(),
+                    $booking->getGuestId(),
+                    $coGuest?->getFullName() ?? 'Unknown Guest',
+                    $booking->getCheckIn()->format('Y-m-d'),
+                    $booking->getTenantId(),
+                    [
+                        'departure_date'       => $booking->getCheckOut()->format('Y-m-d'),
+                        'room_number'          => $coRoomNum,
+                        'nationality'          => $coGuest?->getNationality() ?? null,
+                        'id_type'              => $coGuest?->getIdType() ?? null,
+                        'id_number'            => $coGuest?->getIdNumber() ?? null,
+                        'phone'                => $coGuest?->getPhone() ?? null,
+                        'email'                => $coGuest?->getEmail() ?? null,
+                        'accompanying_persons' => max(0, ($booking->getAdults() + $booking->getChildren()) - 1),
+                    ]
+                );
+            } catch (\Throwable $e) {
+                $this->logger->error("Police report safety-net failed on checkout for {$booking->getBookingRef()}: {$e->getMessage()}");
+            }
+        }
+
         return $booking;
     }
 
