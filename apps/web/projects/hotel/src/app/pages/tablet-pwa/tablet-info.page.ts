@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TabletService } from './tablet.service';
+import { GuestApiService } from '../../services/guest-api.service';
 
 @Component({ selector: 'app-tablet-info', standalone: true, imports: [],
   template: `
@@ -50,7 +50,7 @@ import { TabletService } from './tablet.service';
 })
 export class TabletInfoPage implements OnInit {
   readonly router = inject(Router);
-  private svc     = inject(TabletService);
+  private svc     = inject(GuestApiService);
   info    = signal<any>(null);
   loading = signal(true);
   ngOnInit(): void {
