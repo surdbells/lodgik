@@ -597,7 +597,7 @@ const TABS: Tab[] = [
               <ui-stats-card
                 label="Outstanding Balance"
                 [value]="'₦' + (+folioSummary()!.outstanding_balance || 0).toLocaleString()"
-                icon="alert-circle" variant="gradient"
+                icon="triangle-alert" variant="gradient"
                 gradient="linear-gradient(135deg, #7c2d12 0%, #ea580c 100%)">
               </ui-stats-card>
               <ui-stats-card
