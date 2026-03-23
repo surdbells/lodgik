@@ -459,5 +459,11 @@ export const routes: Routes = [
     ],
   },
 
+        { path: 'recruitment',        loadComponent: () => import('./pages/recruitment/recruitment.page').then(m => m.RecruitmentPage) },
+        { path: 'training',            loadComponent: () => import('./pages/training/training.page').then(m => m.TrainingPage) },
+        { path: 'expense-claims',      loadComponent: () => import('./pages/expense-claims/expense-claims.page').then(m => m.ExpenseClaimsPage) },
+        { path: 'performance-reviews', loadComponent: () => import('./pages/performance-reviews/performance-reviews.page').then(m => m.PerformanceReviewsPage) },
+        { path: 'hr-analytics',        loadComponent: () => import('./pages/hr-analytics/hr-analytics.page').then(m => m.HrAnalyticsPage) },
+
   { path: '**', redirectTo: '' },
 ];

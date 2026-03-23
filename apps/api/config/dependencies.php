@@ -1,6 +1,13 @@
 <?php
 
-declare(strict_types=1);
+decl
+        \Lodgik\Module\HR\HRController::class => function (ContainerInterface $c): \Lodgik\Module\HR\HRController {
+            return new \Lodgik\Module\HR\HRController(
+                em:       $c->get(\Doctrine\ORM\EntityManagerInterface::class),
+                response: $c->get(\Lodgik\Service\ResponseHelper::class),
+            );
+        },
+are(strict_types=1);
 
 use DI\ContainerBuilder;
 use Doctrine\DBAL\DriverManager;
