@@ -58,19 +58,19 @@ export class TabletChatComponent implements OnInit, OnDestroy {
 
   loadMessages() {
     if (!this.bookingId) return;
-    this.api.get(`/chat/messages/${this.bookingId}`).subscribe({
+    this.api.get('/guest/chat/messages').subscribe({
       next: (r: any) => this.messages = r.data || [],
     });
   }
 
   markRead() {
     if (!this.bookingId) return;
-    this.api.post(`/chat/messages/${this.bookingId}/read`, { reader_type: 'guest' }).subscribe();
+    this.api.post('/guest/chat/read', {}).subscribe();
   }
 
   send() {
     if (!this.newMessage.trim() || !this.bookingId) return;
-    this.api.post('/chat/messages', {
+    this.api.post('/guest/chat/send', {
       booking_id: this.bookingId, property_id: this.propertyId,
       sender_type: 'guest', sender_id: this.guestId, sender_name: this.guestName,
       message: this.newMessage.trim(),

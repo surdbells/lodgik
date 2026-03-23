@@ -90,7 +90,7 @@ export class TabletBillComponent implements OnInit {
     const propertyId = data?.session?.property_id;
 
     if (bookingId) {
-      this.api.get(`/folios/by-booking/${bookingId}`).subscribe({
+      this.api.get('/guest/folio').subscribe({
         next: (r: any) => { this.folio = r.data; this.charges = r.data?.charges || []; },
       });
     }

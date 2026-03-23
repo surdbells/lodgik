@@ -8,7 +8,7 @@ const TOKEN_KEY = 'hk_auth_token';
 
 @Injectable({ providedIn: 'root' })
 export class HousekeepingApiService {
-  private baseUrl = ApplicationSettings.getString(API_URL_KEY, 'http://10.0.2.2:8080');
+  private baseUrl = ApplicationSettings.getString(API_URL_KEY, 'https://api.lodgik.co/api');
 
   constructor(private http: HttpClient) {}
 

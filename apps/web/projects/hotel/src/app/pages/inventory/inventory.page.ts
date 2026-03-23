@@ -1,11 +1,11 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
   ApiService, PageHeaderComponent, StatsCardComponent,
   LoadingSpinnerComponent, EmptyStateComponent, ToastService,
-  ConfirmDialogService, ActivePropertyService
-} from '@lodgik/shared';
+  ConfirmDialogService, ActivePropertyService, TourService } from '@lodgik/shared';
 
 interface StockCategory {
   id: string; name: string; department: string; is_active: boolean;
@@ -49,7 +49,8 @@ const BLANK_FORM = () => ({
   title="Stock & Inventory"
   icon="package"
   [breadcrumbs]="['Inventory & Food Cost', 'Stock & Inventory']"
-  subtitle="Item master, stock levels, and opening balances">
+  subtitle="Item master, stock levels, and opening balances"
+      tourKey="inventory" (tourClick)="startTour()">
   <button (click)="openCreate()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">
     + Add Item
   </button>
@@ -443,6 +444,7 @@ const BLANK_FORM = () => ({
   `,
 })
 export class InventoryPage implements OnInit {
+  private tour = inject(TourService);
   private api      = inject(ApiService);
   private toast    = inject(ToastService);
   private confirm  = inject(ConfirmDialogService);
@@ -747,5 +749,9 @@ export class InventoryPage implements OnInit {
 
   isLowStock(item: StockItem): boolean {
     return this.summary()?.low_stock_items?.some((li: any) => li.id === item.id) ?? false;
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['inventory'] ?? [], 'inventory');
   }
 }

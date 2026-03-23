@@ -1,6 +1,7 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService , ConfirmDialogComponent } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService , ConfirmDialogComponent , TourService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-staff-list',
@@ -8,7 +9,8 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
   imports: [PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, FormsModule, ConfirmDialogComponent],
   template: `
     <ui-confirm-dialog/>
-    <ui-page-header title="Staff" subtitle="Manage hotel staff members">
+    <ui-page-header title="Staff" subtitle="Manage hotel staff members"
+      tourKey="staff" (tourClick)="startTour()">
       <button class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" (click)="showAdd = !showAdd">
         {{ showAdd ? 'Cancel' : '+ Add Staff' }}
       </button>
@@ -165,6 +167,7 @@ import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, Table
   `,
 })
 export class StaffListPage implements OnInit {
+  private tour = inject(TourService);
   private api = inject(ApiService);
   private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
@@ -306,5 +309,9 @@ export class StaffListPage implements OnInit {
   availableProperties(): any[] {
     const granted = new Set(this.accessList().map((a: any) => a.property_id));
     return this.allProperties().filter((p: any) => !granted.has(p.id));
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['staff'] ?? [], 'staff');
   }
 }

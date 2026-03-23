@@ -1,3 +1,4 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { DatePipe, NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -8,15 +9,15 @@ import {
   LoadingSpinnerComponent,
   ToastService,
   ConfirmDialogService,
-  ActivePropertyService,
-} from '@lodgik/shared';
+  ActivePropertyService, TourService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-guest-cards',
   standalone: true,
   imports: [DatePipe, NgClass, RouterLink, FormsModule, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Guest Cards" subtitle="Card inventory — RFID/QR dual-interface cards">
+    <ui-page-header title="Guest Cards" subtitle="Card inventory — RFID/QR dual-interface cards"
+      tourKey="guest-cards" (tourClick)="startTour()">
       <div class="flex gap-2">
         <!-- Gate Issue button: opens the security gate issuance flow -->
         <button (click)="openGateIssueModal()"
@@ -342,6 +343,7 @@ import {
   `,
 })
 export class GuestCardsPage implements OnInit {
+  private tour = inject(TourService);
   private api     = inject(ApiService);
   private toast   = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
@@ -614,5 +616,9 @@ export class GuestCardsPage implements OnInit {
         error: (e: any) => this.toast.error(e?.error?.message ?? 'Failed'),
       });
     });
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['guest-cards'] ?? [], 'guest-cards');
   }
 }

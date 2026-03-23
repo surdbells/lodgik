@@ -6,8 +6,8 @@ import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   ApiService, PageHeaderComponent, LoadingSpinnerComponent,
-  ToastService, ActivePropertyService, HasPermDirective,
-} from '@lodgik/shared';
+  ToastService, ActivePropertyService, HasPermDirective, TourService } from '@lodgik/shared';
+import { PAGE_TOURS } from '../../services/page-tours';
 
 interface TrackerBooking {
   id: string; booking_ref: string; booking_type: string; booking_type_label: string;
@@ -91,7 +91,8 @@ const TIER_CONFIG: Record<string, { bg: string; border: string; badge: string; t
     }
 
     <!-- Normal view (hidden when fullscreen) -->
-    <ui-page-header title="Live Room Monitor" icon="monitor" subtitle="Live countdown for all checked-in guests">
+    <ui-page-header title="Live Room Monitor" icon="monitor" subtitle="Live countdown for all checked-in guests"
+      tourKey="checkout-tracker" (tourClick)="startTour()">
       <div class="flex items-center gap-2">
         <div class="flex items-center gap-1.5 text-xs text-gray-400">
           <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -379,6 +380,7 @@ const TIER_CONFIG: Record<string, { bg: string; border: string; badge: string; t
   `,
 })
 export class CheckoutTrackerPage implements OnInit, OnDestroy {
+  private tour = inject(TourService);
   private api            = inject(ApiService);
   private toast          = inject(ToastService);
   private activeProperty = inject(ActivePropertyService);
@@ -592,5 +594,9 @@ export class CheckoutTrackerPage implements OnInit, OnDestroy {
         this.toast.error(r.message || 'Failed to extend');
       }
     });
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['checkout-tracker'] ?? [], 'checkout-tracker');
   }
 }

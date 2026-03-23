@@ -1,13 +1,15 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms'
-import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService, ToastService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, AuthService, ActivePropertyService, ToastService , TourService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-housekeeping',
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Housekeeping" icon="spray-can" [breadcrumbs]="['Daily Operation', 'Housekeeping']" subtitle="Task management, cleaning schedules, and inspections">
+    <ui-page-header title="Housekeeping" icon="spray-can" [breadcrumbs]="['Daily Operation', 'Housekeeping']" subtitle="Task management, cleaning schedules, and inspections"
+      tourKey="housekeeping" (tourClick)="startTour()">
       <button (click)="openCreateTask()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ Create Task</button>
     </ui-page-header>
 
@@ -344,6 +346,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComp
   `,
 })
 export class HousekeepingPage implements OnInit {
+  private tour = inject(TourService);
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private activeProperty = inject(ActivePropertyService);
@@ -563,5 +566,9 @@ export class HousekeepingPage implements OnInit {
   formatDue(dt: string): string {
     try { return new Date(dt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
     catch { return dt; }
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['housekeeping'] ?? [], 'housekeeping');
   }
 }

@@ -59,7 +59,7 @@ export class RoomControlsComponent implements OnInit {
   loadStatus() {
     const s = this.api.getSession(); if (!s?.booking?.id) return;
     this.roomNumber = s.booking.room_number || '';
-    this.api.get(`/room-controls/status?booking_id=${s.booking.id}`).subscribe({
+    this.api.get('/guest/room-controls/status').subscribe({
       next: (r: any) => { const d = r.data || {}; this.dndActive = d.dnd; this.makeUpActive = d.make_up_room; this.maintenance = d.maintenance || []; },
     });
   }
@@ -67,7 +67,7 @@ export class RoomControlsComponent implements OnInit {
   toggleDnd(e: any) {
     const active = e.object?.checked;
     const s = this.api.getSession(); if (!s) return;
-    this.api.post('/room-controls/dnd', { property_id: s.property_id, booking_id: s.booking.id, guest_id: s.guest.id, room_id: s.booking.room_id, room_number: s.booking.room_number, active }).subscribe({
+    this.api.post('/guest/room-controls/dnd', { active }).subscribe({
       next: () => { this.toggleMsg = active ? '🔕 DND activated' : '🔔 DND deactivated'; setTimeout(() => this.toggleMsg = '', 2000); },
     });
   }
@@ -75,7 +75,7 @@ export class RoomControlsComponent implements OnInit {
   toggleMakeUp(e: any) {
     const active = e.object?.checked;
     const s = this.api.getSession(); if (!s) return;
-    this.api.post('/room-controls/make-up', { property_id: s.property_id, booking_id: s.booking.id, guest_id: s.guest.id, room_id: s.booking.room_id, room_number: s.booking.room_number, active }).subscribe({
+    this.api.post('/guest/room-controls/make-up', {}).subscribe({
       next: () => { this.toggleMsg = active ? '🧹 Make-up room requested' : '✅ Request cancelled'; setTimeout(() => this.toggleMsg = '', 2000); },
     });
   }
@@ -88,7 +88,7 @@ export class RoomControlsComponent implements OnInit {
   reportMaintenance() {
     if (!this.maintDesc) return;
     const s = this.api.getSession(); if (!s) return;
-    this.api.post('/room-controls/maintenance', {
+    this.api.post('/guest/room-controls/maintenance', {
       property_id: s.property_id, booking_id: s.booking.id, guest_id: s.guest.id,
       room_id: s.booking.room_id, room_number: s.booking.room_number,
       description: this.maintDesc, photo_url: this.maintPhoto || undefined,

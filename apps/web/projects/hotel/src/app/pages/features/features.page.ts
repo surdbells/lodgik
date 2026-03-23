@@ -1,5 +1,6 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, TokenService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, TokenService , TourService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-features',
@@ -7,7 +8,8 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, TokenService 
   imports: [PageHeaderComponent, LoadingSpinnerComponent],
   template: `
     <ui-page-header title="Features & Modules" icon="puzzle"
-      subtitle="Enable or disable modules for your property. Core modules cannot be turned off.">
+      subtitle="Enable or disable modules for your property. Core modules cannot be turned off."
+      tourKey="features" (tourClick)="startTour()">
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
@@ -110,6 +112,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, TokenService 
   `,
 })
 export class FeaturesPage implements OnInit {
+  private tour = inject(TourService);
   private api  = inject(ApiService);
   private tok  = inject(TokenService);
 
@@ -268,5 +271,9 @@ export class FeaturesPage implements OnInit {
         this.toggling.set(false);
       },
     });
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['features'] ?? [], 'features');
   }
 }

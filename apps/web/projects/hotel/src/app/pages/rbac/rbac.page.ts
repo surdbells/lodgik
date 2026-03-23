@@ -11,8 +11,8 @@ import {
   PageHeaderComponent,
   LoadingSpinnerComponent,
   ToastService,
-  TokenService,
-} from '@lodgik/shared';
+  TokenService, TourService } from '@lodgik/shared';
+import { PAGE_TOURS } from '../../services/page-tours';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -84,6 +84,9 @@ const MODULE_META: Record<string, { label: string; icon: string }> = {
   service_requests: { label: 'Service Requests',       icon: '🔔' },
   ota:              { label: 'OTA Channels',           icon: '🌐' },
   gym:              { label: 'Gym & Fitness',          icon: '💪' },
+  chat:             { label: 'Guest Chat',             icon: '💬' },
+  police_reports:   { label: 'Police Reports',         icon: '📋' },
+  night_audit:      { label: 'Night Audit',            icon: '🌙' },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────
@@ -97,7 +100,8 @@ const MODULE_META: Record<string, { label: string; icon: string }> = {
       title="Role Permissions"
       icon="shield-check"
       [breadcrumbs]="['System', 'Role Permissions']"
-      subtitle="Control exactly what each staff role can see and do in your hotel.">
+      subtitle="Control exactly what each staff role can see and do in your hotel."
+      tourKey="rbac" (tourClick)="startTour()">
     </ui-page-header>
 
     <ui-loading [loading]="loading()"></ui-loading>
@@ -322,6 +326,7 @@ const MODULE_META: Record<string, { label: string; icon: string }> = {
   `,
 })
 export class RbacPage implements OnInit {
+  private tour = inject(TourService);
   private api   = inject(ApiService);
   private toast = inject(ToastService);
   private token = inject(TokenService);
@@ -589,5 +594,9 @@ export class RbacPage implements OnInit {
   hasAnyPermForModule(rs: RoleState, moduleKey: string): boolean {
     // Always show the module if it exists in catalogue — even if all denied
     return this.moduleGroups().some(m => m.moduleKey === moduleKey);
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['rbac'] ?? [], 'rbac');
   }
 }

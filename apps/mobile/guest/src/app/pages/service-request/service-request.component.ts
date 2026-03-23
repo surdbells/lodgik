@@ -142,12 +142,12 @@ export class ServiceRequestComponent implements OnInit {
   loadRequests() {
     const session = this.api.getSession();
     if (!session?.booking?.id) return;
-    this.api.get(`/service-requests/booking/${session.booking.id}`).subscribe({
+    this.api.get('/guest/service-requests').subscribe({
       next: (r: any) => this.requests = r.data || [],
     });
   }
 
   rate(id: string, rating: number) {
-    this.api.post(`/service-requests/${id}/rate`, { rating }).subscribe({ next: () => this.loadRequests() });
+    this.api.post(`/guest/service-requests/${id}/rate`, { rating }).subscribe({ next: () => this.loadRequests() });
   }
 }

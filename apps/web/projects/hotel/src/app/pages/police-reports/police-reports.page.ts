@@ -1,9 +1,9 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   ApiService, PageHeaderComponent, LoadingSpinnerComponent,
-  ToastService, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent
-} from '@lodgik/shared';
+  ToastService, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, TourService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-police-reports',
@@ -11,7 +11,8 @@ import {
   imports: [PageHeaderComponent, LoadingSpinnerComponent, ConfirmDialogComponent, FormsModule],
   template: `
     <ui-confirm-dialog/>
-    <ui-page-header title="Police Reports" subtitle="Nigeria Form C — auto-generated on check-in, editable here">
+    <ui-page-header title="Police Reports" subtitle="Nigeria Form C — auto-generated on check-in, editable here"
+      tourKey="police-reports" (tourClick)="startTour()">
       <div class="flex gap-2">
         <button (click)="showForm.set(true)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">
           + Add Report
@@ -220,6 +221,7 @@ import {
   `,
 })
 export default class PoliceReportsPage implements OnInit {
+  private tour = inject(TourService);
   private api      = inject(ApiService);
   private toast    = inject(ToastService);
   private confirm  = inject(ConfirmDialogService);
@@ -326,5 +328,9 @@ export default class PoliceReportsPage implements OnInit {
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
     a.download = `police_reports_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['police-reports'] ?? [], 'police-reports');
   }
 }

@@ -54,7 +54,7 @@ export class NotificationsComponent implements OnInit {
 
   load() {
     this.loading = true;
-    this.api.get('/notifications?limit=50').subscribe({
+    this.api.get('/guest/service-requests').subscribe({
       next: (r: any) => {
         this.notifications = r.data || [];
         this.unread = this.notifications.filter((n: any) => !n.is_read).length;

@@ -1,6 +1,7 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService, HasPermDirective, PermDisableDirective, TokenService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService, HasPermDirective, PermDisableDirective, TokenService , TourService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -8,7 +9,8 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, HasPermDirective, PermDisableDirective],
   template: `
-    <ui-page-header title="Payroll" icon="hand-coins" [breadcrumbs]="['Human Resources', 'Payroll']" subtitle="Monthly payroll processing & payslips">
+    <ui-page-header title="Payroll" icon="hand-coins" [breadcrumbs]="['Human Resources', 'Payroll']" subtitle="Monthly payroll processing & payslips"
+      tourKey="payroll" (tourClick)="startTour()">
       <button *hasPerm="'payroll.run'" (click)="showCreate = true" class="bg-sage-600 text-white px-4 py-2 text-sm rounded-xl hover:bg-sage-700 transition-colors">+ New Payroll</button>
     </ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
@@ -184,6 +186,7 @@ import { AuthService } from '@lodgik/shared';
   `,
 })
 export class PayrollPage implements OnInit {
+  private tour = inject(TourService);
   private api   = inject(ApiService);
   private auth  = inject(AuthService);
   private token = inject(TokenService);
@@ -240,5 +243,9 @@ export class PayrollPage implements OnInit {
 
   fmt(kobo: string | number): string {
     return (Number(kobo) / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['payroll'] ?? [], 'payroll');
   }
 }

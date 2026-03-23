@@ -4,8 +4,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import {
   ApiService, PageHeaderComponent, LoadingSpinnerComponent, ActivePropertyService,
-  ConfirmDialogService, ConfirmDialogComponent
-} from '@lodgik/shared';
+  ConfirmDialogService, ConfirmDialogComponent, TourService } from '@lodgik/shared';
+import { PAGE_TOURS } from '../../services/page-tours';
 
 type CategoryType = 'food' | 'drink' | 'dessert' | 'other';
 
@@ -38,7 +38,8 @@ interface StockItem { id: string; sku: string; name: string; }
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, ConfirmDialogComponent],
   template: `
     <ui-confirm-dialog/>
-    <ui-page-header title="Menu & Pricing" subtitle="Manage F&B categories, items, and prices">
+    <ui-page-header title="Menu & Pricing" subtitle="Manage F&B categories, items, and prices"
+      tourKey="pos-menu" (tourClick)="startTour()">
       <div class="flex gap-2">
         @if (activeTab() === 'categories') {
           <button (click)="openCategoryModal()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">
@@ -459,6 +460,7 @@ interface StockItem { id: string; sku: string; name: string; }
   `,
 })
 export class MenuPage implements OnInit {
+  private tour = inject(TourService);
   private api = inject(ApiService);
   private activeProperty = inject(ActivePropertyService);
   private confirm = inject(ConfirmDialogService);
@@ -731,5 +733,9 @@ export class MenuPage implements OnInit {
     const ok = await this.confirm.confirm({ title: 'Delete Product', message: `Delete "${p.name}"? This cannot be undone.`, confirmLabel: 'Delete', variant: 'danger' });
     if (!ok) return;
     this.api.delete(`/pos/products/${p.id}`).subscribe(() => this.load());
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['pos-menu'] ?? [], 'pos-menu');
   }
 }

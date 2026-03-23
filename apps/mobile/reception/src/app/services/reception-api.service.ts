@@ -9,7 +9,7 @@ const PID_KEY = 'reception_property_id';
 
 @Injectable({ providedIn: 'root' })
 export class ReceptionApiService {
-  private baseUrl = ApplicationSettings.getString(API_KEY, 'http://10.0.2.2:8080');
+  private baseUrl = ApplicationSettings.getString(API_KEY, 'https://api.lodgik.co/api');
 
   constructor(private http: HttpClient) {}
 

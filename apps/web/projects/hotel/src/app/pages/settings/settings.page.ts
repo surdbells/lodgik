@@ -1,13 +1,15 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ActivePropertyService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ActivePropertyService , TourService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
   imports: [PageHeaderComponent, LoadingSpinnerComponent, FormsModule],
   template: `
-    <ui-page-header title="Settings" icon="settings" [breadcrumbs]="['System', 'Settings']" subtitle="Manage hotel configuration, staff, and operational rules"></ui-page-header>
+    <ui-page-header title="Settings" icon="settings" [breadcrumbs]="['System', 'Settings']" subtitle="Manage hotel configuration, staff, and operational rules"
+      tourKey="settings" (tourClick)="startTour()"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
@@ -327,6 +329,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
   `,
 })
 export class SettingsPage implements OnInit {
+  private tour = inject(TourService);
   private api            = inject(ApiService);
   private toast          = inject(ToastService);
   private activeProperty = inject(ActivePropertyService);
@@ -492,5 +495,9 @@ export class SettingsPage implements OnInit {
     this.api.patch('/tenant', { locale: t.locale, timezone: t.timezone, currency: t.currency }).subscribe(r => {
       if (r.success) this.toast.success('Locale saved');
     });
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['settings'] ?? [], 'settings');
   }
 }

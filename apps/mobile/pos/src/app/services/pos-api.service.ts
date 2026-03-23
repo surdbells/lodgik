@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class PosApiService {
-  private baseUrl = ApplicationSettings.getString('pos_api_url', 'http://10.0.2.2:8080');
+  private baseUrl = ApplicationSettings.getString('pos_api_url', 'https://api.lodgik.co/api');
 
   constructor(private http: HttpClient) {}
 

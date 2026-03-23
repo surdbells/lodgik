@@ -62,7 +62,7 @@ export class KitchenQueueComponent implements OnInit, OnDestroy {
   private lastCount = 0;
 
   constructor(private http: HttpClient, private zone: NgZone) {
-    this.baseUrl = ApplicationSettings.getString('kitchen_api_url', 'http://10.0.2.2:8080');
+    this.baseUrl = ApplicationSettings.getString('kitchen_api_url', 'https://api.lodgik.co/api');
   }
 
   private headers(): HttpHeaders {

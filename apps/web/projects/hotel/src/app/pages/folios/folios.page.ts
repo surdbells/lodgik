@@ -1,8 +1,9 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService, TokenService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService, TokenService , TourService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -10,7 +11,8 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, DatePipe, RouterLink, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent],
   template: `
-    <ui-page-header title="Folios" icon="folder-open" [breadcrumbs]="['Finance', 'Folios']" subtitle="Guest accounts and charges"></ui-page-header>
+    <ui-page-header title="Folios" icon="folder-open" [breadcrumbs]="['Finance', 'Folios']" subtitle="Guest accounts and charges"
+      tourKey="folios" (tourClick)="startTour()"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>
 
     @if (!loading()) {
@@ -37,6 +39,7 @@ import { AuthService } from '@lodgik/shared';
   `,
 })
 export class FoliosPage implements OnInit {
+  private tour = inject(TourService);
   private api = inject(ApiService);
   private auth          = inject(AuthService);
   private router         = inject(Router);
@@ -115,5 +118,9 @@ export class FoliosPage implements OnInit {
       },
       error: () => { /* advanced_analytics may not be enabled — silently skip */ },
     });
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['folios'] ?? [], 'folios');
   }
 }

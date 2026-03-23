@@ -25,3 +25,5 @@ export { errorInterceptor } from './lib/interceptors/error.interceptor';
 
 // Guards
 export { authGuard, adminGuard, roleGuard, featureGuard } from './lib/guards';
+
+export { TourService, TourStep } from './lib/services/tour.service';

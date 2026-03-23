@@ -151,7 +151,7 @@ export class TabletHomeComponent implements OnInit, OnDestroy {
     const data = this.api.guestData$.value;
     const bookingId = data?.session?.booking_id;
     if (!bookingId) return;
-    this.api.get(`/chat/unread/${bookingId}`, { for: 'guest' }).subscribe({
+    this.api.get('/guest/chat/unread').subscribe({
       next: (r: any) => this.unread = r.data?.unread || 0,
     });
   }

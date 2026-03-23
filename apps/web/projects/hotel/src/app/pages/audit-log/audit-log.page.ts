@@ -1,14 +1,16 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, JsonPipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ActivePropertyService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ActivePropertyService , TourService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-audit-log',
   standalone: true,
   imports: [FormsModule, DatePipe, JsonPipe, PageHeaderComponent, LoadingSpinnerComponent],
   template: `
-    <ui-page-header title="Audit Log" subtitle="Track all critical actions across your hotel">
+    <ui-page-header title="Audit Log" subtitle="Track all critical actions across your hotel"
+      tourKey="audit-log" (tourClick)="startTour()">
       <button (click)="exportCsv()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">
         Export CSV
       </button>
@@ -136,6 +138,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
   `,
 })
 export class AuditLogPage implements OnInit {
+  private tour = inject(TourService);
   private api = inject(ApiService);
   private toast = inject(ToastService);
   private activeProperty = inject(ActivePropertyService);
@@ -224,5 +227,9 @@ export class AuditLogPage implements OnInit {
     if (action.includes('login') || action.includes('auth') || action.includes('switch')) return 'bg-amber-50 text-amber-700';
     if (action.includes('subscription') || action.includes('payment')) return 'bg-purple-50 text-purple-700';
     return 'bg-gray-100 text-gray-600';
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['audit-log'] ?? [], 'audit-log');
   }
 }

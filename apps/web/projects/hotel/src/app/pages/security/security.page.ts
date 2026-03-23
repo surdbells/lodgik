@@ -1,7 +1,8 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, StatsCardComponent, AuthService, ActivePropertyService, ToastService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, StatsCardComponent, AuthService, ActivePropertyService, ToastService , TourService} from '@lodgik/shared';
 
 @Component({
   selector: 'app-security',
@@ -9,7 +10,8 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, AuthService, Activ
   imports: [FormsModule, TitleCasePipe, PageHeaderComponent, StatsCardComponent],
   template: `
     <ui-page-header title="Security & Gate Pass" icon="shield" [breadcrumbs]="['Operations', 'Security']"
-      subtitle="Visitor management, gate passes, and guest movement tracking">
+      subtitle="Visitor management, gate passes, and guest movement tracking"
+      tourKey="security" (tourClick)="startTour()">
       <div class="flex gap-2">
         @if (activeTab === 'passes') {
           <button (click)="openCreatePass()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ Gate Pass</button>
@@ -512,6 +514,7 @@ import { ApiService, PageHeaderComponent, StatsCardComponent, AuthService, Activ
   `,
 })
 export class SecurityPage implements OnInit, OnDestroy {
+  private tour = inject(TourService);
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private activeProperty = inject(ActivePropertyService);
@@ -832,5 +835,9 @@ export class SecurityPage implements OnInit, OnDestroy {
     if (!dt) return '';
     try { return new Date(dt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
     catch { return dt; }
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['security'] ?? [], 'security');
   }
 }

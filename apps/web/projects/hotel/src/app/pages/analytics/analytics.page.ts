@@ -1,6 +1,7 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService , TourService} from '@lodgik/shared';
 import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartDataPoint, ChartSeries } from '@lodgik/charts';
 
 @Component({
@@ -8,7 +9,8 @@ import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartDataPo
   standalone: true,
   imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, LineChartComponent, BarChartComponent, DonutChartComponent],
   template: `
-    <ui-page-header title="Analytics & BI" icon="chart-bar" subtitle="Revenue, occupancy, and performance insights">
+    <ui-page-header title="Analytics & BI" icon="chart-bar" subtitle="Revenue, occupancy, and performance insights"
+      tourKey="analytics" (tourClick)="startTour()">
       <div class="flex items-center gap-2 flex-wrap">
         <select [(ngModel)]="period" (ngModelChange)="onPeriodChange()" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
           <option value="7">Last 7 days</option>
@@ -174,6 +176,7 @@ import { LineChartComponent, BarChartComponent, DonutChartComponent, ChartDataPo
   `,
 })
 export default class AnalyticsPage implements OnInit {
+  private tour = inject(TourService);
   private api = inject(ApiService);
   private activeProperty = inject(ActivePropertyService);
   loading = signal(true);
@@ -311,5 +314,9 @@ export default class AnalyticsPage implements OnInit {
     })));
     const ages = data.age_groups || [];
     this.ageData.set(ages.map((a: any) => ({ label: a.group, value: a.count })));
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['analytics'] ?? [], 'analytics');
   }
 }

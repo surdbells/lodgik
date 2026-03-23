@@ -49,7 +49,7 @@ export class KitchenNotificationsComponent implements OnInit {
   private h(): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${ApplicationSettings.getString('kitchen_token', '')}`, 'Content-Type': 'application/json' });
   }
-  private get base(): string { return ApplicationSettings.getString('kitchen_api_url', 'http://10.0.2.2:8080'); }
+  private get base(): string { return ApplicationSettings.getString('kitchen_api_url', 'https://api.lodgik.co/api'); }
 
   ngOnInit() { this.load(); }
 

@@ -1,8 +1,9 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ActivePropertyService, AuthService, AmountInputDirective } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, ActivePropertyService, AuthService, AmountInputDirective , TourService} from '@lodgik/shared';
 
 // Booking type definitions
 interface BookingTypeOption {
@@ -20,7 +21,8 @@ interface BookingTypeOption {
   standalone: true,
   imports: [FormsModule, DecimalPipe, RouterLink, PageHeaderComponent, LoadingSpinnerComponent, AmountInputDirective],
   template: `
-    <ui-page-header title="New Booking" subtitle="Create a reservation">
+    <ui-page-header title="New Booking" subtitle="Create a reservation"
+      tourKey="new-booking" (tourClick)="startTour()">
       <a routerLink="/bookings" class="px-4 py-2 text-sm border border-gray-300 rounded-xl hover:bg-gray-50">← Cancel</a>
     </ui-page-header>
 
@@ -491,6 +493,7 @@ interface BookingTypeOption {
   `,
 })
 export class NewBookingPage implements OnInit {
+  private tour = inject(TourService);
   private api            = inject(ApiService);
   private auth           = inject(AuthService);
   private toast          = inject(ToastService);
@@ -851,5 +854,9 @@ export class NewBookingPage implements OnInit {
       },
       error: () => { this.submitting.set(false); this.toast.error('Error creating booking'); },
     });
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['new-booking'] ?? [], 'new-booking');
   }
 }

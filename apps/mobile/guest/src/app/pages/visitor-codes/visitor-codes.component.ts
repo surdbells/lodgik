@@ -47,7 +47,7 @@ export class VisitorCodesComponent implements OnInit {
   private durations = [2, 4, 8, 24];
   constructor(private api: ApiService, public router: RouterExtensions) {}
   ngOnInit() { this.load(); }
-  load() { const s = this.api.getSession(); if (!s?.booking?.id) return; this.api.get(`/security/visitor-codes?booking_id=${s.booking.id}`).subscribe({ next: (r: any) => this.codes = r.data || [] }); }
+  load() { const s = this.api.getSession(); if (!s?.booking?.id) return; this.api.get('/guest/visitor-codes').subscribe({ next: (r: any) => this.codes = r.data || [] }); }
   generate() {
     const s = this.api.getSession(); if (!s) return;
     const now = new Date(); const until = new Date(now.getTime() + this.durations[this.durationIdx] * 3600000);
@@ -58,5 +58,5 @@ export class VisitorCodesComponent implements OnInit {
       room_number: s.booking.room_number, guest_name: s.guest.name,
     }).subscribe({ next: (r: any) => { this.generatedCode = r.data.code; this.validFrom = r.data.valid_from; this.validUntil = r.data.valid_until; this.form = { visitor_name: '', visitor_phone: '', purpose: '' }; this.load(); } });
   }
-  revoke(id: string) { this.api.post(`/security/visitor-codes/${id}/revoke`, {}).subscribe({ next: () => this.load() }); }
+  revoke(id: string) { this.api.delete(`/guest/visitor-codes/${id}`).subscribe({ next: () => this.load() }); }
 }

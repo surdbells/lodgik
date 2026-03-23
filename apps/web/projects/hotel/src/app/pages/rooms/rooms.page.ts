@@ -1,3 +1,4 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -5,8 +6,7 @@ import { DecimalPipe } from '@angular/common';
 import {
   ApiService, PageHeaderComponent, LoadingSpinnerComponent,
   ToastService, StatsCardComponent, ActivePropertyService,
-  HasPermDirective, PermDisableDirective,
-} from '@lodgik/shared';
+  HasPermDirective, PermDisableDirective, TourService } from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string; dot: string; label: string }> = {
@@ -28,7 +28,8 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string;
     StatsCardComponent, HasPermDirective, PermDisableDirective,
   ],
   template: `
-    <ui-page-header title="Rooms" subtitle="Room status, occupancy & quick actions">
+    <ui-page-header title="Rooms" subtitle="Room status, occupancy & quick actions"
+      tourKey="rooms" (tourClick)="startTour()">
       <div class="flex gap-2 flex-wrap">
         <!-- View toggle -->
         <div class="flex border border-gray-200 rounded-xl overflow-hidden text-sm">
@@ -474,6 +475,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string;
   `,
 })
 export class RoomsPage implements OnInit {
+  private tour = inject(TourService);
   private api            = inject(ApiService);
   private toast          = inject(ToastService);
   private auth           = inject(AuthService);
@@ -670,5 +672,9 @@ export class RoomsPage implements OnInit {
     if (!form.amenities) form.amenities = [];
     const i = form.amenities.indexOf(a);
     i >= 0 ? form.amenities.splice(i, 1) : form.amenities.push(a);
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['rooms'] ?? [], 'rooms');
   }
 }

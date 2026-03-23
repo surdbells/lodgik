@@ -1,3 +1,5 @@
+import { PAGE_TOURS } from '../../services/page-tours';
+import { TourService } from '@lodgik/shared';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
@@ -9,7 +11,8 @@ import { BarChartComponent, GaugeChartComponent, LineChartComponent, ChartDataPo
   standalone: true,
   imports: [RouterLink, DatePipe, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, BarChartComponent, GaugeChartComponent, LineChartComponent],
   template: `
-    <ui-page-header title="Gym & Fitness" subtitle="Membership management and access control">
+    <ui-page-header title="Gym & Fitness" subtitle="Membership management and access control"
+      tourKey="gym" (tourClick)="startTour()">
       <div class="flex gap-2">
         <a routerLink="/gym/check-in" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">🔍 Check-in</a>
         <a routerLink="/gym/members" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Member</a>
@@ -75,6 +78,7 @@ import { BarChartComponent, GaugeChartComponent, LineChartComponent, ChartDataPo
   `,
 })
 export class GymDashboardPage implements OnInit {
+  private tour = inject(TourService);
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private activeProperty = inject(ActivePropertyService);
@@ -113,4 +117,6 @@ export class GymDashboardPage implements OnInit {
   }
 
   formatAmount(kobo: any): string { return (+kobo / 100).toLocaleString('en-NG', { minimumFractionDigits: 0 }); }
+
+  startTour(): void { this.tour.start(PAGE_TOURS['gym'] ?? [], 'gym'); }
 }

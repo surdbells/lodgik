@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
 import { LODGIK_ICONS } from '../../icons';
@@ -43,6 +43,13 @@ import { LODGIK_ICONS } from '../../icons';
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <ng-content></ng-content>
+        @if (tourKey) {
+          <button (click)="tourClick.emit()"
+            title="Take a guided tour of this page"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-violet-600 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 transition-colors">
+            <span class="text-sm">?</span> Tour
+          </button>
+        }
       </div>
     </div>
   `,
@@ -53,6 +60,8 @@ export class PageHeaderComponent {
   @Input() icon?: string;
   @Input() breadcrumbs: string[] = [];
   @Input() starred = false;
+  @Input() tourKey?: string;
+  @Output() tourClick = new EventEmitter<void>();
 
   /** True if icon is a lucide name (lowercase kebab-case), false if emoji */
   get isLucide(): boolean {

@@ -86,7 +86,7 @@ export class RoomServiceComponent implements OnInit {
     const session = data?.session;
     if (!session) return;
     this.loading = true; this.success = false;
-    this.api.post('/service-requests', {
+    this.api.post('/guest/service-requests', {
       property_id: session.property_id, booking_id: session.booking_id,
       guest_id: session.guest_id, room_id: session.room_id,
       category: this.selected, title: this.title,
@@ -101,7 +101,7 @@ export class RoomServiceComponent implements OnInit {
     const data = this.api.guestData$.value;
     const bookingId = data?.session?.booking_id;
     if (!bookingId) return;
-    this.api.get(`/service-requests/booking/${bookingId}`).subscribe({
+    this.api.get('/guest/service-requests').subscribe({
       next: (r: any) => this.requests = r.data || [],
     });
   }

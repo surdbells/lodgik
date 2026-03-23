@@ -146,7 +146,7 @@ export class DashboardComponent implements OnInit {
     this.push.init();
 
     // Load unread notification count
-    this.api.get('/notifications/unread-count').subscribe({
+    this.api.get('/guest/chat/unread').subscribe({
       next: (r: any) => this.unreadNotifs = r.data?.count || 0,
     });
   }

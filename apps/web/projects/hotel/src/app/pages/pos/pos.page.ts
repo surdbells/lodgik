@@ -1,10 +1,10 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe } from '@angular/common';
 import {
   ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent,
-  AuthService, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, ToastService
-} from '@lodgik/shared';
+  AuthService, ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, ToastService, TourService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-pos',
@@ -12,7 +12,8 @@ import {
   imports: [FormsModule, TitleCasePipe, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent, ConfirmDialogComponent],
   template: `
     <ui-confirm-dialog/>
-    <ui-page-header title="Bar & Restaurant" subtitle="POS, table management, and kitchen display">
+    <ui-page-header title="Bar & Restaurant" subtitle="POS, table management, and kitchen display"
+      tourKey="pos" (tourClick)="startTour()">
       <div class="flex gap-2">
         <button (click)="openTableModal()" class="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">+ Add Table</button>
         <button (click)="openOrderBuilder()"
@@ -376,6 +377,7 @@ import {
   `,
 })
 export class PosPage implements OnInit {
+  private tour = inject(TourService);
   private api = inject(ApiService);
   private activeProperty = inject(ActivePropertyService);
   private confirm = inject(ConfirmDialogService);
@@ -679,4 +681,8 @@ export class PosPage implements OnInit {
   }
 
   formatAmount(kobo: any): string { return ((+kobo || 0) / 100).toLocaleString('en-NG', { minimumFractionDigits: 0 }); }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['pos'] ?? [], 'pos');
+  }
 }

@@ -76,7 +76,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   loadMessages() {
     const session = this.api.getSession();
     if (!session?.booking?.id) return;
-    this.api.get(`/chat/messages/${session.booking.id}`).subscribe({
+    this.api.get('/guest/chat/messages').subscribe({
       next: (r: any) => this.messages = r.data || [],
     });
   }
@@ -84,14 +84,14 @@ export class ChatComponent implements OnInit, OnDestroy {
   markRead() {
     const session = this.api.getSession();
     if (!session?.booking?.id) return;
-    this.api.post(`/chat/messages/${session.booking.id}/read`, { reader_type: 'guest' }).subscribe();
+    this.api.post('/guest/chat/read', {}).subscribe();
   }
 
   send() {
     if (!this.newMessage.trim()) return;
     const session = this.api.getSession();
     if (!session?.booking?.id) return;
-    this.api.post('/chat/messages', {
+    this.api.post('/guest/chat/send', {
       booking_id: session.booking.id, property_id: session.property_id,
       sender_type: 'guest', sender_id: session.guest.id, sender_name: session.guest.name,
       message: this.newMessage.trim(), department: this.department,
@@ -105,7 +105,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     if (!base64) return;
     const session = this.api.getSession();
     if (!session?.booking?.id) return;
-    this.api.post('/chat/messages', {
+    this.api.post('/guest/chat/send', {
       booking_id: session.booking.id, property_id: session.property_id,
       sender_type: 'guest', sender_id: session.guest.id, sender_name: session.guest.name,
       message: '📷 Photo', image_url: `data:image/jpg;base64,${base64.substring(0, 200)}`,

@@ -75,7 +75,7 @@ export class CheckoutComponent implements OnInit {
   ngOnInit() {
     const session = this.api.getSession();
     if (session?.booking?.id) {
-      this.api.get(`/folios/by-booking/${session.booking.id}`).subscribe({
+      this.api.get('/guest/folio').subscribe({
         next: (r: any) => this.folio = r.data,
       });
     }
@@ -96,7 +96,7 @@ export class CheckoutComponent implements OnInit {
     }
 
     // Notify staff of checkout request
-    this.api.post('/chat/messages', {
+    this.api.post('/guest/chat/send', {
       booking_id: session.booking.id, property_id: session.property_id,
       sender_type: 'guest', sender_id: session.guest.id, sender_name: session.guest.name,
       message: `🚪 Guest is ready to check out. Rating: ${this.rating}/5${this.feedback ? '. Feedback: ' + this.feedback : ''}`,

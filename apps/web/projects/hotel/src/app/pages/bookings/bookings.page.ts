@@ -1,8 +1,9 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService, StatsCardComponent, ActivePropertyService, HasPermDirective, PermDisableDirective, TokenService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, DataTableComponent, TableColumn, TableAction, LoadingSpinnerComponent, ToastService, ConfirmDialogService, StatsCardComponent, ActivePropertyService, HasPermDirective, PermDisableDirective, TokenService , TourService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
@@ -10,7 +11,8 @@ import { AuthService } from '@lodgik/shared';
   standalone: true,
   imports: [FormsModule, RouterLink, DatePipe, DecimalPipe, PageHeaderComponent, DataTableComponent, LoadingSpinnerComponent, StatsCardComponent, HasPermDirective, PermDisableDirective],
   template: `
-    <ui-page-header title="Bookings" subtitle="Reservations, check-ins and check-outs">
+    <ui-page-header title="Bookings" subtitle="Reservations, check-ins and check-outs"
+      tourKey="bookings" (tourClick)="startTour()">
       <div class="flex gap-2">
         <div class="flex border border-gray-200 rounded-lg overflow-hidden">
           <button (click)="viewMode.set('list')" class="px-3 py-2 text-sm font-medium transition-colors"
@@ -320,6 +322,7 @@ import { AuthService } from '@lodgik/shared';
   `,
 })
 export class BookingsPage implements OnInit {
+  private tour = inject(TourService);
   private api = inject(ApiService);
   private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
@@ -662,5 +665,9 @@ export class BookingsPage implements OnInit {
       () => this.toast.success('Booking reference copied'),
       () => this.toast.error('Could not copy to clipboard'),
     );
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['bookings'] ?? [], 'bookings');
   }
 }

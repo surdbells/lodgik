@@ -164,7 +164,7 @@ export class GuestIoTControlsComponent implements OnInit, OnDestroy {
     const s = this.api.getSession();
     if (!s) return;
     const active = !this.dnd;
-    this.api.post('/room-controls/dnd', {
+    this.api.post('/guest/room-controls/dnd', {
       property_id: s.property_id, booking_id: s.booking.id,
       guest_id: s.guest.id, room_id: s.booking.room_id,
       room_number: s.booking.room_number, active,

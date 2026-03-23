@@ -54,20 +54,15 @@ export class AccessCodeComponent implements OnInit {
     this.bookingRef = session?.booking?.ref || '';
     this.checkOut = session?.booking?.check_out || '';
 
-    // The access code was used to login — reconstruct from session or fetch
-    // For now, display a placeholder and inform the guest
-    this.displayCode = '• • • • • •';
-
-    // If we have the booking ID, we could fetch the access code
-    // In production, the access code would be part of the session data
-    if (session?.booking?.id) {
-      this.api.get('/guest-auth/session').subscribe({
-        next: (r: any) => {
-          // Session contains access info
-          if (r.data) {
-            this.displayCode = r.data.room_id ? `Room ${r.data.room_id.substring(0, 4)}` : '• • • • • •';
-          }
-        },
+    // Fetch the guest's access code from the portal session endpoint
+    this.api.get('/guest/booking').subscribe({
+      next: (r: any) => {
+        const code = r?.data?.access_code;
+        this.displayCode = code ?? '——';
+      },
+      error: () => {
+        this.displayCode = '——';
+      },
       });
     }
   }

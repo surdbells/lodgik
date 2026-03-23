@@ -1,3 +1,4 @@
+import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
@@ -13,8 +14,7 @@ import {
   TokenService,
   LODGIK_ICONS,
   ActivePropertyService,
-  FeatureService,
-} from '@lodgik/shared';
+  FeatureService, TourService } from '@lodgik/shared';
 import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
 import {
   LineChartComponent,
@@ -61,7 +61,8 @@ const TABS: Tab[] = [
   providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(LODGIK_ICONS) }],
   template: `
     <div class="fade-in">
-      <ui-page-header title="Dashboard" [subtitle]="greeting()">
+      <ui-page-header title="Dashboard"
+      tourKey="dashboard" (tourClick)="startTour()" [subtitle]="greeting()">
         <div class="flex items-center gap-3">
           @if (isMultiProperty()) {
             <div class="flex items-center bg-gray-100 rounded-lg p-0.5">
@@ -681,6 +682,7 @@ const TABS: Tab[] = [
   `,
 })
 export class DashboardPage implements OnInit, OnDestroy {
+  private tour = inject(TourService);
   private api            = inject(ApiService);
   private auth           = inject(AuthService);
   private activeProperty = inject(ActivePropertyService);
@@ -1059,5 +1061,9 @@ export class DashboardPage implements OnInit, OnDestroy {
       .subscribe((r: any) => {
         if (r.success) this.trends.set(r.data ?? []);
       });
+  }
+
+  startTour(): void {
+    this.tour.start(PAGE_TOURS['dashboard'] ?? [], 'dashboard');
   }
 }
