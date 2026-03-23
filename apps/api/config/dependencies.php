@@ -1,13 +1,6 @@
 <?php
 
-decl
-        \Lodgik\Module\HR\HRController::class => function (ContainerInterface $c): \Lodgik\Module\HR\HRController {
-            return new \Lodgik\Module\HR\HRController(
-                em:       $c->get(\Doctrine\ORM\EntityManagerInterface::class),
-                response: $c->get(\Lodgik\Service\ResponseHelper::class),
-            );
-        },
-are(strict_types=1);
+declare(strict_types=1);
 
 use DI\ContainerBuilder;
 use Doctrine\DBAL\DriverManager;
@@ -713,6 +706,13 @@ return function (ContainerBuilder $builder): void {
                 taxRepo: $c->get(TaxConfigurationRepository::class),
                 mail: $c->get(ZeptoMailService::class),
                 logger: $c->get(LoggerInterface::class),
+            );
+        },
+
+        \Lodgik\Module\HR\HRController::class => function (ContainerInterface $c): \Lodgik\Module\HR\HRController {
+            return new \Lodgik\Module\HR\HRController(
+                em:       $c->get(\Doctrine\ORM\EntityManagerInterface::class),
+                response: $c->get(\Lodgik\Service\ResponseHelper::class),
             );
         },
 
