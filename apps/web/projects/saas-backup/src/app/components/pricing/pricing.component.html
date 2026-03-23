@@ -1,0 +1,53 @@
+
+<section id="pricing" aria-labelledby="pricing-heading">
+  <div class="container">
+    <header class="pricing-intro reveal">
+      <div class="label">Pricing</div>
+      <h2 class="section-title" id="pricing-heading">
+        Plans for every<br/><em>size of hotel</em>
+      </h2>
+      <p class="section-lead">Billed in Naira. No hidden fees. Cancel any time.</p>
+    </header>
+
+    <!-- Toggle -->
+    <div class="billing-toggle" role="group" aria-label="Billing period">
+      <span class="toggle-label" [class.active]="!isAnnual()">Monthly</span>
+      <button
+        class="toggle-switch" [class.on]="isAnnual()"
+        role="switch" [attr.aria-checked]="isAnnual()"
+        (click)="toggleBilling()"
+        aria-label="Toggle annual billing">
+        <span class="toggle-thumb"></span>
+      </button>
+      <span class="toggle-label" [class.active]="isAnnual()">Annual</span>
+      <span class="save-badge">Save 20%</span>
+    </div>
+
+    <!-- Plans grid -->
+    <div class="pricing-grid reveal">
+      <div class="price-card" *ngFor="let plan of plans" [class.popular]="plan.popular">
+        <div class="popular-badge" *ngIf="plan.popular">Most Popular</div>
+        <div class="price-tier">{{ plan.tier }}</div>
+
+        <div class="price-amount" *ngIf="plan.monthlyPrice">
+          <sup>₦</sup>{{ displayPrice(plan) }}<sub>/mo</sub>
+        </div>
+        <div class="price-amount custom" *ngIf="!plan.monthlyPrice">Custom</div>
+
+        <p class="price-desc">{{ plan.desc }}</p>
+
+        <ul class="price-features" aria-label="{{ plan.tier }} plan features">
+          <li *ngFor="let f of plan.features; let i = index"
+              [class.dim]="isDim(plan, i)">{{ f }}</li>
+        </ul>
+
+        <a [href]="plan.ctaHref" class="btn" [class]="'btn ' + plan.ctaClass"
+           [attr.rel]="plan.ctaHref.startsWith('http') ? 'noopener' : null">
+          {{ plan.ctaText }}
+        </a>
+      </div>
+    </div>
+
+    <p class="pricing-note reveal">All plans include a 14-day free trial · No credit card required · <a href="mailto:hello@lodgik.co">Talk to us</a> for a custom plan</p>
+  </div>
+</section>

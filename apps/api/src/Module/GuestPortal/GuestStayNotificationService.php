@@ -72,8 +72,9 @@ final class GuestStayNotificationService
         if (!$n || $n->getBookingId() !== $bookingId) throw new \RuntimeException('Contact not found');
 
         $booking  = $this->em->find(Booking::class, $bookingId);
-        $guest    = $this->em->find(Guest::class,   $n->getBookingId() !== $bookingId ? null : $booking?->getPropertyId());
-        $guest    = $this->em->getRepository(Guest::class)->findOneBy(['id' => $this->resolveGuestId($n)]);
+        $guest    = $booking?->getGuestId()
+            ? $this->em->find(\Lodgik\Entity\Guest::class, $booking->getGuestId())
+            : null;
         $property = $this->em->find(Property::class, $booking?->getPropertyId());
         $room     = $booking?->getRoomId() ? $this->em->find(Room::class, $booking->getRoomId()) : null;
 
@@ -124,14 +125,6 @@ final class GuestStayNotificationService
         }
     }
 
-    private function resolveGuestId(GuestStayNotification $n): string
-    {
-        // Guest id stored on the notification entity directly
-        $r = new \ReflectionClass($n);
-        $p = $r->getProperty('guestId');
-        $p->setAccessible(true);
-        return $p->getValue($n);
-    }
 
     private function buildMessage(
         GuestStayNotification $n,
@@ -227,7 +220,7 @@ final class GuestStayNotificationService
       <strong>{$guestName}</strong> is currently staying at <strong>{$hotelName}</strong>.
     </p>
 
-    {$bookingSection && "<table style='width:100%;border-top:1px solid #f3f4f6;margin-bottom:24px;'><tbody>{$bookingSection}</tbody></table>"}
+    {$bookingSection ? "<table style='width:100%;border-top:1px solid #f3f4f6;margin-bottom:24px;'><tbody>{$bookingSection}</tbody></table>" : ""}
 
     <!-- Hotel Details -->
     <div style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:24px;">

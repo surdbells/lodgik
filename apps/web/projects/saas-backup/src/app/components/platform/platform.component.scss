@@ -1,0 +1,51 @@
+
+@use '../../shared/btn.scss';
+
+section {
+  padding: clamp(4rem, 8vw, 7rem) 0;
+  background: var(--bg-surface);
+}
+
+.platform-inner {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 5rem; align-items: center;
+}
+
+.label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 5px 14px; border-radius: 100px; margin-bottom: 1rem;
+  &::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+  &-teal { color: var(--teal-bright); border: 1px solid var(--teal-border); background: var(--teal-subtle); &::before { background: var(--teal-bright); } }
+}
+.section-title {
+  font-family: 'Fraunces', serif; font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700; line-height: 1.15; letter-spacing: -0.015em;
+  color: var(--text-primary); margin-bottom: 1rem;
+  em { font-style: italic; color: var(--gold-bright); }
+}
+.section-lead { font-size: clamp(0.95rem, 1.6vw, 1.08rem); color: var(--text-secondary); line-height: 1.72; }
+.platform-note { font-size: 0.87rem; color: var(--text-muted); line-height: 1.65; margin-top: 1rem; }
+.platform-cta { margin-top: 2rem; }
+
+.apps-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;
+}
+.app-card {
+  background: var(--bg-base); border-radius: 12px; padding: 1.3rem;
+  border: 1px solid var(--border); transition: all 0.3s;
+  &:hover { border-color: var(--gold-border); transform: translateY(-3px); box-shadow: var(--shadow-md); }
+}
+.app-icon { font-size: 1.5rem; margin-bottom: 0.7rem; }
+.app-card h4 { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; }
+.app-card p  { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.7rem; }
+.app-badge {
+  font-size: 0.62rem; font-weight: 600; padding: 3px 9px;
+  border-radius: 100px; border: 1px solid;
+  &.badge-web     { background: rgba(59,130,246,0.08); color: #3B82F6; border-color: rgba(59,130,246,0.2); }
+  &.badge-android { background: rgba(34,197,94,0.08);  color: #16A34A; border-color: rgba(34,197,94,0.2);  }
+  &.badge-desktop { background: rgba(168,85,247,0.08); color: #9333EA; border-color: rgba(168,85,247,0.2); }
+}
+
+@media (max-width: 900px) { .platform-inner { grid-template-columns: 1fr; } }
+@media (max-width: 500px) { .apps-grid { grid-template-columns: 1fr; } }

@@ -1,0 +1,45 @@
+
+section { padding: clamp(4rem, 8vw, 7rem) 0; }
+
+.modules-header {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 3rem; align-items: end; margin-bottom: 3rem;
+}
+.label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 5px 14px; border-radius: 100px; margin-bottom: 1rem;
+  color: var(--gold-bright); border: 1px solid var(--gold-border); background: var(--gold-subtle);
+  &::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--gold-bright); }
+}
+.section-title {
+  font-family: 'Fraunces', serif; font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700; line-height: 1.15; letter-spacing: -0.015em; color: var(--text-primary); margin-bottom: 1rem;
+  em { font-style: italic; color: var(--gold-bright); }
+}
+.section-lead { font-size: clamp(0.95rem, 1.6vw, 1.05rem); color: var(--text-secondary); line-height: 1.72; }
+
+.count-num {
+  font-family: 'Fraunces', serif; font-size: clamp(3rem, 5vw, 4.2rem);
+  font-weight: 700; color: var(--gold-bright); line-height: 1; text-align: right;
+}
+.count-sub { font-size: 0.82rem; color: var(--text-muted); text-align: right; line-height: 1.5; }
+
+.modules-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+.module-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 17px; border-radius: 100px;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  font-size: 0.84rem; color: var(--text-secondary);
+  transition: all 0.25s; cursor: default;
+  &:hover { color: var(--text-primary); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  &.accent-gold:hover { border-color: var(--gold-border); background: var(--gold-subtle); }
+  &.accent-teal:hover { border-color: var(--teal-border); background: var(--teal-subtle); }
+}
+.pill-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  .accent-gold & { background: var(--gold-bright); }
+  .accent-teal & { background: var(--teal-bright); }
+}
+
+@media (max-width: 700px) { .modules-header { grid-template-columns: 1fr; } .count-num, .count-sub { text-align: left; } }

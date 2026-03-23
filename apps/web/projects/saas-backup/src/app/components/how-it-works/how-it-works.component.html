@@ -1,0 +1,19 @@
+
+<section id="how" aria-labelledby="how-heading">
+  <div class="container">
+    <header class="how-header reveal">
+      <div class="label">How It Works</div>
+      <h2 class="section-title" id="how-heading">
+        Up and running <em>in hours,</em> not weeks
+      </h2>
+    </header>
+    <div class="steps">
+      <div class="step-connector" aria-hidden="true"></div>
+      <div class="step reveal" *ngFor="let s of steps; let i = index" [class]="'reveal d' + i">
+        <div class="step-num" aria-hidden="true">{{ s.num }}</div>
+        <h3>{{ s.title }}</h3>
+        <p>{{ s.desc }}</p>
+      </div>
+    </div>
+  </div>
+</section>

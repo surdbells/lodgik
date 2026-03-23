@@ -1240,7 +1240,7 @@ function statusClass(val: string): string {
         </path>
       }
       <text x="130" y="96" text-anchor="middle" font-size="18" font-weight="700" fill="#1E293B">
-        {{ ch.total | number:'1.0-0' }}
+        {{ ch.total }}
       </text>
       <text x="130" y="112" text-anchor="middle" font-size="10" fill="#9CA3AF">Total</text>
     </svg>

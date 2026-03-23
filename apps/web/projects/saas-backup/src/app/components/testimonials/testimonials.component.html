@@ -1,0 +1,26 @@
+
+<section id="testimonials" aria-labelledby="testi-heading">
+  <div class="container">
+    <header class="testi-intro reveal">
+      <div class="label">Testimonials</div>
+      <h2 class="section-title" id="testi-heading">
+        Hotels that switched to <em>Lodgik</em>
+      </h2>
+    </header>
+    <div class="testi-grid">
+      <blockquote class="testi-card reveal" *ngFor="let t of testimonials; let i = index" [class]="'reveal d' + i">
+        <div class="stars" [attr.aria-label]="t.stars + ' stars'">
+          <span *ngFor="let s of [].constructor(t.stars)">★</span>
+        </div>
+        <p class="quote">"{{ t.quote }}"</p>
+        <footer class="author">
+          <div class="avatar" aria-hidden="true">{{ t.initials }}</div>
+          <div>
+            <div class="author-name">{{ t.name }}</div>
+            <div class="author-role">{{ t.role }}, {{ t.hotel }}</div>
+          </div>
+        </footer>
+      </blockquote>
+    </div>
+  </div>
+</section>
