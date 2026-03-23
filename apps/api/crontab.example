@@ -1,53 +1,44 @@
-# Lodgik Automated Job Schedule
-# ============================================================
-# Install with: crontab crontab.example
-# Or merge into /etc/cron.d/lodgik
+# Lodgik — Production Cron Schedule (aaPanel / Bare Metal)
+# =========================================================
+# Install:  crontab -e  (as root or www user)
+# Verify:   crontab -l
 #
-# Assumes the API container is named 'lodgik-api' (see docker-compose.yml).
-# For bare-metal / VM deployments, replace the docker exec prefix with:
-#   cd /var/www/lodgik/apps/api && php bin/console
-#
-# Logs are written by Monolog inside the container.
-# Add >> /var/log/lodgik-cron.log 2>&1 to capture shell-level stdout.
-# ============================================================
+# PHP binary: /www/server/php/83/bin/php
+# Project:    /www/wwwroot/lodgik/apps/api
+# Logs:       /www/wwwroot/lodgik/logs/cron/
+# =========================================================
 
-# ── Environment ──────────────────────────────────────────────
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+LODGIK=/www/wwwroot/lodgik/apps/api
+PHP=/www/server/php/83/bin/php
 
-# Convenience alias (adjust if your container name differs)
-LODGIK_CLI=docker exec lodgik-api php bin/console
+# ── Ensure log directory exists ───────────────────────────
+# Run once manually: mkdir -p /www/wwwroot/lodgik/logs/cron
 
-# ── Fraud-prevention: auto-checkout cleared/overdue bookings ─
-# Runs at 01:00 AM daily — before night audit so revenue is accurate
-0 1 * * *   ${LODGIK_CLI} lodgik:fraud-auto-checkout >> /var/log/lodgik/fraud-checkout.log 2>&1
+# ── 01:00 AM — Fraud auto-checkout ────────────────────────
+# Checks for bookings overdue by >2h and auto-checks them out.
+# Must run BEFORE night audit so revenue totals are accurate.
+0 1 * * * cd $LODGIK && $PHP bin/console lodgik:fraud-auto-checkout >> /www/wwwroot/lodgik/logs/cron/fraud-checkout.log 2>&1
 
-# ── Night audit: generate + auto-close for all properties ─────
-# Runs at 02:00 AM daily
-0 2 * * *   ${LODGIK_CLI} lodgik:night-audit >> /var/log/lodgik/night-audit.log 2>&1
+# ── 02:00 AM — Night audit ────────────────────────────────
+# Generates DailySnapshot for all active properties.
+# Posts nightly room charges to open folios.
+0 2 * * * cd $LODGIK && $PHP bin/console lodgik:night-audit >> /www/wwwroot/lodgik/logs/cron/night-audit.log 2>&1
 
-# ── Database backup with AES-256 encryption ───────────────────
-# Runs at 02:30 AM daily (30 min after night audit completes)
-30 2 * * *  ${LODGIK_CLI} lodgik:database-backup >> /var/log/lodgik/backup.log 2>&1
+# ── 02:30 AM — Database backup ────────────────────────────
+# pg_dump → AES-256 encrypted → /www/backup/lodgik_YYYYMMDD.dump.gz.enc
+# Retains 30 days. Upload to remote storage manually or via rclone.
+30 2 * * * cd $LODGIK && $PHP bin/console lodgik:db-backup >> /www/wwwroot/lodgik/logs/cron/backup.log 2>&1
 
-# ── Noon room status sweep ────────────────────────────────────
-# Flags overdue check-outs, sets rooms to cleaning, creates housekeeping tasks
-0 12 * * *  ${LODGIK_CLI} lodgik:noon-checkout >> /var/log/lodgik/noon-checkout.log 2>&1
+# ── 12:00 PM — Noon checkout reminder ─────────────────────
+# Sends SMS/push reminder to guests with noon checkout.
+0 12 * * * cd $LODGIK && $PHP bin/console lodgik:noon-checkout >> /www/wwwroot/lodgik/logs/cron/noon-checkout.log 2>&1
 
-# ── Visitor overstay detection ────────────────────────────────
-# Every 30 minutes during operational hours (08:00 – 22:00)
-*/30 8-22 * * *  ${LODGIK_CLI} lodgik:visitor-overstay >> /var/log/lodgik/visitor-overstay.log 2>&1
+# ── 12:30 PM — Late checkout charges ─────────────────────
+# Posts late-checkout fee to folio for guests still checked in after noon.
+30 12 * * * cd $LODGIK && $PHP bin/console lodgik:late-checkout-charge >> /www/wwwroot/lodgik/logs/cron/late-checkout.log 2>&1
 
-# ── Log rotation (weekly, keep 4 weeks) ──────────────────────
-# Requires logrotate to be installed
-# Add a file at /etc/logrotate.d/lodgik with:
-#
-#   /var/log/lodgik/*.log {
-#       weekly
-#       rotate 4
-#       compress
-#       delaycompress
-#       missingok
-#       notifempty
-#       create 0640 www-data www-data
-#   }
+# ── Every 30 min — Visitor overstay check ────────────────
+# Flags visitor access codes that have exceeded their valid window.
+*/30 * * * * cd $LODGIK && $PHP bin/console lodgik:visitor-overstay >> /www/wwwroot/lodgik/logs/cron/visitor-overstay.log 2>&1
