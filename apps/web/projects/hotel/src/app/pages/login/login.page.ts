@@ -48,14 +48,14 @@ import { AuthService, ToastService } from '@lodgik/shared';
             <form (ngSubmit)="login()" class="space-y-5 mt-6">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-                <input type="email" [(ngModel)]="email" name="email" required
+                <input type="email" [(ngModel)]="email" name="mail" required
                        class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all bg-gray-50 focus:bg-white"
                        placeholder="you&#64;hotel.com">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
                 <div class="relative">
-                  <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password" required
+                  <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="lock" required
                          class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all bg-gray-50 focus:bg-white pr-10">
                   <button type="button" (click)="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     {{ showPassword ? '🙈' : '👁️' }}

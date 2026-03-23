@@ -641,7 +641,7 @@ const TABS: Tab[] = [
                 class="bg-white rounded-xl border border-gray-100 shadow-card p-5 hover:border-amber-200 hover:shadow-md transition-all group">
                 <div class="flex items-center gap-3 mb-2">
                   <span class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <lucide-icon name="alert-triangle" [size]="18" [strokeWidth]="1.75" class="text-amber-600"></lucide-icon>
+                    <lucide-icon name="triangle-alert" [size]="18" [strokeWidth]="1.75" class="text-amber-600"></lucide-icon>
                   </span>
                   <h4 class="text-sm font-semibold text-gray-800">Outstanding Balances</h4>
                 </div>

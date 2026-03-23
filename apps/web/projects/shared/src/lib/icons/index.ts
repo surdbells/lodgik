@@ -104,6 +104,18 @@ import {
   Settings2,
   TrendingDown,
   Truck,
+
+  // ─── Previously missing — added v5 ───────────────────────
+  CircleAlert,
+  CircleDollarSign,
+  Monitor,
+  Info,
+  Lock,
+  Calendar,
+  Mail,
+  SearchX,
+  SlidersVertical,
+  MessageSquare,
 } from 'lucide-angular';
 
 /**
@@ -194,6 +206,18 @@ export const LODGIK_ICONS = {
   Settings2,
   TrendingDown,
   Truck,
+
+  // ─── Previously missing — added v5 ───────────────────────
+  CircleAlert,
+  CircleDollarSign,
+  Monitor,
+  Info,
+  Lock,
+  Calendar,
+  Mail,
+  SearchX,
+  SlidersVertical,
+  MessageSquare,
 };
 
 /**

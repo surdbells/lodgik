@@ -54,7 +54,7 @@ import { ApiService, ToastService } from '@lodgik/shared';
                 <input [(ngModel)]="form.admin_last_name" name="ln" placeholder="Last name" required
                        class="px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all">
               </div>
-              <input [(ngModel)]="form.admin_email" name="email" type="email" placeholder="Email address" required
+              <input [(ngModel)]="form.admin_email" name="mail" type="email" placeholder="Email address" required
                      class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all">
               <input [(ngModel)]="form.admin_password" name="pw" type="password" placeholder="Password (min 8 chars)" required
                      class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-sage-200 focus:border-sage-400 focus:bg-white outline-none transition-all">

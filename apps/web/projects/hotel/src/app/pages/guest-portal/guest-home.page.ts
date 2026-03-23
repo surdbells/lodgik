@@ -13,18 +13,18 @@ import { GuestThemeService } from '../../services/guest-theme.service';
 const QUICK_ACTIONS = [
   { label: 'My Bill',       icon: 'receipt',      route: '/guest/folio',          color: 'text-amber-400' },
   { label: 'Room Service',  icon: 'bell',         route: '/guest/services',       color: 'text-amber-400' },
-  { label: 'Chat Staff',    icon: 'chat',         route: '/guest/chat',           color: 'text-amber-400' },
+  { label: 'Chat Staff',    icon: 'message-square',         route: '/guest/chat',           color: 'text-amber-400' },
   { label: 'Restaurant',     icon: 'utensils',     route: '/guest/restaurant',     color: 'text-orange-400' },
   { label: 'Visitors',      icon: 'users',        route: '/guest/visitor-codes',  color: 'text-blue-400'  },
   { label: 'Notify Contacts', icon: 'shield',    route: '/guest/stay-notifications', color: 'text-green-400' },
   { label: 'Extend Stay',   icon: 'calendar',     route: '/guest/stay-extension', color: 'text-purple-400' },
-  { label: 'Room Controls', icon: 'sliders',      route: '/guest/room-controls',  color: 'text-emerald-400' },
-  { label: 'Lost & Found',  icon: 'searchx',      route: '/guest/lost-found',     color: 'text-pink-400'  },
+  { label: 'Room Controls', icon: 'sliders-vertical',      route: '/guest/room-controls',  color: 'text-emerald-400' },
+  { label: 'Lost & Found',  icon: 'search-x',      route: '/guest/lost-found',     color: 'text-pink-400'  },
   { label: 'Hotel Info',    icon: 'info',         route: '/guest/hotel-info',     color: 'text-cyan-400'  },
   { label: 'Spa & Gym',     icon: 'sparkles',     route: '/guest/spa',            color: 'text-rose-400'  },
-  { label: 'Preferences',   icon: 'sliders', route: '/guest/preferences', color: 'text-violet-400' },
+  { label: 'Preferences',   icon: 'sliders-vertical', route: '/guest/preferences', color: 'text-violet-400' },
   { label: 'Stay Alert',    icon: 'bell',         route: '/guest/stay-notifications', color: 'text-orange-400' },
-  { label: 'Check Out',     icon: 'dooropen',     route: '/guest/checkout',       color: 'text-red-400'   },
+  { label: 'Check Out',     icon: 'door-open',     route: '/guest/checkout',       color: 'text-red-400'   },
 ];
 
 @Component({
