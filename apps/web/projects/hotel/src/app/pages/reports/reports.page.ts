@@ -12,12 +12,26 @@ import { forkJoin, of, catchError } from 'rxjs';
 
 // ─── Number helpers ────────────────────────────────────────────────────────────
 
-const CURRENCY_KEYS = new Set([
-  'total','amount','revenue','balance','payment','subtotal','tax','grand',
-  'collected','outstanding','charges','cost','adr','revpar','paid','price',
-  'fee','sum','earning','income','expense','rate','value','cash','transfer',
-  'pos','room','bar','restaurant','service','laundry','other','ancillary',
-  'lost','refund','discount','deposit','naira',
+// Keys that are definitively money — matched as full key or as a suffix after the last underscore
+const MONEY_SUFFIX_KEYS = new Set([
+  'amount','revenue','balance','payment','subtotal','tax','grand_total',
+  'collected','outstanding','charges','cost','adr','revpar','paid',
+  'price','fee','earning','income','expense','cash','transfer','naira',
+  'refund','discount','deposit','rate_per_night','base_rate','room_revenue',
+  'ancillary_revenue','total_revenue','total_charges','total_payments',
+  'total_outstanding','lost_revenue','bar_revenue','restaurant_revenue',
+  'service_revenue','laundry_revenue','avg_adr','avg_revpar','total_amount',
+  'outstanding_balance','total_naira','grand_total','total_paid',
+  'pending_amount','total_collected',
+]);
+
+// Keys that look like money by suffix but are actually counts / quantities
+const COUNT_KEYS = new Set([
+  'count','rooms','guests','adults','children','nights','bookings',
+  'in_house','checkins','checkouts','arrivals','departures','no_shows',
+  'cancellations','walk_ins','staff','users','items','orders','tasks',
+  'properties','floors','capacity','occupancy','persons','members',
+  'pct','percent','requests','incidents','entries','pages','total',
 ]);
 
 function looksLikeMoney(key: string, val: unknown): boolean {
@@ -25,7 +39,25 @@ function looksLikeMoney(key: string, val: unknown): boolean {
   const n = Number(val);
   if (isNaN(n)) return false;
   const k = key.toLowerCase().replace(/[^a-z_]/g, '');
-  return k.split('_').some(part => CURRENCY_KEYS.has(part));
+
+  // Explicit full-key match first
+  if (MONEY_SUFFIX_KEYS.has(k)) return true;
+
+  // Check if any segment of the key is a count word — counts are never money
+  const parts = k.split('_');
+  if (parts.some(p => COUNT_KEYS.has(p))) return false;
+
+  // Check if the last meaningful segment looks like a money word
+  const moneySuffixes = new Set([
+    'amount','revenue','balance','payment','subtotal','tax',
+    'collected','outstanding','charges','cost','adr','revpar','paid',
+    'price','fee','earning','income','expense','cash','transfer','naira',
+    'refund','discount','deposit','total',
+  ]);
+  const lastPart = parts[parts.length - 1];
+  // Only treat 'total' as money when it's the final segment
+  // and the key doesn't contain a count word
+  return moneySuffixes.has(lastPart);
 }
 
 function fmtMoney(v: unknown): string {
