@@ -33,3 +33,6 @@ apps/mobile/*/node_modules/
 apps/mobile/*/platforms/
 apps/mobile/*/hooks/
 apps/mobile/security/node_modules/
+
+# Local project directories — not part of Lodgik
+apps/web/projects/saas-backup/
