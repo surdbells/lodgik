@@ -378,6 +378,7 @@ return function (ContainerBuilder $builder): void {
                 staffService: $c->get(StaffService::class),
                 response: $c->get(ResponseHelper::class),
                 fileStorage: $c->get(\Lodgik\Service\FileStorageService::class),
+                employeeService: $c->get(\Lodgik\Module\Employee\EmployeeService::class),
             );
         },
 

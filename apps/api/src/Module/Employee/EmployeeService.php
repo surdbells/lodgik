@@ -7,6 +7,7 @@ namespace Lodgik\Module\Employee;
 use Doctrine\ORM\EntityManagerInterface;
 use Lodgik\Entity\Department;
 use Lodgik\Entity\Employee;
+use Lodgik\Enum\EmploymentType;
 use Lodgik\Enum\EmploymentStatus;
 use Lodgik\Repository\DepartmentRepository;
 use Lodgik\Repository\EmployeeRepository;
@@ -77,49 +78,61 @@ final class EmployeeService
 
     public function createEmployee(array $data, string $tenantId): Employee
     {
-        $staffId = $data['staff_id'] ?? $this->empRepo->generateStaffId($tenantId);
+        $required = ['property_id', 'first_name', 'last_name', 'job_title', 'hire_date'];
+        foreach ($required as $f) {
+            if (empty($data[$f])) throw new \InvalidArgumentException("$f is required");
+        }
+
+        // Auto-generate staff_id if not provided
+        if (empty($data['staff_id'])) {
+            $initials = strtoupper(substr($data['first_name'], 0, 1) . substr($data['last_name'], 0, 1));
+            $seq      = str_pad((string) random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+            $data['staff_id'] = "EMP-{$initials}{$seq}";
+        }
 
         $emp = new Employee(
             propertyId: $data['property_id'],
-            firstName: $data['first_name'],
-            lastName: $data['last_name'],
-            staffId: $staffId,
-            jobTitle: $data['job_title'],
-            hireDate: new \DateTimeImmutable($data['hire_date'] ?? 'today'),
-            tenantId: $tenantId,
+            firstName:  $data['first_name'],
+            lastName:   $data['last_name'],
+            staffId:    $data['staff_id'],
+            jobTitle:   $data['job_title'],
+            hireDate:   new \DateTimeImmutable($data['hire_date']),
+            tenantId:   $tenantId,
         );
 
-        if (isset($data['department_id'])) $emp->setDepartmentId($data['department_id']);
-        if (isset($data['user_id'])) $emp->setUserId($data['user_id']);
-        if (isset($data['email'])) $emp->setEmail($data['email']);
-        if (isset($data['phone'])) $emp->setPhone($data['phone']);
-        if (isset($data['gross_salary'])) $emp->setGrossSalary($data['gross_salary']);
-        if (isset($data['employment_status'])) $emp->setEmploymentStatus(EmploymentStatus::from($data['employment_status']));
+        if (!empty($data['user_id']))          $emp->setUserId($data['user_id']);
+        if (!empty($data['department_id']))    $emp->setDepartmentId($data['department_id']);
+        if (!empty($data['email']))            $emp->setEmail($data['email']);
+        if (!empty($data['phone']))            $emp->setPhone($data['phone']);
+        if (!empty($data['gross_salary']))     $emp->setGrossSalary((string)$data['gross_salary']);
+        if (!empty($data['bank_name']))        $emp->setBankName($data['bank_name']);
+        if (!empty($data['bank_account_number'])) $emp->setBankAccountNumber($data['bank_account_number']);
+        if (!empty($data['bank_account_name']))   $emp->setBankAccountName($data['bank_account_name']);
+        if (!empty($data['date_of_birth']))    $emp->setDateOfBirth(new \DateTimeImmutable($data['date_of_birth']));
+        if (!empty($data['gender']))           $emp->setGender($data['gender']);
+        if (!empty($data['address']))          $emp->setAddress($data['address']);
+        if (!empty($data['nin']))              $emp->setNin($data['nin']);
+        if (!empty($data['tax_id']))           $emp->setTaxId($data['tax_id']);
+        if (!empty($data['pension_pin']))      $emp->setPensionPin($data['pension_pin']);
+        if (!empty($data['nhf_id']))           $emp->setNhfId($data['nhf_id']);
+        if (!empty($data['emergency_contact_name']))  $emp->setEmergencyContactName($data['emergency_contact_name']);
+        if (!empty($data['emergency_contact_phone'])) $emp->setEmergencyContactPhone($data['emergency_contact_phone']);
+        if (!empty($data['notes']))            $emp->setNotes($data['notes']);
 
-        // Bank details
-        if (isset($data['bank_name'])) $emp->setBankName($data['bank_name']);
-        if (isset($data['bank_account_number'])) $emp->setBankAccountNumber($data['bank_account_number']);
-        if (isset($data['bank_account_name'])) $emp->setBankAccountName($data['bank_account_name']);
-
-        // Personal
-        if (isset($data['date_of_birth'])) $emp->setDateOfBirth(new \DateTimeImmutable($data['date_of_birth']));
-        if (isset($data['gender'])) $emp->setGender($data['gender']);
-        if (isset($data['address'])) $emp->setAddress($data['address']);
-        if (isset($data['emergency_contact_name'])) $emp->setEmergencyContactName($data['emergency_contact_name']);
-        if (isset($data['emergency_contact_phone'])) $emp->setEmergencyContactPhone($data['emergency_contact_phone']);
-
-        // Tax IDs
-        if (isset($data['nin'])) $emp->setNin($data['nin']);
-        if (isset($data['tax_id'])) $emp->setTaxId($data['tax_id']);
-        if (isset($data['pension_pin'])) $emp->setPensionPin($data['pension_pin']);
-        if (isset($data['nhf_id'])) $emp->setNhfId($data['nhf_id']);
+        // New Phase A fields
+        if (!empty($data['employment_type']))  $emp->setEmploymentType(EmploymentType::from($data['employment_type']));
+        if (!empty($data['contract_start']))   $emp->setContractStart(new \DateTimeImmutable($data['contract_start']));
+        if (!empty($data['contract_end']))     $emp->setContractEnd(new \DateTimeImmutable($data['contract_end']));
+        if (isset($data['notice_period_days'])) $emp->setNoticePeriodDays((int)$data['notice_period_days']);
+        if (!empty($data['reporting_to']))     $emp->setReportingTo($data['reporting_to']);
+        if (!empty($data['work_location']))    $emp->setWorkLocation($data['work_location']);
+        if (!empty($data['work_schedule']))    $emp->setWorkSchedule($data['work_schedule']);
 
         $this->em->persist($emp);
         $this->em->flush();
-
-        $this->logger->info("Employee created: {$emp->getStaffId()} ({$emp->getFullName()})");
         return $emp;
     }
+
 
     public function getEmployee(string $id): ?Employee
     {
@@ -128,42 +141,43 @@ final class EmployeeService
 
     public function updateEmployee(string $id, array $data): Employee
     {
-        $emp = $this->empRepo->find($id);
-        if (!$emp) throw new \RuntimeException('Employee not found');
+        $emp = $this->em->find(Employee::class, $id);
+        if (!$emp) throw new \InvalidArgumentException('Employee not found');
 
-        $fields = [
-            'first_name' => 'setFirstName', 'last_name' => 'setLastName',
-            'email' => 'setEmail', 'phone' => 'setPhone',
-            'job_title' => 'setJobTitle', 'department_id' => 'setDepartmentId',
-            'user_id' => 'setUserId',
-            'gross_salary' => 'setGrossSalary',
-            'bank_name' => 'setBankName', 'bank_account_number' => 'setBankAccountNumber',
-            'bank_account_name' => 'setBankAccountName',
-            'gender' => 'setGender', 'address' => 'setAddress',
-            'emergency_contact_name' => 'setEmergencyContactName',
-            'emergency_contact_phone' => 'setEmergencyContactPhone',
-            'nin' => 'setNin', 'tax_id' => 'setTaxId',
-            'pension_pin' => 'setPensionPin', 'nhf_id' => 'setNhfId',
-            'notes' => 'setNotes',
-        ];
+        if (isset($data['first_name']))          $emp->setFirstName($data['first_name']);
+        if (isset($data['last_name']))           $emp->setLastName($data['last_name']);
+        if (isset($data['email']))               $emp->setEmail($data['email'] ?: null);
+        if (isset($data['phone']))               $emp->setPhone($data['phone'] ?: null);
+        if (isset($data['job_title']))           $emp->setJobTitle($data['job_title']);
+        if (isset($data['department_id']))       $emp->setDepartmentId($data['department_id'] ?: null);
+        if (isset($data['gross_salary']))        $emp->setGrossSalary((string)$data['gross_salary']);
+        if (isset($data['bank_name']))           $emp->setBankName($data['bank_name'] ?: null);
+        if (isset($data['bank_account_number'])) $emp->setBankAccountNumber($data['bank_account_number'] ?: null);
+        if (isset($data['bank_account_name']))   $emp->setBankAccountName($data['bank_account_name'] ?: null);
+        if (isset($data['date_of_birth']))       $emp->setDateOfBirth($data['date_of_birth'] ? new \DateTimeImmutable($data['date_of_birth']) : null);
+        if (isset($data['gender']))              $emp->setGender($data['gender'] ?: null);
+        if (isset($data['address']))             $emp->setAddress($data['address'] ?: null);
+        if (isset($data['nin']))                 $emp->setNin($data['nin'] ?: null);
+        if (isset($data['tax_id']))              $emp->setTaxId($data['tax_id'] ?: null);
+        if (isset($data['pension_pin']))         $emp->setPensionPin($data['pension_pin'] ?: null);
+        if (isset($data['nhf_id']))              $emp->setNhfId($data['nhf_id'] ?: null);
+        if (isset($data['emergency_contact_name']))  $emp->setEmergencyContactName($data['emergency_contact_name'] ?: null);
+        if (isset($data['emergency_contact_phone'])) $emp->setEmergencyContactPhone($data['emergency_contact_phone'] ?: null);
+        if (isset($data['notes']))               $emp->setNotes($data['notes'] ?: null);
 
-        foreach ($fields as $key => $setter) {
-            if (array_key_exists($key, $data)) $emp->$setter($data[$key]);
-        }
-
-        if (isset($data['employment_status'])) {
-            $emp->setEmploymentStatus(EmploymentStatus::from($data['employment_status']));
-        }
-        if (isset($data['date_of_birth'])) {
-            $emp->setDateOfBirth($data['date_of_birth'] ? new \DateTimeImmutable($data['date_of_birth']) : null);
-        }
-        if (isset($data['termination_date'])) {
-            $emp->setTerminationDate($data['termination_date'] ? new \DateTimeImmutable($data['termination_date']) : null);
-        }
+        // Phase A fields
+        if (!empty($data['employment_type']))   $emp->setEmploymentType(EmploymentType::from($data['employment_type']));
+        if (array_key_exists('contract_start', $data)) $emp->setContractStart($data['contract_start'] ? new \DateTimeImmutable($data['contract_start']) : null);
+        if (array_key_exists('contract_end', $data))   $emp->setContractEnd($data['contract_end'] ? new \DateTimeImmutable($data['contract_end']) : null);
+        if (isset($data['notice_period_days'])) $emp->setNoticePeriodDays((int)$data['notice_period_days']);
+        if (isset($data['reporting_to']))        $emp->setReportingTo($data['reporting_to'] ?: null);
+        if (isset($data['work_location']))       $emp->setWorkLocation($data['work_location'] ?: null);
+        if (!empty($data['work_schedule']))      $emp->setWorkSchedule($data['work_schedule']);
 
         $this->em->flush();
         return $emp;
     }
+
 
     public function terminate(string $id, string $reason, string $terminationDate): Employee
     {
@@ -177,6 +191,11 @@ final class EmployeeService
     }
 
     /** @return Employee[] */
+    public function getByUserId(string $userId): ?Employee
+    {
+        return $this->em->getRepository(Employee::class)->findOneBy(['userId' => $userId]);
+    }
+
     public function getActiveByProperty(string $propertyId): array
     {
         return $this->empRepo->findActiveByProperty($propertyId);

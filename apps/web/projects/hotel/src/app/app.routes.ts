@@ -134,12 +134,14 @@ export const routes: Routes = [
       // Phase 3: HR & Payroll
       {
         path: 'employees',
-        loadComponent: () => import('./pages/employees/employees.page').then(m => m.EmployeesPage),
+        redirectTo: 'staff',
+        pathMatch: 'full',
         canActivate: [roleGuard('property_admin', 'manager')],
       },
       {
         path: 'employees/:id',
-        loadComponent: () => import('./pages/employees/employee-detail.page').then(m => m.EmployeeDetailPage),
+        redirectTo: '/staff',
+        pathMatch: 'full',
         canActivate: [roleGuard('property_admin', 'manager')],
       },
       {

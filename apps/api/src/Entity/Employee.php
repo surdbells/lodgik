@@ -12,6 +12,7 @@ use Lodgik\Entity\Traits\HasTenant;
 use Lodgik\Entity\Traits\HasTimestamps;
 use Lodgik\Entity\Traits\SoftDeletable;
 use Lodgik\Enum\EmploymentStatus;
+use Lodgik\Enum\EmploymentType;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'employees')]
@@ -70,6 +71,27 @@ class Employee implements TenantAware
 
     #[ORM\Column(name: 'termination_date', type: Types::DATE_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $terminationDate = null;
+
+    #[ORM\Column(name: 'employment_type', type: Types::STRING, length: 20, enumType: EmploymentType::class, options: ['default' => 'permanent'])]
+    private EmploymentType $employmentType = EmploymentType::PERMANENT;
+
+    #[ORM\Column(name: 'contract_start', type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $contractStart = null;
+
+    #[ORM\Column(name: 'contract_end', type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $contractEnd = null;
+
+    #[ORM\Column(name: 'notice_period_days', type: Types::SMALLINT, options: ['default' => 30])]
+    private int $noticePeriodDays = 30;
+
+    #[ORM\Column(name: 'reporting_to', type: Types::STRING, length: 36, nullable: true)]
+    private ?string $reportingTo = null;
+
+    #[ORM\Column(name: 'work_location', type: Types::STRING, length: 100, nullable: true)]
+    private ?string $workLocation = null;
+
+    #[ORM\Column(name: 'work_schedule', type: Types::STRING, length: 50, options: ['default' => 'full_time'])]
+    private string $workSchedule = 'full_time';
 
     // ─── Compensation ───────────────────────────────────────────
 
@@ -193,6 +215,27 @@ class Employee implements TenantAware
     public function setNhfId(?string $v): void { $this->nhfId = $v; }
     public function getNotes(): ?string { return $this->notes; }
     public function setNotes(?string $v): void { $this->notes = $v; }
+    public function getEmploymentType(): EmploymentType { return $this->employmentType; }
+    public function setEmploymentType(EmploymentType $v): void { $this->employmentType = $v; }
+    public function getContractStart(): ?\DateTimeImmutable { return $this->contractStart; }
+    public function setContractStart(?\DateTimeImmutable $v): void { $this->contractStart = $v; }
+    public function getContractEnd(): ?\DateTimeImmutable { return $this->contractEnd; }
+    public function setContractEnd(?\DateTimeImmutable $v): void { $this->contractEnd = $v; }
+    public function getNoticePeriodDays(): int { return $this->noticePeriodDays; }
+    public function setNoticePeriodDays(int $v): void { $this->noticePeriodDays = $v; }
+    public function getReportingTo(): ?string { return $this->reportingTo; }
+    public function setReportingTo(?string $v): void { $this->reportingTo = $v; }
+    public function getWorkLocation(): ?string { return $this->workLocation; }
+    public function setWorkLocation(?string $v): void { $this->workLocation = $v; }
+    public function getWorkSchedule(): string { return $this->workSchedule; }
+    public function setWorkSchedule(string $v): void { $this->workSchedule = $v; }
+
+    public function isContractExpiring(int $withinDays = 30): bool
+    {
+        if ($this->contractEnd === null) return false;
+        $threshold = (new \DateTimeImmutable())->modify("+{$withinDays} days");
+        return $this->contractEnd <= $threshold && $this->contractEnd >= new \DateTimeImmutable();
+    }
 
     // ─── Serialization ──────────────────────────────────────────
 
@@ -229,6 +272,17 @@ class Employee implements TenantAware
             'pension_pin' => $this->pensionPin,
             'nhf_id' => $this->nhfId,
             'notes' => $this->notes,
+            'employment_type' => $this->employmentType->value,
+            'employment_type_label' => $this->employmentType->label(),
+            'employment_type_color' => $this->employmentType->color(),
+            'employment_type_bg' => $this->employmentType->bgColor(),
+            'contract_start' => $this->contractStart?->format('Y-m-d'),
+            'contract_end' => $this->contractEnd?->format('Y-m-d'),
+            'notice_period_days' => $this->noticePeriodDays,
+            'reporting_to' => $this->reportingTo,
+            'work_location' => $this->workLocation,
+            'work_schedule' => $this->workSchedule,
+            'contract_expiring_soon' => $this->isContractExpiring(30),
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
     }

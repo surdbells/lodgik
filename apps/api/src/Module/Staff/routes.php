@@ -18,6 +18,8 @@ return function (App $app): void {
         $group->patch('/{id}', [StaffController::class, 'update']);
         $group->delete('/{id}', [StaffController::class, 'delete']);
         $group->post('/{id}/resend-invite', [StaffController::class, 'resendInvite']);
+        $group->get('/{id}/employee',        [StaffController::class, 'getEmployee']);
+        $group->post('/{id}/employee',       [StaffController::class, 'upsertEmployee']);
         $group->post('/{id}/avatar', [StaffController::class, 'uploadAvatar']);
         $group->get('/{id}/property-access', [StaffController::class, 'getPropertyAccess']);
         $group->post('/{id}/property-access', [StaffController::class, 'grantPropertyAccess']);
