@@ -77,9 +77,9 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, TokenService 
                   <p class="text-sm font-semibold text-gray-900 truncate">{{ m.name }}</p>
                   <!-- Toggle -->
                   @if (m.is_core) {
-                    <span class="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 bg-sage-100 text-sage-700 rounded-full">Core</span>
+                    <span data-tour="features-core" class="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 bg-sage-100 text-sage-700 rounded-full">Core</span>
                   } @else if (isAdmin()) {
-                    <button
+                    <button data-tour="features-toggle"
                       (click)="toggle(m)"
                       [disabled]="toggling()"
                       class="relative flex-shrink-0 w-11 h-6 rounded-full transition-all focus:outline-none disabled:opacity-50"

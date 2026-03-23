@@ -165,6 +165,7 @@
               }
             ],
             "styles": [
+              "node_modules/driver.js/dist/driver.css",
               "projects/hotel/src/styles.scss"
             ],
             "outputPath": {

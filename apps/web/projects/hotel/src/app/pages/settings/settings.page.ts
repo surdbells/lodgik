@@ -8,6 +8,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
   standalone: true,
   imports: [PageHeaderComponent, LoadingSpinnerComponent, FormsModule],
   template: `
+    <div data-tour="settings-property"></div>
     <ui-page-header title="Settings" icon="settings" [breadcrumbs]="['System', 'Settings']" subtitle="Manage hotel configuration, staff, and operational rules"
       tourKey="settings" (tourClick)="startTour()"></ui-page-header>
     <ui-loading [loading]="loading()"></ui-loading>

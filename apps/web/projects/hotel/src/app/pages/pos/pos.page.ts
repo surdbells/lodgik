@@ -94,7 +94,7 @@ import {
             @if (menuLoading()) {
               <div class="flex justify-center pt-10"><div class="w-6 h-6 border-2 border-sage-300 border-t-transparent rounded-full animate-spin"></div></div>
             }
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div data-tour="pos-tables" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
               @for (p of filteredProducts(); track p.id) {
                 <button (click)="addToCart(p)"
                   class="relative text-left border rounded-2xl p-4 transition-all active:scale-95 hover:border-sage-300 hover:shadow-sm"

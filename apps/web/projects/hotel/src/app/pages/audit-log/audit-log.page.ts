@@ -54,7 +54,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
         <input [(ngModel)]="filters.date_to" type="date" (change)="load()"
                class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50" placeholder="To">
       </div>
-      <div class="flex items-center gap-2 mt-2">
+      <div data-tour="audit-filter" class="flex items-center gap-2 mt-2">
         <button (click)="load()" class="px-3 py-1.5 bg-sage-600 text-white text-xs rounded-lg">Apply</button>
         <button (click)="clearFilters()" class="px-3 py-1.5 text-gray-500 text-xs border rounded-lg">Clear</button>
         <span class="text-xs text-gray-400 ml-auto">{{ meta().total || 0 }} results</span>

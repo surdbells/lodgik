@@ -25,7 +25,7 @@ import { AuthService } from '@lodgik/shared';
             [class.bg-sage-600]="viewMode()==='gantt'" [class.text-white]="viewMode()==='gantt'"
             [class.bg-white]="viewMode()!=='gantt'" [class.text-gray-500]="viewMode()!=='gantt'">📊 Gantt</button>
         </div>
-        <a *hasPerm="'bookings.create'" routerLink="/bookings/new" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700">+ New Booking</a>
+        <a *hasPerm="'bookings.create'" routerLink="/bookings/new" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-lg hover:bg-sage-700" data-tour="bookings-new">+ New Booking</a>
       </div>
     </ui-page-header>
 

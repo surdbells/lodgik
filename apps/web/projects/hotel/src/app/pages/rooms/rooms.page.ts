@@ -54,7 +54,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string;
     </ui-page-header>
 
     <!-- Stats strip -->
-    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-5">
+    <div data-tour="rooms-grid" class="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-5">
       <ui-stats-card label="Total"     [value]="statusCounts().total || 0"        icon="hotel"></ui-stats-card>
       <ui-stats-card label="Available" [value]="statusCounts().vacant_clean || 0" icon="circle-check"></ui-stats-card>
       <ui-stats-card label="Occupied"  [value]="statusCounts().occupied || 0"     icon="bed-double"></ui-stats-card>

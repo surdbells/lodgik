@@ -50,6 +50,7 @@ final class BookingService
         private readonly ?\Lodgik\Service\TermiiService $termii = null,
         private readonly ?\Lodgik\Module\Notification\NotificationService $notificationService = null,
         private readonly ?\Lodgik\Service\ZeptoMailService $mailService = null,
+        private readonly ?\Lodgik\Module\Finance\FinanceService $financeService = null,
     ) {}
 
     // ═══ List / Get ════════════════════════════════════════════

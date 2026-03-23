@@ -14,7 +14,7 @@ import {
     <ui-page-header title="Police Reports" subtitle="Nigeria Form C — auto-generated on check-in, editable here"
       tourKey="police-reports" (tourClick)="startTour()">
       <div class="flex gap-2">
-        <button (click)="showForm.set(true)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">
+        <button data-tour="police-add" (click)="showForm.set(true)" class="px-4 py-2 bg-sage-600 text-white text-sm rounded-lg hover:bg-sage-700">
           + Add Report
         </button>
         <button (click)="exportAll()" class="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700">

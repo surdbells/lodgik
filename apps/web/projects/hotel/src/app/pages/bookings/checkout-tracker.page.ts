@@ -49,7 +49,7 @@ const TIER_CONFIG: Record<string, { bg: string; border: string; badge: string; t
           <div class="flex items-center gap-2">
             <span class="text-gray-400 text-xs">Auto-refreshes every 60s</span>
             <button (click)="load()" class="px-3 py-1.5 text-xs border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800">↺ Refresh</button>
-            <button (click)="toggleFullscreen()" class="px-3 py-1.5 text-xs border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 flex items-center gap-1.5">
+            <button data-tour="tracker-fullscreen" (click)="toggleFullscreen()" class="px-3 py-1.5 text-xs border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M15 9h4.5M15 9V4.5M15 15v4.5M15 15h4.5M9 15H4.5M9 15v4.5"/></svg>
               Exit Fullscreen
             </button>

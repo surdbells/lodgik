@@ -120,7 +120,7 @@ const TABS: Tab[] = [
         } @else {
 
           <!-- KPI Cards -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 stagger-children">
+          <div data-tour="dashboard-stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 stagger-children">
             <ui-stats-card
               [label]="scope() === 'all' ? 'Pending (All)' : 'Pending Bookings'"
               [value]="kpi().pending_bookings || '0'" icon="hotel" variant="gradient"
