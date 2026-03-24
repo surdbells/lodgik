@@ -8,6 +8,7 @@ use Lodgik\Helper\PaginationHelper;
 use Lodgik\Helper\ResponseHelper;
 use Lodgik\Module\Staff\DTO\InviteStaffRequest;
 use Lodgik\Module\Staff\DTO\UpdateStaffRequest;
+use Lodgik\Module\Employee\EmployeeService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
