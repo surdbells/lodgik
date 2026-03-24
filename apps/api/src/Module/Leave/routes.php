@@ -22,6 +22,7 @@ return function (App $app): void {
     // All authenticated staff: submit/view/cancel own requests
     // Approve/reject: managers/hr only (enforced in controller via role check)
     $app->group('/api/leave-requests', function (RouteCollectorProxy $g) {
+        $g->get('', [LeaveController::class, 'listRequests']);
         $g->get('/pending', [LeaveController::class, 'pendingRequests']);
         $g->get('/{id}', [LeaveController::class, 'getRequest']);
         $g->post('', [LeaveController::class, 'submitRequest']);
@@ -32,6 +33,8 @@ return function (App $app): void {
 
     $app->group('/api/leave-balances', function (RouteCollectorProxy $g) {
         $g->get('', [LeaveController::class, 'getBalances']);
+        $g->get('/{employeeId}', [LeaveController::class, 'getBalances']);
         $g->post('/init/{employeeId}', [LeaveController::class, 'initBalances']);
+        $g->post('/{employeeId}/init', [LeaveController::class, 'initBalances']);
     })->add($featureGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 };

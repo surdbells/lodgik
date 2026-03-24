@@ -27,5 +27,6 @@ return function (App $app): void {
 
     $app->group('/api/payslips', function (RouteCollectorProxy $g) {
         $g->get('/{id}', [PayrollController::class, 'getPayslip']);
+        $g->post('/{id}/email', [PayrollController::class, 'emailPayslip']);
     })->add($featureGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);
 };

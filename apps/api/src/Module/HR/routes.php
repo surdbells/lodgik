@@ -64,7 +64,7 @@ return function (App $app): void {
         $g->get('/analytics',                              [HRController::class, 'analytics']);
 
     })
-    ->add(new RoleMiddleware(['property_admin','manager','accountant']))
+    ->add(new RoleMiddleware(['property_admin','manager','accountant','hr']))
     ->add(TenantMiddleware::class)
     ->add(AuthMiddleware::class);
 };

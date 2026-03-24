@@ -174,6 +174,28 @@ final class LeaveService
         return $this->reqRepo->findPending();
     }
 
+    public function getAllRequests(string $tenantId, string $propertyId, ?int $year = null, ?string $status = null): array
+    {
+        $qb = $this->em->createQueryBuilder()
+            ->select('r')
+            ->from(LeaveRequest::class, 'r')
+            ->where('r.tenantId = :tid')
+            ->setParameter('tid', $tenantId)
+            ->orderBy('r.createdAt', 'DESC');
+        if ($year) {
+            $from = new \DateTimeImmutable("{$year}-01-01");
+            $to   = new \DateTimeImmutable("{$year}-12-31");
+            $qb->andWhere('r.startDate BETWEEN :from AND :to')
+               ->setParameter('from', $from)
+               ->setParameter('to', $to);
+        }
+        if ($status) {
+            $statusEnum = \Lodgik\Enum\LeaveRequestStatus::from($status);
+            $qb->andWhere('r.status = :status')->setParameter('status', $statusEnum);
+        }
+        return $qb->getQuery()->getResult();
+    }
+
     public function getRequest(string $id): ?LeaveRequest
     {
         return $this->reqRepo->find($id);

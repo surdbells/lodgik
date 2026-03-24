@@ -28,13 +28,36 @@ final class LeaveController
 
     public function getBalances(Request $req, Response $res, array $args): Response
     {
-        $year = (int)($req->getQueryParams()['year'] ?? date('Y'));
-        return JsonResponse::ok($res, array_map(fn($b) => $b->toArray(), $this->service->getBalances($args['employee_id'], $year)));
+        $qs   = $req->getQueryParams();
+        $year = (int)($qs['year'] ?? date('Y'));
+        // employee_id from path param or query string
+        $empId = $args['employeeId'] ?? $args['employee_id'] ?? $qs['employee_id'] ?? null;
+        if (!$empId) return JsonResponse::error($res, 'employee_id required', 422);
+        return JsonResponse::ok($res, array_map(fn($b) => $b->toArray(), $this->service->getBalances($empId, $year)));
+    }
+
+    public function listRequests(Request $req, Response $res): Response
+    {
+        $qs = $req->getQueryParams();
+        $tid = $req->getAttribute('auth.tenant_id');
+        $pid = $req->getAttribute('auth.property_id') ?? '';
+        $year = isset($qs['year']) ? (int)$qs['year'] : null;
+        if (!empty($qs['employee_id'])) {
+            $requests = $this->service->getEmployeeRequests($qs['employee_id'], $year);
+        } else {
+            $requests = $this->service->getAllRequests($tid, $pid, $year, $qs['status'] ?? null);
+        }
+        return JsonResponse::ok($res, array_map(fn($r) => $r->toArray(), $requests));
     }
 
     public function initBalances(Request $req, Response $res, array $args): Response
     {
-        $this->service->initializeBalances($args['employee_id'], (int)($req->getQueryParams()['year'] ?? date('Y')), $req->getAttribute('auth.tenant_id'));
+        // Support both /init/{employeeId} and /{employeeId}/init path patterns
+        $empId = $args['employeeId'] ?? $args['employee_id'] ?? null;
+        if (!$empId) return JsonResponse::error($res, 'employee_id required', 422);
+        $body = (array)($req->getParsedBody() ?? []);
+        $year = (int)($body['year'] ?? $req->getQueryParams()['year'] ?? date('Y'));
+        $this->service->initializeBalances($empId, $year, $req->getAttribute('auth.tenant_id'));
         return JsonResponse::ok($res, null, 'Leave balances initialized');
     }
 
