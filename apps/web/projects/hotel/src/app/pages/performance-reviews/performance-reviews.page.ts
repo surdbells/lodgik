@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, StatsCardComponent, ActivePropertyService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, StatsCardComponent, ActivePropertyService, EmployeePickerComponent } from '@lodgik/shared';
+import type { EmployeeOption } from '@lodgik/shared';
 
 @Component({
   selector: 'app-performance-reviews',
   standalone: true,
-  imports: [FormsModule, DatePipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
+  imports: [FormsModule, DatePipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, EmployeePickerComponent],
   template: `
 <ui-page-header title="Performance & Goals" icon="star" subtitle="Reviews, KRAs and employee objectives" [breadcrumbs]="['HR', 'Performance']">
   <button (click)="showAddReview=true" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700">+ New Review</button>
@@ -92,10 +93,13 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService,
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5" (click)="$event.stopPropagation()">
       <h3 class="text-base font-semibold mb-4">New Performance Review</h3>
       <div class="space-y-3">
-        <div><label class="text-xs text-gray-500 mb-1 block">Employee ID *</label>
-          <input [(ngModel)]="reviewForm.employee_id" placeholder="Employee UUID" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
-        <div><label class="text-xs text-gray-500 mb-1 block">Employee Name *</label>
-          <input [(ngModel)]="reviewForm.employee_name" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
+        <div class="col-span-2">
+          <label class="text-xs text-gray-500 mb-1 block">Employee *</label>
+          <ui-employee-picker (employeeSelected)="onEmployeePicked($event)" placeholder="Search staff member..."></ui-employee-picker>
+          @if (reviewForm.employee_name) {
+            <p class="text-xs text-sage-600 mt-1">✓ {{ reviewForm.employee_name }}</p>
+          }
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="text-xs text-gray-500 mb-1 block">Period</label>
             <select [(ngModel)]="reviewForm.period" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50">
@@ -130,6 +134,10 @@ export class PerformanceReviewsPage implements OnInit {
   readonly achievedGoalsCount = computed(() => this.goals().filter(g => g.status === 'achieved').length); tabs = ['Reviews', 'Goals'];
   showAddReview = false;
   reviewForm: any = { employee_id:'', employee_name:'', period:'Q4', year:new Date().getFullYear(), overall_rating:3, strengths:'', areas_for_improvement:'' };
+  onEmployeePicked(opt: EmployeeOption | null) {
+    this.reviewForm.employee_id   = opt?.employee_id ?? opt?.user_id ?? '';
+    this.reviewForm.employee_name = opt?.full_name ?? '';
+  }
   ngOnInit() { this.load(); }
   load() {
     this.loading.set(true);

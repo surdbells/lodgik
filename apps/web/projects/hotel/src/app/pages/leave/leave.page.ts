@@ -172,7 +172,7 @@ import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComp
           <div class="space-y-3">
             <select [(ngModel)]="reqForm.employee_id" class="border rounded-lg px-3 py-2 text-sm w-full">
               <option value="">Select Employee</option>
-              @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.full_name }} — {{ e.staff_id }}</option> }
+              @for (e of employees(); track (e.employee_id ?? e.user_id)) { <option [value]="e.employee_id ?? e.user_id">{{ e.full_name }} {{ e.staff_id ? '— ' + e.staff_id : '' }}</option> }
             </select>
             <select [(ngModel)]="reqForm.leave_type_id" class="border rounded-lg px-3 py-2 text-sm w-full">
               <option value="">Select Leave Type</option>

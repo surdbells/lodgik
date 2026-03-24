@@ -1,7 +1,8 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, StatsCardComponent, ActivePropertyService } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, StatsCardComponent, ActivePropertyService, EmployeePickerComponent } from '@lodgik/shared';
+import type { EmployeeOption } from '@lodgik/shared';
 
 const STATUS_COLORS: Record<string,string> = {
   draft:'bg-gray-100 text-gray-600', submitted:'bg-blue-50 text-blue-700',
@@ -11,7 +12,7 @@ const STATUS_COLORS: Record<string,string> = {
 @Component({
   selector: 'app-expense-claims',
   standalone: true,
-  imports: [FormsModule, DatePipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent],
+  imports: [FormsModule, DatePipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, EmployeePickerComponent],
   template: `
 <ui-page-header title="Expense Claims" icon="receipt" subtitle="Employee expense submissions and approvals" [breadcrumbs]="['HR', 'Expense Claims']">
   <button (click)="openNew()" class="px-4 py-2 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700">+ New Claim</button>
@@ -85,8 +86,13 @@ const STATUS_COLORS: Record<string,string> = {
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" (click)="$event.stopPropagation()">
       <h3 class="text-base font-semibold mb-4">New Expense Claim</h3>
       <div class="space-y-3">
-        <div><label class="text-xs text-gray-500 mb-1 block">Employee ID *</label>
-          <input [(ngModel)]="form.employee_id" placeholder="Employee UUID" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
+        <div class="col-span-2">
+          <label class="text-xs text-gray-500 mb-1 block">Employee *</label>
+          <ui-employee-picker (employeeSelected)="onEmployeePicked($event)" placeholder="Search staff member..."></ui-employee-picker>
+          @if (form.employee_name) {
+            <p class="text-xs text-sage-600 mt-1">✓ {{ form.employee_name }}</p>
+          }
+        </div>
         <div><label class="text-xs text-gray-500 mb-1 block">Claim Title *</label>
           <input [(ngModel)]="form.title" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
         <div><label class="text-xs text-gray-500 mb-1 block">Notes</label>
@@ -137,11 +143,15 @@ export class ExpenseClaimsPage implements OnInit {
   totalPaid = () => this.claims().filter(c=>c.status==='paid').reduce((s,c)=>s+Number(c.total_amount),0);
   statusColor = (s: string) => STATUS_COLORS[s] ?? 'bg-gray-100 text-gray-500';
   fmtK = (n: number) => n >= 100000 ? '₦'+(n/100/1000).toFixed(1)+'k' : '₦'+(n/100).toLocaleString();
-  openNew() { this.form = { employee_id:'', title:'', notes:'', items:[{ description:'', amount:'', expense_date:new Date().toISOString().slice(0,10) }] }; this.showNew=true; }
+  openNew() { this.form = { employee_id:'', employee_name:'', title:'', notes:'', items:[{ description:'', amount:'', expense_date:new Date().toISOString().slice(0,10) }] }; this.showNew=true; }
+  onEmployeePicked(opt: EmployeeOption | null) {
+    this.form.employee_id = opt?.employee_id ?? opt?.user_id ?? '';
+    this.form.employee_name = opt?.full_name ?? '';
+  }
   addItem() { this.form.items.push({ description:'', amount:'', expense_date:new Date().toISOString().slice(0,10) }); }
   removeItem(i: number) { this.form.items.splice(i,1); }
   submit() {
-    if (!this.form.employee_id||!this.form.title) { this.toast.error('Employee ID and title required'); return; }
+    if (!this.form.employee_id||!this.form.title) { this.toast.error('Select an employee and enter a title'); return; }
     this.api.post('/hr/expense-claims', this.form).subscribe((r:any)=>{ if(r.success){this.toast.success('Claim created');this.showNew=false;this.load();}else this.toast.error(r.message||'Failed'); });
   }
   approve(c: any) { this.api.post(`/hr/expense-claims/${c.id}/approve`,{}).subscribe(()=>this.load()); }

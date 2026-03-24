@@ -37,8 +37,8 @@ import {
           <select [(ngModel)]="filterEmp" (change)="load()"
             class="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50 min-w-[160px]">
             <option value="">All employees</option>
-            @for (e of employees(); track e.id) {
-              <option [value]="e.id">{{ e.name }}</option>
+            @for (e of employees(); track (e.employee_id ?? e.user_id)) {
+              <option [value]="e.employee_id ?? e.user_id">{{ e.full_name ?? e.name }}</option>
             }
           </select>
         </div>
@@ -127,7 +127,7 @@ import {
               <select [(ngModel)]="form.employee_id" (change)="onEmpChange()"
                 class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50">
                 <option value="">Select employee…</option>
-                @for (e of employees(); track e.id) {
+                @for (e of employees(); track (e.employee_id ?? e.user_id)) {
                   <option [value]="e.id">{{ e.name }} — {{ e.staff_id }}</option>
                 }
               </select>
@@ -301,8 +301,8 @@ export default class ReviewsPage implements OnInit {
   openDetail(r: any): void { this.detailReview.set(r); }
 
   onEmpChange(): void {
-    const emp = this.employees().find(e => e.id === this.form.employee_id);
-    if (emp) this.form.employee_name = emp.name;
+    const emp = this.employees().find(e => (e.employee_id ?? e.user_id) === this.form.employee_id);
+    if (emp) this.form.employee_name = emp.full_name ?? emp.name ?? '';
   }
 
   create(): void {

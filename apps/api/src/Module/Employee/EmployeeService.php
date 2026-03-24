@@ -191,6 +191,53 @@ final class EmployeeService
     }
 
     /** @return Employee[] */
+    /**
+     * Unified staff directory — joins users + employees tables.
+     * Returns every active staff member in the property with:
+     *   id           = employee.id (null if no HR record yet)
+     *   user_id      = user.id
+     *   full_name    = first_name + last_name
+     *   job_title    = employees.job_title ?? user.role
+     *   department_id / department_name
+     *   employment_type, staff_id
+     */
+    public function getUnifiedDirectory(string $propertyId, ?string $search = null): array
+    {
+        $conn = $this->em->getConnection();
+
+        $sql = "
+            SELECT
+                u.id           AS user_id,
+                e.id           AS employee_id,
+                u.first_name,
+                u.last_name,
+                CONCAT(u.first_name, ' ', u.last_name)  AS full_name,
+                u.email,
+                u.role,
+                COALESCE(e.job_title, INITCAP(REPLACE(u.role, '_', ' ')))  AS job_title,
+                e.staff_id,
+                e.department_id,
+                e.employment_type,
+                e.gross_salary
+            FROM users u
+            LEFT JOIN employees e ON e.user_id = u.id AND e.deleted_at IS NULL
+            WHERE u.property_id = :pid
+              AND u.is_active = TRUE
+              AND u.deleted_at IS NULL
+        ";
+
+        $params = ['pid' => $propertyId];
+
+        if ($search) {
+            $sql .= " AND (LOWER(u.first_name) LIKE :s OR LOWER(u.last_name) LIKE :s OR LOWER(u.email) LIKE :s OR LOWER(e.staff_id) LIKE :s)";
+            $params['s'] = '%' . strtolower($search) . '%';
+        }
+
+        $sql .= " ORDER BY u.first_name, u.last_name";
+
+        return $conn->fetchAllAssociative($sql, $params);
+    }
+
     public function getByUserId(string $userId): ?Employee
     {
         return $this->em->getRepository(Employee::class)->findOneBy(['userId' => $userId]);

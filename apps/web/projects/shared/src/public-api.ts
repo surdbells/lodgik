@@ -27,3 +27,5 @@ export { errorInterceptor } from './lib/interceptors/error.interceptor';
 export { authGuard, adminGuard, roleGuard, featureGuard } from './lib/guards';
 
 export { TourService, TourStep } from './lib/services/tour.service';
+export { EmployeePickerComponent } from './lib/components/employee-picker.component';
+export type { EmployeeOption } from './lib/components/employee-picker.component';

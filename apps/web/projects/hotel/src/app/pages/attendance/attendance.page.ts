@@ -147,7 +147,7 @@ import { AuthService } from '@lodgik/shared';
           <h3 class="text-lg font-semibold mb-4">🕐 Clock In</h3>
           <select [(ngModel)]="clockEmpId" class="border rounded-lg px-3 py-2 text-sm w-full mb-3">
             <option value="">Select Employee</option>
-            @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.full_name }}</option> }
+            @for (e of employees(); track (e.employee_id ?? e.user_id)) { <option [value]="e.employee_id ?? e.user_id">{{ e.full_name }}</option> }
           </select>
           <div class="flex justify-end gap-2">
             <button (click)="showClockIn = false" class="px-4 py-2 text-sm border rounded-lg">Cancel</button>
@@ -164,7 +164,7 @@ import { AuthService } from '@lodgik/shared';
           <h3 class="text-lg font-semibold mb-4">🕕 Clock Out</h3>
           <select [(ngModel)]="clockEmpId" class="border rounded-lg px-3 py-2 text-sm w-full mb-3">
             <option value="">Select Employee</option>
-            @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.full_name }}</option> }
+            @for (e of employees(); track (e.employee_id ?? e.user_id)) { <option [value]="e.employee_id ?? e.user_id">{{ e.full_name }}</option> }
           </select>
           <div class="flex justify-end gap-2">
             <button (click)="showClockOut = false" class="px-4 py-2 text-sm border rounded-lg">Cancel</button>
@@ -181,7 +181,7 @@ import { AuthService } from '@lodgik/shared';
           <h3 class="text-lg font-semibold mb-4">📝 Record Attendance</h3>
           <select [(ngModel)]="clockEmpId" class="border rounded-lg px-3 py-2 text-sm w-full mb-2">
             <option value="">Select Employee</option>
-            @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.full_name }}</option> }
+            @for (e of employees(); track (e.employee_id ?? e.user_id)) { <option [value]="e.employee_id ?? e.user_id">{{ e.full_name }}</option> }
           </select>
           <select [(ngModel)]="recordStatus" class="border rounded-lg px-3 py-2 text-sm w-full mb-2">
             <option value="absent">Absent</option>
@@ -231,7 +231,7 @@ import { AuthService } from '@lodgik/shared';
             @if (!bulkMode) {
               <select [(ngModel)]="assignForm.employee_id" class="border rounded-lg px-3 py-2 text-sm w-full">
                 <option value="">Select Employee</option>
-                @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.full_name }}</option> }
+                @for (e of employees(); track (e.employee_id ?? e.user_id)) { <option [value]="e.employee_id ?? e.user_id">{{ e.full_name }}</option> }
               </select>
               <input [(ngModel)]="assignForm.date" type="date" class="border rounded-lg px-3 py-2 text-sm w-full" />
             } @else {

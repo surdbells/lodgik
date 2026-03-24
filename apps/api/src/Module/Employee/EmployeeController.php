@@ -107,7 +107,8 @@ final class EmployeeController
     {
         $propertyId = $req->getQueryParams()['property_id'] ?? null;
         if (!$propertyId) return JsonResponse::error($res, 'property_id required', 422);
-        $employees = $this->service->getActiveByProperty($propertyId);
-        return JsonResponse::ok($res, array_map(fn($e) => $e->toArray(), $employees));
+        $search = $req->getQueryParams()['search'] ?? null;
+        $items = $this->service->getUnifiedDirectory($propertyId, $search);
+        return JsonResponse::ok($res, $items);
     }
 }
