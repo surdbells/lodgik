@@ -233,7 +233,7 @@ final class EmployeeService
             $params['s'] = '%' . strtolower($search) . '%';
         }
 
-        $sql .= " ORDER BY u.first_name, u.last_name";
+        $sql .= " ORDER BY u.firstname, u.lastname";
 
         return $conn->fetchAllAssociative($sql, $params);
     }
