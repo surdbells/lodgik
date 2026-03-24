@@ -6,6 +6,13 @@ use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app): void {
+    // Diagnostic: no auth/middleware
+    $app->get('/api/hr-ping', function($req, $res) {
+        $payload = json_encode(['ok' => true, 'ts' => time()]);
+        $res->getBody()->write($payload);
+        return $res->withHeader('Content-Type','application/json');
+    });
+
     $app->group('/api/hr', function (RouteCollectorProxy $g) {
 
         // ── Phase B: Documents & Job History ─────────────────────────────
