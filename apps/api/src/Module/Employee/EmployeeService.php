@@ -209,9 +209,9 @@ final class EmployeeService
             SELECT
                 u.id           AS user_id,
                 e.id           AS employee_id,
-                u.\"firstName\"       AS first_name,
-                u.\"lastName\"        AS last_name,
-                CONCAT(u.\"firstName\", ' ', u.\"lastName\")  AS full_name,
+                u.firstname       AS first_name,
+                u.lastname        AS last_name,
+                CONCAT(u.firstname, ' ', u.lastname)  AS full_name,
                 u.email,
                 u.role,
                 COALESCE(e.job_title, INITCAP(REPLACE(u.role, '_', ' ')))  AS job_title,
@@ -229,7 +229,7 @@ final class EmployeeService
         $params = ['pid' => $propertyId];
 
         if ($search) {
-            $sql .= " AND (LOWER(u.\"firstName\") LIKE :s OR LOWER(u.\"lastName\") LIKE :s OR LOWER(u.email) LIKE :s OR LOWER(COALESCE(e.staff_id,'')) LIKE :s)";
+            $sql .= " AND (LOWER(u.firstname) LIKE :s OR LOWER(u.lastname) LIKE :s OR LOWER(u.email) LIKE :s OR LOWER(COALESCE(e.staff_id,'')) LIKE :s)";
             $params['s'] = '%' . strtolower($search) . '%';
         }
 
