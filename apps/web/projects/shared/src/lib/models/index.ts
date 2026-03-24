@@ -50,6 +50,8 @@ export interface User {
   is_active: boolean;
   email_verified: boolean;
   created_at: string;
+  employee_id?: string | null;
+  avatar_url?: string | null;
 }
 
 export type UserRole =

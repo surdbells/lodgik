@@ -405,6 +405,9 @@ export const routes: Routes = [
       { path: 'recruitment',    loadComponent: () => import('./pages/recruitment/recruitment.page').then(m => m.RecruitmentPage) },
       { path: 'training',        loadComponent: () => import('./pages/training/training.page').then(m => m.TrainingPage) },
       { path: 'expense-claims',  loadComponent: () => import('./pages/expense-claims/expense-claims.page').then(m => m.ExpenseClaimsPage) },
+      { path: 'self-service',        loadComponent: () => import('./pages/self-service/self-service.page').then(m => m.SelfServicePage) },
+      { path: 'goals',               loadComponent: () => import('./pages/goals/goals.page').then(m => m.GoalsPage) },
+      { path: 'payroll-components',  loadComponent: () => import('./pages/payroll-components/payroll-components.page').then(m => m.PayrollComponentsPage) },
       { path: 'hr-analytics',    loadComponent: () => import('./pages/hr-analytics/hr-analytics.page').then(m => m.HrAnalyticsPage) },
     ],
   },
@@ -467,5 +470,8 @@ export const routes: Routes = [
     ],
   },
 
+      { path: 'self-service',       loadComponent: () => import('./pages/self-service/self-service.page').then(m => m.SelfServicePage) },
+      { path: 'goals',               loadComponent: () => import('./pages/goals/goals.page').then(m => m.GoalsPage) },
+      { path: 'payroll-components',  loadComponent: () => import('./pages/payroll-components/payroll-components.page').then(m => m.PayrollComponentsPage) },
   { path: '**', redirectTo: '' },
 ];

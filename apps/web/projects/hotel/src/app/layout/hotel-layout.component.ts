@@ -374,7 +374,10 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Training',    icon: 'book-open',      route: '/training',            requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager'] },
         { label: 'Expense Claims', icon: 'receipt',     route: '/expense-claims',      requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager','accountant'] },
         { label: 'Performance', icon: 'star',           route: '/performance-reviews', requiredModule: 'performance_reviews',  requiredRoles: ['property_admin','manager'] },
-        { label: 'HR Analytics',icon: 'chart-bar',      route: '/hr-analytics',        requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager'] },
+        { label: 'Goals',          icon: 'target',         route: '/goals',               requiredModule: 'performance_reviews',  requiredRoles: ['property_admin','manager'] },
+        { label: 'Pay Components', icon: 'sliders-vertical',route: '/payroll-components',  requiredModule: 'payroll',              requiredRoles: ['property_admin','manager'] },
+        { label: 'Self-Service',   icon: 'user-round',     route: '/self-service',        requiredRoles: ['front_desk','manager','accountant','security','housekeeping','concierge','kitchen','bar','maintenance','restaurant'] },
+        { label: 'HR Analytics',   icon: 'chart-bar',      route: '/hr-analytics',        requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager'] },
       ],
     },
     {

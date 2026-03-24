@@ -53,11 +53,21 @@ return function (App $app): void {
         $g->post('/training',                                         [HRController::class, 'createTraining']);
         $g->put('/training/{id}',                                     [HRController::class, 'updateTraining']);
 
+        // ── Phase J: Training Enrollments ───────────────────────────────
+        $g->get('/training/{id}/enrollments',             [HRController::class, 'listEnrollments']);
+        $g->post('/training/{id}/enrollments',            [HRController::class, 'enroll']);
+        $g->patch('/training/{id}/enrollments/{enrollId}',[HRController::class, 'updateEnrollment']);
+
         // ── Phase K: Offboarding ─────────────────────────────────────────
         $g->get('/employees/{id}/offboarding',                        [HRController::class, 'listOffboarding']);
         $g->post('/employees/{id}/offboarding',                       [HRController::class, 'addOffboardingTask']);
         $g->post('/employees/{id}/offboarding/seed',                  [HRController::class, 'seedDefaultOffboarding']);
         $g->post('/employees/{id}/offboarding/{taskId}/complete',     [HRController::class, 'completeOffboardingTask']);
+
+        // ── Phase J: Training Enrollments ──────────────────────────────────
+        $g->get('/training/{id}/enrollments',                         [HRController::class, 'listEnrollments']);
+        $g->post('/training/{id}/enrollments',                        [HRController::class, 'enroll']);
+        $g->patch('/training/{id}/enrollments/{enrollId}',            [HRController::class, 'updateEnrollment']);
 
         // ── Phase L: HR Analytics ────────────────────────────────────────
         $g->get('/analytics',                                         [HRController::class, 'analytics']);

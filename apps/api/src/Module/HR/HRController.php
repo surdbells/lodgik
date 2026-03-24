@@ -13,7 +13,9 @@ use Lodgik\Entity\PerformanceGoal;
 use Lodgik\Entity\ExpenseClaim;
 use Lodgik\Entity\ExpenseClaimItem;
 use Lodgik\Entity\TrainingProgram;
+use Lodgik\Entity\TrainingEnrollment;
 use Lodgik\Entity\OffboardingChecklist;
+use Lodgik\Entity\TrainingEnrollment;
 use Lodgik\Helper\ResponseHelper;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\{ResponseInterface as Response, ServerRequestInterface as Request};
@@ -496,6 +498,83 @@ final class HRController
         }
         $this->em->flush();
         return $this->response->success($res,['created'=>$created],'Default offboarding tasks seeded');
+    }
+
+    public function listEnrollments(Request $req, Response $res, array $args): Response
+    {
+        $items = $this->em->getRepository(TrainingEnrollment::class)
+            ->findBy(['programId' => $args['id']], ['enrolledAt' => 'DESC']);
+        return $this->response->success($res, array_map(fn($e) => $e->toArray(), $items));
+    }
+
+    public function enroll(Request $req, Response $res, array $args): Response
+    {
+        $body = $this->body($req);
+        if (empty($body['employee_id']) || empty($body['employee_name']))
+            return $this->response->validationError($res, ['employee_id and employee_name required']);
+        // Check duplicate
+        $existing = $this->em->getRepository(TrainingEnrollment::class)
+            ->findOneBy(['programId' => $args['id'], 'employeeId' => $body['employee_id']]);
+        if ($existing) return $this->response->error($res, 'Employee already enrolled', 409);
+        $e = new TrainingEnrollment($args['id'], $body['employee_id'], $body['employee_name']);
+        $this->em->persist($e); $this->em->flush();
+        return $this->response->created($res, $e->toArray(), 'Enrolled');
+    }
+
+    public function updateEnrollment(Request $req, Response $res, array $args): Response
+    {
+        $e = $this->em->find(TrainingEnrollment::class, $args['enrollId']);
+        if (!$e) return $this->response->notFound($res, 'Enrollment not found');
+        $body = $this->body($req);
+        if (isset($body['completion_pct'])) $e->setCompletionPct((int)$body['completion_pct']);
+        if (isset($body['score']))          $e->setScore($body['score']);
+        if (!empty($body['certificate_url'])) $e->setCertificateUrl($body['certificate_url']);
+        if (!empty($body['notes']))         $e->setNotes($body['notes']);
+        if (!empty($body['status'])) {
+            $e->setStatus($body['status']);
+            if ($body['status'] === 'completed') $e->complete();
+        }
+        $this->em->flush();
+        return $this->response->success($res, $e->toArray(), 'Updated');
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PHASE J — Training Enrollments
+    // ════════════════════════════════════════════════════════════════════════
+
+    public function listEnrollments(Request $req, Response $res, array $args): Response
+    {
+        $rows = $this->em->getRepository(TrainingEnrollment::class)
+            ->findBy(['programId' => $args['id']], ['enrolledAt' => 'DESC']);
+        return $this->response->success($res, array_map(fn($r) => $r->toArray(), $rows));
+    }
+
+    public function enroll(Request $req, Response $res, array $args): Response
+    {
+        $body = $this->body($req);
+        if (empty($body['employee_id']) || empty($body['employee_name']))
+            return $this->response->validationError($res, ['employee_id and employee_name required']);
+        // prevent duplicate
+        $existing = $this->em->getRepository(TrainingEnrollment::class)
+            ->findOneBy(['programId' => $args['id'], 'employeeId' => $body['employee_id']]);
+        if ($existing) return $this->response->error($res, 'Already enrolled', 409);
+        $e = new TrainingEnrollment($args['id'], $body['employee_id'], $body['employee_name']);
+        $this->em->persist($e); $this->em->flush();
+        return $this->response->created($res, $e->toArray(), 'Enrolled');
+    }
+
+    public function updateEnrollment(Request $req, Response $res, array $args): Response
+    {
+        $e = $this->em->find(TrainingEnrollment::class, $args['enrollId']);
+        if (!$e) return $this->response->notFound($res, 'Enrollment not found');
+        $body = $this->body($req);
+        if (isset($body['completion_pct'])) $e->setCompletionPct((int)$body['completion_pct']);
+        if (isset($body['score']))          $e->setScore($body['score']);
+        if (isset($body['notes']))          $e->setNotes($body['notes']);
+        if (!empty($body['status']) && $body['status'] === 'completed') $e->complete();
+        elseif (!empty($body['status']))    $e->setStatus($body['status']);
+        $this->em->flush();
+        return $this->response->success($res, $e->toArray(), 'Updated');
     }
 
     // ════════════════════════════════════════════════════════════════════════

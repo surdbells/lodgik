@@ -298,7 +298,7 @@ function fmtRole(val: string): string {
       <!-- Detail Tabs -->
       <div class="flex border-b px-5">
         @for (tab of detailTabs; track tab.id) {
-          <button (click)="detailTab = tab.id"
+          <button (click)="setDetailTab(tab.id)"
             class="px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
             [class]="detailTab === tab.id
               ? 'border-sage-600 text-sage-700'
@@ -624,6 +624,173 @@ function fmtRole(val: string): string {
           }
         }
 
+        <!-- ── Documents Tab ────────────────────────────────────────── -->
+        @if (detailTab === 'docs') {
+          @if (docsLoading()) {
+            <div class="flex justify-center py-8"><svg class="animate-spin w-5 h-5 text-sage-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></div>
+          } @else if (docs().length === 0 && !showAddDoc) {
+            <div class="text-center py-8">
+              <p class="text-sm text-gray-500 mb-3">No documents uploaded yet</p>
+              <button (click)="showAddDoc = true; docForm = { title:'', document_type:'contract', expiry_date:'', notes:'' }"
+                class="px-4 py-2 text-sm bg-sage-600 text-white rounded-xl hover:bg-sage-700">Upload Document</button>
+            </div>
+          } @else {
+            <div class="space-y-2 mb-4">
+              @for (doc of docs(); track doc.id) {
+                <div class="flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:bg-gray-50">
+                  <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800 truncate">{{ doc.title }}</p>
+                    <p class="text-xs text-gray-400">{{ doc.document_type }}{{ doc.expiry_date ? ' · Expires ' + doc.expiry_date : '' }}</p>
+                  </div>
+                  @if (doc.file_url) {
+                    <a [href]="doc.file_url" target="_blank" class="text-xs text-blue-600 hover:underline flex-shrink-0">Download</a>
+                  }
+                  <button (click)="deleteDoc(doc.id)" class="text-xs text-red-500 hover:underline flex-shrink-0">Delete</button>
+                </div>
+              }
+            </div>
+            <button (click)="showAddDoc = true; docForm = { title:'', document_type:'contract', expiry_date:'', notes:'' }"
+              class="px-3 py-1.5 text-xs bg-sage-50 text-sage-700 border border-sage-200 rounded-lg hover:bg-sage-100">+ Upload Document</button>
+          }
+          @if (showAddDoc) {
+            <div class="mt-4 border-t pt-4 space-y-3">
+              <h4 class="text-sm font-semibold text-gray-700">Add Document</h4>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="col-span-2"><label class="text-xs text-gray-500 mb-1 block">Title *</label>
+                  <input [(ngModel)]="docForm.title" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
+                <div><label class="text-xs text-gray-500 mb-1 block">Type</label>
+                  <select [(ngModel)]="docForm.document_type" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50">
+                    <option value="contract">Contract</option>
+                    <option value="id_card">ID Card</option>
+                    <option value="passport">Passport</option>
+                    <option value="certificate">Certificate</option>
+                    <option value="degree">Degree</option>
+                    <option value="offer_letter">Offer Letter</option>
+                    <option value="nda">NDA</option>
+                    <option value="medical">Medical</option>
+                    <option value="other">Other</option>
+                  </select></div>
+                <div><label class="text-xs text-gray-500 mb-1 block">Expiry Date</label>
+                  <input [(ngModel)]="docForm.expiry_date" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
+                <div class="col-span-2"><label class="text-xs text-gray-500 mb-1 block">Notes</label>
+                  <input [(ngModel)]="docForm.notes" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
+              </div>
+              <div class="flex justify-end gap-2">
+                <button (click)="showAddDoc = false" class="px-3 py-1.5 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">Cancel</button>
+                <button (click)="addDoc()" class="px-4 py-1.5 text-sm bg-sage-600 text-white rounded-xl hover:bg-sage-700">Save</button>
+              </div>
+            </div>
+          }
+        }
+
+        <!-- ── Job History Tab ────────────────────────────────────────── -->
+        @if (detailTab === 'history') {
+          @if (historyLoading()) {
+            <div class="flex justify-center py-8"><svg class="animate-spin w-5 h-5 text-sage-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></div>
+          } @else {
+            @if (jobHistory().length > 0) {
+              <div class="relative pl-4 before:absolute before:left-1.5 before:top-0 before:bottom-0 before:w-0.5 before:bg-gray-200 space-y-4 mb-4">
+                @for (h of jobHistory(); track h.id) {
+                  <div class="relative">
+                    <div class="absolute -left-4 top-1.5 w-3 h-3 rounded-full bg-sage-500 border-2 border-white"></div>
+                    <div class="bg-gray-50 rounded-xl p-3">
+                      <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium text-gray-800">{{ h.job_title }}</p>
+                        <span class="text-xs text-gray-400">{{ h.start_date }}{{ h.end_date ? ' → ' + h.end_date : ' · Present' }}</span>
+                      </div>
+                      @if (h.department_name) { <p class="text-xs text-gray-500">{{ h.department_name }}</p> }
+                      <div class="flex gap-3 mt-1">
+                        <span class="text-xs text-gray-400 capitalize">{{ h.change_type }}</span>
+                        @if (h.gross_salary > 0) { <span class="text-xs text-emerald-600">₦{{ (h.gross_salary/100).toLocaleString() }}/mo</span> }
+                      </div>
+                      @if (h.change_reason) { <p class="text-xs text-gray-400 mt-1 italic">{{ h.change_reason }}</p> }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="text-sm text-gray-400 text-center py-4 mb-3">No job history recorded</p>
+            }
+            <button (click)="showAddHistory = true; historyForm = { job_title: '', department_name: '', change_type: 'promotion', change_reason: '', start_date: '', gross_salary: '' }"
+              class="px-3 py-1.5 text-xs bg-sage-50 text-sage-700 border border-sage-200 rounded-lg hover:bg-sage-100">+ Add History Entry</button>
+            @if (showAddHistory) {
+              <div class="mt-4 border-t pt-4 space-y-3">
+                <h4 class="text-sm font-semibold text-gray-700">Record Role Change</h4>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="col-span-2"><label class="text-xs text-gray-500 mb-1 block">Job Title *</label>
+                    <input [(ngModel)]="historyForm.job_title" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
+                  <div><label class="text-xs text-gray-500 mb-1 block">Change Type</label>
+                    <select [(ngModel)]="historyForm.change_type" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50">
+                      <option value="hire">Hire</option>
+                      <option value="promotion">Promotion</option>
+                      <option value="transfer">Transfer</option>
+                      <option value="demotion">Demotion</option>
+                      <option value="role_change">Role Change</option>
+                    </select></div>
+                  <div><label class="text-xs text-gray-500 mb-1 block">Start Date *</label>
+                    <input [(ngModel)]="historyForm.start_date" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
+                  <div><label class="text-xs text-gray-500 mb-1 block">Department</label>
+                    <input [(ngModel)]="historyForm.department_name" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
+                  <div><label class="text-xs text-gray-500 mb-1 block">Salary at time (₦/mo)</label>
+                    <input [(ngModel)]="historyForm.gross_salary" type="number" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
+                  <div class="col-span-2"><label class="text-xs text-gray-500 mb-1 block">Reason</label>
+                    <input [(ngModel)]="historyForm.change_reason" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"></div>
+                </div>
+                <div class="flex justify-end gap-2">
+                  <button (click)="showAddHistory = false" class="px-3 py-1.5 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">Cancel</button>
+                  <button (click)="addHistory()" class="px-4 py-1.5 text-sm bg-sage-600 text-white rounded-xl hover:bg-sage-700">Save</button>
+                </div>
+              </div>
+            }
+          }
+        }
+
+        <!-- ── Onboarding Tab ─────────────────────────────────────────── -->
+        @if (detailTab === 'onboarding') {
+          @if (onboardingLoading()) {
+            <div class="flex justify-center py-8"><svg class="animate-spin w-5 h-5 text-sage-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></div>
+          } @else {
+            @if (onboarding().length === 0) {
+              <div class="text-center py-6">
+                <p class="text-sm text-gray-500 mb-3">No onboarding tasks yet</p>
+                <button (click)="seedOnboarding()" class="px-4 py-2 text-sm bg-sage-600 text-white rounded-xl hover:bg-sage-700">Seed Default Tasks</button>
+              </div>
+            } @else {
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="h-2 bg-gray-100 rounded-full w-32 overflow-hidden">
+                    <div class="h-full bg-sage-500 rounded-full transition-all"
+                      [style.width]="(onboardingStats().total > 0 ? onboardingStats().completed / onboardingStats().total * 100 : 0) + '%'"></div>
+                  </div>
+                  <span class="text-xs text-gray-500">{{ onboardingStats().completed }}/{{ onboardingStats().total }} done</span>
+                </div>
+              </div>
+              <div class="space-y-2">
+                @for (task of onboarding(); track task.id) {
+                  <div class="flex items-center gap-3 p-3 rounded-xl border"
+                    [class]="task.is_completed ? 'border-emerald-100 bg-emerald-50' : 'border-gray-100 bg-white'">
+                    <button (click)="!task.is_completed && completeOnboarding(task.id)"
+                      class="w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors"
+                      [class]="task.is_completed ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300 hover:border-sage-400'">
+                      @if (task.is_completed) {
+                        <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                      }
+                    </button>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm text-gray-800" [class.line-through]="task.is_completed" [class.text-gray-400]="task.is_completed">{{ task.title }}</p>
+                      <p class="text-xs text-gray-400">{{ task.category }}{{ task.due_date ? ' · Due ' + task.due_date : '' }}</p>
+                    </div>
+                    @if (task.is_mandatory) { <span class="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full flex-shrink-0">Required</span> }
+                  </div>
+                }
+              </div>
+            }
+          }
+        }
+
         <!-- ── Leave / Attendance quick links ────────────────────────── -->
         @if (detailTab === 'links') {
           <div class="grid grid-cols-2 gap-3">
@@ -808,15 +975,33 @@ export class StaffListPage implements OnInit {
   loadingHr   = signal(false);
   detailTab   = 'account';
   detailTabs  = [
-    { id: 'account', label: 'Account' },
-    { id: 'hr',      label: 'HR Record' },
-    { id: 'links',   label: 'Quick Links' },
+    { id: 'account',    label: 'Account' },
+    { id: 'hr',         label: 'HR Record' },
+    { id: 'docs',       label: 'Documents' },
+    { id: 'history',    label: 'Job History' },
+    { id: 'onboarding', label: 'Onboarding' },
+    { id: 'links',      label: 'Quick Links' },
   ];
 
   editingAccount = false;
   acctForm: any  = {};
 
   editingHr  = false;
+  // Documents
+  docs         = signal<any[]>([]);
+  docsLoading  = signal(false);
+  showAddDoc   = false;
+  docForm: any = { title: '', document_type: 'contract', expiry_date: '', notes: '' };
+  // Onboarding
+  onboarding       = signal<any[]>([]);
+  onboardingLoading = signal(false);
+  // Job History
+  jobHistory      = signal<any[]>([]);
+  historyLoading  = signal(false);
+  showAddHistory  = false;
+  historyForm: any = { job_title: '', department_name: '', change_type: 'promotion', change_reason: '', start_date: '', gross_salary: '' };
+  // Onboarding
+  onboardingStats   = signal({ total: 0, completed: 0 });
   hrForm: any = {};
 
   showTerminate    = false;
@@ -922,6 +1107,7 @@ export class StaffListPage implements OnInit {
     this.editingHr      = false;
     this.acctForm = { ...row, new_password: '', _avatarBase64: '' };
     this.empRecord.set(null);
+    this.docs.set([]); this.jobHistory.set([]); this.onboarding.set([]);
     this.loadHrRecord(row.id);
   }
 
@@ -1123,4 +1309,90 @@ export class StaffListPage implements OnInit {
   }
 
   startTour(): void { this.tour.start(PAGE_TOURS['staff'] ?? [], 'staff'); }
+  // ── Tab navigation helper ─────────────────────────────────────────────────
+  setDetailTab(id: string): void { this.detailTab = id; }
+
+  // ── Documents ────────────────────────────────────────────────────────────
+  loadDocs(): void {
+    const emp = this.empRecord();
+    if (!emp) return;
+    this.docsLoading.set(true);
+    this.api.get(`/hr/employees/${emp.id}/documents`).subscribe({
+      next: (r: any) => { this.docs.set(r.data ?? []); this.docsLoading.set(false); },
+      error: () => this.docsLoading.set(false),
+    });
+  }
+
+  addDoc(): void {
+    const emp = this.empRecord();
+    if (!emp || !this.docForm.title) { this.toast.error('Title required'); return; }
+    this.api.post(`/hr/employees/${emp.id}/documents`, this.docForm).subscribe({
+      next: (r: any) => {
+        if (r.success) { this.toast.success('Document added'); this.showAddDoc = false; this.docForm = { title:'', document_type:'contract', expiry_date:'', notes:'' }; this.loadDocs(); }
+        else this.toast.error(r.message || 'Failed');
+      },
+    });
+  }
+
+  deleteDoc(docId: string): void {
+    const emp = this.empRecord();
+    if (!emp) return;
+    this.api.delete(`/hr/employees/${emp.id}/documents/${docId}`).subscribe({
+      next: (r: any) => { if (r.success) { this.toast.success('Deleted'); this.loadDocs(); } },
+    });
+  }
+
+  // ── Job History ───────────────────────────────────────────────────────────
+  loadHistory(): void {
+    const emp = this.empRecord();
+    if (!emp) return;
+    this.historyLoading.set(true);
+    this.api.get(`/hr/employees/${emp.id}/job-history`).subscribe({
+      next: (r: any) => { this.jobHistory.set(r.data ?? []); this.historyLoading.set(false); },
+      error: () => this.historyLoading.set(false),
+    });
+  }
+
+  addHistory(): void {
+    const emp = this.empRecord();
+    if (!emp || !this.historyForm.job_title || !this.historyForm.start_date) {
+      this.toast.error('Job title and start date required'); return;
+    }
+    const data: any = { ...this.historyForm };
+    if (data.gross_salary) data.gross_salary = String(Math.round(Number(data.gross_salary) * 100));
+    this.api.post(`/hr/employees/${emp.id}/job-history`, data).subscribe({
+      next: (r: any) => {
+        if (r.success) { this.toast.success('History recorded'); this.showAddHistory = false; this.historyForm = { job_title:'', department_name:'', change_type:'promotion', change_reason:'', start_date:'', gross_salary:'' }; this.loadHistory(); }
+        else this.toast.error(r.message || 'Failed');
+      },
+    });
+  }
+
+  // ── Onboarding ────────────────────────────────────────────────────────────
+  loadOnboarding(): void {
+    const emp = this.empRecord();
+    if (!emp) return;
+    this.onboardingLoading.set(true);
+    this.api.get(`/hr/employees/${emp.id}/onboarding`).subscribe({
+      next: (r: any) => { this.onboarding.set(r.data?.items ?? []); this.onboardingLoading.set(false); },
+      error: () => this.onboardingLoading.set(false),
+    });
+  }
+
+  seedOnboarding(): void {
+    const emp = this.empRecord();
+    if (!emp) return;
+    this.api.post(`/hr/employees/${emp.id}/onboarding/seed`, {}).subscribe({
+      next: (r: any) => { if (r.success) { this.toast.success('Default tasks added'); this.loadOnboarding(); } },
+    });
+  }
+
+  completeOnboarding(taskId: string): void {
+    const emp = this.empRecord();
+    if (!emp) return;
+    this.api.post(`/hr/employees/${emp.id}/onboarding/${taskId}/complete`, {}).subscribe({
+      next: (r: any) => { if (r.success) { this.toast.success('Task completed'); this.loadOnboarding(); } },
+    });
+  }
+
 }
