@@ -108,5 +108,6 @@ return function (App $app): void {
 
     // ── RBAC: Permission Management ───────────────────────────────
     (require __DIR__ . '/../src/Module/Rbac/routes.php')($app);
+    // ─── HR Module (Phases B-L) ───────────────────────────────
+    (require __DIR__ . '/../src/Module/HR/routes.php')($app);
 };
-(require __DIR__ . '/../src/Module/HR/routes.php')($app);
