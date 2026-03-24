@@ -375,7 +375,6 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Expense Claims', icon: 'receipt',     route: '/expense-claims',      requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager','accountant'] },
         { label: 'Performance', icon: 'star',           route: '/performance-reviews', requiredModule: 'performance_reviews',  requiredRoles: ['property_admin','manager'] },
         { label: 'HR Analytics',icon: 'chart-bar',      route: '/hr-analytics',        requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager'] },
-        { label: 'Reviews',    icon: 'message-square', route: '/reviews',             requiredRoles: ['property_admin','manager'] },
       ],
     },
     {

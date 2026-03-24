@@ -712,7 +712,7 @@ return function (ContainerBuilder $builder): void {
         \Lodgik\Module\HR\HRController::class => function (ContainerInterface $c): \Lodgik\Module\HR\HRController {
             return new \Lodgik\Module\HR\HRController(
                 em:       $c->get(\Doctrine\ORM\EntityManagerInterface::class),
-                response: $c->get(\Lodgik\Service\ResponseHelper::class),
+                response: $c->get(\Lodgik\Helper\ResponseHelper::class),
             );
         },
 
