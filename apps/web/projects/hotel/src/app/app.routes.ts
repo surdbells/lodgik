@@ -246,7 +246,7 @@ export const routes: Routes = [
       },
       {
         path: 'performance-reviews',
-        loadComponent: () => import('./pages/reviews/reviews.page'),
+        loadComponent: () => import('./pages/performance-reviews/performance-reviews.page').then(m => m.PerformanceReviewsPage),
       },
       {
         path: 'pricing-rules',
@@ -398,6 +398,10 @@ export const routes: Routes = [
         path: 'guest-cards/scan-points',
         loadComponent: () => import('./pages/guest-cards/scan-points.page').then(m => m.ScanPointsPage),
       },
+      { path: 'recruitment',    loadComponent: () => import('./pages/recruitment/recruitment.page').then(m => m.RecruitmentPage) },
+      { path: 'training',        loadComponent: () => import('./pages/training/training.page').then(m => m.TrainingPage) },
+      { path: 'expense-claims',  loadComponent: () => import('./pages/expense-claims/expense-claims.page').then(m => m.ExpenseClaimsPage) },
+      { path: 'hr-analytics',    loadComponent: () => import('./pages/hr-analytics/hr-analytics.page').then(m => m.HrAnalyticsPage) },
     ],
   },
   // ── Guest PWA — separate layout with dark theme ───────────────
@@ -458,12 +462,6 @@ export const routes: Routes = [
       { path: 'stay-notifications',   loadComponent: () => import('./pages/guest-portal/guest-stay-notifications.page') },
     ],
   },
-
-        { path: 'recruitment',        loadComponent: () => import('./pages/recruitment/recruitment.page').then(m => m.RecruitmentPage) },
-        { path: 'training',            loadComponent: () => import('./pages/training/training.page').then(m => m.TrainingPage) },
-        { path: 'expense-claims',      loadComponent: () => import('./pages/expense-claims/expense-claims.page').then(m => m.ExpenseClaimsPage) },
-        { path: 'performance-reviews', loadComponent: () => import('./pages/performance-reviews/performance-reviews.page').then(m => m.PerformanceReviewsPage) },
-        { path: 'hr-analytics',        loadComponent: () => import('./pages/hr-analytics/hr-analytics.page').then(m => m.HrAnalyticsPage) },
 
   { path: '**', redirectTo: '' },
 ];
