@@ -366,8 +366,7 @@ export class HotelLayoutComponent implements OnInit {
     {
       label: 'Human Resources',
       items: [
-        { label: 'Staff',      icon: 'user-round',     route: '/staff',                                                requiredRoles: ['property_admin','manager'] },
-        { label: 'Employees',  icon: 'user-round-cog', route: '/staff',               requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager'] },
+        { label: 'People',     icon: 'users',          route: '/staff',               requiredRoles: ['property_admin','manager'] },
         { label: 'Attendance', icon: 'clock',          route: '/attendance',          requiredModule: 'attendance_shifts',    requiredRoles: ['property_admin','manager'] },
         { label: 'Leave',      icon: 'tree-palm',      route: '/leave',               requiredModule: 'leave_management',     requiredRoles: ['property_admin','manager'] },
         { label: 'Payroll',    icon: 'hand-coins',     route: '/payroll',             requiredModule: 'payroll',              requiredRoles: ['property_admin','manager'] },
