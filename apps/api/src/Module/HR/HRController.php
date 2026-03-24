@@ -14,7 +14,7 @@ use Lodgik\Entity\ExpenseClaim;
 use Lodgik\Entity\ExpenseClaimItem;
 use Lodgik\Entity\TrainingProgram;
 use Lodgik\Entity\OffboardingChecklist;
-use Lodgik\Service\ResponseHelper;
+use Lodgik\Helper\ResponseHelper;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\{ResponseInterface as Response, ServerRequestInterface as Request};
 
