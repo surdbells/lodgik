@@ -80,7 +80,9 @@ final class FeatureService
 
         // Core modules always included
         $coreModules = $this->getCoreModuleKeys();
-        $effective = array_unique(array_merge($planModules, $coreModules));
+        // 'all'-tier modules are available on every plan regardless of subscription
+        $allTierModules = $this->getAllTierModuleKeys();
+        $effective = array_unique(array_merge($planModules, $coreModules, $allTierModules));
 
         // Apply overrides
         $overrides = $this->getTenantOverrides($tenantId);
@@ -339,6 +341,13 @@ final class FeatureService
     /**
      * @return string[]
      */
+    private function getAllTierModuleKeys(): array
+    {
+        $modules = $this->em->getRepository(FeatureModule::class)
+            ->findBy(['minTier' => 'all', 'isActive' => true]);
+        return array_map(fn(FeatureModule $m) => $m->getModuleKey(), $modules);
+    }
+
     private function getCoreModuleKeys(): array
     {
         $cores = $this->em->getRepository(FeatureModule::class)

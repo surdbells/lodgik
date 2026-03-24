@@ -206,8 +206,31 @@ final class AuthController
         return $this->response->success(
             $response,
             null,
-            'If an account with that email exists, a password reset link has been sent.'
+            'If an account with that email exists, a 6-digit OTP has been sent.'
         );
+    }
+
+    /**
+     * POST /api/auth/verify-otp
+     * Validate 6-digit OTP and exchange it for a reset token.
+     */
+    public function verifyOtp(Request $request, Response $response): Response
+    {
+        $body  = (array) ($request->getParsedBody() ?? []);
+        $email = trim($body['email'] ?? '');
+        $otp   = trim($body['otp']   ?? '');
+
+        if ($email === '' || $otp === '') {
+            return $this->response->validationError($response, ['email and otp are required']);
+        }
+
+        try {
+            $resetToken = $this->authService->verifyOtp($email, $otp);
+        } catch (\RuntimeException $e) {
+            return $this->response->error($response, $e->getMessage(), 400);
+        }
+
+        return $this->response->success($response, ['reset_token' => $resetToken], 'OTP verified successfully.');
     }
 
     /**

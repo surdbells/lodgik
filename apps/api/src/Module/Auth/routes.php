@@ -14,7 +14,8 @@ return function (App $app): void {
         $group->post('/login', [AuthController::class, 'login']);
         $group->post('/refresh', [AuthController::class, 'refresh']);
         $group->post('/forgot-password', [AuthController::class, 'forgotPassword']);
-        $group->post('/reset-password', [AuthController::class, 'resetPassword']);
+        $group->post('/verify-otp',       [AuthController::class, 'verifyOtp']);
+        $group->post('/reset-password',   [AuthController::class, 'resetPassword']);
         $group->post('/accept-invite', [AuthController::class, 'acceptInvite']);
 
         // Authenticated routes

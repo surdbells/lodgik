@@ -126,9 +126,9 @@ final class AuthService
         );
         $this->em->flush();
 
-        // Send welcome email (async-safe: failures don't block registration)
+        // Send welcome email with credentials (async-safe: failures don't block registration)
         try {
-            $this->mail->sendWelcome($user->getEmail(), $user->getFirstName(), $tenant->getName());
+            $this->mail->sendWelcome($user->getEmail(), $user->getFirstName(), $tenant->getName(), $dto->password);
         } catch (\Throwable $e) {
             $this->logger->warning('Failed to send welcome email', ['error' => $e->getMessage()]);
         }
@@ -273,25 +273,60 @@ final class AuthService
             return; // Silent fail — no email enumeration
         }
 
-        // Generate secure token
-        $token = bin2hex(random_bytes(32));
-        $user->setPasswordResetToken($token, 60); // 60 minutes
+        // Generate 6-digit OTP, prefixed so we can identify it later
+        $otp   = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+        $token = 'OTP:' . $otp;
+        $user->setPasswordResetToken($token, 10); // 10 minutes
         $this->em->flush();
 
-        // Send email
         try {
-            $this->mail->sendPasswordReset(
+            $this->mail->sendPasswordOtp(
                 $user->getEmail(),
                 $user->getFirstName(),
-                $token,
-                $this->appUrl,
+                $otp,
             );
         } catch (\Throwable $e) {
-            $this->logger->error('Failed to send password reset email', [
+            $this->logger->error('Failed to send password OTP', [
                 'user_id' => $user->getId(),
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Verify OTP submitted by user. On success, replace with full reset token.
+     * Returns the reset token so frontend can proceed to the reset form.
+     */
+    public function verifyOtp(string $email, string $otp): string
+    {
+        $this->disableTenantFilter();
+        $user = $this->userRepo->findByEmail($email);
+        $this->restoreTenantFilter();
+
+        if ($user === null) {
+            throw new \RuntimeException('Invalid OTP');
+        }
+
+        $stored = $user->getPasswordResetToken();
+        if ($stored === null || !str_starts_with($stored, 'OTP:')) {
+            throw new \RuntimeException('No OTP requested or OTP already used');
+        }
+
+        $storedOtp = substr($stored, 4);
+        if (!hash_equals($storedOtp, $otp)) {
+            throw new \RuntimeException('Invalid OTP');
+        }
+
+        if (!$user->isPasswordResetTokenValid($stored)) {
+            throw new \RuntimeException('OTP has expired. Please request a new one.');
+        }
+
+        // OTP valid — replace with a full reset token (15 min)
+        $resetToken = bin2hex(random_bytes(32));
+        $user->setPasswordResetToken($resetToken, 15);
+        $this->em->flush();
+
+        return $resetToken;
     }
 
     /**

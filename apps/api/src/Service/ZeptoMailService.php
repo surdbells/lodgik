@@ -165,14 +165,30 @@ final class ZeptoMailService
     /**
      * Send a welcome email to new tenant admin.
      */
-    public function sendWelcome(string $toEmail, string $toName, string $tenantName): bool
+    public function sendWelcome(string $toEmail, string $toName, string $tenantName, ?string $plainPassword = null): bool
     {
         $html = $this->renderTemplate('welcome', [
-            'name' => $toName,
-            'tenant_name' => $tenantName,
+            'name'          => $toName,
+            'tenant_name'   => $tenantName,
+            'email'         => $toEmail,
+            'password'      => $plainPassword ?? '',
+            'has_password'  => $plainPassword !== null ? 'true' : '',
+            'login_url'     => ($_ENV['HOTEL_APP_URL'] ?? 'https://hotel.lodgik.co') . '/login',
         ]);
 
         return $this->send($toEmail, $toName, "Welcome to Lodgik — {$tenantName}", $html);
+    }
+
+    /**
+     * Send a 6-digit OTP for password reset.
+     */
+    public function sendPasswordOtp(string $toEmail, string $toName, string $otp): bool
+    {
+        $html = $this->renderTemplate('passwordOtp', [
+            'name' => $toName,
+            'otp'  => $otp,
+        ]);
+        return $this->send($toEmail, $toName, 'Your Lodgik password reset code', $html);
     }
 
     /**
@@ -206,11 +222,17 @@ final class ZeptoMailService
     private function renderTemplate(string $template, array $vars): string
     {
         $html = match ($template) {
-            'welcome' => $this->welcomeTemplate(),
-            'password_reset' => $this->passwordResetTemplate(),
+            'welcome'       => $this->welcomeTemplate(),
+            'passwordReset' => $this->passwordResetTemplate(),
+            'passwordOtp'   => $this->passwordOtpTemplate(),
             'staff_invitation' => $this->staffInvitationTemplate(),
             default => '<p>{{body}}</p>',
         };
+
+        // Process conditionals: {{key}}...{{/key}} shown only when $vars[key] is truthy
+        $html = preg_replace_callback('/\{\{(\w+)\}\}(.*?)\{\{\/\1\}\}/s', function ($m) use ($vars) {
+            return !empty($vars[$m[1]]) ? $m[2] : '';
+        }, $html);
 
         foreach ($vars as $key => $value) {
             $html = str_replace('{{' . $key . '}}', htmlspecialchars((string) $value, ENT_QUOTES), $html);
@@ -258,15 +280,38 @@ final class ZeptoMailService
     {
         return <<<HTML
         <h2>Welcome aboard, {{name}}! 🎉</h2>
-        <p>Your account for <strong>{{tenant_name}}</strong> has been created successfully.</p>
-        <p>You're now ready to start managing your hotel with Lodgik. Here's what you can do next:</p>
-        <ul>
-            <li>Set up your property details</li>
-            <li>Add your rooms and room types</li>
+        <p>Your Lodgik account for <strong>{{tenant_name}}</strong> has been created successfully.</p>
+        {{has_password}}
+        <div style="background:#f4f7f4; border-left:4px solid #4A7A4A; border-radius:8px; padding:16px 20px; margin:20px 0;">
+            <p style="margin:0 0 8px; font-weight:600; color:#2d5a2d;">Your login credentials</p>
+            <p style="margin:4px 0; font-size:14px;"><strong>Email:</strong> {{email}}</p>
+            <p style="margin:4px 0; font-size:14px;"><strong>Password:</strong> <code style="background:#e8f0e8; padding:2px 6px; border-radius:4px;">{{password}}</code></p>
+            <p style="margin:12px 0 0; font-size:13px; color:#666;">Please change your password after your first login.</p>
+        </div>
+        {{/has_password}}
+        <p style="margin:16px 0 8px;">Log in at: <a href="{{login_url}}" style="color:#4A7A4A; font-weight:600;">{{login_url}}</a></p>
+        <p style="color:#555;">Once you're in, here's what to do next:</p>
+        <ul style="color:#555; line-height:1.8;">
+            <li>Set up your property details and room types</li>
             <li>Invite your staff members</li>
             <li>Configure your bank account for guest payments</li>
         </ul>
-        <p>If you need any help getting started, just reach out to us on WhatsApp.</p>
+        <p style="margin-top:16px; color:#888; font-size:13px;">Need help? Reach out to us any time.</p>
+        HTML;
+    }
+
+    private function passwordOtpTemplate(): string
+    {
+        return <<<HTML
+        <div style="text-align:center; padding: 32px 0;">
+            <h2 style="margin-bottom:8px;">Password Reset Code</h2>
+            <p style="color:#555; margin-bottom:24px;">Hi {{name}}, use the code below to reset your password.</p>
+            <div style="display:inline-block; background:#f4f7f4; border:2px solid #4A7A4A; border-radius:12px; padding:16px 40px; margin-bottom:24px;">
+                <span style="font-size:36px; font-weight:800; letter-spacing:12px; color:#2d5a2d; font-family:monospace;">{{otp}}</span>
+            </div>
+            <p style="color:#888; font-size:13px;">This code expires in <strong>10 minutes</strong>.</p>
+            <p style="color:#888; font-size:13px;">If you did not request a password reset, you can safely ignore this email.</p>
+        </div>
         HTML;
     }
 
