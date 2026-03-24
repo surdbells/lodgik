@@ -246,7 +246,11 @@ export const routes: Routes = [
       },
       {
         path: 'performance-reviews',
-        loadComponent: () => import('./pages/performance-reviews/performance-reviews.page').then(m => m.PerformanceReviewsPage),
+        loadComponent: () => import('./pages/reviews/reviews.page').then(m => m.default),
+      },
+      {
+        path: 'reviews',
+        loadComponent: () => import('./pages/reviews/reviews.page').then(m => m.default),
       },
       {
         path: 'pricing-rules',
