@@ -1,8 +1,9 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, StatsCardComponent, ActivePropertyService, EmployeePickerComponent } from '@lodgik/shared';
-import type { EmployeeOption } from '@lodgik/shared';
+import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, ToastService, StatsCardComponent, ActivePropertyService } from '@lodgik/shared';
+import { EmployeePickerComponent } from '../../components/employee-picker.component';
+import type { EmployeeOption } from '../../components/employee-picker.component';
 
 @Component({
   selector: 'app-performance-reviews',
