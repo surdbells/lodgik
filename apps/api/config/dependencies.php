@@ -922,6 +922,7 @@ return function (ContainerBuilder $builder): void {
             folioService:    $c->get(\Lodgik\Module\Folio\FolioService::class),
             movementService: $c->get(\Lodgik\Module\Inventory\MovementService::class),
             recipeService:   $c->get(\Lodgik\Module\Pos\RecipeService::class),
+            chatService:     $c->get(\Lodgik\Module\Chat\ChatService::class),
         ),
         \Lodgik\Module\Pos\PosController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\PosController(
             service: $c->get(\Lodgik\Module\Pos\PosService::class),

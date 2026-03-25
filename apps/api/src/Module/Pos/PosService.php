@@ -16,6 +16,8 @@ use Lodgik\Enum\PosOrderStatus;
 use Lodgik\Module\Folio\FolioService;
 use Lodgik\Module\Inventory\MovementService;
 use Psr\Log\LoggerInterface;
+use Lodgik\Module\Chat\ChatService;
+use Lodgik\Module\Chat\ChatService;
 use Lodgik\Module\Pos\RecipeService;
 
 final class PosService
@@ -31,6 +33,7 @@ final class PosService
         private readonly ?FolioService $folioService = null,
         private readonly ?MovementService $movementService = null,
         private readonly ?RecipeService $recipeService = null,
+        private readonly ?ChatService $chatService = null,
     ) {}
 
     // ─── Tables ─────────────────────────────────────────────────
@@ -196,12 +199,36 @@ final class PosService
         $order->setItemCount($count);
     }
 
+    // ─── Guest order status notifications (room-service only) ──────────
+
+    private function notifyGuestOrderStatus(PosOrder $order, string $message): void
+    {
+        if (!$order->getBookingId() || !$this->chatService) return;
+        try {
+            $this->chatService->sendMessage(
+                bookingId:  $order->getBookingId(),
+                propertyId: $order->getPropertyId(),
+                senderType: 'staff',
+                senderId:   'kitchen',
+                senderName: 'Kitchen',
+                message:    $message,
+                tenantId:   $order->getTenantId(),
+                department: 'kitchen',
+            );
+        } catch (\Throwable $e) {
+            $this->logger->warning("Order status notification failed: {$e->getMessage()}");
+        }
+    }
+
     public function sendToKitchen(string $orderId): PosOrder
     {
         $order = $this->em->find(PosOrder::class, $orderId) ?? throw new \RuntimeException('Order not found');
         $order->send();
         $this->em->flush();
         $this->logger->info("Order {$order->getOrderNumber()} sent to kitchen");
+        $this->notifyGuestOrderStatus($order,
+            "🍽 Your room service order #{$order->getOrderNumber()} has been received by our kitchen and is now being prepared."
+        );
         return $order;
     }
 
@@ -229,7 +256,12 @@ final class PosService
                     $allReady = false; break;
                 }
             }
-            if ($allReady) $order->ready();
+            if ($allReady) {
+                $order->ready();
+                $this->notifyGuestOrderStatus($order,
+                    "✅ Your room service order #{$order->getOrderNumber()} is ready and on its way to your room!"
+                );
+            }
         }
         $this->em->flush(); return $item;
     }
@@ -238,7 +270,11 @@ final class PosService
     {
         $order = $this->em->find(PosOrder::class, $orderId) ?? throw new \RuntimeException('Order not found');
         $order->serve();
-        $this->em->flush(); return $order;
+        $this->em->flush();
+        $this->notifyGuestOrderStatus($order,
+            "🛎 Your room service order #{$order->getOrderNumber()} has been delivered. Bon appétit!"
+        );
+        return $order;
     }
 
     public function payOrder(string $orderId, string $paymentType, ?string $paymentMethod = null, ?string $folioId = null): PosOrder

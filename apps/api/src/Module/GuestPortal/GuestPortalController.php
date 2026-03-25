@@ -793,10 +793,31 @@ final class GuestPortalController
                 );
             }
 
-            // Auto-post to folio so it appears on the guest's bill immediately
+            // Post to folio (charge + payment type stored)
             $this->posService->postToFolio($order->getId(), $bookingId);
 
-            // Notify kitchen via chat message
+            // Auto-send to kitchen so order appears in kitchen queue
+            $this->posService->sendToKitchen($order->getId());
+
+            // 1. Notify guest that order was placed
+            try {
+                $itemLines = '';
+                foreach ($items as $item) {
+                    $itemLines .= "\n• " . ($item['quantity'] ?? 1) . '× ' . ($item['product_name'] ?? $item['product_id']);
+                }
+                $this->chatService->sendMessage(
+                    bookingId:  $bookingId,
+                    propertyId: $propertyId,
+                    senderType: 'staff',
+                    senderId:   'room_service',
+                    senderName: 'Room Service',
+                    message:    "✅ Your order #{$order->getOrderNumber()} has been placed successfully. Total: ₦" . number_format((int)$order->getTotalAmount() / 100, 0, '.', ',') . ". We'll keep you updated as it progresses.",
+                    tenantId:   $tenantId,
+                    department: 'kitchen',
+                );
+            } catch (\Throwable) {}
+
+            // 2. Notify kitchen staff
             try {
                 $this->chatService->sendMessage(
                     bookingId:  $bookingId,
@@ -804,8 +825,9 @@ final class GuestPortalController
                     senderType: 'staff',
                     senderId:   'room_service',
                     senderName: 'Room Service',
-                    message:    "🍽 New room service order from {$guestName} (Room {$roomNum}). Order #{$order->getOrderNumber()}. Check kitchen queue.",
+                    message:    "🍽 NEW ROOM SERVICE — {$guestName} (Room {$roomNum}) — Order #{$order->getOrderNumber()} — ₦" . number_format((int)$order->getTotalAmount() / 100, 0, '.', ','),
                     tenantId:   $tenantId,
+                    department: 'kitchen',
                 );
             } catch (\Throwable) {}
 

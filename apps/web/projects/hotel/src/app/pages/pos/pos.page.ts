@@ -224,10 +224,16 @@ type Tab = 'orders' | 'kitchen' | 'tables' | 'menu' | 'history';
                 💳 Process Payment
               </button>
               @if (activeOrder()!.booking_id) {
-                <button (click)="postToFolio(activeOrder()!.id)"
-                  class="px-3 py-2 text-sm font-medium bg-purple-600 text-white rounded-xl hover:bg-purple-700">
-                  → Room Bill
-                </button>
+                @if (activeOrder()!.folio_id) {
+                  <span class="px-3 py-2 text-sm font-medium bg-purple-100 text-purple-700 rounded-xl flex items-center gap-1">
+                    ✓ On Folio
+                  </span>
+                } @else {
+                  <button (click)="postToFolio(activeOrder()!.id)"
+                    class="px-3 py-2 text-sm font-medium bg-purple-600 text-white rounded-xl hover:bg-purple-700">
+                    → Add to Room Bill
+                  </button>
+                }
               }
               <button (click)="cancelOrderModal(activeOrder()!.id)"
                 class="px-3 py-2 text-sm font-medium bg-red-500 text-white rounded-xl hover:bg-red-600">
@@ -1214,7 +1220,9 @@ export class PosPage implements OnInit, OnDestroy {
   }
 
   postToFolio(orderId: string) {
-    this.api.post(`/pos/orders/${orderId}/post-to-folio`, {}).subscribe({
+    const order = this.orders().find(o => o.id === orderId) || this.activeOrder();
+    const body = order?.booking_id ? { booking_id: order.booking_id } : {};
+    this.api.post(`/pos/orders/${orderId}/post-to-folio`, body).subscribe({
       next: (r: any) => { if (r.success || r.data) { this.toast.success('Posted to guest folio'); this.load(); } else this.toast.error(r.message || 'Failed'); },
       error: () => this.toast.error('Failed to post to folio'),
     });

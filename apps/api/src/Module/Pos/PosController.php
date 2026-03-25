@@ -201,11 +201,21 @@ final class PosController
 
     public function postToFolio(Request $req, Response $res, array $args): Response
     {
-        $body = (array) ($req->getParsedBody() ?? []);
-        $folioId = $body['folio_id'] ?? '';
+        $body      = (array) ($req->getParsedBody() ?? []);
+        $bookingId = $body['booking_id'] ?? null;
+
         try {
-            $order = $this->service->payOrder($args['id'], 'room_charge', 'room_charge', $folioId);
-            return JsonResponse::ok($res, $order->toArray());
+            $order = $this->em->find(\Lodgik\Entity\PosOrder::class, $args['id']);
+            if (!$order) return JsonResponse::error($res, 'Order not found', 404);
+
+            // Use booking_id from body, or fall back to the order's stored booking_id
+            $bid = $bookingId ?? $order->getBookingId();
+            if (!$bid) return JsonResponse::error($res, 'No booking linked to this order', 422);
+
+            // Post charge to folio (keeps order open, does NOT mark as paid)
+            $this->service->postToFolio($args['id'], $bid);
+
+            return JsonResponse::ok($res, $order->toArray(), 'Charge posted to guest folio');
         } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 400); }
     }
 
