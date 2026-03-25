@@ -18,6 +18,7 @@ return function (App $app): void {
         $g->post('/categories', [PosController::class, 'createCategory']);
         $g->put('/categories/{id}', [PosController::class, 'updateCategory']);
         $g->delete('/categories/{id}', [PosController::class, 'deleteCategory']);
+        $g->delete('/products/{id}',  [PosController::class, 'deleteProduct']);
         $g->get('/products', [PosController::class, 'listProducts']);
         $g->post('/products', [PosController::class, 'createProduct']);
         $g->put('/products/{id}', [PosController::class, 'updateProduct']);
@@ -28,7 +29,11 @@ return function (App $app): void {
         $g->post('/orders/{id}/items', [PosController::class, 'addItem']);
         $g->post('/orders/{id}/items/{item_id}/remove', [PosController::class, 'removeItem']);
         $g->post('/orders/{id}/items/{item_id}/status', [PosController::class, 'updateItemStatus']);
-        $g->post('/orders/{id}/close', [PosController::class, 'closeOrder']);
+        $g->post('/orders/{id}/send-to-kitchen', [PosController::class, 'sendToKitchen']);
+        $g->post('/orders/{id}/pay',            [PosController::class, 'payOrder']);
+        $g->post('/orders/{id}/serve',          [PosController::class, 'serveOrder']);
+        $g->post('/orders/{id}/split',          [PosController::class, 'splitOrder']);
+        $g->post('/orders/{id}/close',          [PosController::class, 'closeOrder']);
         $g->post('/orders/{id}/cancel', [PosController::class, 'cancelOrder']);
         $g->post('/orders/{id}/post-to-folio', [PosController::class, 'postToFolio']);
         $g->get('/kitchen/queue', [PosController::class, 'kitchenQueue']);
