@@ -104,7 +104,7 @@ final class PosService
         $p = $this->em->find(PosProduct::class, $id) ?? throw new \RuntimeException('Product not found');
         if (isset($data['name'])) $p->setName($data['name']);
         if (isset($data['description'])) $p->setDescription($data['description']);
-        if (isset($data['price'])) $p->setPrice((string) $data['price']);
+        if (isset($data['price'])) $p->setPrice((string)(int)round((float)$data['price']));
         if (isset($data['is_available'])) $p->setIsAvailable($data['is_available']);
         if (isset($data['prep_time_minutes'])) $p->setPrepTimeMinutes($data['prep_time_minutes']);
         if (isset($data['requires_kitchen'])) $p->setRequiresKitchen($data['requires_kitchen']);
@@ -163,7 +163,7 @@ final class PosService
                 if ($sectionPrice) $resolvedPrice = $sectionPrice->getPrice();
             }
         }
-        $item = new PosOrderItem($orderId, $productId, $product->getName(), $quantity, $resolvedPrice, $tenantId);
+        $item = new PosOrderItem($orderId, $productId, $product->getName(), $quantity, (string)(int)$resolvedPrice, $tenantId);
         $item->setRequiresKitchen($product->getRequiresKitchen());
         if ($notes) $item->setNotes($notes);
         $item->setSplitGroup($splitGroup);

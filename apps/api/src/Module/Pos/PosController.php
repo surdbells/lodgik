@@ -72,7 +72,7 @@ final class PosController
         foreach (['property_id', 'category_id', 'name', 'price'] as $f) {
             if (empty($d[$f])) return JsonResponse::error($res, "$f required", 422);
         }
-        return JsonResponse::created($res, $this->service->createProduct($d['property_id'], $d['category_id'], $d['name'], (string)$d['price'], $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Product created');
+        return JsonResponse::created($res, $this->service->createProduct($d['property_id'], $d['category_id'], $d['name'], (string)(int)round((float)$d['price']), $req->getAttribute('auth.tenant_id'), $d)->toArray(), 'Product created');
     }
 
     public function updateProduct(Request $req, Response $res, array $args): Response
