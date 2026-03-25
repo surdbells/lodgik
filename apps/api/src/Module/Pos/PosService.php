@@ -326,7 +326,7 @@ final class PosService
             $desc     = "Room Service #{$order->getOrderNumber()} — {$order->getItemCount()} item(s)";
             $this->folioService->addCharge($folio->getId(), $category, $desc, (string)$order->getTotalAmount());
             $order->setFolioId($folio->getId());
-            $order->pay('room_charge', 'room_charge');
+            // Keep order open — staff closes it from kitchen/POS; charge is on folio
             $this->em->flush();
             $this->logger->info("Room service posted to folio: order={$order->getOrderNumber()}, folio={$folio->getId()}");
         } else {
@@ -343,12 +343,14 @@ final class PosService
     }
 
     /** @return PosOrder[] */
-    public function listOrders(string $propertyId, ?string $status = null, int $limit = 50): array
+    public function listOrders(string $propertyId, ?string $status = null, int $limit = 100, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $qb = $this->em->createQueryBuilder()->select('o')->from(PosOrder::class, 'o')
             ->where('o.propertyId = :pid')->setParameter('pid', $propertyId)
             ->orderBy('o.createdAt', 'DESC')->setMaxResults($limit);
-        if ($status) $qb->andWhere('o.status = :s')->setParameter('s', $status);
+        if ($status)   $qb->andWhere('o.status = :s')->setParameter('s', $status);
+        if ($dateFrom) $qb->andWhere('o.createdAt >= :df')->setParameter('df', new \DateTimeImmutable($dateFrom . ' 00:00:00'));
+        if ($dateTo)   $qb->andWhere('o.createdAt <= :dt')->setParameter('dt', new \DateTimeImmutable($dateTo . ' 23:59:59'));
         return $qb->getQuery()->getResult();
     }
 
@@ -422,6 +424,11 @@ final class PosService
             $groups[$g]['total'] += intval($item->getLineTotal());
         }
         return $groups;
+    }
+
+    public function getConnection(): \Doctrine\DBAL\Connection
+    {
+        return $this->em->getConnection();
     }
 
     public function getLastDeductionWarnings(): array

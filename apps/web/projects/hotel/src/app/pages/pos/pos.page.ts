@@ -566,8 +566,12 @@ type Tab = 'orders' | 'kitchen' | 'tables' | 'menu' | 'history';
         </thead>
         <tbody>
           @for (o of historyOrders(); track o.id) {
-            <tr class="border-t border-gray-50 hover:bg-gray-50">
-              <td class="px-4 py-3 font-mono font-medium text-gray-700">#{{ o.order_number }}</td>
+            <tr class="border-t border-gray-50 hover:bg-gray-50 cursor-pointer"
+              (click)="toggleHistoryOrder(o.id)">
+              <td class="px-4 py-3 font-mono font-medium text-gray-700">
+                <span class="mr-1 text-gray-400 text-xs">{{ expandedOrder() === o.id ? '▼' : '▶' }}</span>
+                #{{ o.order_number }}
+              </td>
               <td class="px-4 py-3 capitalize text-gray-600">{{ o.order_type | titlecase }}</td>
               <td class="px-4 py-3 text-gray-500">{{ o.table_number ? 'Table '+o.table_number : (o.guest_name || '—') }}</td>
               <td class="px-4 py-3 text-gray-500">{{ o.item_count }}</td>
@@ -579,13 +583,219 @@ type Tab = 'orders' | 'kitchen' | 'tables' | 'menu' | 'history';
                   {{ o.status }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-xs text-gray-400">{{ o.updated_at | date:'dd MMM HH:mm' }}</td>
+              <td class="px-4 py-3 text-xs text-gray-400">{{ o.paid_at || o.created_at | date:'dd MMM HH:mm' }}</td>
             </tr>
+            @if (expandedOrder() === o.id) {
+              <tr class="bg-gray-50 border-t border-gray-100">
+                <td colspan="8" class="px-8 py-3">
+                  @if (!expandedItems()[o.id]) {
+                    <p class="text-xs text-gray-400 italic">Loading items…</p>
+                  } @else if (expandedItems()[o.id].length === 0) {
+                    <p class="text-xs text-gray-400 italic">No items found</p>
+                  } @else {
+                    <div class="space-y-1">
+                      @for (item of expandedItems()[o.id]; track item.id) {
+                        <div class="flex items-center gap-4 text-xs text-gray-600">
+                          <span class="font-medium w-6">{{ item.quantity }}×</span>
+                          <span class="flex-1">{{ item.product_name }}</span>
+                          @if (item.notes) { <span class="text-gray-400 italic">{{ item.notes }}</span> }
+                          <span class="font-semibold text-gray-800">₦{{ fmtKobo(+item.line_total) }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
           } @empty {
             <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400">No orders in this period</td></tr>
           }
         </tbody>
       </table>
+    </div>
+  }
+}
+
+<!-- ── SALES REPORT TAB ─────────────────────────────────────────────── -->
+@if (activeTab === 'reports') {
+  <div class="flex flex-wrap gap-3 mb-4 items-center">
+    <div>
+      <label class="text-xs text-gray-500 block mb-1">From</label>
+      <input [(ngModel)]="reportDateFrom" type="date" (change)="loadSalesReport()"
+        class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50">
+    </div>
+    <div>
+      <label class="text-xs text-gray-500 block mb-1">To</label>
+      <input [(ngModel)]="reportDateTo" type="date" (change)="loadSalesReport()"
+        class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50">
+    </div>
+    <div class="mt-5">
+      <button (click)="loadSalesReport()" [disabled]="reportLoading()"
+        class="px-4 py-2 bg-sage-600 text-white text-sm rounded-xl hover:bg-sage-700 disabled:opacity-50">
+        {{ reportLoading() ? 'Loading…' : '↻ Refresh' }}
+      </button>
+    </div>
+  </div>
+
+  <ui-loading [loading]="reportLoading()"></ui-loading>
+
+  @if (!reportLoading() && salesReport()) {
+    @let rpt = salesReport()!;
+
+    <!-- KPI row -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 mb-1">Total Revenue</p>
+        <p class="text-2xl font-black text-emerald-600">₦{{ fmtKobo(rpt.total_revenue) }}</p>
+        <p class="text-xs text-gray-400 mt-0.5">{{ rpt.period.from }} – {{ rpt.period.to }}</p>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 mb-1">Orders Closed</p>
+        <p class="text-2xl font-black text-gray-800">{{ rpt.order_count }}</p>
+        <p class="text-xs text-gray-400 mt-0.5">paid orders</p>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 mb-1">Avg Order Value</p>
+        <p class="text-2xl font-black text-sage-700">₦{{ fmtKobo(rpt.avg_order) }}</p>
+        <p class="text-xs text-gray-400 mt-0.5">per closed order</p>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 mb-1">Best Day</p>
+        @if (bestDay(rpt)) {
+          <p class="text-base font-bold text-gray-800">{{ bestDay(rpt).date | date:'dd MMM' }}</p>
+          <p class="text-xs text-sage-600 font-semibold">₦{{ fmtKobo(bestDay(rpt).revenue) }}</p>
+        } @else {
+          <p class="text-sm text-gray-400">—</p>
+        }
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+      <!-- Revenue by type -->
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="text-sm font-semibold text-gray-700 mb-4">Revenue by Order Type</h3>
+        @for (entry of byTypeArr(rpt); track entry.key) {
+          <div class="mb-3">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-gray-600 capitalize">{{ entry.key | titlecase }}</span>
+              <span class="text-xs font-semibold text-gray-800">₦{{ fmtKobo(entry.value) }}</span>
+            </div>
+            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-sage-500 rounded-full transition-all"
+                [style.width]="pct(entry.value, rpt.total_revenue) + '%'"></div>
+            </div>
+            <p class="text-[10px] text-gray-400 mt-0.5 text-right">{{ pct(entry.value, rpt.total_revenue) }}%</p>
+          </div>
+        }
+      </div>
+
+      <!-- Revenue by payment -->
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="text-sm font-semibold text-gray-700 mb-4">Revenue by Payment Method</h3>
+        @for (entry of byPayArr(rpt); track entry.key) {
+          <div class="mb-3">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-gray-600 capitalize">{{ entry.key.replace('_',' ') }}</span>
+              <span class="text-xs font-semibold text-gray-800">₦{{ fmtKobo(entry.value) }}</span>
+            </div>
+            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-blue-400 rounded-full"
+                [style.width]="pct(entry.value, rpt.total_revenue) + '%'"></div>
+            </div>
+            <p class="text-[10px] text-gray-400 mt-0.5 text-right">{{ pct(entry.value, rpt.total_revenue) }}%</p>
+          </div>
+        }
+      </div>
+
+      <!-- Top products -->
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="text-sm font-semibold text-gray-700 mb-4">Top 10 Products</h3>
+        <div class="space-y-2">
+          @for (p of rpt.top_products; track p.name; let i = $index) {
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-bold text-gray-400 w-5 text-right">{{ i+1 }}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-medium text-gray-700 truncate">{{ p.name }}</p>
+                <p class="text-[10px] text-gray-400">{{ p.qty_sold }} sold</p>
+              </div>
+              <span class="text-xs font-semibold text-gray-800 flex-shrink-0">₦{{ fmtKobo(+p.revenue) }}</span>
+            </div>
+          } @empty {
+            <p class="text-xs text-gray-400 text-center py-4">No data</p>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily revenue chart (SVG) -->
+    @if (rpt.by_date.length > 0) {
+      <div class="bg-white rounded-xl border border-gray-100 p-5 mb-5">
+        <h3 class="text-sm font-semibold text-gray-700 mb-4">Daily Revenue</h3>
+        <div class="overflow-x-auto">
+          <svg [attr.width]="Math.max(600, rpt.by_date.length * 40)"
+               height="160" class="w-full" style="min-width:400px">
+            @let maxRev = maxRevenue(rpt);
+            @let barW = Math.max(24, Math.min(36, (Math.max(600,rpt.by_date.length*40) - 60) / rpt.by_date.length - 6));
+            @for (d of rpt.by_date; track d.date; let i = $index) {
+              @let bh = maxRev > 0 ? Math.round((+d.revenue / maxRev) * 110) : 0;
+              @let bx = 30 + i * (barW + 6);
+              <rect [attr.x]="bx" [attr.y]="130 - bh" [attr.width]="barW" [attr.height]="bh || 2"
+                rx="4" fill="#4A7A4A" opacity="0.8">
+                <title>{{ d.date }}: ₦{{ fmtKobo(+d.revenue) }} ({{ d.orders }} orders)</title>
+              </rect>
+              <text [attr.x]="bx + barW/2" y="148" text-anchor="middle"
+                font-size="8" fill="#9ca3af">{{ d.date | date:'dd/MM' }}</text>
+            }
+          </svg>
+        </div>
+      </div>
+    }
+
+    <!-- Orders in period -->
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-700">All Orders in Period</h3>
+        <button (click)="exportReportCsv(rpt)"
+          class="px-3 py-1.5 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 font-medium">
+          ⬇ Export CSV
+        </button>
+      </div>
+      <div class="overflow-x-auto max-h-96 overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 sticky top-0">
+            <tr>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">#</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Type</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Table/Guest</th>
+              <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">Amount</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Payment</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (o of rpt.orders; track o.id) {
+              <tr class="border-t border-gray-50 hover:bg-gray-50">
+                <td class="px-4 py-2.5 font-mono text-xs text-gray-600">#{{ o.order_number }}</td>
+                <td class="px-4 py-2.5 text-xs capitalize text-gray-500">{{ o.order_type | titlecase }}</td>
+                <td class="px-4 py-2.5 text-xs text-gray-500">{{ o.table_number ? 'Table '+o.table_number : (o.guest_name || '—') }}</td>
+                <td class="px-4 py-2.5 text-xs text-right font-semibold text-gray-800">₦{{ fmtKobo(+o.total_amount) }}</td>
+                <td class="px-4 py-2.5 text-xs capitalize text-gray-400">{{ o.payment_type || '—' }}</td>
+                <td class="px-4 py-2.5 text-xs text-gray-400">{{ o.paid_at || o.created_at | date:'dd MMM HH:mm' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400 text-sm">No paid orders in this period</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  @if (!reportLoading() && !salesReport()) {
+    <div class="bg-white rounded-xl border border-gray-100 p-12 text-center">
+      <p class="text-4xl mb-3">📊</p>
+      <p class="text-gray-500 font-medium">Select a date range and click Refresh to load the sales report.</p>
     </div>
   }
 }
@@ -731,6 +941,10 @@ export class PosPage implements OnInit, OnDestroy {
   menuCats     = signal<any[]>([]);
   menuProducts = signal<any[]>([]);
   historyOrders = signal<any[]>([]);
+  salesReport   = signal<any>(null);
+  reportLoading = signal(false);
+  expandedOrder = signal<string>('');
+  expandedItems = signal<Record<string, any[]>>({});
   sectionPrices = signal<any[]>([]);
   orderItems   = signal<any[]>([]);
 
@@ -744,6 +958,7 @@ export class PosPage implements OnInit, OnDestroy {
     { id: 'tables',  label: 'Tables' },
     { id: 'menu',    label: 'Menu' },
     { id: 'history', label: 'History' },
+    { id: 'reports', label: 'Sales Report' },
   ];
   activeTab = 'orders';
 
@@ -859,6 +1074,7 @@ export class PosPage implements OnInit, OnDestroy {
   onTabChange(tab: string) {
     if (tab === 'history') this.loadHistory();
     if (tab === 'kitchen') this.loadKitchen();
+    if (tab === 'reports') this.loadSalesReport();
   }
 
   startKitchenAutoRefresh() {
@@ -1085,4 +1301,83 @@ export class PosPage implements OnInit, OnDestroy {
   }
 
   selectedTableSection(): string | null { const t = this.tables().find(t => t.id === this.orderForm.table_id); return t?.section ?? null; }
+
+  // ── Report fields ────────────────────────────────────────────────────
+  reportDateFrom = new Date(Date.now() - 29 * 86400000).toISOString().slice(0, 10);
+  reportDateTo   = new Date().toISOString().slice(0, 10);
+  readonly Math  = Math;
+
+  loadSalesReport() {
+    this.reportLoading.set(true);
+    this.api.get('/pos/sales-report', {
+      property_id: this.pid,
+      date_from: this.reportDateFrom,
+      date_to:   this.reportDateTo,
+    }).subscribe({
+      next: (r: any) => { this.salesReport.set(r.data ?? null); this.reportLoading.set(false); },
+      error: () => { this.reportLoading.set(false); this.toast.error('Failed to load sales report'); },
+    });
+  }
+
+  // ── History order item expand ────────────────────────────────────────
+  toggleHistoryOrder(orderId: string) {
+    if (this.expandedOrder() === orderId) {
+      this.expandedOrder.set('');
+      return;
+    }
+    this.expandedOrder.set(orderId);
+    if (!this.expandedItems()[orderId]) {
+      this.api.get(`/pos/orders/${orderId}/items`).subscribe({
+        next: (r: any) => {
+          const items = r.data?.items ?? r.data ?? [];
+          this.expandedItems.update(m => ({ ...m, [orderId]: items }));
+        },
+        error: () => this.expandedItems.update(m => ({ ...m, [orderId]: [] })),
+      });
+    }
+  }
+
+  // ── Report helpers ───────────────────────────────────────────────────
+  byTypeArr(rpt: any): { key: string; value: number }[] {
+    return Object.entries(rpt.by_type as Record<string,number>)
+      .map(([key, value]) => ({ key, value }))
+      .sort((a, b) => b.value - a.value);
+  }
+
+  byPayArr(rpt: any): { key: string; value: number }[] {
+    return Object.entries(rpt.by_payment as Record<string,number>)
+      .map(([key, value]) => ({ key, value }))
+      .sort((a, b) => b.value - a.value);
+  }
+
+  pct(value: number, total: number): number {
+    return total > 0 ? Math.round((value / total) * 100) : 0;
+  }
+
+  bestDay(rpt: any): any {
+    if (!rpt.by_date?.length) return null;
+    return rpt.by_date.reduce((best: any, d: any) => (!best || +d.revenue > +best.revenue) ? d : best, null);
+  }
+
+  maxRevenue(rpt: any): number {
+    return rpt.by_date.reduce((m: number, d: any) => Math.max(m, +d.revenue), 0);
+  }
+
+  exportReportCsv(rpt: any) {
+    const headers = ['Order#', 'Type', 'Table/Guest', 'Items', 'Amount (₦)', 'Payment', 'Time'];
+    const rows = (rpt.orders as any[]).map((o: any) => [
+      '#' + o.order_number,
+      o.order_type,
+      o.table_number ? 'Table ' + o.table_number : (o.guest_name || ''),
+      o.item_count,
+      ((+o.total_amount) / 100).toFixed(2),
+      o.payment_type || '',
+      o.paid_at || o.created_at || '',
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = `pos-sales-${rpt.period.from}-to-${rpt.period.to}.csv`;
+    a.click();
+  }
 }

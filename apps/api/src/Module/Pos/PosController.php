@@ -85,7 +85,13 @@ final class PosController
     public function listOrders(Request $req, Response $res): Response
     {
         $q = $req->getQueryParams();
-        $orders = $this->service->listOrders($q['property_id'] ?? '', $q['status'] ?? null, (int)($q['limit'] ?? 50));
+        $orders = $this->service->listOrders(
+            $q['property_id'] ?? '',
+            $q['status'] ?? null,
+            (int)($q['limit'] ?? 100),
+            $q['date_from'] ?? null,
+            $q['date_to']   ?? null,
+        );
         return JsonResponse::ok($res, array_map(fn($o) => $o->toArray(), $orders));
     }
 
@@ -284,4 +290,72 @@ final class PosController
         return JsonResponse::ok($res, null, 'Section price deleted');
     }
 
+
+    public function salesReport(Request $req, Response $res): Response
+    {
+        $q          = $req->getQueryParams();
+        $propertyId = $q['property_id'] ?? '';
+        $dateFrom   = $q['date_from'] ?? date('Y-m-d', strtotime('-30 days'));
+        $dateTo     = $q['date_to']   ?? date('Y-m-d');
+
+        // All paid orders in range
+        $orders = $this->service->listOrders($propertyId, 'paid', 500, $dateFrom, $dateTo);
+
+        $totalRevenue = 0;
+        $byType       = [];
+        $byPayment    = [];
+        $byDate       = [];
+        $orderData    = [];
+
+        foreach ($orders as $order) {
+            $amt = (int) $order->getTotalAmount();
+            $totalRevenue += $amt;
+
+            // By order type
+            $type = $order->getOrderType();
+            $byType[$type] = ($byType[$type] ?? 0) + $amt;
+
+            // By payment method
+            $pay = $order->getPaymentType() ?? 'unknown';
+            $byPayment[$pay] = ($byPayment[$pay] ?? 0) + $amt;
+
+            // By date
+            $day = $order->getCreatedAt()?->format('Y-m-d') ?? 'unknown';
+            if (!isset($byDate[$day])) $byDate[$day] = ['date' => $day, 'revenue' => 0, 'orders' => 0];
+            $byDate[$day]['revenue'] += $amt;
+            $byDate[$day]['orders']  += 1;
+
+            $orderData[] = $order->toArray();
+        }
+
+        ksort($byDate);
+
+        // Top products
+        $conn = $this->service->getConnection();
+        $topProducts = $conn->fetchAllAssociative(
+            "SELECT p.name, SUM(i.quantity) AS qty_sold, SUM(i.line_total) AS revenue
+             FROM pos_order_items i
+             JOIN pos_orders o ON o.id = i.order_id
+             JOIN pos_products p ON p.id = i.product_id
+             WHERE o.property_id = ? AND o.status = 'paid'
+               AND o.created_at >= ? AND o.created_at <= ?
+               AND i.status != 'cancelled'
+             GROUP BY p.id, p.name
+             ORDER BY revenue DESC
+             LIMIT 10",
+            [$propertyId, $dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']
+        );
+
+        return JsonResponse::ok($res, [
+            'period'        => ['from' => $dateFrom, 'to' => $dateTo],
+            'total_revenue' => $totalRevenue,
+            'order_count'   => count($orders),
+            'avg_order'     => count($orders) > 0 ? (int)($totalRevenue / count($orders)) : 0,
+            'by_type'       => $byType,
+            'by_payment'    => $byPayment,
+            'by_date'       => array_values($byDate),
+            'top_products'  => $topProducts,
+            'orders'        => $orderData,
+        ]);
+    }
 }
