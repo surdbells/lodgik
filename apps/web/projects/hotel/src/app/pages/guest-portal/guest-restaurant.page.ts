@@ -78,7 +78,7 @@ import { GuestThemeService } from '../../services/guest-theme.service';
                     @if (product.description) {
                       <p class="text-xs mt-0.5 line-clamp-2" [class]="th.muted()">{{ product.description }}</p>
                     }
-                    <p class="text-sm font-bold text-amber-400 mt-1">₦{{ (+product.price || 0).toLocaleString() }}</p>
+                    <p class="text-sm font-bold text-amber-400 mt-1">₦{{ ((+product.price || 0) / 100).toLocaleString() }}</p>
                   </div>
                   <div class="flex-shrink-0">
                     @if (getQty(product.id) === 0) {
@@ -113,7 +113,7 @@ import { GuestThemeService } from '../../services/guest-theme.service';
                 <div class="flex items-center justify-between">
                   <div class="flex-1">
                     <p class="text-sm font-medium" [class]="th.text()">{{ item.name }}</p>
-                    <p class="text-xs text-amber-400">₦{{ (+item.price * item.quantity).toLocaleString() }}</p>
+                    <p class="text-xs text-amber-400">₦{{ ((+item.price * item.quantity) / 100).toLocaleString() }}</p>
                   </div>
                   <div class="flex items-center gap-2">
                     <button (click)="removeFromCart(item.product_id)"
@@ -167,7 +167,7 @@ import { GuestThemeService } from '../../services/guest-theme.service';
             <h3 class="text-lg font-bold mb-2" [class]="th.text()">Order Placed!</h3>
             <p class="text-sm mb-1" [class]="th.muted()">Your order has been sent to the kitchen.</p>
             <p class="text-xs text-amber-400 mb-6">It will be charged to your room bill.</p>
-            <button (click)="orderPlaced.set(false); cart.set([]); showCart.set(false)"
+            <button (click)="orderPlaced.set(false); cart.set([]); showCart.set(false); notes.set('')"
               class="w-full py-3 rounded-xl bg-amber-400 text-slate-900 font-bold text-sm active:scale-95 transition-all">
               OK, got it!
             </button>
@@ -199,7 +199,7 @@ export default class GuestRestaurantPage implements OnInit {
   });
 
   cartCount  = computed(() => this.cart().reduce((s, i) => s + i.quantity, 0));
-  cartTotal  = computed(() => this.cart().reduce((s, i) => s + (+i.price * i.quantity), 0));
+  cartTotal  = computed(() => this.cart().reduce((s, i) => s + (+i.price * i.quantity), 0) / 100);
 
   ngOnInit(): void {
     this.guestApi.get('/guest/menu').subscribe({

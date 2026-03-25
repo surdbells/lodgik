@@ -11,6 +11,7 @@ use Lodgik\Entity\PosProduct;
 use Lodgik\Entity\PosOrder;
 use Lodgik\Entity\PosSectionPrice;
 use Lodgik\Entity\PosOrderItem;
+use Lodgik\Entity\Folio;
 use Lodgik\Enum\PosOrderStatus;
 use Lodgik\Module\Folio\FolioService;
 use Lodgik\Module\Inventory\MovementService;
@@ -167,6 +168,7 @@ final class PosService
         if ($notes) $item->setNotes($notes);
         $item->setSplitGroup($splitGroup);
         $this->em->persist($item);
+        $this->em->flush(); // flush first so recalculate can read the new item from DB
 
         $this->recalculateOrder($order);
         $this->em->flush();
@@ -295,6 +297,44 @@ final class PosService
     }
 
     /** @return PosOrderItem[] */
+    /**
+     * Post a completed order to a guest folio as a room charge.
+     * Used by GuestPortalController after placing a room-service order.
+     */
+    public function postToFolio(string $orderId, string $bookingId): void
+    {
+        $order = $this->em->find(PosOrder::class, $orderId);
+        if (!$order) throw new \RuntimeException('Order not found');
+
+        // Look up the folio linked to this booking
+        $folio = null;
+        if ($this->folioService) {
+            $folio = $this->em->createQueryBuilder()
+                ->select('f')
+                ->from(\Lodgik\Entity\Folio::class, 'f')
+                ->where('f.bookingId = :bid')
+                ->andWhere('f.status != :closed')
+                ->setParameter('bid', $bookingId)
+                ->setParameter('closed', 'closed')
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+        }
+
+        if ($folio && $this->folioService) {
+            $category = 'restaurant';
+            $desc     = "Room Service #{$order->getOrderNumber()} — {$order->getItemCount()} item(s)";
+            $this->folioService->addCharge($folio->getId(), $category, $desc, (string)$order->getTotalAmount());
+            $order->setFolioId($folio->getId());
+            $order->pay('room_charge', 'room_charge');
+            $this->em->flush();
+            $this->logger->info("Room service posted to folio: order={$order->getOrderNumber()}, folio={$folio->getId()}");
+        } else {
+            // No folio found — mark order as pending room charge without blocking
+            $this->logger->warning("No open folio for booking {$bookingId}, order {$orderId} not posted");
+        }
+    }
+
     public function getOrderItems(string $orderId): array
     {
         return $this->em->createQueryBuilder()->select('i')->from(PosOrderItem::class, 'i')
