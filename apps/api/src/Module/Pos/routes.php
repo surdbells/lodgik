@@ -18,7 +18,6 @@ return function (App $app): void {
         $g->post('/categories', [PosController::class, 'createCategory']);
         $g->put('/categories/{id}', [PosController::class, 'updateCategory']);
         $g->delete('/categories/{id}', [PosController::class, 'deleteCategory']);
-        $g->delete('/products/{id}',  [PosController::class, 'deleteProduct']);
         $g->get('/products', [PosController::class, 'listProducts']);
         $g->post('/products', [PosController::class, 'createProduct']);
         $g->put('/products/{id}', [PosController::class, 'updateProduct']);
