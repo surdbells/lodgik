@@ -834,6 +834,7 @@ return function (ContainerBuilder $builder): void {
             termii:                $c->get(TermiiService::class),
             loyaltyService:        $c->get(\Lodgik\Module\Loyalty\LoyaltyService::class),
             posService:            $c->get(\Lodgik\Module\Pos\PosService::class),
+            notifService:          $c->get(\Lodgik\Module\GuestPortal\GuestStayNotificationService::class),
             logger:                $c->get(LoggerInterface::class),
         ),
 

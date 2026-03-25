@@ -50,6 +50,7 @@ final class GuestPortalController
         private readonly TermiiService                 $termii,
         private readonly \Lodgik\Module\Loyalty\LoyaltyService $loyaltyService,
         private readonly \Lodgik\Module\Pos\PosService $posService,
+        private readonly ?GuestStayNotificationService $notifService = null,
         private readonly ?LoggerInterface $logger = null,
     ) {}
 

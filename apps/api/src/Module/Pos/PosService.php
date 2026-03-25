@@ -251,8 +251,9 @@ final class PosService
             $order->setFolioId($folioId);
             $category = $order->getOrderType() === 'room_service' ? 'restaurant' : 'bar';
             $desc = "POS #{$order->getOrderNumber()} — {$order->getItemCount()} items";
-            $this->folioService->addCharge($folioId, $category, $desc, $order->getTotalAmount());
-            $this->logger->info("Room charge posted: order={$order->getOrderNumber()}, folio={$folioId}");
+            $nairaAmt = number_format((int)$order->getTotalAmount() / 100, 2, '.', '');
+            $this->folioService->addCharge($folioId, $category, $desc, $nairaAmt);
+            $this->logger->info("Room charge posted: order={$order->getOrderNumber()}, folio={$folioId}, amount=₦{$nairaAmt}");
         }
 
         // Release table
@@ -322,15 +323,18 @@ final class PosService
         }
 
         if ($folio && $this->folioService) {
-            $category = 'restaurant';
-            $desc     = "Room Service #{$order->getOrderNumber()} — {$order->getItemCount()} item(s)";
-            $this->folioService->addCharge($folio->getId(), $category, $desc, (string)$order->getTotalAmount());
+            $category  = 'restaurant';
+            $desc      = "Room Service #{$order->getOrderNumber()} — {$order->getItemCount()} item(s)";
+            // POS stores amounts in kobo; FolioCharge expects naira (DECIMAL 12,2)
+            $nairaAmount = number_format((int)$order->getTotalAmount() / 100, 2, '.', '');
+            $this->folioService->addCharge($folio->getId(), $category, $desc, $nairaAmount);
             $order->setFolioId($folio->getId());
-            // Keep order open — staff closes it from kitchen/POS; charge is on folio
+            $order->setPaymentType('room_charge');
+            $order->setPaymentMethod('room_charge');
             $this->em->flush();
-            $this->logger->info("Room service posted to folio: order={$order->getOrderNumber()}, folio={$folio->getId()}");
+            $this->logger->info("Room service posted to folio: order={$order->getOrderNumber()}, folio={$folio->getId()}, amount=₦{$nairaAmount}");
         } else {
-            // No folio found — mark order as pending room charge without blocking
+            // No folio found — keep order open, staff handles manually
             $this->logger->warning("No open folio for booking {$bookingId}, order {$orderId} not posted");
         }
     }
