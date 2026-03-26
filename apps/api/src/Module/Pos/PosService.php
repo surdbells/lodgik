@@ -17,7 +17,6 @@ use Lodgik\Module\Folio\FolioService;
 use Lodgik\Module\Inventory\MovementService;
 use Psr\Log\LoggerInterface;
 use Lodgik\Module\Chat\ChatService;
-use Lodgik\Module\Chat\ChatService;
 use Lodgik\Module\Pos\RecipeService;
 
 final class PosService
