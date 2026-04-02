@@ -163,6 +163,16 @@ final class BookingService
             }
             $roomType = $this->roomTypeRepo->find($room->getRoomTypeId());
 
+            // Acquire a PostgreSQL advisory lock scoped to this room before checking
+            // availability. This prevents two simultaneous booking requests for the
+            // same room from both passing the overlap check and double-booking.
+            // pg_advisory_xact_lock releases automatically at end of transaction.
+            $lockKey = crc32($dto->roomId); // stable int for the room UUID
+            $this->em->getConnection()->executeStatement(
+                'SELECT pg_advisory_xact_lock(:key)',
+                ['key' => $lockKey]
+            );
+
             if ($this->bookingRepo->hasOverlap($dto->roomId, $checkIn, $checkOut)) {
                 throw new \InvalidArgumentException('Room is not available for the selected dates');
             }

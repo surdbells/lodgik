@@ -12,6 +12,7 @@ use Lodgik\Helper\ResponseHelper;
 use Lodgik\Middleware\AuthMiddleware;
 use Lodgik\Middleware\MiddlewareFactory;
 use Lodgik\Middleware\RateLimitMiddleware;
+use Lodgik\Middleware\AuthRateLimitMiddleware;
 use Lodgik\Middleware\TenantMiddleware;
 use Lodgik\Module\Admin\AdminController;
 use Lodgik\Module\Admin\AdminService;
@@ -276,6 +277,11 @@ return function (ContainerBuilder $builder): void {
         // ─── Rate Limit Middleware ─────────────────────────────────
         RateLimitMiddleware::class => function (ContainerInterface $c): RateLimitMiddleware {
             return new RateLimitMiddleware(
+                redis: $c->get(RedisClient::class),
+            );
+
+        AuthRateLimitMiddleware::class => function (ContainerInterface $c): AuthRateLimitMiddleware {
+            return new AuthRateLimitMiddleware(
                 redis: $c->get(RedisClient::class),
             );
         },

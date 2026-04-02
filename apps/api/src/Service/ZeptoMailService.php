@@ -165,15 +165,24 @@ final class ZeptoMailService
     /**
      * Send a welcome email to new tenant admin.
      */
-    public function sendWelcome(string $toEmail, string $toName, string $tenantName, ?string $plainPassword = null): bool
+    public function sendWelcome(string $toEmail, string $toName, string $tenantName, ?string $plainPassword = null, ?string $setPasswordToken = null): bool
     {
+        $appUrl      = $_ENV['HOTEL_APP_URL'] ?? 'https://hotel.lodgik.co';
+        $loginUrl    = $appUrl . '/login';
+        $setPassUrl  = $setPasswordToken !== null
+            ? $appUrl . '/reset-password?token=' . $setPasswordToken . '&email=' . urlencode($toEmail)
+            : null;
+
         $html = $this->renderTemplate('welcome', [
-            'name'          => $toName,
-            'tenant_name'   => $tenantName,
-            'email'         => $toEmail,
-            'password'      => $plainPassword ?? '',
-            'has_password'  => $plainPassword !== null ? 'true' : '',
-            'login_url'     => ($_ENV['HOTEL_APP_URL'] ?? 'https://hotel.lodgik.co') . '/login',
+            'name'              => $toName,
+            'tenant_name'       => $tenantName,
+            'email'             => $toEmail,
+            'login_url'         => $loginUrl,
+            'set_password_url'  => $setPassUrl ?? $loginUrl,
+            'has_set_password'  => $setPassUrl !== null ? 'true' : '',
+            // Legacy plain-password fields kept for backwards compatibility but empty
+            'password'          => '',
+            'has_password'      => '',
         ]);
 
         return $this->send($toEmail, $toName, "Welcome to Lodgik — {$tenantName}", $html);
@@ -279,24 +288,38 @@ final class ZeptoMailService
     private function welcomeTemplate(): string
     {
         return <<<HTML
-        <h2>Welcome aboard, {{name}}! 🎉</h2>
-        <p>Your Lodgik account for <strong>{{tenant_name}}</strong> has been created successfully.</p>
-        {{has_password}}
-        <div style="background:#f4f7f4; border-left:4px solid #4A7A4A; border-radius:8px; padding:16px 20px; margin:20px 0;">
-            <p style="margin:0 0 8px; font-weight:600; color:#2d5a2d;">Your login credentials</p>
-            <p style="margin:4px 0; font-size:14px;"><strong>Email:</strong> {{email}}</p>
-            <p style="margin:4px 0; font-size:14px;"><strong>Password:</strong> <code style="background:#e8f0e8; padding:2px 6px; border-radius:4px;">{{password}}</code></p>
-            <p style="margin:12px 0 0; font-size:13px; color:#666;">Please change your password after your first login.</p>
+        <h2>Welcome to Lodgik, {{name}}! 🎉</h2>
+        <p>Your account for <strong>{{tenant_name}}</strong> has been created.</p>
+
+        {{has_set_password}}
+        <div style="text-align:center; margin:28px 0;">
+            <a href="{{set_password_url}}"
+               style="display:inline-block; background:#4A7A4A; color:#fff; font-weight:700;
+                      font-size:16px; padding:14px 32px; border-radius:10px; text-decoration:none;">
+                Set Your Password &amp; Get Started →
+            </a>
         </div>
+        <p style="font-size:13px; color:#888; text-align:center;">
+            This link expires in <strong>48 hours</strong>.<br>
+            Your login email is: <strong>{{email}}</strong>
+        </p>
+        {{/has_set_password}}
+
+        {{has_password}}
+        <p style="font-size:13px; color:#888; text-align:center;">
+            Log in at: <a href="{{login_url}}" style="color:#4A7A4A;">{{login_url}}</a><br>
+            Your email: <strong>{{email}}</strong>
+        </p>
         {{/has_password}}
-        <p style="margin:16px 0 8px;">Log in at: <a href="{{login_url}}" style="color:#4A7A4A; font-weight:600;">{{login_url}}</a></p>
-        <p style="color:#555;">Once you're in, here's what to do next:</p>
-        <ul style="color:#555; line-height:1.8;">
+
+        <hr style="margin:24px 0; border:none; border-top:1px solid #eee;">
+        <p style="color:#555;">Once you're in, here's what to do first:</p>
+        <ol style="color:#555; line-height:2;">
             <li>Set up your property details and room types</li>
-            <li>Invite your staff members</li>
+            <li>Invite your team members</li>
             <li>Configure your bank account for guest payments</li>
-        </ul>
-        <p style="margin-top:16px; color:#888; font-size:13px;">Need help? Reach out to us any time.</p>
+        </ol>
+        <p style="margin-top:16px; color:#888; font-size:13px;">Need help getting started? Reach out to us any time.</p>
         HTML;
     }
 

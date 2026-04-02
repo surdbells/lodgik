@@ -17,10 +17,24 @@ use Slim\Psr7\Response as SlimResponse;
 
 final class ErrorHandlerMiddleware implements MiddlewareInterface
 {
+    private static bool $sentryInitialized = false;
+
     public function __construct(
         private readonly LoggerInterface $logger,
         private readonly bool $debug = false,
-    ) {}
+        private readonly string $sentryDsn = '',
+    ) {
+        // Initialise Sentry once on first instantiation
+        if ($this->sentryDsn !== '' && !self::$sentryInitialized && class_exists('\Sentry\SentrySdk')) {
+            \Sentry\init([
+                'dsn'                => $this->sentryDsn,
+                'environment'        => $_ENV['APP_ENV'] ?? 'production',
+                'traces_sample_rate' => 0.1, // 10% of requests for performance monitoring
+                'send_default_pii'   => false,
+            ]);
+            self::$sentryInitialized = true;
+        }
+    }
 
     public function process(Request $request, Handler $handler): Response
     {
@@ -46,6 +60,16 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
     private function handleServerError(\Throwable $e, Request $request): Response
     {
         $requestId = $request->getAttribute('request_id', substr(md5(microtime()), 0, 8));
+
+        // Capture in Sentry if configured
+        if (self::$sentryInitialized && class_exists('\Sentry\SentrySdk')) {
+            \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($e, $request, $requestId): void {
+                $scope->setTag('request_id', $requestId);
+                $scope->setTag('method', $request->getMethod());
+                $scope->setExtra('uri', (string) $request->getUri());
+                \Sentry\captureException($e);
+            });
+        }
 
         // ALWAYS log full error details
         $this->logger->error('Unhandled exception', [

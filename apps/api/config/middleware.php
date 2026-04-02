@@ -49,8 +49,10 @@ return function (App $app): void {
     ));
 
     // 4. Error handling (outermost ___ catches everything)
+    //    Set SENTRY_DSN in .env to enable error capture in Sentry.io
     $app->add(new ErrorHandlerMiddleware(
         $container->get(LoggerInterface::class),
-        $settings['app']['debug']
+        $settings['app']['debug'],
+        $_ENV['SENTRY_DSN'] ?? '',
     ));
 };

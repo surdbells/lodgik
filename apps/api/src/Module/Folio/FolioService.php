@@ -145,6 +145,23 @@ final class FolioService
         }
 
         $cat = ChargeCategory::from($category);
+
+        // ── Sanity guard: detect runaway amounts before persisting ────────
+        // A single F&B charge exceeding ₦500,000 is almost certainly a
+        // kobo-passed-as-naira error (e.g. 50000000 kobo = ₦500,000 stored as ₦500,000,000).
+        $amountFloat = (float) $amount * $quantity;
+        if ($amountFloat > 500000.00) {
+            $this->logger->critical('FolioService::addCharge — suspiciously large amount', [
+                'folio_id'    => $folioId,
+                'category'    => $category,
+                'description' => $description,
+                'amount'      => $amount,
+                'quantity'    => $quantity,
+                'computed'    => $amountFloat,
+                'hint'        => 'Possible kobo→naira conversion error. Check caller.',
+            ]);
+        }
+
         $charge = new FolioCharge($folioId, $cat, $description, $amount, $quantity, $folio->getTenantId());
         $charge->setPostedBy($userId);
         $charge->setNotes($notes);

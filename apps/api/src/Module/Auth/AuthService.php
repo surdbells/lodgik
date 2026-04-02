@@ -126,9 +126,13 @@ final class AuthService
         );
         $this->em->flush();
 
-        // Send welcome email with credentials (async-safe: failures don't block registration)
+        // Generate a set-password token (48-hour TTL) for the welcome email.
+        // We never send the plain-text password in email — email is not a secure channel.
         try {
-            $this->mail->sendWelcome($user->getEmail(), $user->getFirstName(), $tenant->getName(), $dto->password);
+            $welcomeToken = bin2hex(random_bytes(32));
+            $user->setPasswordResetToken($welcomeToken, 2880); // 48 hours
+            $this->em->flush();
+            $this->mail->sendWelcome($user->getEmail(), $user->getFirstName(), $tenant->getName(), null, $welcomeToken);
         } catch (\Throwable $e) {
             $this->logger->warning('Failed to send welcome email', ['error' => $e->getMessage()]);
         }

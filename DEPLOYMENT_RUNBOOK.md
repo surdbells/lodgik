@@ -378,7 +378,19 @@ server {
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header Access-Control-Allow-Origin "*" always;
+    # CORS — restrict to known origins only (never use * in production)
+    # Extend this map if you add new frontend domains
+    map $http_origin $cors_origin {
+        default                          "";
+        "https://hotel.lodgik.co"        $http_origin;
+        "https://admin.lodgik.co"        $http_origin;
+        "https://merchant.lodgik.co"     $http_origin;
+        "http://localhost:4200"          $http_origin;   # local dev only
+        "http://localhost:4201"          $http_origin;
+        "http://localhost:4202"          $http_origin;
+    }
+    add_header Access-Control-Allow-Origin  $cors_origin always;
+    add_header Vary                         Origin        always;
     add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
     add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With" always;
 

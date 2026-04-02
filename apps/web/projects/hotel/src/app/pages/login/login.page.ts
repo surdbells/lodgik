@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService, ToastService, ApiService } from '@lodgik/shared';
 
 type ResetStep = 'login' | 'forgot' | 'otp' | 'new-password' | 'done';
@@ -213,6 +213,7 @@ type ResetStep = 'login' | 'forgot' | 'otp' | 'new-password' | 'done';
 })
 export class LoginPage {
   private auth   = inject(AuthService);
+  private route  = inject(ActivatedRoute);
   private api    = inject(ApiService);
   private router = inject(Router);
   private toast  = inject(ToastService);
@@ -230,6 +231,17 @@ export class LoginPage {
   newPassword   = '';
   confirmPassword = '';
   showNewPw     = false;
+
+  ngOnInit(): void {
+    // Handle set-password links from welcome email: /login?token=XXX&email=YYY
+    this.route.queryParams.subscribe(params => {
+      if (params['token'] && params['email']) {
+        this.resetEmail  = params['email'];
+        this.resetToken  = params['token'];
+        this.step.set('new-password');
+      }
+    });
+  }
 
   login(): void {
     if (!this.email || !this.password) { this.error.set('Email and password are required'); return; }
