@@ -58,12 +58,42 @@ class PurchaseOrder implements TenantAware
 
     // ── Vendor (denormalised snapshot) ──────────────────────────
 
-    #[ORM\Column(name: 'vendor_id', type: Types::STRING, length: 36)]
-    private string $vendorId;
+    /** Nullable — open-market POs have no registered vendor */
+    #[ORM\Column(name: 'vendor_id', type: Types::STRING, length: 36, nullable: true)]
+    private ?string $vendorId = null;
 
-    /** Snapshot of vendor name at time of PO creation */
+    /** Snapshot of registered vendor name — null for open-market POs */
     #[ORM\Column(name: 'vendor_name', type: Types::STRING, length: 150)]
     private string $vendorName;
+
+    // ── Open-Market Purchase ─────────────────────────────────────
+
+    /** True when raised without a registered vendor */
+    #[ORM\Column(name: 'is_open_market', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $isOpenMarket = false;
+
+    /** Informal supplier name for open-market purchases */
+    #[ORM\Column(name: 'open_market_vendor_name', type: Types::STRING, length: 150, nullable: true)]
+    private ?string $openMarketVendorName = null;
+
+    /** Why this purchase is being made outside the vendor registry */
+    #[ORM\Column(name: 'open_market_reason', type: Types::TEXT, nullable: true)]
+    private ?string $openMarketReason = null;
+
+    // ── Second Approval (fraud prevention) ──────────────────────
+
+    /** True when this PO requires a second sign-off (open-market above threshold) */
+    #[ORM\Column(name: 'second_approval_required', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $secondApprovalRequired = false;
+
+    #[ORM\Column(name: 'second_approved_by', type: Types::STRING, length: 36, nullable: true)]
+    private ?string $secondApprovedBy = null;
+
+    #[ORM\Column(name: 'second_approved_by_name', type: Types::STRING, length: 100, nullable: true)]
+    private ?string $secondApprovedByName = null;
+
+    #[ORM\Column(name: 'second_approved_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $secondApprovedAt = null;
 
     /** Snapshot of vendor email at time of PO send — used for re-send too */
     #[ORM\Column(name: 'vendor_email', type: Types::STRING, length: 150, nullable: true)]
@@ -141,13 +171,13 @@ class PurchaseOrder implements TenantAware
     // ── Constructor ─────────────────────────────────────────────
 
     public function __construct(
-        string $referenceNumber,
-        string $propertyId,
-        string $vendorId,
-        string $vendorName,
-        string $createdBy,
-        string $createdByName,
-        string $tenantId,
+        string  $referenceNumber,
+        string  $propertyId,
+        ?string $vendorId,
+        string  $vendorName,
+        string  $createdBy,
+        string  $createdByName,
+        string  $tenantId,
     ) {
         $this->generateId();
         $this->referenceNumber = $referenceNumber;
@@ -201,12 +231,56 @@ class PurchaseOrder implements TenantAware
     public function getReferenceNumber(): string { return $this->referenceNumber; }
     public function getPropertyId(): string { return $this->propertyId; }
     public function getStatus(): string { return $this->status; }
-    public function getVendorId(): string { return $this->vendorId; }
+    public function getVendorId(): ?string { return $this->vendorId; }
     public function getVendorName(): string { return $this->vendorName; }
     public function getVendorEmail(): ?string { return $this->vendorEmail; }
     public function setVendorEmail(?string $v): void { $this->vendorEmail = $v; }
     public function getVendorContactPerson(): ?string { return $this->vendorContactPerson; }
     public function setVendorContactPerson(?string $v): void { $this->vendorContactPerson = $v; }
+
+    // Open-market
+    public function isOpenMarket(): bool { return $this->isOpenMarket; }
+    public function setIsOpenMarket(bool $v): void { $this->isOpenMarket = $v; }
+    public function getOpenMarketVendorName(): ?string { return $this->openMarketVendorName; }
+    public function setOpenMarketVendorName(?string $v): void { $this->openMarketVendorName = $v; }
+    public function getOpenMarketReason(): ?string { return $this->openMarketReason; }
+    public function setOpenMarketReason(?string $v): void { $this->openMarketReason = $v; }
+
+    // Second approval
+    public function isSecondApprovalRequired(): bool { return $this->secondApprovalRequired; }
+    public function setSecondApprovalRequired(bool $v): void { $this->secondApprovalRequired = $v; }
+    public function getSecondApprovedBy(): ?string { return $this->secondApprovedBy; }
+    public function getSecondApprovedByName(): ?string { return $this->secondApprovedByName; }
+    public function getSecondApprovedAt(): ?\DateTimeImmutable { return $this->secondApprovedAt; }
+    public function isSecondApproved(): bool { return $this->secondApprovedAt !== null; }
+
+    /**
+     * Grant second approval. Throws if already approved or not required.
+     */
+    public function secondApprove(string $userId, string $userName): void
+    {
+        if (!$this->secondApprovalRequired) {
+            throw new \DomainException('This purchase order does not require a second approval.');
+        }
+        if ($this->secondApprovedAt !== null) {
+            throw new \DomainException('This purchase order has already been second-approved.');
+        }
+        if (in_array($this->status, ['delivered', 'cancelled'])) {
+            throw new \DomainException("Cannot approve a PO in '{$this->status}' status.");
+        }
+        $this->secondApprovedBy     = $userId;
+        $this->secondApprovedByName = $userName;
+        $this->secondApprovedAt     = new \DateTimeImmutable();
+    }
+
+    /**
+     * Whether this open-market PO is blocked pending second approval.
+     * A PO in this state cannot be sent to a vendor.
+     */
+    public function isPendingSecondApproval(): bool
+    {
+        return $this->secondApprovalRequired && $this->secondApprovedAt === null;
+    }
     public function getRequestId(): ?string { return $this->requestId; }
     public function setRequestId(?string $v): void { $this->requestId = $v; }
     public function getCreatedBy(): string { return $this->createdBy; }
@@ -267,32 +341,43 @@ class PurchaseOrder implements TenantAware
     public function toArray(): array
     {
         return [
-            'id'                     => $this->getId(),
-            'reference_number'       => $this->referenceNumber,
-            'property_id'            => $this->propertyId,
-            'status'                 => $this->status,
-            'status_label'           => $this->getStatusLabel(),
-            'status_color'           => $this->getStatusColor(),
-            'vendor_id'              => $this->vendorId,
-            'vendor_name'            => $this->vendorName,
-            'vendor_email'           => $this->vendorEmail,
-            'vendor_contact_person'  => $this->vendorContactPerson,
-            'request_id'             => $this->requestId,
-            'created_by_name'        => $this->createdByName,
-            'sent_at'                => $this->sentAt?->format('Y-m-d H:i:s'),
-            'sent_by_name'           => $this->sentByName,
-            'emailed_count'          => $this->emailedCount,
-            'expected_delivery_date' => $this->expectedDeliveryDate?->format('Y-m-d'),
-            'delivery_address'       => $this->deliveryAddress,
-            'delivery_notes'         => $this->deliveryNotes,
-            'payment_terms'          => $this->paymentTerms,
-            'subtotal_value'         => $this->subtotalValue,
-            'tax_value'              => $this->taxValue,
-            'total_value'            => $this->totalValue,
-            'notes'                  => $this->notes,
-            'line_count'             => $this->lineCount,
-            'created_at'             => $this->getCreatedAt()->format('Y-m-d H:i:s'),
-            'updated_at'             => $this->getUpdatedAt()->format('Y-m-d H:i:s'),
+            'id'                       => $this->getId(),
+            'reference_number'         => $this->referenceNumber,
+            'property_id'              => $this->propertyId,
+            'status'                   => $this->status,
+            'status_label'             => $this->getStatusLabel(),
+            'status_color'             => $this->getStatusColor(),
+            // Vendor
+            'vendor_id'                => $this->vendorId,
+            'vendor_name'              => $this->vendorName,
+            'vendor_email'             => $this->vendorEmail,
+            'vendor_contact_person'    => $this->vendorContactPerson,
+            // Open-market
+            'is_open_market'           => $this->isOpenMarket,
+            'open_market_vendor_name'  => $this->openMarketVendorName,
+            'open_market_reason'       => $this->openMarketReason,
+            // Second approval
+            'second_approval_required' => $this->secondApprovalRequired,
+            'second_approved_by_name'  => $this->secondApprovedByName,
+            'second_approved_at'       => $this->secondApprovedAt?->format('Y-m-d H:i:s'),
+            'is_pending_second_approval' => $this->isPendingSecondApproval(),
+            // Back-ref
+            'request_id'               => $this->requestId,
+            'created_by_name'          => $this->createdByName,
+            'sent_at'                  => $this->sentAt?->format('Y-m-d H:i:s'),
+            'sent_by_name'             => $this->sentByName,
+            'emailed_count'            => $this->emailedCount,
+            'expected_delivery_date'   => $this->expectedDeliveryDate?->format('Y-m-d'),
+            'delivery_address'         => $this->deliveryAddress,
+            'delivery_notes'           => $this->deliveryNotes,
+            'payment_terms'            => $this->paymentTerms,
+            'subtotal_value'           => $this->subtotalValue,
+            'tax_value'                => $this->taxValue,
+            'total_value'              => $this->totalValue,
+            'notes'                    => $this->notes,
+            'line_count'               => $this->lineCount,
+            'created_at'               => $this->getCreatedAt()->format('Y-m-d H:i:s'),
+            'updated_at'               => $this->getUpdatedAt()->format('Y-m-d H:i:s'),
         ];
     }
 }

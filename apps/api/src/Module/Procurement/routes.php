@@ -70,6 +70,9 @@ return function (App $app): void {
         // Cancel PO
         $g->post('/orders/{id}/cancel',  [ProcurementController::class, 'cancelPurchaseOrder']);
 
+        // Second approval — open-market POs above threshold (property_admin only)
+        $g->post('/orders/{id}/second-approve', [ProcurementController::class, 'secondApproveOrder']);
+
     })
         ->add(new RoleMiddleware(['property_admin', 'manager']))
         ->add(TenantMiddleware::class)

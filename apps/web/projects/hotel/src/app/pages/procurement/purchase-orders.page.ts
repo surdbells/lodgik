@@ -24,8 +24,18 @@ interface PurchaseOrder {
   reference_number: string;
   property_id: string;
   status: string; status_label: string; status_color: string;
-  vendor_id: string; vendor_name: string; vendor_email: string | null;
+  vendor_id: string | null; vendor_name: string; vendor_email: string | null;
   vendor_contact_person: string | null;
+  // Open-market
+  is_open_market: boolean;
+  open_market_vendor_name: string | null;
+  open_market_reason: string | null;
+  // Second approval
+  second_approval_required: boolean;
+  second_approved_by_name: string | null;
+  second_approved_at: string | null;
+  is_pending_second_approval: boolean;
+  // Rest
   request_id: string | null;
   created_by_name: string;
   sent_at: string | null; sent_by_name: string | null; emailed_count: number;
@@ -74,6 +84,12 @@ const blankLine = (): PoLine => ({
         {{ s.label }}
       </button>
     }
+    <button (click)="filterOpenMarket = !filterOpenMarket; load()"
+      [class]="filterOpenMarket
+        ? 'px-3 py-1.5 text-sm rounded-lg bg-amber-500 text-white font-medium'
+        : 'px-3 py-1.5 text-sm rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50'">
+      🏪 Open Market
+    </button>
     <span class="ml-auto text-sm text-gray-500 self-center">{{ total() }} order(s)</span>
   </div>
 
@@ -89,7 +105,7 @@ const blankLine = (): PoLine => ({
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="px-4 py-3 text-left font-medium text-gray-600">Reference</th>
-            <th class="px-4 py-3 text-left font-medium text-gray-600">Vendor</th>
+            <th class="px-4 py-3 text-left font-medium text-gray-600">Vendor / Supplier</th>
             <th class="px-4 py-3 text-left font-medium text-gray-600">Status</th>
             <th class="px-4 py-3 text-right font-medium text-gray-600">Total Value</th>
             <th class="px-4 py-3 text-left font-medium text-gray-600">Expected</th>
@@ -100,10 +116,19 @@ const blankLine = (): PoLine => ({
         <tbody class="divide-y divide-gray-100">
           @for (po of orders(); track po.id) {
             <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ po.reference_number }}</td>
+              <td class="px-4 py-3">
+                <p class="font-mono text-xs text-gray-600">{{ po.reference_number }}</p>
+                @if (po.is_open_market) {
+                  <span class="inline-block mt-0.5 px-1.5 py-0.5 text-xs rounded bg-amber-100 text-amber-700 font-medium">
+                    Open Market
+                  </span>
+                }
+              </td>
               <td class="px-4 py-3">
                 <p class="font-medium text-gray-800">{{ po.vendor_name }}</p>
-                @if (po.emailed_count > 0) {
+                @if (po.is_pending_second_approval) {
+                  <p class="text-xs text-red-500 font-medium mt-0.5">⚠ Awaiting 2nd approval</p>
+                } @else if (po.emailed_count > 0) {
                   <p class="text-xs text-gray-400">Sent {{ po.emailed_count }}×</p>
                 }
               </td>
@@ -151,16 +176,43 @@ const blankLine = (): PoLine => ({
     <div class="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
       <div>
         <p class="font-mono text-xs text-gray-400">{{ detailPo()!.reference_number }}</p>
-        <p class="font-semibold text-gray-800 mt-1">{{ detailPo()!.vendor_name }}</p>
+        <div class="flex items-center gap-2 mt-1">
+          <p class="font-semibold text-gray-800">{{ detailPo()!.vendor_name }}</p>
+          @if (detailPo()!.is_open_market) {
+            <span class="px-2 py-0.5 text-xs rounded-lg bg-amber-100 text-amber-700 font-medium">Open Market</span>
+          }
+        </div>
       </div>
       <button (click)="closeDetail()" class="text-gray-400 hover:text-gray-600 text-2xl flex-shrink-0">×</button>
     </div>
 
+    <!-- Second-approval warning banner -->
+    @if (detailPo()!.is_pending_second_approval) {
+      <div class="mx-6 mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <p class="font-semibold mb-1">⚠ Second Approval Required</p>
+        <p class="text-xs text-red-600">
+          This open-market PO exceeds ₦50,000 and must be approved by a Property Admin before it can be sent.
+        </p>
+        <button (click)="secondApprove()" [disabled]="actioning()"
+          class="mt-2 px-4 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 disabled:opacity-60">
+          {{ actioning() ? 'Approving…' : 'Approve This PO' }}
+        </button>
+      </div>
+    }
+
+    <!-- Second-approval granted info -->
+    @if (detailPo()!.second_approval_required && detailPo()!.second_approved_at) {
+      <div class="mx-6 mt-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700">
+        ✓ Second-approved by {{ detailPo()!.second_approved_by_name }}
+        on {{ formatDate(detailPo()!.second_approved_at!) }}
+      </div>
+    }
+
     <!-- Status + actions -->
-    <div class="px-6 py-3 border-b border-gray-100 flex items-center gap-3 flex-wrap">
+    <div class="px-6 py-3 border-b border-gray-100 flex items-center gap-3 flex-wrap mt-2">
       <span [class]="statusClass(detailPo()!.status)">{{ detailPo()!.status_label }}</span>
 
-      @if (['draft','sent','partially_delivered'].includes(detailPo()!.status)) {
+      @if (['draft','sent','partially_delivered'].includes(detailPo()!.status) && !detailPo()!.is_pending_second_approval) {
         <button (click)="openSendModal()" [disabled]="actioning()"
           class="ml-auto px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60">
           {{ detailPo()!.emailed_count > 0 ? 'Re-send Email' : 'Send to Vendor' }}
@@ -180,13 +232,32 @@ const blankLine = (): PoLine => ({
       }
     </div>
 
+    <!-- Open-market info -->
+    @if (detailPo()!.is_open_market) {
+      <div class="mx-6 mt-4 mb-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+        <p class="text-xs text-amber-600 font-medium uppercase tracking-wide mb-2">Open-Market Purchase</p>
+        <div class="grid grid-cols-1 gap-2">
+          <div>
+            <p class="text-xs text-gray-400">Supplier Name</p>
+            <p class="font-medium text-gray-800">{{ detailPo()!.open_market_vendor_name }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">Reason</p>
+            <p class="text-sm text-gray-700">{{ detailPo()!.open_market_reason }}</p>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- Meta -->
     <div class="px-6 py-4 grid grid-cols-2 gap-3 text-sm border-b border-gray-100">
-      <div>
-        <p class="text-xs text-gray-400">Vendor</p>
-        <p class="font-medium">{{ detailPo()!.vendor_name }}</p>
-        @if (detailPo()!.vendor_email) { <p class="text-xs text-gray-400">{{ detailPo()!.vendor_email }}</p> }
-      </div>
+      @if (!detailPo()!.is_open_market) {
+        <div>
+          <p class="text-xs text-gray-400">Vendor</p>
+          <p class="font-medium">{{ detailPo()!.vendor_name }}</p>
+          @if (detailPo()!.vendor_email) { <p class="text-xs text-gray-400">{{ detailPo()!.vendor_email }}</p> }
+        </div>
+      }
       <div>
         <p class="text-xs text-gray-400">Payment Terms</p>
         <p class="font-medium">{{ termsLabel(detailPo()!.payment_terms) }}</p>
@@ -239,7 +310,7 @@ const blankLine = (): PoLine => ({
       </div>
     </div>
 
-    <!-- PO Lines with delivery progress -->
+    <!-- PO Lines -->
     <div class="px-6 py-4">
       <p class="text-xs text-gray-500 font-medium mb-3 uppercase tracking-wide">Order Lines</p>
       <ui-loading [loading]="loadingLines()"></ui-loading>
@@ -260,7 +331,6 @@ const blankLine = (): PoLine => ({
                 <p class="text-xs font-medium text-gray-700 mt-0.5">{{ formatValue(line.line_total) }}</p>
               </div>
             </div>
-            <!-- Progress bar -->
             <div class="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
               <div class="h-full bg-sage-500 rounded-full transition-all"
                 [style.width.%]="deliveryPct(line)"></div>
@@ -273,33 +343,30 @@ const blankLine = (): PoLine => ({
 </div>
 }
 
-<!-- ── Send Email Mini-Modal ────────────────────────────────────────── -->
+<!-- ── Send Email Modal ────────────────────────────────────────────── -->
 @if (showSendModal()) {
 <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
   <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
     <h3 class="font-semibold text-gray-800 mb-4">
       {{ detailPo()!.emailed_count > 0 ? 'Re-send PO to Vendor' : 'Send PO to Vendor' }}
     </h3>
-
     <div class="space-y-3">
       <div>
         <label class="block text-xs text-gray-500 font-medium mb-1">Vendor Email</label>
         <input type="email" [(ngModel)]="sendEmail"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
-        <p class="text-xs text-gray-400 mt-1">Leave as-is to use the vendor's email on record</p>
       </div>
       <div>
-        <label class="block text-xs text-gray-500 font-medium mb-1">Hotel Name (appears in email header)</label>
+        <label class="block text-xs text-gray-500 font-medium mb-1">Hotel Name</label>
         <input type="text" [(ngModel)]="sendHotelName"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
       </div>
       <div>
-        <label class="block text-xs text-gray-500 font-medium mb-1">Your Name (sender)</label>
+        <label class="block text-xs text-gray-500 font-medium mb-1">Your Name</label>
         <input type="text" [(ngModel)]="sendByName"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
       </div>
     </div>
-
     <div class="flex gap-3 mt-5">
       <button (click)="confirmSend()" [disabled]="actioning()"
         class="flex-1 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-60">
@@ -324,33 +391,76 @@ const blankLine = (): PoLine => ({
     </div>
     <div class="px-6 py-5 space-y-4">
 
-      <!-- Vendor + linked PR -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Open-market toggle -->
+      <div class="flex items-center justify-between p-4 rounded-xl border border-amber-200 bg-amber-50">
         <div>
-          <label class="block text-xs text-gray-500 font-medium mb-1">Vendor <span class="text-red-500">*</span></label>
-          <select [(ngModel)]="createForm.vendor_id" (ngModelChange)="onVendorChange()"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
-            <option value="">Select vendor…</option>
-            @for (v of vendors(); track v.id) {
-              <option [value]="v.id">{{ v.name }}</option>
-            }
-          </select>
+          <p class="text-sm font-medium text-amber-800">Open-Market Purchase</p>
+          <p class="text-xs text-amber-600 mt-0.5">
+            Use when buying from local markets or one-time suppliers not in the vendor registry.
+            POs above ₦50,000 require a second approval from a Property Admin before sending.
+          </p>
         </div>
-        <div>
-          <label class="block text-xs text-gray-500 font-medium mb-1">
-            Linked PR <span class="text-gray-400">(optional)</span>
-          </label>
-          <select [(ngModel)]="createForm.request_id"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
-            <option value="">None</option>
-            @for (pr of approvedPrs(); track pr.id) {
-              <option [value]="pr.id">{{ pr.reference_number }} — {{ pr.title }}</option>
-            }
-          </select>
-        </div>
+        <button type="button"
+          (click)="createForm.is_open_market = !createForm.is_open_market; onOpenMarketToggle()"
+          [class]="createForm.is_open_market
+            ? 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-amber-500 transition-colors'
+            : 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors'">
+          <span [class]="createForm.is_open_market ? 'translate-x-5' : 'translate-x-0'"
+            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform"></span>
+        </button>
       </div>
 
-      <!-- Dates + delivery -->
+      <!-- Standard: vendor + linked PR -->
+      @if (!createForm.is_open_market) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-gray-500 font-medium mb-1">Vendor <span class="text-red-500">*</span></label>
+            <select [(ngModel)]="createForm.vendor_id" (ngModelChange)="onVendorChange()"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
+              <option value="">Select vendor…</option>
+              @for (v of vendors(); track v.id) {
+                <option [value]="v.id">{{ v.name }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 font-medium mb-1">
+              Linked PR <span class="text-gray-400">(optional)</span>
+            </label>
+            <select [(ngModel)]="createForm.request_id"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
+              <option value="">None</option>
+              @for (pr of approvedPrs(); track pr.id) {
+                <option [value]="pr.id">{{ pr.reference_number }} — {{ pr.title }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      }
+
+      <!-- Open-market: supplier name + reason -->
+      @if (createForm.is_open_market) {
+        <div class="grid grid-cols-1 gap-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
+          <div>
+            <label class="block text-xs text-amber-700 font-medium mb-1">
+              Supplier Name <span class="text-red-500">*</span>
+            </label>
+            <input type="text" [(ngModel)]="createForm.open_market_vendor_name"
+              placeholder="e.g. Mile 12 Market, Local Provisions Store…"
+              class="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white">
+          </div>
+          <div>
+            <label class="block text-xs text-amber-700 font-medium mb-1">
+              Reason <span class="text-red-500">*</span>
+            </label>
+            <textarea [(ngModel)]="createForm.open_market_reason" rows="2"
+              placeholder="e.g. Registered vendors out of stock; emergency weekend purchase…"
+              class="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"></textarea>
+          </div>
+        </div>
+      }
+
+      <!-- Dates + payment terms -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs text-gray-500 font-medium mb-1">Expected Delivery Date</label>
@@ -369,19 +479,17 @@ const blankLine = (): PoLine => ({
         </div>
       </div>
 
-      <!-- Delivery address + notes -->
       <div>
         <label class="block text-xs text-gray-500 font-medium mb-1">Delivery Address</label>
         <textarea [(ngModel)]="createForm.delivery_address" rows="2"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500"></textarea>
       </div>
       <div>
-        <label class="block text-xs text-gray-500 font-medium mb-1">Notes to Vendor</label>
+        <label class="block text-xs text-gray-500 font-medium mb-1">Notes</label>
         <textarea [(ngModel)]="createForm.notes" rows="2"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500"></textarea>
       </div>
 
-      <!-- Tax -->
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-xs text-gray-500 font-medium mb-1">Tax / VAT (₦)</label>
@@ -402,15 +510,12 @@ const blankLine = (): PoLine => ({
           <button (click)="addPoLine()"
             class="px-3 py-1.5 text-xs bg-sage-50 text-sage-700 rounded-lg hover:bg-sage-100">+ Add Item</button>
         </div>
-
         @if (poLines().length === 0) {
           <p class="text-sm text-gray-400 italic text-center py-4">Add at least one item to order</p>
         }
         @for (line of poLines(); track $index; let i = $index) {
           <div class="border border-gray-200 rounded-lg p-3 mb-2">
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-
-              <!-- Item search -->
               <div class="sm:col-span-2">
                 <label class="block text-xs text-gray-400 mb-1">Item <span class="text-red-400">*</span></label>
                 @if (!line.item_id) {
@@ -435,23 +540,17 @@ const blankLine = (): PoLine => ({
                   </div>
                 }
               </div>
-
-              <!-- Qty -->
               <div>
                 <label class="block text-xs text-gray-400 mb-1">Qty <span class="text-red-400">*</span></label>
                 <input type="number" [(ngModel)]="line.ordered_quantity" min="0.001" step="0.001"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
               </div>
-
-              <!-- Unit cost -->
               <div>
                 <label class="block text-xs text-gray-400 mb-1">Unit Cost (₦) <span class="text-red-400">*</span></label>
                 <input type="number" [(ngModel)]="line.unit_cost" min="0" step="0.01"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500">
               </div>
             </div>
-
-            <!-- Location + line total -->
             <div class="flex gap-2 mt-2 items-center">
               <select [(ngModel)]="line.location_id" (ngModelChange)="onPoLocationChange(i)"
                 class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sage-500">
@@ -460,9 +559,7 @@ const blankLine = (): PoLine => ({
                   <option [value]="loc.id">{{ loc.name }}</option>
                 }
               </select>
-              <span class="text-xs font-medium text-gray-600 whitespace-nowrap">
-                = {{ lineTotal(line) }}
-              </span>
+              <span class="text-xs font-medium text-gray-600 whitespace-nowrap">= {{ lineTotal(line) }}</span>
               <button type="button" (click)="removePoLine(i)"
                 class="px-2 py-1.5 text-red-500 border border-red-200 rounded-lg text-xs hover:bg-red-50">×</button>
             </div>
@@ -477,12 +574,18 @@ const blankLine = (): PoLine => ({
             <span>Subtotal</span><span>{{ poSubtotal() }}</span>
           </div>
           <div class="flex justify-between text-gray-500">
-            <span>Tax / VAT</span><span>{{ '₦' + (+(createForm.tax_naira || 0)).toLocaleString('en-NG', {minimumFractionDigits:2}) }}</span>
+            <span>Tax / VAT</span>
+            <span>{{ '₦' + (+(createForm.tax_naira || 0)).toLocaleString('en-NG', {minimumFractionDigits:2}) }}</span>
           </div>
           <div class="flex justify-between font-bold text-gray-800 border-t border-gray-200 pt-1">
-            <span>Total</span>
-            <span>{{ poTotal() }}</span>
+            <span>Total</span><span>{{ poTotal() }}</span>
           </div>
+          @if (createForm.is_open_market && poTotalKobo() >= 5000000) {
+            <div class="mt-2 pt-2 border-t border-amber-200 flex items-start gap-2 text-xs text-amber-700">
+              <span>⚠</span>
+              <span>This PO exceeds ₦50,000 and will require a second approval before it can be sent.</span>
+            </div>
+          }
         </div>
       }
     </div>
@@ -509,38 +612,41 @@ export class PurchaseOrdersPage implements OnInit {
   private route   = inject(ActivatedRoute);
   router          = inject(Router);
 
-  loading      = signal(true);
-  actioning    = signal(false);
-  creating     = signal(false);
-  loadingLines = signal(false);
-  showCreate   = signal(false);
+  loading       = signal(true);
+  actioning     = signal(false);
+  creating      = signal(false);
+  loadingLines  = signal(false);
+  showCreate    = signal(false);
   showSendModal = signal(false);
 
-  orders     = signal<PurchaseOrder[]>([]);
-  total      = signal(0);
-  page       = signal(1);
-  lastPage   = signal(1);
-  detailPo   = signal<PurchaseOrder | null>(null);
+  orders      = signal<PurchaseOrder[]>([]);
+  total       = signal(0);
+  page        = signal(1);
+  lastPage    = signal(1);
+  detailPo    = signal<PurchaseOrder | null>(null);
   detailLines = signal<any[]>([]);
 
-  vendors      = signal<Vendor[]>([]);
-  stockItems   = signal<StockItem[]>([]);
-  locations    = signal<StockLocation[]>([]);
-  approvedPrs  = signal<PrSummary[]>([]);
+  vendors     = signal<Vendor[]>([]);
+  stockItems  = signal<StockItem[]>([]);
+  locations   = signal<StockLocation[]>([]);
+  approvedPrs = signal<PrSummary[]>([]);
 
-  filterStatus = '';
+  filterStatus     = '';
+  filterOpenMarket = false;
 
-  sendEmail    = '';
+  sendEmail     = '';
   sendHotelName = '';
-  sendByName   = '';
+  sendByName    = '';
 
   createForm = {
-    vendor_id: '', request_id: '', expected_delivery_date: '',
-    delivery_address: '', notes: '', payment_terms: 'net30',
-    tax_naira: 0, created_by_name: '',
+    is_open_market: false,
+    vendor_id: '', request_id: '',
+    open_market_vendor_name: '', open_market_reason: '',
+    expected_delivery_date: '', delivery_address: '', notes: '',
+    payment_terms: 'net30', tax_naira: 0, created_by_name: '',
   };
 
-  poLines      = signal<PoLine[]>([]);
+  poLines       = signal<PoLine[]>([]);
   poLineSearch: string[] = [];
   poLineResults: StockItem[][] = [];
 
@@ -550,12 +656,15 @@ export class PurchaseOrdersPage implements OnInit {
     return '₦' + (kobo / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 });
   });
 
-  poTotal = computed(() => {
+  poTotalKobo = computed(() => {
     const subKobo = this.poLines().reduce((s, l) =>
       s + (l.ordered_quantity ?? 0) * Math.round((l.unit_cost ?? 0) * 100), 0);
-    const taxKobo = Math.round((this.createForm.tax_naira ?? 0) * 100);
-    return '₦' + ((subKobo + taxKobo) / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 });
+    return subKobo + Math.round((this.createForm.tax_naira ?? 0) * 100);
   });
+
+  poTotal = computed(() =>
+    '₦' + (this.poTotalKobo() / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })
+  );
 
   statusTabs = [
     { key: '',                    label: 'All' },
@@ -569,13 +678,8 @@ export class PurchaseOrdersPage implements OnInit {
   ngOnInit() {
     this.loadReferenceData();
     this.load();
-
-    // Support ?request_id=xxx query param from PR → Create PO button
     this.route.queryParams.subscribe(q => {
-      if (q['request_id']) {
-        this.createForm.request_id = q['request_id'];
-        this.openCreate();
-      }
+      if (q['request_id']) { this.createForm.request_id = q['request_id']; this.openCreate(); }
     });
   }
 
@@ -583,14 +687,15 @@ export class PurchaseOrdersPage implements OnInit {
     this.loading.set(true);
     const pid = this.propSvc.propertyId();
     const params: any = { page: this.page(), per_page: 30 };
-    if (this.filterStatus) params['status'] = this.filterStatus;
-    if (pid) params['property_id'] = pid;
+    if (this.filterStatus)     params['status']         = this.filterStatus;
+    if (this.filterOpenMarket) params['is_open_market']  = true;
+    if (pid)                   params['property_id']    = pid;
 
     this.api.get('/procurement/orders', params).subscribe({
       next: r => {
         this.orders.set(r.data ?? []);
         this.total.set(r.meta?.total ?? 0);
-        this.lastPage.set(r.meta?.pages ?? 1);
+        this.lastPage.set(r.meta?.last_page ?? r.meta?.pages ?? 1);
         this.loading.set(false);
       },
       error: () => { this.toast.error('Failed to load purchase orders'); this.loading.set(false); },
@@ -601,7 +706,6 @@ export class PurchaseOrdersPage implements OnInit {
     this.api.get('/procurement/vendors', { active_only: true }).subscribe({ next: r => this.vendors.set(r.data ?? []) });
     this.api.get('/inventory/items', { per_page: 500, active_only: true }).subscribe({ next: r => this.stockItems.set(r.data ?? []) });
     this.api.get('/inventory/locations', {}).subscribe({ next: r => this.locations.set(r.data ?? []) });
-    // Load approved PRs for PO linking
     this.api.get('/procurement/requests', { status: 'approved', per_page: 100 }).subscribe({
       next: r => this.approvedPrs.set((r.data ?? []).map((p: any) => ({
         id: p.id, reference_number: p.reference_number, title: p.title,
@@ -611,10 +715,7 @@ export class PurchaseOrdersPage implements OnInit {
 
   changePage(p: number): void { this.page.set(p); this.load(); }
 
-  openDetail(po: PurchaseOrder): void {
-    this.detailPo.set(po);
-    this.loadLines(po.id);
-  }
+  openDetail(po: PurchaseOrder): void { this.detailPo.set(po); this.loadLines(po.id); }
   closeDetail(): void { this.detailPo.set(null); this.detailLines.set([]); }
 
   loadLines(poId: string): void {
@@ -625,12 +726,24 @@ export class PurchaseOrdersPage implements OnInit {
     });
   }
 
-  // ── Send email ──────────────────────────────────────────────────
+  secondApprove(): void {
+    if (!confirm('Approve this open-market purchase order? It will then be sendable.')) return;
+    this.actioning.set(true);
+    this.api.post(`/procurement/orders/${this.detailPo()!.id}/second-approve`, {}).subscribe({
+      next: r => {
+        this.toast.success('Purchase order approved');
+        this.detailPo.set(r.data);
+        this.actioning.set(false);
+        this.load();
+      },
+      error: (e: any) => { this.toast.error(e.error?.message ?? 'Failed to approve'); this.actioning.set(false); },
+    });
+  }
 
   openSendModal(): void {
-    this.sendEmail    = this.detailPo()!.vendor_email ?? '';
+    this.sendEmail = this.detailPo()!.vendor_email ?? '';
     this.sendHotelName = '';
-    this.sendByName   = '';
+    this.sendByName = '';
     this.showSendModal.set(true);
   }
 
@@ -652,18 +765,14 @@ export class PurchaseOrdersPage implements OnInit {
     });
   }
 
-  // ── GRN shortcut ─────────────────────────────────────────────────
-
   recordGrn(): void {
-    const po = this.detailPo();
-    if (!po) return;
+    const po = this.detailPo(); if (!po) return;
     this.closeDetail();
     this.router.navigate(['/inventory/grn'], { queryParams: { purchase_order_id: po.id } });
   }
 
-  // ── Cancel PO ───────────────────────────────────────────────────
-
   cancelPo(id: string): void {
+    if (!confirm('Cancel this purchase order?')) return;
     this.actioning.set(true);
     this.api.post(`/procurement/orders/${id}/cancel`, {}).subscribe({
       next: r => {
@@ -676,22 +785,25 @@ export class PurchaseOrdersPage implements OnInit {
     });
   }
 
-  // ── Create PO ───────────────────────────────────────────────────
-
   openCreate(): void {
     if (!this.createForm.request_id) {
       this.createForm = {
-        vendor_id: '', request_id: '', expected_delivery_date: '',
-        delivery_address: '', notes: '', payment_terms: 'net30',
-        tax_naira: 0, created_by_name: '',
+        is_open_market: false, vendor_id: '', request_id: '',
+        open_market_vendor_name: '', open_market_reason: '',
+        expected_delivery_date: '', delivery_address: '', notes: '',
+        payment_terms: 'net30', tax_naira: 0, created_by_name: '',
       };
     }
-    this.poLines.set([]);
-    this.poLineSearch = [];
-    this.poLineResults = [];
+    this.poLines.set([]); this.poLineSearch = []; this.poLineResults = [];
     this.showCreate.set(true);
   }
   closeCreate(): void { this.showCreate.set(false); }
+
+  onOpenMarketToggle(): void {
+    this.createForm.vendor_id = '';
+    this.createForm.open_market_vendor_name = '';
+    this.createForm.open_market_reason = '';
+  }
 
   onVendorChange(): void {
     const v = this.vendors().find(v => v.id === this.createForm.vendor_id);
@@ -700,14 +812,12 @@ export class PurchaseOrdersPage implements OnInit {
 
   addPoLine(): void {
     this.poLines.update(ls => [...ls, blankLine()]);
-    this.poLineSearch.push('');
-    this.poLineResults.push([]);
+    this.poLineSearch.push(''); this.poLineResults.push([]);
   }
 
   removePoLine(i: number): void {
     this.poLines.update(ls => ls.filter((_, idx) => idx !== i));
-    this.poLineSearch.splice(i, 1);
-    this.poLineResults.splice(i, 1);
+    this.poLineSearch.splice(i, 1); this.poLineResults.splice(i, 1);
   }
 
   onPoLineSearch(i: number): void {
@@ -724,8 +834,7 @@ export class PurchaseOrdersPage implements OnInit {
       copy[i] = { ...copy[i], item_id: si.id, item_sku: si.sku, item_name: si.name };
       return copy;
     });
-    this.poLineSearch[i] = '';
-    this.poLineResults[i] = [];
+    this.poLineSearch[i] = ''; this.poLineResults[i] = [];
   }
 
   clearPoItem(i: number): void {
@@ -737,13 +846,8 @@ export class PurchaseOrdersPage implements OnInit {
   }
 
   onPoLocationChange(i: number): void {
-    const locId = this.poLines()[i].location_id;
-    const name  = this.locations().find(l => l.id === locId)?.name ?? '';
-    this.poLines.update(ls => {
-      const copy = [...ls];
-      copy[i] = { ...copy[i], location_name: name };
-      return copy;
-    });
+    const name = this.locations().find(l => l.id === this.poLines()[i].location_id)?.name ?? '';
+    this.poLines.update(ls => { const copy = [...ls]; copy[i] = { ...copy[i], location_name: name }; return copy; });
   }
 
   lineTotal(line: PoLine): string {
@@ -752,22 +856,24 @@ export class PurchaseOrdersPage implements OnInit {
   }
 
   submitCreate(): void {
-    if (!this.createForm.vendor_id) { this.toast.error('Please select a vendor'); return; }
+    const isOM = this.createForm.is_open_market;
+    if (!isOM && !this.createForm.vendor_id)                       { this.toast.error('Please select a vendor'); return; }
+    if (isOM && !this.createForm.open_market_vendor_name.trim())   { this.toast.error('Supplier name is required'); return; }
+    if (isOM && !this.createForm.open_market_reason.trim())        { this.toast.error('Reason is required'); return; }
+
     const lines = this.poLines();
-    if (lines.length === 0) { this.toast.error('Add at least one item'); return; }
+    if (!lines.length) { this.toast.error('Add at least one item'); return; }
     for (const l of lines) {
-      if (!l.item_id) { this.toast.error('All lines must have an item selected'); return; }
+      if (!l.item_id)                               { this.toast.error('All lines must have an item selected'); return; }
       if (!l.ordered_quantity || l.ordered_quantity <= 0) { this.toast.error('All quantities must be > 0'); return; }
-      if (l.unit_cost === null || l.unit_cost < 0) { this.toast.error('Unit costs must be ≥ 0'); return; }
+      if (l.unit_cost === null || l.unit_cost < 0)  { this.toast.error('Unit costs must be ≥ 0'); return; }
     }
 
-    const pid = this.propSvc.propertyId() ?? '';
     this.creating.set(true);
-
-    const payload = {
-      vendor_id:              this.createForm.vendor_id,
+    const payload: any = {
+      is_open_market:         isOM,
       request_id:             this.createForm.request_id || null,
-      property_id:            pid,
+      property_id:            this.propSvc.propertyId() ?? '',
       expected_delivery_date: this.createForm.expected_delivery_date || null,
       delivery_address:       this.createForm.delivery_address || null,
       notes:                  this.createForm.notes || null,
@@ -775,67 +881,64 @@ export class PurchaseOrdersPage implements OnInit {
       tax_value:              Math.round((this.createForm.tax_naira ?? 0) * 100),
       created_by_name:        this.createForm.created_by_name || 'Staff',
       lines: lines.map(l => ({
-        item_id:          l.item_id,
-        item_sku:         l.item_sku,
-        item_name:        l.item_name,
-        location_id:      l.location_id || null,
-        location_name:    l.location_name || null,
+        item_id: l.item_id, item_sku: l.item_sku, item_name: l.item_name,
+        location_id: l.location_id || null, location_name: l.location_name || null,
         ordered_quantity: l.ordered_quantity,
-        unit_cost:        Math.round((l.unit_cost ?? 0) * 100),
-        notes:            l.notes || null,
+        unit_cost: Math.round((l.unit_cost ?? 0) * 100),
+        notes: l.notes || null,
       })),
     };
 
+    if (isOM) {
+      payload.open_market_vendor_name = this.createForm.open_market_vendor_name.trim();
+      payload.open_market_reason      = this.createForm.open_market_reason.trim();
+    } else {
+      payload.vendor_id = this.createForm.vendor_id;
+    }
+
     this.api.post('/procurement/orders', payload).subscribe({
-      next: () => {
-        this.toast.success('Purchase order created');
-        this.creating.set(false);
-        this.closeCreate();
-        this.load();
+      next: (r) => {
+        const po = r.data as PurchaseOrder;
+        if (po.is_pending_second_approval) {
+          this.toast.info('PO created — awaiting second approval (total exceeds ₦50,000).');
+        } else {
+          this.toast.success('Purchase order created');
+        }
+        this.creating.set(false); this.closeCreate(); this.load();
       },
       error: (e: any) => { this.toast.error(e.error?.message ?? 'Failed to create PO'); this.creating.set(false); },
     });
   }
 
-  // ── Display helpers ─────────────────────────────────────────────
-
   formatDate(d: string): string {
     return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   }
-
   formatValue(kobo: string | number): string {
     return '₦' + (parseInt(String(kobo ?? '0'), 10) / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 });
   }
-
   termsLabel(t: string): string {
-    return { cod: 'Cash on Delivery', net7: 'Net 7', net15: 'Net 15', net30: 'Net 30' }[t] ?? t;
+    return ({ cod: 'Cash on Delivery', net7: 'Net 7', net15: 'Net 15', net30: 'Net 30' } as any)[t] ?? t;
   }
-
   statusClass(s: string): string {
-    const map: Record<string, string> = {
+    return ({
       draft:               'px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600',
       sent:                'px-2 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700',
       partially_delivered: 'px-2 py-0.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700',
       delivered:           'px-2 py-0.5 rounded-lg text-xs font-medium bg-green-50 text-green-700',
       cancelled:           'px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-400',
-    };
-    return map[s] ?? 'px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-500';
+    } as any)[s] ?? 'px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-500';
   }
-
   lineStatusClass(s: string): string {
-    const map: Record<string, string> = {
+    return ({
       pending:  'px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-500',
       partial:  'px-1.5 py-0.5 rounded text-xs bg-orange-50 text-orange-600',
       received: 'px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700',
       cancelled:'px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-400',
-    };
-    return map[s] ?? 'px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-500';
+    } as any)[s] ?? 'px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-500';
   }
-
   deliveryPct(line: any): number {
-    const ordered  = parseFloat(line.ordered_quantity ?? '0');
-    const received = parseFloat(line.received_quantity ?? '0');
-    if (ordered === 0) return 0;
-    return Math.min(100, Math.round((received / ordered) * 100));
+    const o = parseFloat(line.ordered_quantity ?? '0');
+    const r = parseFloat(line.received_quantity ?? '0');
+    return o === 0 ? 0 : Math.min(100, Math.round((r / o) * 100));
   }
 }

@@ -281,14 +281,17 @@ final class ProcurementController
         $page    = max(1, (int) ($q['page']    ?? 1));
         $perPage = min(100, max(1, (int) ($q['per_page'] ?? 30)));
 
+        $isOpenMarket = isset($q['is_open_market']) ? filter_var($q['is_open_market'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) : null;
+
         $result = $this->service->listPurchaseOrders(
-            tenantId:   $tid,
-            page:       $page,
-            perPage:    $perPage,
-            status:     $q['status']      ?? null,
-            vendorId:   $q['vendor_id']   ?? null,
-            propertyId: $q['property_id'] ?? null,
-            requestId:  $q['request_id']  ?? null,
+            tenantId:     $tid,
+            page:         $page,
+            perPage:      $perPage,
+            status:       $q['status']      ?? null,
+            vendorId:     $q['vendor_id']   ?? null,
+            propertyId:   $q['property_id'] ?? null,
+            requestId:    $q['request_id']  ?? null,
+            isOpenMarket: $isOpenMarket,
         );
 
         $total    = $result['total'];
@@ -320,10 +323,24 @@ final class ProcurementController
         $uid  = $req->getAttribute('auth.user_id');
         $pid  = $d['property_id'] ?? $req->getAttribute('auth.property_id') ?? '';
 
+        $isOpenMarket = !empty($d['is_open_market']) && (bool) $d['is_open_market'];
+
         $errors = [];
-        if (empty($pid))             $errors[] = 'property_id is required';
-        if (empty($d['vendor_id']))  $errors[] = 'vendor_id is required';
-        if (empty($d['lines']))      $errors[] = 'lines must be a non-empty array';
+        if (empty($pid)) {
+            $errors[] = 'property_id is required';
+        }
+        if (!$isOpenMarket && empty($d['vendor_id'])) {
+            $errors[] = 'vendor_id is required for standard purchase orders';
+        }
+        if ($isOpenMarket && empty($d['open_market_vendor_name'])) {
+            $errors[] = 'open_market_vendor_name is required for open-market purchases';
+        }
+        if ($isOpenMarket && empty($d['open_market_reason'])) {
+            $errors[] = 'open_market_reason is required for open-market purchases';
+        }
+        if (empty($d['lines'])) {
+            $errors[] = 'lines must be a non-empty array';
+        }
         if (!empty($errors)) {
             return JsonResponse::validationError($res, $errors);
         }
@@ -332,12 +349,34 @@ final class ProcurementController
             $po = $this->service->createPurchaseOrder(
                 tenantId:      $tid,
                 propertyId:    $pid,
-                vendorId:      $d['vendor_id'],
+                vendorId:      $isOpenMarket ? null : ($d['vendor_id'] ?? null),
                 createdBy:     $uid,
                 createdByName: $d['created_by_name'] ?? 'Staff',
                 data:          $d,
             );
             return JsonResponse::created($res, $po->toArray(), "Purchase order {$po->getReferenceNumber()} created");
+        } catch (\RuntimeException $e) {
+            return JsonResponse::notFound($res, $e->getMessage());
+        } catch (\DomainException $e) {
+            return JsonResponse::error($res, $e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * POST /api/procurement/orders/{id}/second-approve
+     * Body: { approver_name? }
+     * Role: property_admin only
+     */
+    public function secondApproveOrder(Request $req, Response $res, array $args): Response
+    {
+        $d    = (array) $req->getParsedBody();
+        $tid  = $req->getAttribute('auth.tenant_id');
+        $uid  = $req->getAttribute('auth.user_id');
+        $name = $d['approver_name'] ?? 'Admin';
+
+        try {
+            $po = $this->service->secondApprovePurchaseOrder($args['id'], $tid, $uid, $name);
+            return JsonResponse::ok($res, $po->toArray(), 'Purchase order second-approved successfully');
         } catch (\RuntimeException $e) {
             return JsonResponse::notFound($res, $e->getMessage());
         } catch (\DomainException $e) {

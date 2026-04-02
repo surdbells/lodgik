@@ -321,37 +321,68 @@ final class ProcurementService
      * If request_id is given the PR is validated and will be marked converted
      * after the PO is flushed.
      */
+    // Open-market threshold: POs above this kobo value require second approval.
+    // 50,000 NGN = 5,000,000 kobo
+    private const OPEN_MARKET_SECOND_APPROVAL_THRESHOLD = 5_000_000;
+
     public function createPurchaseOrder(
-        string $tenantId,
-        string $propertyId,
-        string $vendorId,
-        string $createdBy,
-        string $createdByName,
-        array  $data,
+        string  $tenantId,
+        string  $propertyId,
+        ?string $vendorId,
+        string  $createdBy,
+        string  $createdByName,
+        array   $data,
     ): PurchaseOrder {
         if (empty($data['lines']) || !is_array($data['lines'])) {
             throw new \DomainException('Purchase order must have at least one line item.');
         }
 
-        $vendor = $this->findVendorOrFail($vendorId, $tenantId);
+        $isOpenMarket = !empty($data['is_open_market']) && (bool) $data['is_open_market'];
+
+        if ($isOpenMarket) {
+            // Open-market path — no registered vendor required
+            if (empty($data['open_market_vendor_name'])) {
+                throw new \DomainException('Supplier name is required for open-market purchases.');
+            }
+            if (empty($data['open_market_reason'])) {
+                throw new \DomainException('Reason is required for open-market purchases.');
+            }
+            $resolvedVendorId   = null;
+            $resolvedVendorName = trim($data['open_market_vendor_name']);
+        } else {
+            // Standard path — must have a registered vendor
+            if (empty($vendorId)) {
+                throw new \DomainException('vendor_id is required for standard purchase orders.');
+            }
+            $vendor             = $this->findVendorOrFail($vendorId, $tenantId);
+            $resolvedVendorId   = $vendorId;
+            $resolvedVendorName = $vendor->getName();
+        }
 
         $ref = $this->generateRefNumber('PO', $tenantId);
 
         $po = new PurchaseOrder(
             referenceNumber: $ref,
             propertyId:      $propertyId,
-            vendorId:        $vendorId,
-            vendorName:      $vendor->getName(),
+            vendorId:        $resolvedVendorId,
+            vendorName:      $resolvedVendorName,
             createdBy:       $createdBy,
             createdByName:   $createdByName,
             tenantId:        $tenantId,
         );
 
-        // Snapshot vendor contact details
-        $po->setVendorEmail($vendor->getEmail());
-        $po->setVendorContactPerson($vendor->getContactPerson());
-        $po->setPaymentTerms($data['payment_terms'] ?? $vendor->getPaymentTerms());
+        if ($isOpenMarket) {
+            $po->setIsOpenMarket(true);
+            $po->setOpenMarketVendorName(trim($data['open_market_vendor_name']));
+            $po->setOpenMarketReason(trim($data['open_market_reason']));
+        } else {
+            // Snapshot vendor contact details for standard POs
+            $po->setVendorEmail($vendor->getEmail());
+            $po->setVendorContactPerson($vendor->getContactPerson());
+            $po->setPaymentTerms($data['payment_terms'] ?? $vendor->getPaymentTerms());
+        }
 
+        if (!empty($data['payment_terms'])) $po->setPaymentTerms($data['payment_terms']);
         if (!empty($data['expected_delivery_date'])) {
             $po->setExpectedDeliveryDate(new \DateTimeImmutable($data['expected_delivery_date']));
         }
@@ -383,6 +414,11 @@ final class ProcurementService
         $po->recalcTotal();
         $po->setLineCount(count($data['lines']));
 
+        // Fraud prevention: open-market POs above threshold require second approval
+        if ($isOpenMarket && (int) $po->getTotalValue() >= self::OPEN_MARKET_SECOND_APPROVAL_THRESHOLD) {
+            $po->setSecondApprovalRequired(true);
+        }
+
         // Convert PR
         if ($pr !== null) {
             $pr->convert($po->getId());
@@ -390,7 +426,23 @@ final class ProcurementService
 
         $this->em->flush();
 
-        $this->logger->info("PO created: {$ref} vendor={$vendor->getName()} by {$createdByName}");
+        $label = $isOpenMarket ? "OPEN MARKET" : "vendor={$resolvedVendorName}";
+        $this->logger->info("PO created: {$ref} {$label} by {$createdByName}");
+
+        return $po;
+    }
+
+    /**
+     * Grant second approval on an open-market PO.
+     * Only property_admin may perform this action (enforced in controller/route).
+     */
+    public function secondApprovePurchaseOrder(string $id, string $tenantId, string $userId, string $userName): PurchaseOrder
+    {
+        $po = $this->findPoOrFail($id, $tenantId);
+        $po->secondApprove($userId, $userName);
+        $this->em->flush();
+
+        $this->logger->info("PO second-approved: {$po->getReferenceNumber()} by {$userName}");
 
         return $po;
     }
@@ -459,6 +511,10 @@ final class ProcurementService
             throw new \DomainException("Cannot send a PO in '{$po->getStatus()}' status.");
         }
 
+        if ($po->isPendingSecondApproval()) {
+            throw new \DomainException('This open-market purchase order requires a second approval before it can be sent.');
+        }
+
         $toEmail = $overrideEmail ?? $po->getVendorEmail();
         if (empty($toEmail)) {
             throw new \DomainException('No vendor email address on record. Please update the vendor or provide an override email.');
@@ -512,12 +568,13 @@ final class ProcurementService
      */
     public function listPurchaseOrders(
         string  $tenantId,
-        int     $page       = 1,
-        int     $perPage    = 30,
-        ?string $status     = null,
-        ?string $vendorId   = null,
-        ?string $propertyId = null,
-        ?string $requestId  = null,
+        int     $page         = 1,
+        int     $perPage      = 30,
+        ?string $status       = null,
+        ?string $vendorId     = null,
+        ?string $propertyId   = null,
+        ?string $requestId    = null,
+        ?bool   $isOpenMarket = null,
     ): array {
         $qb = $this->em->createQueryBuilder()
             ->select('po')
@@ -526,10 +583,11 @@ final class ProcurementService
             ->setParameter('tid', $tenantId)
             ->orderBy('po.createdAt', 'DESC');
 
-        if ($status)     $qb->andWhere('po.status = :status')->setParameter('status', $status);
-        if ($vendorId)   $qb->andWhere('po.vendorId = :vid')->setParameter('vid', $vendorId);
-        if ($propertyId) $qb->andWhere('po.propertyId = :pid')->setParameter('pid', $propertyId);
-        if ($requestId)  $qb->andWhere('po.requestId = :rid')->setParameter('rid', $requestId);
+        if ($status)              $qb->andWhere('po.status = :status')->setParameter('status', $status);
+        if ($vendorId)            $qb->andWhere('po.vendorId = :vid')->setParameter('vid', $vendorId);
+        if ($propertyId)          $qb->andWhere('po.propertyId = :pid')->setParameter('pid', $propertyId);
+        if ($requestId)           $qb->andWhere('po.requestId = :rid')->setParameter('rid', $requestId);
+        if ($isOpenMarket !== null) $qb->andWhere('po.isOpenMarket = :om')->setParameter('om', $isOpenMarket);
 
         $total = (int) (clone $qb)
             ->select('COUNT(po.id)')
