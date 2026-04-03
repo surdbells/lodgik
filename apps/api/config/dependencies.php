@@ -239,6 +239,8 @@ return function (ContainerBuilder $builder): void {
             mail:     $c->get(ZeptoMailService::class),
         ),
 
+        \Lodgik\Module\Docs\DocsController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Docs\DocsController(),
+
         // ─── Helpers ───────────────────────────────────────────────
         ResponseHelper::class => function (): ResponseHelper {
             return new ResponseHelper();

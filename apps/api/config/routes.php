@@ -8,6 +8,9 @@ return function (App $app): void {
     // ─── Health Check ─────────────────────────────────────────
     (require __DIR__ . '/../src/Module/Health/routes.php')($app);
 
+    // ─── Tenant API Docs (JWT-authenticated) ──────────────────
+    (require __DIR__ . '/../src/Module/Docs/routes.php')($app);
+
     // ─── Phase 0: SaaS Platform ───────────────────────────────
     (require __DIR__ . '/../src/Module/Auth/routes.php')($app);
     (require __DIR__ . '/../src/Module/Staff/routes.php')($app);
