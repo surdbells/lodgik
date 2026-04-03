@@ -19,8 +19,9 @@ return function (App $app): void {
         $g->post('', [PayrollController::class, 'createPeriod']);
         $g->post('/{id}/calculate', [PayrollController::class, 'calculate']);
         $g->post('/{id}/review', [PayrollController::class, 'review']);
-        $g->post('/{id}/approve', [PayrollController::class, 'approve']);
-        $g->post('/{id}/paid', [PayrollController::class, 'markPaid']);
+        $g->post('/{id}/approve',  [PayrollController::class, 'approve']);
+        $g->post('/{id}/paid',     [PayrollController::class, 'markPaid']);
+        $g->post('/{id}/disburse', [PayrollController::class, 'disburse']);
         // List payslips for a period
         $g->get('/{id}/payslips', [PayrollController::class, 'listPayslips']);
     })->add(new RoleMiddleware(['property_admin', 'hr']))->add($featureGate)->add(TenantMiddleware::class)->add(AuthMiddleware::class);

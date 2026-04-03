@@ -1,13 +1,14 @@
 import { PAGE_TOURS } from '../../services/page-tours';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TitleCasePipe } from '@angular/common';
 import { ApiService, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, ActivePropertyService, HasPermDirective, PermDisableDirective, TokenService , TourService} from '@lodgik/shared';
 import { AuthService } from '@lodgik/shared';
 
 @Component({
   selector: 'app-payroll',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, HasPermDirective, PermDisableDirective],
+  imports: [FormsModule, TitleCasePipe, PageHeaderComponent, LoadingSpinnerComponent, StatsCardComponent, HasPermDirective, PermDisableDirective],
   template: `
     <ui-page-header title="Payroll" icon="hand-coins" [breadcrumbs]="['Human Resources', 'Payroll']" subtitle="Monthly payroll processing & payslips"
       tourKey="payroll" (tourClick)="startTour()">
@@ -46,7 +47,13 @@ import { AuthService } from '@lodgik/shared';
                     <button (click)="approve(p.id); $event.stopPropagation()" [permDisable]="'payroll.approve'" class="text-green-600 hover:underline text-xs mr-2">Approve</button>
                   }
                   @if (p.status === 'approved') {
-                    <button (click)="markPaid(p.id); $event.stopPropagation()" [permDisable]="'payroll.approve'" class="text-emerald-600 hover:underline text-xs">Mark Paid</button>
+                    <button (click)="disburse(p.id, $event)" [permDisable]="'payroll.approve'"
+                      class="px-2 py-1 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 mr-1 disabled:opacity-50"
+                      [disabled]="disbursing()">
+                      {{ disbursing() ? 'Disbursing…' : '⚡ Disburse via Paystack' }}
+                    </button>
+                    <button (click)="markPaid(p.id); $event.stopPropagation()" [permDisable]="'payroll.approve'"
+                      class="text-gray-400 hover:underline text-xs">Manual Paid</button>
                   }
                 </td>
               </tr>
@@ -99,6 +106,7 @@ import { AuthService } from '@lodgik/shared';
             <th class="px-4 py-3 text-right font-medium text-gray-500">Pension</th>
             <th class="px-4 py-3 text-right font-medium text-gray-500">Net</th>
             <th class="px-4 py-3 text-left font-medium text-gray-500">Bank</th>
+            <th class="px-4 py-3 text-left font-medium text-gray-500">Transfer</th>
             <th class="px-4 py-3 text-left font-medium text-gray-500">Actions</th>
           </tr></thead>
           <tbody>
@@ -111,6 +119,17 @@ import { AuthService } from '@lodgik/shared';
                 <td class="px-4 py-3 text-right text-amber-600">₦{{ fmt(s.pension_employee) }}</td>
                 <td class="px-4 py-3 text-right font-medium text-green-600">₦{{ fmt(s.net_pay) }}</td>
                 <td class="px-4 py-3 text-xs">{{ s.bank_name || '—' }}</td>
+                <td class="px-4 py-3">
+                  @if (s.transfer_status === 'success') {
+                    <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">✓ Paid</span>
+                  } @else if (s.transfer_status === 'pending') {
+                    <span class="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">Pending</span>
+                  } @else if (s.transfer_status === 'failed') {
+                    <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700" [title]="s.transfer_failure_reason">✗ Failed</span>
+                  } @else {
+                    <span class="text-xs text-gray-300">—</span>
+                  }
+                </td>
                 <td class="px-4 py-3">
                   <button (click)="showPayslipDetail(s)" class="text-sage-600 hover:underline text-xs mr-2">View</button>
                   <button (click)="emailPayslip(s.id)" [permDisable]="'payroll.view_payslips'" class="text-green-600 hover:underline text-xs">Email</button>
@@ -176,6 +195,30 @@ import { AuthService } from '@lodgik/shared';
                 <p class="text-xs text-sage-500">{{ detailPayslip()!.bank_account_name }}</p>
               </div>
             }
+
+            @if (detailPayslip()!.transfer_status) {
+              <div class="mt-3 p-3 rounded-lg border"
+                [class.bg-green-50]="detailPayslip()!.transfer_status === 'success'"
+                [class.border-green-200]="detailPayslip()!.transfer_status === 'success'"
+                [class.bg-blue-50]="detailPayslip()!.transfer_status === 'pending'"
+                [class.border-blue-200]="detailPayslip()!.transfer_status === 'pending'"
+                [class.bg-red-50]="detailPayslip()!.transfer_status === 'failed'"
+                [class.border-red-200]="detailPayslip()!.transfer_status === 'failed'">
+                <p class="text-xs font-semibold mb-1">Paystack Transfer</p>
+                <p class="text-xs">Status:
+                  <strong>{{ detailPayslip()!.transfer_status | titlecase }}</strong>
+                </p>
+                @if (detailPayslip()!.transfer_reference) {
+                  <p class="text-xs font-mono text-gray-500 mt-0.5">Ref: {{ detailPayslip()!.transfer_reference }}</p>
+                }
+                @if (detailPayslip()!.transfer_failure_reason) {
+                  <p class="text-xs text-red-600 mt-0.5">{{ detailPayslip()!.transfer_failure_reason }}</p>
+                }
+                @if (detailPayslip()!.transfer_initiated_at) {
+                  <p class="text-xs text-gray-400 mt-0.5">Initiated: {{ detailPayslip()!.transfer_initiated_at }}</p>
+                }
+              </div>
+            }
           </div>
           <div class="flex justify-end mt-4">
             <button (click)="detailPayslip.set(null)" class="px-4 py-2 text-sm border rounded-lg">Close</button>
@@ -193,6 +236,7 @@ export class PayrollPage implements OnInit {
   private activeProperty = inject(ActivePropertyService);
 
   loading = signal(true);
+  disbursing = signal(false);
   periods = signal<any[]>([]);
   selectedPeriod = signal<any>(null);
   payslips = signal<any[]>([]);
@@ -238,6 +282,33 @@ export class PayrollPage implements OnInit {
   review(id: string) { this.api.post(`/payroll/${id}/review`, {}).subscribe({ next: () => this.load() }); }
   approve(id: string) { this.api.post(`/payroll/${id}/approve`, {}).subscribe({ next: () => this.load() }); }
   markPaid(id: string) { this.api.post(`/payroll/${id}/paid`, {}).subscribe({ next: () => this.load() }); }
+
+  disburse(id: string, event: Event): void {
+    event.stopPropagation();
+    if (!confirm('Initiate Paystack salary transfers for all employees in this payroll period?')) return;
+    this.disbursing.set(true);
+    this.api.post(`/payroll/${id}/disburse`, {}).subscribe({
+      next: (r: any) => {
+        this.disbursing.set(false);
+        const results: any[] = r.data?.results ?? [];
+        const succeeded = results.filter(x => x.status === 'success' || x.status === 'pending').length;
+        const failed    = results.filter(x => x.status === 'failed').length;
+        const skipped   = results.filter(x => x.status === 'skipped').length;
+        alert(`Disbursement complete.\n✓ ${succeeded} initiated  ✗ ${failed} failed  — ${skipped} skipped\n\nOpen the period to see per-employee transfer status.`);
+        this.load();
+        // Refresh payslips if period is open
+        if (this.selectedPeriod()?.id === id) {
+          this.api.get<any>(`/payroll/${id}/payslips`).subscribe({
+            next: pr => this.payslips.set(pr.data ?? []),
+          });
+        }
+      },
+      error: (e: any) => {
+        this.disbursing.set(false);
+        alert('Disbursement failed: ' + (e.error?.message ?? 'Unknown error'));
+      },
+    });
+  }
   showPayslipDetail(s: any) { this.detailPayslip.set(s); }
   emailPayslip(id: string) { this.api.post(`/payslips/${id}/email`, { hotel_name: 'Hotel' }).subscribe(); }
 

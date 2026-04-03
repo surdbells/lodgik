@@ -67,6 +67,25 @@ final class PayrollController
         } catch (\RuntimeException $e) { return JsonResponse::error($res, $e->getMessage(), 422); }
     }
 
+    /**
+     * POST /api/payroll/periods/{id}/disburse
+     * Initiates Paystack salary transfers for an approved payroll period.
+     */
+    public function disburse(Request $req, Response $res, array $args): Response
+    {
+        try {
+            $result  = $this->service->disbursePayroll($args['id']);
+            $message = $result['all_passed']
+                ? 'Salary disbursement initiated successfully'
+                : 'Disbursement completed with some failures — review results';
+            return JsonResponse::ok($res, $result, $message);
+        } catch (\DomainException $e) {
+            return JsonResponse::error($res, $e->getMessage(), 422);
+        } catch (\RuntimeException $e) {
+            return JsonResponse::error($res, $e->getMessage(), 400);
+        }
+    }
+
     public function getPayslip(Request $req, Response $res, array $args): Response
     {
         $item = $this->service->getPayslip($args['id']);

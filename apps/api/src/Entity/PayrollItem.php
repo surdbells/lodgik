@@ -99,8 +99,35 @@ class PayrollItem implements TenantAware
     #[ORM\Column(name: 'bank_account_name', type: Types::STRING, length: 150, nullable: true)]
     private ?string $bankAccountName = null;
 
+    /** CBN bank code (e.g. "058" for GTBank) — required for Paystack transfer */
+    #[ORM\Column(name: 'bank_code', type: Types::STRING, length: 10, nullable: true)]
+    private ?string $bankCode = null;
+
     #[ORM\Column(name: 'payslip_emailed_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $payslipEmailedAt = null;
+
+    // ─── Paystack Transfer Tracking ─────────────────────────────
+
+    /** Paystack transfer recipient code — reused across payroll runs */
+    #[ORM\Column(name: 'transfer_recipient_code', type: Types::STRING, length: 50, nullable: true)]
+    private ?string $transferRecipientCode = null;
+
+    /** Paystack transfer reference for this specific disbursement */
+    #[ORM\Column(name: 'transfer_reference', type: Types::STRING, length: 100, nullable: true)]
+    private ?string $transferReference = null;
+
+    /** pending | success | failed | reversed */
+    #[ORM\Column(name: 'transfer_status', type: Types::STRING, length: 20, nullable: true)]
+    private ?string $transferStatus = null;
+
+    #[ORM\Column(name: 'transfer_initiated_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $transferInitiatedAt = null;
+
+    #[ORM\Column(name: 'transfer_completed_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $transferCompletedAt = null;
+
+    #[ORM\Column(name: 'transfer_failure_reason', type: Types::TEXT, nullable: true)]
+    private ?string $transferFailureReason = null;
 
     public function __construct(string $payrollPeriodId, string $employeeId, string $employeeName, string $employeeStaffId, string $tenantId)
     {
@@ -151,36 +178,83 @@ class PayrollItem implements TenantAware
     public function setBankAccountNumber(?string $v): void { $this->bankAccountNumber = $v; }
     public function getBankAccountName(): ?string { return $this->bankAccountName; }
     public function setBankAccountName(?string $v): void { $this->bankAccountName = $v; }
+    public function getBankCode(): ?string { return $this->bankCode; }
+    public function setBankCode(?string $v): void { $this->bankCode = $v; }
     public function getPayslipEmailedAt(): ?\DateTimeImmutable { return $this->payslipEmailedAt; }
     public function setPayslipEmailedAt(?\DateTimeImmutable $v): void { $this->payslipEmailedAt = $v; }
+
+    // Transfer tracking
+    public function getTransferRecipientCode(): ?string { return $this->transferRecipientCode; }
+    public function setTransferRecipientCode(?string $v): void { $this->transferRecipientCode = $v; }
+    public function getTransferReference(): ?string { return $this->transferReference; }
+    public function setTransferReference(?string $v): void { $this->transferReference = $v; }
+    public function getTransferStatus(): ?string { return $this->transferStatus; }
+    public function setTransferStatus(?string $v): void { $this->transferStatus = $v; }
+    public function getTransferInitiatedAt(): ?\DateTimeImmutable { return $this->transferInitiatedAt; }
+    public function setTransferInitiatedAt(?\DateTimeImmutable $v): void { $this->transferInitiatedAt = $v; }
+    public function getTransferCompletedAt(): ?\DateTimeImmutable { return $this->transferCompletedAt; }
+    public function setTransferCompletedAt(?\DateTimeImmutable $v): void { $this->transferCompletedAt = $v; }
+    public function getTransferFailureReason(): ?string { return $this->transferFailureReason; }
+    public function setTransferFailureReason(?string $v): void { $this->transferFailureReason = $v; }
+
+    /**
+     * Record the result of a Paystack transfer initiation.
+     */
+    public function recordTransferInitiated(string $reference, string $recipientCode): void
+    {
+        $this->transferReference     = $reference;
+        $this->transferRecipientCode = $recipientCode;
+        $this->transferStatus        = 'pending';
+        $this->transferInitiatedAt   = new \DateTimeImmutable();
+    }
+
+    public function recordTransferSuccess(): void
+    {
+        $this->transferStatus      = 'success';
+        $this->transferCompletedAt = new \DateTimeImmutable();
+    }
+
+    public function recordTransferFailure(string $reason): void
+    {
+        $this->transferStatus        = 'failed';
+        $this->transferFailureReason = $reason;
+        $this->transferCompletedAt   = new \DateTimeImmutable();
+    }
 
     public function toArray(): array
     {
         return [
-            'id' => $this->getId(),
-            'payroll_period_id' => $this->payrollPeriodId,
-            'employee_id' => $this->employeeId,
-            'employee_name' => $this->employeeName,
-            'employee_staff_id' => $this->employeeStaffId,
-            'basic_salary' => $this->basicSalary,
-            'housing_allowance' => $this->housingAllowance,
-            'transport_allowance' => $this->transportAllowance,
-            'other_allowances' => $this->otherAllowances,
-            'overtime_pay' => $this->overtimePay,
-            'gross_pay' => $this->grossPay,
-            'cra' => $this->cra,
-            'pension_employee' => $this->pensionEmployee,
-            'nhf' => $this->nhf,
-            'taxable_income' => $this->taxableIncome,
-            'paye_tax' => $this->payeTax,
-            'other_deductions' => $this->otherDeductions,
-            'total_deductions' => $this->totalDeductions,
-            'net_pay' => $this->netPay,
-            'bank_name' => $this->bankName,
-            'bank_account_number' => $this->bankAccountNumber,
-            'bank_account_name' => $this->bankAccountName,
-            'payslip_emailed_at' => $this->payslipEmailedAt?->format('Y-m-d H:i:s'),
-            'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'id'                      => $this->getId(),
+            'payroll_period_id'       => $this->payrollPeriodId,
+            'employee_id'             => $this->employeeId,
+            'employee_name'           => $this->employeeName,
+            'employee_staff_id'       => $this->employeeStaffId,
+            'basic_salary'            => $this->basicSalary,
+            'housing_allowance'       => $this->housingAllowance,
+            'transport_allowance'     => $this->transportAllowance,
+            'other_allowances'        => $this->otherAllowances,
+            'overtime_pay'            => $this->overtimePay,
+            'gross_pay'               => $this->grossPay,
+            'cra'                     => $this->cra,
+            'pension_employee'        => $this->pensionEmployee,
+            'nhf'                     => $this->nhf,
+            'taxable_income'          => $this->taxableIncome,
+            'paye_tax'                => $this->payeTax,
+            'other_deductions'        => $this->otherDeductions,
+            'total_deductions'        => $this->totalDeductions,
+            'net_pay'                 => $this->netPay,
+            'bank_name'               => $this->bankName,
+            'bank_account_number'     => $this->bankAccountNumber,
+            'bank_account_name'       => $this->bankAccountName,
+            'bank_code'               => $this->bankCode,
+            // Transfer
+            'transfer_status'         => $this->transferStatus,
+            'transfer_reference'      => $this->transferReference,
+            'transfer_initiated_at'   => $this->transferInitiatedAt?->format('Y-m-d H:i:s'),
+            'transfer_completed_at'   => $this->transferCompletedAt?->format('Y-m-d H:i:s'),
+            'transfer_failure_reason' => $this->transferFailureReason,
+            'payslip_emailed_at'      => $this->payslipEmailedAt?->format('Y-m-d H:i:s'),
+            'created_at'              => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
     }
 }

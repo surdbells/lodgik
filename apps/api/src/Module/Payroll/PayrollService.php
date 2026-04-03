@@ -14,6 +14,7 @@ use Lodgik\Repository\PayrollItemRepository;
 use Lodgik\Repository\TaxBracketRepository;
 use Lodgik\Repository\EmployeeRepository;
 use Lodgik\Service\ZeptoMailService;
+use Lodgik\Service\PaystackService;
 use Psr\Log\LoggerInterface;
 
 final class PayrollService
@@ -26,6 +27,7 @@ final class PayrollService
         private readonly EmployeeRepository $empRepo,
         private readonly ZeptoMailService $mailer,
         private readonly LoggerInterface $logger,
+        private readonly ?PaystackService $paystack = null,
     ) {}
 
     // ─── Payroll Period CRUD ────────────────────────────────────
@@ -306,5 +308,162 @@ HTML;
             $this->em->flush();
         }
         return $sent;
+    }
+
+    // ─── Paystack Salary Disbursement ────────────────────────────
+
+    /**
+     * Disburse salaries for an approved payroll period via Paystack Transfers.
+     *
+     * Rules:
+     * - Period must be in APPROVED status
+     * - Paystack must be configured
+     * - Each payslip must have bank_account_number and bank_code
+     * - Already-successful transfers are skipped (idempotent)
+     * - On completion, period status is set to PAID
+     *
+     * Returns a summary array with per-employee results.
+     *
+     * @throws \RuntimeException if Paystack is not configured or period is wrong status
+     */
+    public function disbursePayroll(string $periodId): array
+    {
+        if ($this->paystack === null || !$this->paystack->isConfigured()) {
+            throw new \RuntimeException('Paystack is not configured. Please set PAYSTACK_SECRET_KEY in your environment.');
+        }
+
+        $period = $this->periodRepo->find($periodId);
+        if (!$period) throw new \RuntimeException('Payroll period not found');
+
+        if ($period->getStatus() !== PayrollStatus::APPROVED) {
+            throw new \DomainException(
+                "Payroll must be in 'approved' status before disbursement. Current status: {$period->getStatus()->value}"
+            );
+        }
+
+        $items = $this->itemRepo->findByPeriod($periodId);
+        if (empty($items)) {
+            throw new \RuntimeException('No payslips found for this period');
+        }
+
+        $results   = [];
+        $allPassed = true;
+
+        foreach ($items as $item) {
+            // Skip already-successful transfers
+            if ($item->getTransferStatus() === 'success') {
+                $results[] = [
+                    'employee_id'   => $item->getEmployeeId(),
+                    'employee_name' => $item->getEmployeeName(),
+                    'status'        => 'skipped',
+                    'reason'        => 'Already disbursed',
+                    'reference'     => $item->getTransferReference(),
+                ];
+                continue;
+            }
+
+            $accountNumber = $item->getBankAccountNumber();
+            $accountName   = $item->getBankAccountName();
+            $bankCode      = $item->getBankCode();
+            $netPayKobo    = (int) $item->getNetPay();
+
+            if (empty($accountNumber) || empty($bankCode)) {
+                $results[] = [
+                    'employee_id'   => $item->getEmployeeId(),
+                    'employee_name' => $item->getEmployeeName(),
+                    'status'        => 'skipped',
+                    'reason'        => 'Missing bank account number or bank code',
+                ];
+                $allPassed = false;
+                continue;
+            }
+
+            if ($netPayKobo <= 0) {
+                $results[] = [
+                    'employee_id'   => $item->getEmployeeId(),
+                    'employee_name' => $item->getEmployeeName(),
+                    'status'        => 'skipped',
+                    'reason'        => 'Net pay is zero',
+                ];
+                continue;
+            }
+
+            try {
+                // Create or reuse transfer recipient
+                $recipientCode = $item->getTransferRecipientCode();
+                if (empty($recipientCode)) {
+                    $recipientCode = $this->paystack->createTransferRecipient(
+                        accountName:   $accountName ?? $item->getEmployeeName(),
+                        accountNumber: $accountNumber,
+                        bankCode:      $bankCode,
+                        description:   "Salary — {$item->getEmployeeName()}",
+                    );
+                    $item->setTransferRecipientCode($recipientCode);
+                }
+
+                // Unique reference: period + employee
+                $reference = 'SAL-' . strtoupper(substr($periodId, 0, 8))
+                    . '-' . strtoupper(substr($item->getEmployeeId(), 0, 8))
+                    . '-' . time();
+
+                $transfer = $this->paystack->initiateTransfer(
+                    recipientCode: $recipientCode,
+                    amountKobo:    $netPayKobo,
+                    reference:     $reference,
+                    reason:        "Salary payment — {$period->getPeriodLabel()}",
+                );
+
+                $item->recordTransferInitiated($reference, $recipientCode);
+
+                // Paystack may complete immediately (OTP-disabled accounts)
+                if (($transfer['status'] ?? '') === 'success') {
+                    $item->recordTransferSuccess();
+                }
+
+                $results[] = [
+                    'employee_id'   => $item->getEmployeeId(),
+                    'employee_name' => $item->getEmployeeName(),
+                    'status'        => $item->getTransferStatus(),
+                    'reference'     => $reference,
+                    'amount_kobo'   => $netPayKobo,
+                ];
+
+                $this->logger->info("Transfer initiated for {$item->getEmployeeName()} ref={$reference}");
+
+            } catch (\Throwable $e) {
+                $item->recordTransferFailure($e->getMessage());
+                $allPassed = false;
+
+                $results[] = [
+                    'employee_id'   => $item->getEmployeeId(),
+                    'employee_name' => $item->getEmployeeName(),
+                    'status'        => 'failed',
+                    'reason'        => $e->getMessage(),
+                ];
+
+                $this->logger->error("Transfer failed for {$item->getEmployeeName()}: {$e->getMessage()}");
+            }
+        }
+
+        $this->em->flush();
+
+        // Mark period as paid only when all items succeeded or were skipped for legitimate reasons
+        $anyPending = array_filter($results, fn($r) => $r['status'] === 'pending');
+        $anyFailed  = array_filter($results, fn($r) => $r['status'] === 'failed');
+
+        if (empty($anyFailed) && empty($anyPending)) {
+            $period->setStatus(PayrollStatus::PAID);
+            $this->em->flush();
+        }
+
+        return [
+            'period_id'    => $periodId,
+            'total_items'  => count($items),
+            'results'      => $results,
+            'all_passed'   => $allPassed && empty($anyFailed),
+            'period_status' => $period->getStatus()->value,
+        ];
+    }
+}
     }
 }

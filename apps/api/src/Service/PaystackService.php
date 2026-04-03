@@ -236,4 +236,85 @@ final class PaystackService
     {
         return !empty($this->secretKey) && !empty($this->publicKey);
     }
+
+    // ─── Transfers (Salary Disbursement) ────────────────────────
+
+    /**
+     * Fetch Nigerian banks from Paystack.
+     * Returns array of ['name' => string, 'code' => string].
+     */
+    public function listBanks(): array
+    {
+        $result = $this->get('/bank?currency=NGN&perPage=100');
+        return $result['data'] ?? [];
+    }
+
+    /**
+     * Create a Paystack transfer recipient for an employee bank account.
+     * Returns the recipient_code — store this on PayrollItem for reuse.
+     *
+     * @throws \RuntimeException on Paystack error
+     */
+    public function createTransferRecipient(
+        string $accountName,
+        string $accountNumber,
+        string $bankCode,
+        string $description = '',
+    ): string {
+        $result = $this->post('/transferrecipient', [
+            'type'           => 'nuban',
+            'name'           => $accountName,
+            'account_number' => $accountNumber,
+            'bank_code'      => $bankCode,
+            'currency'       => 'NGN',
+            'description'    => $description ?: $accountName,
+        ]);
+
+        if (!($result['status'] ?? false) || empty($result['data']['recipient_code'])) {
+            throw new \RuntimeException(
+                'Paystack createTransferRecipient failed: ' . ($result['message'] ?? 'unknown error')
+            );
+        }
+
+        return $result['data']['recipient_code'];
+    }
+
+    /**
+     * Initiate a single NGN transfer. Amount is in kobo.
+     * Returns the full Paystack transfer data array.
+     *
+     * @throws \RuntimeException on Paystack error
+     */
+    public function initiateTransfer(
+        string $recipientCode,
+        int    $amountKobo,
+        string $reference,
+        string $reason = 'Salary Payment',
+    ): array {
+        $result = $this->post('/transfer', [
+            'source'    => 'balance',
+            'amount'    => $amountKobo,
+            'recipient' => $recipientCode,
+            'reason'    => $reason,
+            'reference' => $reference,
+            'currency'  => 'NGN',
+        ]);
+
+        if (!($result['status'] ?? false)) {
+            throw new \RuntimeException(
+                'Paystack initiateTransfer failed: ' . ($result['message'] ?? 'unknown error')
+            );
+        }
+
+        return $result['data'] ?? [];
+    }
+
+    /**
+     * Verify a transfer by reference. Returns transfer data including status.
+     */
+    public function verifyTransfer(string $reference): array
+    {
+        $result = $this->get('/transfer/verify/' . urlencode($reference));
+        return $result['data'] ?? [];
+    }
 }

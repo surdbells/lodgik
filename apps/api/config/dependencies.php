@@ -778,13 +778,14 @@ return function (ContainerBuilder $builder): void {
         PayrollItemRepository::class => fn(ContainerInterface $c) => new PayrollItemRepository($c->get(EntityManagerInterface::class)),
 
         PayrollService::class => fn(ContainerInterface $c) => new PayrollService(
-            em: $c->get(EntityManagerInterface::class),
+            em:         $c->get(EntityManagerInterface::class),
             periodRepo: $c->get(PayrollPeriodRepository::class),
-            itemRepo: $c->get(PayrollItemRepository::class),
-            bracketRepo: $c->get(TaxBracketRepository::class),
-            empRepo: $c->get(EmployeeRepository::class),
-            mailer: $c->get(ZeptoMailService::class),
-            logger: $c->get(LoggerInterface::class),
+            itemRepo:   $c->get(PayrollItemRepository::class),
+            bracketRepo:$c->get(TaxBracketRepository::class),
+            empRepo:    $c->get(EmployeeRepository::class),
+            mailer:     $c->get(ZeptoMailService::class),
+            logger:     $c->get(LoggerInterface::class),
+            paystack:   $c->get(\Lodgik\Service\PaystackService::class),
         ),
         PayrollController::class => fn(ContainerInterface $c) => new PayrollController(
             service: $c->get(PayrollService::class),
