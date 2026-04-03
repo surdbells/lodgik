@@ -325,6 +325,8 @@ return function (ContainerBuilder $builder): void {
             );
         },
 
+        \Lodgik\Service\EncryptionService::class => fn(ContainerInterface $c) => new \Lodgik\Service\EncryptionService(),
+
         ZeptoMailService::class => function (ContainerInterface $c): ZeptoMailService {
             $settings = $c->get('settings')['zeptomail'];
 

@@ -34,7 +34,8 @@ class Guest implements TenantAware
     #[ORM\Column(type: Types::STRING, length: 320, nullable: true)]
     private ?string $email = null;
 
-    #[ORM\Column(type: Types::STRING, length: 30, nullable: true)]
+    /** Encrypted at rest with AES-256-GCM via EncryptionService */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $phone = null;
 
     #[ORM\Column(type: Types::STRING, length: 80, nullable: true)]
@@ -43,7 +44,8 @@ class Guest implements TenantAware
     #[ORM\Column(name: 'id_type', type: Types::STRING, length: 50, nullable: true)]
     private ?string $idType = null;
 
-    #[ORM\Column(name: 'id_number', type: Types::STRING, length: 50, nullable: true)]
+    /** Encrypted at rest with AES-256-GCM via EncryptionService */
+    #[ORM\Column(name: 'id_number', type: Types::TEXT, nullable: true)]
     private ?string $idNumber = null;
 
     #[ORM\Column(name: 'date_of_birth', type: Types::DATE_IMMUTABLE, nullable: true)]
@@ -162,4 +164,23 @@ class Guest implements TenantAware
 
     public function getCompanyName(): ?string { return $this->companyName; }
     public function setCompanyName(?string $v): void { $this->companyName = $v; }
+
+    // ─── PII Encryption Lifecycle ────────────────────────────────
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function encryptPii(): void
+    {
+        $enc = new \Lodgik\Service\EncryptionService();
+        $this->phone    = $enc->encrypt($this->phone);
+        $this->idNumber = $enc->encrypt($this->idNumber);
+    }
+
+    #[ORM\PostLoad]
+    public function decryptPii(): void
+    {
+        $enc = new \Lodgik\Service\EncryptionService();
+        $this->phone    = $enc->decrypt($this->phone);
+        $this->idNumber = $enc->decrypt($this->idNumber);
+    }
 }

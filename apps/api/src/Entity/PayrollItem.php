@@ -93,7 +93,8 @@ class PayrollItem implements TenantAware
     #[ORM\Column(name: 'bank_name', type: Types::STRING, length: 100, nullable: true)]
     private ?string $bankName = null;
 
-    #[ORM\Column(name: 'bank_account_number', type: Types::STRING, length: 20, nullable: true)]
+    /** Encrypted at rest with AES-256-GCM via EncryptionService */
+    #[ORM\Column(name: 'bank_account_number', type: Types::TEXT, nullable: true)]
     private ?string $bankAccountNumber = null;
 
     #[ORM\Column(name: 'bank_account_name', type: Types::STRING, length: 150, nullable: true)]
@@ -256,5 +257,22 @@ class PayrollItem implements TenantAware
             'payslip_emailed_at'      => $this->payslipEmailedAt?->format('Y-m-d H:i:s'),
             'created_at'              => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
+    }
+
+    // ─── PII Encryption Lifecycle ────────────────────────────────
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function encryptPii(): void
+    {
+        $enc = new \Lodgik\Service\EncryptionService();
+        $this->bankAccountNumber = $enc->encrypt($this->bankAccountNumber);
+    }
+
+    #[ORM\PostLoad]
+    public function decryptPii(): void
+    {
+        $enc = new \Lodgik\Service\EncryptionService();
+        $this->bankAccountNumber = $enc->decrypt($this->bankAccountNumber);
     }
 }

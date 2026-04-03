@@ -52,7 +52,8 @@ class Employee implements TenantAware
     #[ORM\Column(type: Types::STRING, length: 320, nullable: true)]
     private ?string $email = null;
 
-    #[ORM\Column(type: Types::STRING, length: 30, nullable: true)]
+    /** Encrypted at rest with AES-256-GCM via EncryptionService */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $phone = null;
 
     #[ORM\Column(name: 'staff_id', type: Types::STRING, length: 30)]
@@ -102,7 +103,8 @@ class Employee implements TenantAware
     #[ORM\Column(name: 'bank_name', type: Types::STRING, length: 100, nullable: true)]
     private ?string $bankName = null;
 
-    #[ORM\Column(name: 'bank_account_number', type: Types::STRING, length: 20, nullable: true)]
+    /** Encrypted at rest with AES-256-GCM via EncryptionService */
+    #[ORM\Column(name: 'bank_account_number', type: Types::TEXT, nullable: true)]
     private ?string $bankAccountNumber = null;
 
     #[ORM\Column(name: 'bank_account_name', type: Types::STRING, length: 150, nullable: true)]
@@ -285,5 +287,24 @@ class Employee implements TenantAware
             'contract_expiring_soon' => $this->isContractExpiring(30),
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
+    }
+
+    // ─── PII Encryption Lifecycle ────────────────────────────────
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function encryptPii(): void
+    {
+        $enc = new \Lodgik\Service\EncryptionService();
+        $this->phone             = $enc->encrypt($this->phone);
+        $this->bankAccountNumber = $enc->encrypt($this->bankAccountNumber);
+    }
+
+    #[ORM\PostLoad]
+    public function decryptPii(): void
+    {
+        $enc = new \Lodgik\Service\EncryptionService();
+        $this->phone             = $enc->decrypt($this->phone);
+        $this->bankAccountNumber = $enc->decrypt($this->bankAccountNumber);
     }
 }
