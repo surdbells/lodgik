@@ -289,6 +289,13 @@ class Employee implements TenantAware
         ];
     }
 
+    /** Set when a right-to-erasure request has been processed */
+    #[ORM\Column(name: 'gdpr_erased', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $gdprErased = false;
+
+    public function isGdprErased(): bool { return $this->gdprErased; }
+    public function setGdprErased(bool $v): void { $this->gdprErased = $v; }
+
     // ─── PII Encryption Lifecycle ────────────────────────────────
 
     #[ORM\PrePersist]

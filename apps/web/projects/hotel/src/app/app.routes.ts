@@ -384,6 +384,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/audit-log/audit-log.page').then(m => m.AuditLogPage),
         canActivate: [roleGuard('property_admin', 'manager')],
       },
+      {
+        path: 'compliance',
+        loadComponent: () => import('./pages/compliance/compliance.page').then(m => m.CompliancePage),
+        canActivate: [roleGuard('property_admin')],
+      },
 
       // ── Guest Card System ─────────────────────────────────────
       {

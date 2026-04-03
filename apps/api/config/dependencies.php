@@ -241,6 +241,15 @@ return function (ContainerBuilder $builder): void {
 
         \Lodgik\Module\Docs\DocsController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Docs\DocsController(),
 
+        \Lodgik\Module\Ndpr\NdprService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Ndpr\NdprService(
+            em:     $c->get(EntityManagerInterface::class),
+            mailer: $c->get(ZeptoMailService::class),
+            logger: $c->get(LoggerInterface::class),
+        ),
+        \Lodgik\Module\Ndpr\NdprController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Ndpr\NdprController(
+            svc: $c->get(\Lodgik\Module\Ndpr\NdprService::class),
+        ),
+
         // ─── Helpers ───────────────────────────────────────────────
         ResponseHelper::class => function (): ResponseHelper {
             return new ResponseHelper();

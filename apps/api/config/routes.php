@@ -11,6 +11,9 @@ return function (App $app): void {
     // ─── Tenant API Docs (JWT-authenticated) ──────────────────
     (require __DIR__ . '/../src/Module/Docs/routes.php')($app);
 
+    // ─── NDPR Compliance ──────────────────────────────────────
+    (require __DIR__ . '/../src/Module/Ndpr/routes.php')($app);
+
     // ─── Phase 0: SaaS Platform ───────────────────────────────
     (require __DIR__ . '/../src/Module/Auth/routes.php')($app);
     (require __DIR__ . '/../src/Module/Staff/routes.php')($app);
