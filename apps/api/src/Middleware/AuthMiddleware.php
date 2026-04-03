@@ -38,6 +38,14 @@ final class AuthMiddleware implements MiddlewareInterface
                 ?? '';
         }
 
+        // Fallback for SSE / EventSource: token passed as ?token= query param
+        // (EventSource cannot set custom headers)
+        if (($authHeader === '' || !str_starts_with($authHeader, 'Bearer '))
+            && !empty($request->getQueryParams()['token'])
+        ) {
+            $authHeader = 'Bearer ' . $request->getQueryParams()['token'];
+        }
+
         if ($authHeader === '' || !str_starts_with($authHeader, 'Bearer ')) {
             return $this->unauthorized('Missing or invalid Authorization header');
         }

@@ -929,6 +929,10 @@ return function (ContainerBuilder $builder): void {
             movementService: $c->get(\Lodgik\Module\Inventory\MovementService::class),
             recipeService:   $c->get(\Lodgik\Module\Pos\RecipeService::class),
             chatService:     $c->get(\Lodgik\Module\Chat\ChatService::class),
+            redis:           $c->get(RedisClient::class),
+        ),
+        \Lodgik\Module\Pos\KitchenSseController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\KitchenSseController(
+            redisSettings: $c->get('settings')['redis'],
         ),
         \Lodgik\Module\Pos\PosController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Pos\PosController(
             service: $c->get(\Lodgik\Module\Pos\PosService::class),

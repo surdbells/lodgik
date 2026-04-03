@@ -18,6 +18,7 @@ use Lodgik\Module\Inventory\MovementService;
 use Psr\Log\LoggerInterface;
 use Lodgik\Module\Chat\ChatService;
 use Lodgik\Module\Pos\RecipeService;
+use Predis\Client as RedisClient;
 
 final class PosService
 {
@@ -33,6 +34,8 @@ final class PosService
         private readonly ?MovementService $movementService = null,
         private readonly ?RecipeService $recipeService = null,
         private readonly ?ChatService $chatService = null,
+        private readonly ?RedisClient $redis = null,
+    ) {}
     ) {}
 
     // ─── Tables ─────────────────────────────────────────────────
@@ -225,6 +228,7 @@ final class PosService
         $order->send();
         $this->em->flush();
         $this->logger->info("Order {$order->getOrderNumber()} sent to kitchen");
+        $this->publishKitchenEvent($order->getPropertyId(), 'new_order');
         $this->notifyGuestOrderStatus($order,
             "🍽 Your room service order #{$order->getOrderNumber()} has been received by our kitchen and is now being prepared."
         );
@@ -238,7 +242,9 @@ final class PosService
         // Update order status
         $order = $this->em->find(PosOrder::class, $item->getOrderId());
         if ($order && $order->getStatus() === PosOrderStatus::SENT) $order->preparing();
-        $this->em->flush(); return $item;
+        $this->em->flush();
+        $this->publishKitchenEvent($order?->getPropertyId() ?? '', 'item_preparing');
+        return $item;
     }
 
     public function markItemReady(string $itemId): PosOrderItem
@@ -262,7 +268,9 @@ final class PosService
                 );
             }
         }
-        $this->em->flush(); return $item;
+        $this->em->flush();
+        $this->publishKitchenEvent($order?->getPropertyId() ?? '', 'item_ready');
+        return $item;
     }
 
     public function serveOrder(string $orderId): PosOrder
@@ -473,5 +481,23 @@ final class PosService
     public function getLastDeductionWarnings(): array
     {
         return $this->lastDeductionWarnings;
+    }
+
+    /**
+     * Publish a kitchen update event to the Redis pub/sub channel.
+     * All connected kitchen SSE clients for this property will receive it
+     * and re-fetch the queue. Silently no-ops if Redis is unavailable.
+     */
+    private function publishKitchenEvent(string $propertyId, string $eventType = 'refresh'): void
+    {
+        if ($this->redis === null) {
+            return;
+        }
+        try {
+            $payload = json_encode(['type' => $eventType, 'property_id' => $propertyId]);
+            $this->redis->publish('kitchen:' . $propertyId, $payload);
+        } catch (\Throwable $e) {
+            $this->logger->warning('Kitchen SSE publish failed: ' . $e->getMessage());
+        }
     }
 }

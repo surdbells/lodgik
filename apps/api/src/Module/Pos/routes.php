@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use Lodgik\Module\Pos\PosController;
+use Lodgik\Module\Pos\KitchenSseController;
 use Lodgik\Module\Pos\RecipeController;
 use Lodgik\Middleware\RoleMiddleware;
 use Lodgik\Middleware\AuthMiddleware;
@@ -36,6 +37,8 @@ return function (App $app): void {
         $g->post('/orders/{id}/cancel', [PosController::class, 'cancelOrder']);
         $g->post('/orders/{id}/post-to-folio', [PosController::class, 'postToFolio']);
         $g->get('/kitchen/queue', [PosController::class, 'kitchenQueue']);
+        // SSE: real-time kitchen push (replaces 30-second polling)
+        $g->get('/kitchen/stream', [KitchenSseController::class, 'stream']);
         $g->get('/sales-report',   [PosController::class, 'salesReport']);
         $g->get('/section-prices',        [PosController::class, 'listSectionPrices']);
         $g->post('/section-prices',       [PosController::class, 'saveSectionPrice']);

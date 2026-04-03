@@ -4,7 +4,9 @@ import { TitleCasePipe, DatePipe } from '@angular/common';
 import {
   ApiService, PageHeaderComponent, StatsCardComponent, LoadingSpinnerComponent,
   ActivePropertyService, ConfirmDialogService, ConfirmDialogComponent, ToastService,
+  TokenService,
 } from '@lodgik/shared';
+import { environment } from '../../../environments/environment';
 
 type Tab = 'orders' | 'kitchen' | 'tables' | 'menu' | 'history';
 
@@ -931,6 +933,7 @@ export class PosPage implements OnInit, OnDestroy {
   private activeProperty = inject(ActivePropertyService);
   private confirm        = inject(ConfirmDialogService);
   private toast          = inject(ToastService);
+  private tokenSvc       = inject(TokenService);
 
   // State
   loading         = signal(true);
@@ -1011,7 +1014,7 @@ export class PosPage implements OnInit, OnDestroy {
   historyStatus   = 'paid';
 
   // Auto-refresh
-  private kitchenTimer: any;
+  private sseSource: EventSource | null = null;
 
   // Computed
   filteredProducts = computed(() => {
@@ -1032,8 +1035,8 @@ export class PosPage implements OnInit, OnDestroy {
 
   get pid() { return this.activeProperty.propertyId(); }
 
-  ngOnInit() { this.load(); this.startKitchenAutoRefresh(); }
-  ngOnDestroy() { clearInterval(this.kitchenTimer); clearTimeout(this.rsTimer); }
+  ngOnInit() { this.load(); this.startKitchenSse(); }
+  ngOnDestroy() { this.stopKitchenSse(); clearTimeout(this.rsTimer); }
 
   // ── Data loading ─────────────────────────────────────────────────────
   load() {
@@ -1079,12 +1082,41 @@ export class PosPage implements OnInit, OnDestroy {
   setTab(id: string) { this.activeTab = id as Tab; }
   onTabChange(tab: string) {
     if (tab === 'history') this.loadHistory();
-    if (tab === 'kitchen') this.loadKitchen();
+    if (tab === 'kitchen') {
+      this.loadKitchen();       // immediate fresh fetch when switching to kitchen
+      if (!this.sseSource) this.startKitchenSse(); // restart if it was closed
+    }
     if (tab === 'reports') this.loadSalesReport();
   }
 
-  startKitchenAutoRefresh() {
-    this.kitchenTimer = setInterval(() => { if (this.activeTab === 'kitchen') this.loadKitchen(); }, 30000);
+  startKitchenSse() {
+    this.stopKitchenSse();
+    const pid = this.pid;
+    if (!pid) return;
+
+    const token = this.tokenSvc.getAccessToken() ?? '';
+    const url = `${environment.apiUrl}/pos/kitchen/stream`
+      + `?property_id=${encodeURIComponent(pid)}`
+      + `&token=${encodeURIComponent(token)}`;
+
+    const source = new EventSource(url);
+    this.sseSource = source;
+
+    source.addEventListener('kitchen_update', () => {
+      this.loadKitchen();
+    });
+
+    source.onerror = () => {
+      // EventSource retries automatically; one-shot poll to keep display fresh.
+      this.loadKitchen();
+    };
+  }
+
+  stopKitchenSse() {
+    if (this.sseSource) {
+      this.sseSource.close();
+      this.sseSource = null;
+    }
   }
 
   // ── Order builder ─────────────────────────────────────────────────────
