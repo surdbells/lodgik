@@ -6,6 +6,7 @@ use Lodgik\Entity\{Expense, ExpenseCategory, NightAudit, PoliceReport, Performan
 use Lodgik\Entity\{Booking, Room, Folio, FolioCharge, FolioPayment};
 use Lodgik\Enum\{BookingStatus, ChargeCategory, PaymentMethod, PaymentStatus};
 use Lodgik\Module\Folio\FolioService;
+use Lodgik\Service\ZeptoMailService;
 use Psr\Log\LoggerInterface;
 
 final class FinanceService
@@ -14,6 +15,7 @@ final class FinanceService
         private readonly EntityManagerInterface $em,
         private readonly ?FolioService $folioService = null,
         private readonly ?LoggerInterface $logger = null,
+        private readonly ?ZeptoMailService $mailer = null,
     ) {}
 
     public function listCategories(string $tenantId): array { return array_map(fn($c) => $c->toArray(), $this->em->getRepository(ExpenseCategory::class)->findBy(['tenantId' => $tenantId], ['name' => 'ASC'])); }
@@ -465,19 +467,126 @@ final class FinanceService
             );
         }
 
-        if ($this->folioService !== null) {
-            $summary = $this->folioService->getCorporateSummary($groupBookingId);
-            // Email sending would go through ZeptoMail here in full implementation.
-            // For now we log the intent and return success — the email service
-            // integration hook is here for when ZeptoMail templates are built.
-            $this->logger?->info(
-                "Corporate invoice requested for group booking {$groupBookingId}. " .
-                "Recipient: {$email}. Outstanding: ₦{$summary['outstanding']}. " .
-                "Folio count: {$summary['folio_count']}."
-            );
+        if ($this->folioService === null) {
+            throw new \RuntimeException('FolioService not available');
         }
 
-        return "Corporate invoice queued for delivery to {$email}";
+        $summary  = $this->folioService->getCorporateSummary($groupBookingId);
+        $folios   = $summary['folios'] ?? [];
+        $groupName = $gb->getName();
+        $contactName = $gb->getContactName();
+        $refNumber = $gb->getCorporateRefNumber();
+        $checkIn  = $gb->getCheckIn()->format('d M Y');
+        $checkOut = $gb->getCheckOut()->format('d M Y');
+
+        $outstanding = (float) ($summary['outstanding'] ?? 0);
+        $totalCharges = (float) ($summary['total_charges'] ?? 0);
+        $totalPaid = (float) ($summary['total_payments'] ?? 0);
+
+        // Build folio breakdown rows
+        $folioRows = '';
+        foreach ($folios as $folio) {
+            $folioNum   = $folio['folio_number'] ?? '—';
+            $charges    = number_format((float)($folio['total_charges'] ?? 0), 2);
+            $paid       = number_format((float)($folio['total_payments'] ?? 0), 2);
+            $balance    = number_format((float)($folio['balance'] ?? 0), 2);
+            $balanceColor = (float)($folio['balance'] ?? 0) > 0 ? '#dc2626' : '#16a34a';
+            $folioRows .= "
+            <tr>
+                <td style='padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;font-family:monospace;'>{$folioNum}</td>
+                <td style='padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;'>₦{$charges}</td>
+                <td style='padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;color:#16a34a;'>₦{$paid}</td>
+                <td style='padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;color:{$balanceColor};font-weight:600;'>₦{$balance}</td>
+            </tr>";
+        }
+
+        $refLine = $refNumber ? "<p style='margin:4px 0;color:#6b7280;font-size:13px;'>Reference: <strong>{$refNumber}</strong></p>" : '';
+        $outstandingColor = $outstanding > 0 ? '#dc2626' : '#16a34a';
+        $outstandingLabel = $outstanding > 0 ? 'Amount Due' : 'Settled';
+
+        $html = "
+<!DOCTYPE html>
+<html>
+<head><meta charset='UTF-8'></head>
+<body style='margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;'>
+<div style='max-width:640px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;'>
+
+  <!-- Header -->
+  <div style='background:#1e4a35;padding:28px 32px;'>
+    <h1 style='margin:0;color:#ffffff;font-size:20px;font-weight:700;'>Corporate Invoice</h1>
+    <p style='margin:6px 0 0;color:#a7f3d0;font-size:14px;'>Consolidated billing for group booking</p>
+  </div>
+
+  <!-- Group info -->
+  <div style='padding:24px 32px;border-bottom:1px solid #f0f0f0;'>
+    <h2 style='margin:0 0 8px;font-size:16px;color:#111827;'>{$groupName}</h2>
+    {$refLine}
+    <p style='margin:4px 0;color:#6b7280;font-size:13px;'>Attention: {$contactName}</p>
+    <p style='margin:4px 0;color:#6b7280;font-size:13px;'>Period: {$checkIn} — {$checkOut}</p>
+  </div>
+
+  <!-- Folio breakdown -->
+  <div style='padding:24px 32px;'>
+    <p style='margin:0 0 12px;font-size:13px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:0.05em;'>Room Charges Breakdown</p>
+    <table style='width:100%;border-collapse:collapse;'>
+      <thead>
+        <tr style='background:#f9fafb;'>
+          <th style='padding:8px 12px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;border-bottom:2px solid #e5e7eb;'>Folio Ref</th>
+          <th style='padding:8px 12px;text-align:right;font-size:12px;color:#6b7280;font-weight:600;border-bottom:2px solid #e5e7eb;'>Charges</th>
+          <th style='padding:8px 12px;text-align:right;font-size:12px;color:#6b7280;font-weight:600;border-bottom:2px solid #e5e7eb;'>Paid</th>
+          <th style='padding:8px 12px;text-align:right;font-size:12px;color:#6b7280;font-weight:600;border-bottom:2px solid #e5e7eb;'>Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {$folioRows}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Totals -->
+  <div style='padding:16px 32px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;'>
+    <table style='width:100%;'>
+      <tr>
+        <td style='font-size:13px;color:#6b7280;padding:4px 0;'>Total Charges</td>
+        <td style='font-size:13px;color:#374151;text-align:right;padding:4px 0;'>₦" . number_format($totalCharges, 2) . "</td>
+      </tr>
+      <tr>
+        <td style='font-size:13px;color:#6b7280;padding:4px 0;'>Total Paid</td>
+        <td style='font-size:13px;color:#16a34a;text-align:right;padding:4px 0;'>₦" . number_format($totalPaid, 2) . "</td>
+      </tr>
+      <tr>
+        <td style='font-size:15px;font-weight:700;color:#111827;padding:8px 0 4px;border-top:2px solid #e5e7eb;margin-top:8px;'>{$outstandingLabel}</td>
+        <td style='font-size:15px;font-weight:700;color:{$outstandingColor};text-align:right;padding:8px 0 4px;border-top:2px solid #e5e7eb;'>₦" . number_format($outstanding, 2) . "</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div style='padding:20px 32px;border-top:1px solid #e5e7eb;'>
+    <p style='margin:0;font-size:12px;color:#9ca3af;text-align:center;'>
+      This is an automated invoice from Lodgik PMS. Please contact the hotel for payment queries.
+    </p>
+  </div>
+</div>
+</body>
+</html>";
+
+        $subject = "Corporate Invoice — {$groupName}" . ($refNumber ? " ({$refNumber})" : '');
+
+        if ($this->mailer !== null) {
+            $sent = $this->mailer->send($email, $contactName ?: 'Billing Contact', $subject, $html);
+            if (!$sent) {
+                $this->logger?->error("Corporate invoice email failed for group booking {$groupBookingId}", ['email' => $email]);
+                throw new \RuntimeException('Failed to send invoice email. Please check the ZeptoMail configuration.');
+            }
+        }
+
+        $this->logger?->info(
+            "Corporate invoice sent for group booking {$groupBookingId}",
+            ['email' => $email, 'outstanding' => $outstanding, 'folios' => count($folios)]
+        );
+
+        return "Corporate invoice sent to {$email}";
     }
 }
 

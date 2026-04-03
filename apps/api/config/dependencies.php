@@ -974,7 +974,10 @@ return function (ContainerBuilder $builder): void {
 
         // ─── Phase 8A: Finance ──────────────────────────────────
         \Lodgik\Module\Finance\FinanceService::class => fn(ContainerInterface $c) => new \Lodgik\Module\Finance\FinanceService(
-            em: $c->get(EntityManagerInterface::class),
+            em:           $c->get(EntityManagerInterface::class),
+            folioService: $c->get(\Lodgik\Module\Folio\FolioService::class),
+            logger:       $c->get(\Psr\Log\LoggerInterface::class),
+            mailer:       $c->get(ZeptoMailService::class),
         ),
         \Lodgik\Module\Finance\FinanceController::class => fn(ContainerInterface $c) => new \Lodgik\Module\Finance\FinanceController(
             svc: $c->get(\Lodgik\Module\Finance\FinanceService::class),

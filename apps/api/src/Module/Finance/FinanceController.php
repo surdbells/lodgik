@@ -94,8 +94,15 @@ final class FinanceController
     }
     public function sendCorporateInvoice(Request $req, Response $res, array $args): Response
     {
-        $result = $this->svc->sendCorporateInvoice($args['id'], $req->getAttribute('auth.tenant_id'));
-        return $this->json($res, ['success' => true, 'message' => $result]);
+        try {
+            $result = $this->svc->sendCorporateInvoice($args['id'], $req->getAttribute('auth.tenant_id'));
+            return $this->json($res, ['success' => true, 'message' => $result]);
+        } catch (\RuntimeException $e) {
+            $code = $e->getCode() === 404 ? 404 : 500;
+            return $this->json($res, ['success' => false, 'message' => $e->getMessage()], $code);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json($res, ['success' => false, 'message' => $e->getMessage()], 422);
+        }
     }
 
     /** POST /api/expenses/{id}/share-receipt */
