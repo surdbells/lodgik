@@ -10,6 +10,7 @@ import {
 import { ActivePropertyService } from '@lodgik/shared';
 import { BarChartComponent, ChartDataPoint } from '@lodgik/charts';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 interface OtaChannel {
   id: string;
@@ -22,6 +23,8 @@ interface OtaChannel {
   is_active: boolean;
   room_type_mapping: Record<string, string> | null;
   rate_plan_mapping: Record<string, string> | null;
+  ical_token: string | null;
+  has_webhook_secret: boolean;
 }
 
 interface OtaReservation {
@@ -168,6 +171,30 @@ const CHANNEL_OPTIONS = [
                     Disconnect
                   </button>
                 </div>
+
+                <!-- iCal Feed URL -->
+                @if (c.ical_token) {
+                  <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                    <p class="text-xs text-blue-700 font-semibold mb-1">📅 iCal Feed URL</p>
+                    <p class="text-xs text-blue-600 mb-2">
+                      Paste this URL into Booking.com or Expedia extranet under "iCal import"
+                      to keep their calendars in sync with your confirmed bookings.
+                    </p>
+                    <div class="flex items-center gap-2">
+                      <code class="flex-1 text-xs bg-white border border-blue-200 rounded-lg px-2 py-1.5 break-all text-gray-600">
+                        {{ icalFeedUrl(c.ical_token) }}
+                      </code>
+                      <button (click)="copyIcalUrl(c.ical_token!)"
+                        class="flex-shrink-0 px-2 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">
+                        Copy
+                      </button>
+                    </div>
+                    <button (click)="rotateIcalToken(c.id)"
+                      class="mt-2 text-xs text-blue-500 hover:underline">
+                      Rotate URL (invalidates current link)
+                    </button>
+                  </div>
+                }
               </div>
             }
           </div>
@@ -569,6 +596,31 @@ export default class OtaChannelsPage implements OnInit, OnDestroy {
     this.api.post(`/ota/channels/${id}/sync`, {}).subscribe({
       next: () => this.load(),
       error: () => this.toast.error('Sync failed'),
+    });
+  }
+
+  // ── iCal feed ────────────────────────────────────────────────
+
+  icalFeedUrl(token: string): string {
+    return `${environment.apiUrl}/ota/feed/${token}.ics`;
+  }
+
+  copyIcalUrl(token: string): void {
+    const url = this.icalFeedUrl(token);
+    navigator.clipboard.writeText(url).then(
+      () => this.toast.success('iCal URL copied to clipboard'),
+      () => this.toast.error('Copy failed — please copy manually'),
+    );
+  }
+
+  rotateIcalToken(id: string): void {
+    if (!confirm('Rotating the iCal URL will invalidate the current link.\nYou will need to update the URL in Booking.com / Expedia.\n\nContinue?')) return;
+    this.api.post(`/ota/channels/${id}/rotate-ical-token`, {}).subscribe({
+      next: (r: any) => {
+        this.toast.success('iCal URL rotated — update your OTA extranet with the new URL');
+        this.channels.update(cs => cs.map(c => c.id === id ? { ...c, ical_token: r.data?.ical_token ?? c.ical_token } : c));
+      },
+      error: () => this.toast.error('Failed to rotate token'),
     });
   }
 

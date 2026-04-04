@@ -22,17 +22,29 @@ class OtaChannel implements TenantAware
     #[ORM\Column(name: 'last_sync_at', type: Types::DATETIME_IMMUTABLE, nullable: true)] private ?\DateTimeImmutable $lastSyncAt = null;
     #[ORM\Column(name: 'is_active', type: Types::BOOLEAN, options: ['default' => false])] private bool $isActive = false;
 
+    /** Unguessable token used in the public iCal feed URL */
+    #[ORM\Column(name: 'ical_token', type: Types::STRING, length: 36, nullable: true, unique: true)]
+    private ?string $icalToken = null;
+
+    /** Optional HMAC secret for verifying inbound webhook payloads from OTA platforms */
+    #[ORM\Column(name: 'webhook_secret', type: Types::STRING, length: 100, nullable: true)]
+    private ?string $webhookSecret = null;
+
     public function __construct(string $propertyId, string $channelName, string $displayName, string $tenantId)
-    { $this->generateId(); $this->propertyId = $propertyId; $this->channelName = $channelName; $this->displayName = $displayName; $this->setTenantId($tenantId); }
+    { $this->generateId(); $this->propertyId = $propertyId; $this->channelName = $channelName; $this->displayName = $displayName; $this->setTenantId($tenantId); $this->icalToken = \Lodgik\Helper\UuidHelper::generate(); }
 
     public function getChannelName(): string { return $this->channelName; } public function getSyncStatus(): string { return $this->syncStatus; }
+    public function getPropertyId(): string { return $this->propertyId; }
     public function setCredentials(?array $v): void { $this->credentials = $v; } public function setRoomTypeMapping(?array $v): void { $this->roomTypeMapping = $v; }
     public function setRatePlanMapping(?array $v): void { $this->ratePlanMapping = $v; } public function setCommissionPercentage(string $v): void { $this->commissionPercentage = $v; }
     public function setDisplayName(string $v): void { $this->displayName = $v; }
-    public function activate(): void { $this->isActive = true; $this->syncStatus = 'active'; } public function pause(): void { $this->syncStatus = 'paused'; }
-    public function disconnect(): void { $this->isActive = false; $this->syncStatus = 'disconnected'; }
+    public function getIcalToken(): ?string { return $this->icalToken; }
+    public function rotateIcalToken(): void { $this->icalToken = \Lodgik\Helper\UuidHelper::generate(); }
+    public function getWebhookSecret(): ?string { return $this->webhookSecret; }
+    public function setWebhookSecret(?string $v): void { $this->webhookSecret = $v; }
+    public function activate(): void { $this->isActive = true; $this->syncStatus = 'active'; } public function pause(): void { $this->syncStatus = 'paused'; }\n    public function disconnect(): void { $this->isActive = false; $this->syncStatus = 'disconnected'; }
     public function markSynced(): void { $this->lastSyncAt = new \DateTimeImmutable(); }
     public function markError(): void { $this->syncStatus = 'error'; }
 
-    public function toArray(): array { return ['id' => $this->getId(), 'property_id' => $this->propertyId, 'channel_name' => $this->channelName, 'display_name' => $this->displayName, 'commission_percentage' => $this->commissionPercentage, 'sync_status' => $this->syncStatus, 'last_sync_at' => $this->lastSyncAt?->format('Y-m-d H:i:s'), 'is_active' => $this->isActive, 'room_type_mapping' => $this->roomTypeMapping, 'rate_plan_mapping' => $this->ratePlanMapping]; }
+    public function toArray(): array { return ['id' => $this->getId(), 'property_id' => $this->propertyId, 'channel_name' => $this->channelName, 'display_name' => $this->displayName, 'commission_percentage' => $this->commissionPercentage, 'sync_status' => $this->syncStatus, 'last_sync_at' => $this->lastSyncAt?->format('Y-m-d H:i:s'), 'is_active' => $this->isActive, 'room_type_mapping' => $this->roomTypeMapping, 'rate_plan_mapping' => $this->ratePlanMapping, 'ical_token' => $this->icalToken, 'has_webhook_secret' => $this->webhookSecret !== null]; }
 }

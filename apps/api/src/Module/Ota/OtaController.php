@@ -41,4 +41,70 @@ final class OtaController
             ], $rows),
         ]]);
     }
+
+    // ── iCal Feed (public, no auth) ─────────────────────────────────────────
+
+    /**
+     * GET /api/ota/feed/{token}.ics
+     * Returns an RFC 5545 iCal file for all confirmed bookings on the property
+     * linked to the channel identified by {token}.
+     * Hotels paste this URL into Booking.com / Expedia extranet.
+     */
+    public function icalFeed(Request $req, Response $res, array $args): Response
+    {
+        $token   = pathinfo($args['token'], PATHINFO_FILENAME); // strip .ics extension
+        $channel = $this->svc->getChannelByIcalToken($token);
+
+        if (!$channel) {
+            $res->getBody()->write('Channel not found');
+            return $res->withStatus(404)->withHeader('Content-Type', 'text/plain');
+        }
+
+        $hotelName = $req->getQueryParams()['name'] ?? 'Hotel';
+        $ical      = $this->svc->generateIcalFeed(
+            propertyId: $channel->getPropertyId(),
+            tenantId:   $channel->getTenantId(),
+            hotelName:  $hotelName,
+        );
+
+        $res->getBody()->write($ical);
+        return $res
+            ->withHeader('Content-Type', 'text/calendar; charset=utf-8')
+            ->withHeader('Content-Disposition', 'inline; filename="lodgik-bookings.ics"');
+    }
+
+    /**
+     * POST /api/ota/webhook/{channelId}
+     * Receives inbound reservation notifications from OTA platforms.
+     * Validates optional HMAC signature and ingests/updates reservations.
+     */
+    public function webhook(Request $req, Response $res, array $args): Response
+    {
+        $payload   = (array) $req->getParsedBody();
+        $signature = $req->getHeaderLine('X-OTA-Signature') ?: $req->getHeaderLine('X-Hub-Signature-256');
+
+        try {
+            $result = $this->svc->handleWebhook($args['channelId'], $payload, $signature ?: null);
+            return $this->json($res, ['success' => true, 'data' => $result]);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json($res, ['success' => false, 'message' => $e->getMessage()], 400);
+        } catch (\RuntimeException $e) {
+            $code = str_contains($e->getMessage(), 'HMAC') ? 401 : 404;
+            return $this->json($res, ['success' => false, 'message' => $e->getMessage()], $code);
+        }
+    }
+
+    /**
+     * POST /api/ota/channels/{id}/rotate-ical-token (authenticated)
+     * Invalidates the current iCal feed URL and issues a new one.
+     */
+    public function rotateIcalToken(Request $req, Response $res, array $args): Response
+    {
+        try {
+            $channel = $this->svc->rotateIcalToken($args['id']);
+            return $this->json($res, ['success' => true, 'data' => $channel->toArray()]);
+        } catch (\RuntimeException $e) {
+            return $this->json($res, ['success' => false, 'message' => $e->getMessage()], 404);
+        }
+    }
 }
