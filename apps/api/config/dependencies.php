@@ -290,6 +290,7 @@ return function (ContainerBuilder $builder): void {
             return new RateLimitMiddleware(
                 redis: $c->get(RedisClient::class),
             );
+        },
 
         AuthRateLimitMiddleware::class => function (ContainerInterface $c): AuthRateLimitMiddleware {
             return new AuthRateLimitMiddleware(
