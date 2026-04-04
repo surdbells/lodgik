@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService, TokenService, FeatureService, BrandingService, LODGIK_ICONS, ApiService, ActivePropertyService, ToastService } from '@lodgik/shared';
 import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
@@ -24,13 +24,27 @@ interface NavGroup {
   imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
   providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(LODGIK_ICONS) }],
   template: `
+    <!-- Mobile overlay when sidebar is open -->
+    @if (mobileNavOpen()) {
+      <div class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+           (click)="mobileNavOpen.set(false)"></div>
+    }
+
+    <!-- Bottom sheet overlay -->
+    @if (bottomSheetGroup() !== null) {
+      <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
+           (click)="closeBottomSheet()"></div>
+    }
+
     <div class="flex h-screen overflow-hidden bg-[#f9fafb]" (click)="unlockAudio()">
 
-      <!-- ═══ Sidebar ═══ -->
-      <aside class="bg-white border-r border-gray-100 flex flex-col shrink-0 h-screen overflow-hidden transition-all duration-300"
+      <!-- ═══════════════════════════════════════════════════
+           DESKTOP SIDEBAR (hidden on mobile)
+      ═══════════════════════════════════════════════════ -->
+      <aside class="hidden lg:flex bg-white border-r border-gray-100 flex-col shrink-0 h-screen overflow-hidden transition-all duration-300"
              [style.width.px]="collapsed() ? 72 : 260">
 
-        <!-- Logo / Brand + Collapse Toggle -->
+        <!-- Logo + Collapse Toggle -->
         <div class="px-4 pt-4 pb-2 flex items-center" [class.justify-center]="collapsed()">
           @if (!collapsed()) {
             <div class="flex items-center gap-2.5 flex-1 min-w-0">
@@ -38,12 +52,11 @@ interface NavGroup {
                    style="background: linear-gradient(135deg, #3a543a 0%, #5a825a 100%)">
                 {{ branding().appName?.charAt(0) || 'L' }}
               </div>
-              <h1 class="text-[15px] font-bold text-gray-900 font-heading truncate">{{ branding().appName || 'Lodgik' }}</h1>
+              <h1 class="text-[15px] font-bold text-gray-900 truncate">{{ branding().appName || 'Lodgik' }}</h1>
             </div>
           }
           <button (click)="collapsed.set(!collapsed())"
-                  class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors text-gray-400 shrink-0"
-                  [title]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'">
+                  class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors text-gray-400 shrink-0">
             <lucide-icon [name]="collapsed() ? 'chevron-right' : 'chevron-left'" [size]="16" [strokeWidth]="2"></lucide-icon>
           </button>
         </div>
@@ -63,10 +76,13 @@ interface NavGroup {
               <lucide-icon name="chevron-down" [size]="14" class="text-gray-400 shrink-0"></lucide-icon>
             </div>
             @if (showPropertySwitcher && allProperties().length > 1) {
-              <div class="absolute left-0 right-0 top-full mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-40 overflow-y-auto" (click)="$event.stopPropagation()">
+              <div class="absolute left-0 right-0 top-full mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-40 overflow-y-auto"
+                   (click)="$event.stopPropagation()">
                 @for (p of allProperties(); track p.id) {
-                  <button (click)="switchToProperty(p)" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
-                          [class.bg-sage-50]="p.id === currentPropertyId()" [class.font-semibold]="p.id === currentPropertyId()">
+                  <button (click)="switchToProperty(p)"
+                          class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                          [class.bg-sage-50]="p.id === currentPropertyId()"
+                          [class.font-semibold]="p.id === currentPropertyId()">
                     <span class="w-5 h-5 rounded bg-sage-100 flex items-center justify-center text-sage-700 text-[10px] font-bold shrink-0">{{ p.name?.charAt(0) }}</span>
                     <span class="truncate">{{ p.name }}</span>
                     @if (p.id === currentPropertyId()) { <span class="text-sage-600 text-xs ml-auto">✓</span> }
@@ -77,15 +93,13 @@ interface NavGroup {
           </div>
         }
 
-        <!-- Navigation -->
+        <!-- Desktop Navigation -->
         <nav class="flex-1 overflow-y-auto pb-3">
           @for (group of visibleNavGroups(); track group.label; let gi = $index) {
-
-            <!-- Section Header -->
             @if (!collapsed()) {
               <div class="flex items-center justify-between px-5 pt-5 pb-1.5 cursor-pointer select-none group/hdr"
                    (click)="toggleGroup(gi)">
-                <span class="text-[11px] font-bold tracking-[0.06em] uppercase font-heading transition-colors duration-150"
+                <span class="text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150"
                       [class.text-gray-900]="!isGroupCollapsed(gi)"
                       [class.text-gray-400]="isGroupCollapsed(gi)">
                   {{ group.label }}
@@ -96,9 +110,7 @@ interface NavGroup {
                 </lucide-icon>
               </div>
             } @else {
-              @if (gi > 0) {
-                <div class="mx-4 my-2 border-t border-gray-100"></div>
-              }
+              @if (gi > 0) { <div class="mx-4 my-2 border-t border-gray-100"></div> }
             }
 
             @if (!isGroupCollapsed(gi) || collapsed()) {
@@ -124,11 +136,11 @@ interface NavGroup {
           }
         </nav>
 
-        <!-- Bottom: Notifications + Settings -->
+        <!-- Bottom links -->
         <div class="border-t border-gray-100 p-2 space-y-0.5">
           <a routerLink="/notifications" routerLinkActive="sidebar-active"
              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors"
-             [class.justify-center]="collapsed()" [title]="collapsed() ? 'Notifications' : ''">
+             [class.justify-center]="collapsed()">
             <lucide-icon name="bell" [size]="18" [strokeWidth]="1.75" class="shrink-0 opacity-70"></lucide-icon>
             @if (!collapsed()) {
               <span>Notifications</span>
@@ -137,15 +149,9 @@ interface NavGroup {
               }
             }
           </a>
-          <a routerLink="/audit-log" routerLinkActive="sidebar-active"
-             class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors"
-             [class.justify-center]="collapsed()" [title]="collapsed() ? 'Audit Log' : ''">
-            <lucide-icon name="shield-check" [size]="18" [strokeWidth]="1.75" class="shrink-0 opacity-70"></lucide-icon>
-            @if (!collapsed()) { <span>Audit Log</span> }
-          </a>
           <a routerLink="/settings" routerLinkActive="sidebar-active"
              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors"
-             [class.justify-center]="collapsed()" [title]="collapsed() ? 'Settings' : ''">
+             [class.justify-center]="collapsed()">
             <lucide-icon name="settings" [size]="18" [strokeWidth]="1.75" class="shrink-0 opacity-70"></lucide-icon>
             @if (!collapsed()) { <span>Settings</span> }
           </a>
@@ -171,19 +177,119 @@ interface NavGroup {
         </div>
       </aside>
 
-      <!-- ═══ Main Content ═══ -->
+      <!-- ═══════════════════════════════════════════════════
+           MOBILE SLIDE-IN SIDEBAR DRAWER
+      ═══════════════════════════════════════════════════ -->
+      <aside class="fixed top-0 left-0 h-full w-72 bg-white z-50 flex flex-col shadow-2xl lg:hidden transition-transform duration-300 ease-out"
+             [class.-translate-x-full]="!mobileNavOpen()"
+             [class.translate-x-0]="mobileNavOpen()">
+
+        <!-- Mobile Drawer Header -->
+        <div class="px-4 pt-4 pb-3 flex items-center justify-between border-b border-gray-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                 style="background: linear-gradient(135deg, #3a543a 0%, #5a825a 100%)">
+              {{ branding().appName?.charAt(0) || 'L' }}
+            </div>
+            <div>
+              <h1 class="text-[15px] font-bold text-gray-900">{{ branding().appName || 'Lodgik' }}</h1>
+              <p class="text-[11px] text-gray-400 capitalize">{{ staffRole() }}</p>
+            </div>
+          </div>
+          <button (click)="mobileNavOpen.set(false)"
+                  class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors text-gray-400">
+            <lucide-icon name="x" [size]="18" [strokeWidth]="2"></lucide-icon>
+          </button>
+        </div>
+
+        <!-- Mobile Property Selector -->
+        <div class="mx-3 my-2 px-3 py-2.5 bg-gray-50 rounded-lg cursor-pointer"
+             (click)="showMobilePropertySwitcher = !showMobilePropertySwitcher">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-md bg-sage-100 flex items-center justify-center text-sage-700 text-xs font-bold shrink-0">
+              {{ propertyInitial() }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[13px] font-semibold text-gray-800 truncate">{{ propertyName() }}</p>
+            </div>
+            <lucide-icon name="chevron-down" [size]="14" class="text-gray-400 shrink-0"></lucide-icon>
+          </div>
+          @if (showMobilePropertySwitcher && allProperties().length > 1) {
+            <div class="mt-2 bg-white rounded-lg border overflow-hidden" (click)="$event.stopPropagation()">
+              @for (p of allProperties(); track p.id) {
+                <button (click)="switchToProperty(p); mobileNavOpen.set(false)"
+                        class="w-full text-left px-3 py-2 text-sm hover:bg-sage-50 flex items-center gap-2"
+                        [class.font-semibold]="p.id === currentPropertyId()">
+                  <span class="w-5 h-5 rounded bg-sage-100 flex items-center justify-center text-sage-700 text-[10px] font-bold shrink-0">{{ p.name?.charAt(0) }}</span>
+                  <span class="truncate">{{ p.name }}</span>
+                  @if (p.id === currentPropertyId()) { <span class="text-sage-600 text-xs ml-auto">✓</span> }
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Mobile Full Nav -->
+        <nav class="flex-1 overflow-y-auto pb-4">
+          @for (group of visibleNavGroups(); track group.label; let gi = $index) {
+            <div class="px-4 pt-4 pb-1">
+              <span class="text-[10px] font-bold tracking-[0.07em] uppercase text-gray-400">{{ group.label }}</span>
+            </div>
+            @for (item of group.items; track item.route) {
+              <a [routerLink]="item.route"
+                 routerLinkActive="mobile-nav-active"
+                 [routerLinkActiveOptions]="{ exact: true }"
+                 (click)="mobileNavOpen.set(false)"
+                 class="flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium text-gray-600 hover:bg-sage-50 hover:text-sage-700 transition-colors">
+                <lucide-icon [name]="item.icon" [size]="17" [strokeWidth]="1.75" class="shrink-0"></lucide-icon>
+                <span class="flex-1">{{ item.label }}</span>
+                @if (item.badge) {
+                  <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-50 text-red-600">{{ item.badge }}</span>
+                }
+              </a>
+            }
+          }
+        </nav>
+
+        <!-- Mobile Drawer Footer -->
+        <div class="border-t border-gray-100 p-3 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+               style="background: linear-gradient(135deg, #293929 0%, #466846 100%)">
+            {{ userInitials() }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-gray-800 truncate">{{ user()?.full_name || 'User' }}</p>
+            <p class="text-[11px] text-gray-400 capitalize">{{ user()?.role?.replace('_', ' ') || '' }}</p>
+          </div>
+          <button (click)="logout()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-400">
+            <lucide-icon name="log-out" [size]="17" [strokeWidth]="1.75"></lucide-icon>
+          </button>
+        </div>
+      </aside>
+
+      <!-- ═══════════════════════════════════════════════════
+           MAIN CONTENT AREA
+      ═══════════════════════════════════════════════════ -->
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-        <!-- Top bar with notification bell -->
-        <header class="h-14 shrink-0 bg-white border-b border-gray-100 px-6 flex items-center justify-end gap-3">
+        <!-- Top bar -->
+        <header class="h-14 shrink-0 bg-white border-b border-gray-100 px-4 flex items-center justify-between gap-3">
+          <!-- Mobile hamburger -->
+          <button (click)="mobileNavOpen.set(true)"
+                  class="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
+            <lucide-icon name="menu" [size]="20" [strokeWidth]="1.75"></lucide-icon>
+          </button>
+
+          <!-- Mobile: property name in header -->
+          <span class="lg:hidden text-sm font-semibold text-gray-700 truncate flex-1 text-center">{{ propertyName() }}</span>
+
+          <!-- Desktop: spacer -->
+          <div class="hidden lg:flex flex-1"></div>
+
+          <!-- Notification bell (both) -->
           <a routerLink="/notifications"
-             class="relative p-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-700"
-             title="Notifications">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
+             class="relative p-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-700">
+            <lucide-icon name="bell" [size]="20" [strokeWidth]="1.75"></lucide-icon>
             @if (notificationCount() > 0) {
               <span class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white
                            text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
@@ -193,18 +299,135 @@ interface NavGroup {
           </a>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-6 page-bg">
+        <!-- Page Content — extra bottom padding on mobile for bottom nav -->
+        <main class="flex-1 overflow-y-auto p-4 lg:p-6 page-bg pb-24 lg:pb-6">
           <router-outlet />
         </main>
       </div>
     </div>
 
-    <!-- ── Floating Chat Bubble ─────────────────────────────────────── -->
+    <!-- ═══════════════════════════════════════════════════
+         MOBILE FLOATING BOTTOM NAVIGATION
+    ═══════════════════════════════════════════════════ -->
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-xl border-t border-gray-200 safe-area-bottom">
+      <div class="flex items-center justify-around px-2 py-1 max-w-lg mx-auto">
+
+        <!-- Dashboard -->
+        <a routerLink="/dashboard" routerLinkActive="bottom-nav-active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all text-gray-400 hover:text-sage-600">
+          <lucide-icon name="layout-dashboard" [size]="22" [strokeWidth]="1.75"></lucide-icon>
+          <span class="text-[10px] font-medium">Home</span>
+        </a>
+
+        <!-- Bookings -->
+        <a routerLink="/bookings" routerLinkActive="bottom-nav-active"
+           class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all text-gray-400 hover:text-sage-600">
+          <lucide-icon name="clipboard-list" [size]="22" [strokeWidth]="1.75"></lucide-icon>
+          <span class="text-[10px] font-medium">Bookings</span>
+        </a>
+
+        <!-- More (opens bottom sheet) -->
+        <button (click)="openMoreSheet()"
+                class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all text-gray-400 hover:text-sage-600 relative">
+          <div class="w-12 h-12 -mt-5 rounded-2xl flex items-center justify-center shadow-xl transition-all"
+               [class.bg-sage-600]="bottomSheetGroup() !== null"
+               [class.bg-sage-500]="bottomSheetGroup() === null"
+               style="box-shadow: 0 4px 20px rgba(90,130,90,0.4)">
+            <lucide-icon [name]="bottomSheetGroup() !== null ? 'x' : 'grid-2x2'" [size]="20" [strokeWidth]="2" class="text-white"></lucide-icon>
+          </div>
+          <span class="text-[10px] font-medium mt-1">Menu</span>
+        </button>
+
+        <!-- Chat -->
+        <a routerLink="/chat" routerLinkActive="bottom-nav-active"
+           class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all text-gray-400 hover:text-sage-600 relative">
+          <lucide-icon name="message-circle" [size]="22" [strokeWidth]="1.75"></lucide-icon>
+          @if (chatUnreadCount() > 0) {
+            <span class="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+              {{ chatUnreadCount() > 9 ? '9+' : chatUnreadCount() }}
+            </span>
+          }
+          <span class="text-[10px] font-medium">Chat</span>
+        </a>
+
+        <!-- Profile / Settings -->
+        <a routerLink="/settings" routerLinkActive="bottom-nav-active"
+           class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all text-gray-400 hover:text-sage-600">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+               style="background: linear-gradient(135deg, #293929 0%, #466846 100%)">
+            {{ userInitials() }}
+          </div>
+          <span class="text-[10px] font-medium">Me</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════
+         BOTTOM SHEET — "MORE" MENU GROUPS
+    ═══════════════════════════════════════════════════ -->
+    @if (bottomSheetGroup() !== null) {
+      <div class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[80vh] flex flex-col"
+           style="animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1)">
+
+        <!-- Drag handle -->
+        <div class="flex justify-center pt-3 pb-1">
+          <div class="w-10 h-1 rounded-full bg-gray-300"></div>
+        </div>
+
+        <!-- Sheet header -->
+        <div class="px-5 py-3 flex items-center justify-between border-b border-gray-100">
+          <h3 class="text-base font-bold text-gray-900">All Sections</h3>
+          <button (click)="closeBottomSheet()"
+                  class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+            <lucide-icon name="x" [size]="16" [strokeWidth]="2"></lucide-icon>
+          </button>
+        </div>
+
+        <!-- Navigation groups as a scrollable grid -->
+        <div class="overflow-y-auto pb-8">
+
+          <!-- Group selector tabs -->
+          <div class="flex gap-2 px-4 py-3 overflow-x-auto no-scrollbar">
+            @for (group of visibleNavGroups(); track group.label; let gi = $index) {
+              <button (click)="bottomSheetGroup.set(gi)"
+                      class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap"
+                      [class.bg-sage-600]="bottomSheetGroup() === gi"
+                      [class.text-white]="bottomSheetGroup() === gi"
+                      [class.bg-gray-100]="bottomSheetGroup() !== gi"
+                      [class.text-gray-600]="bottomSheetGroup() !== gi">
+                {{ group.label }}
+              </button>
+            }
+          </div>
+
+          <!-- Items grid for selected group -->
+          @if (bottomSheetGroup() !== null) {
+            <div class="px-4 grid grid-cols-3 gap-3 pb-safe">
+              @for (item of visibleNavGroups()[bottomSheetGroup()!]?.items ?? []; track item.route) {
+                <a [routerLink]="item.route"
+                   routerLinkActive="sheet-item-active"
+                   [routerLinkActiveOptions]="{ exact: true }"
+                   (click)="closeBottomSheet()"
+                   class="flex flex-col items-center gap-2 p-3 rounded-2xl border border-gray-100 hover:border-sage-200 hover:bg-sage-50 transition-all text-gray-600 hover:text-sage-700 active:scale-95">
+                  <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                    <lucide-icon [name]="item.icon" [size]="20" [strokeWidth]="1.75"></lucide-icon>
+                  </div>
+                  <span class="text-[11px] font-medium text-center leading-tight">{{ item.label }}</span>
+                </a>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Floating Chat Bubble (desktop only) -->
     @if (chatUnreadCount() >= 0) {
       <a routerLink="/chat"
-        class="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95"
+        class="hidden lg:flex fixed bottom-6 right-6 z-40 items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95"
         style="background:linear-gradient(135deg,#466846,#5a825a)"
-        title="Guest Chat {{ chatUnreadCount() > 0 ? '(' + chatUnreadCount() + ' unread)' : '' }}">
+        title="Guest Chat">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
         </svg>
@@ -222,10 +445,37 @@ interface NavGroup {
       color: #3a543a;
       font-weight: 600;
     }
-    :host ::ng-deep a.sidebar-active lucide-icon {
-      opacity: 1;
+    :host ::ng-deep a.sidebar-active lucide-icon { opacity: 1; }
+
+    :host ::ng-deep a.mobile-nav-active {
+      background-color: #f4f7f4;
+      color: #3a543a;
+      font-weight: 600;
     }
 
+    :host ::ng-deep a.bottom-nav-active {
+      color: #3a543a;
+    }
+    :host ::ng-deep a.bottom-nav-active span { font-weight: 700; }
+
+    :host ::ng-deep a.sheet-item-active {
+      background-color: #f4f7f4;
+      border-color: #c9dac9;
+      color: #3a543a;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .safe-area-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 1.5rem); }
   `],
 })
 export class HotelLayoutComponent implements OnInit {
@@ -241,26 +491,27 @@ export class HotelLayoutComponent implements OnInit {
   protected branding = this.brandingService.config;
 
   collapsed = signal(false);
+  mobileNavOpen = signal(false);
   notificationCount = signal(0);
-  chatUnreadCount   = signal(0);
-  showChatBubble    = signal(true);
+  chatUnreadCount = signal(0);
+
+  /** null = closed; number = index of selected group */
+  bottomSheetGroup = signal<number | null>(null);
 
   private collapsedGroups = signal<Set<number>>(new Set([0,1,2,3,4,5,6,7,8,9,10,11]));
 
-  propertyName = computed(() => this.activeProperty.propertyName());
+  propertyName    = computed(() => this.activeProperty.propertyName());
   propertyInitial = computed(() => this.propertyName().charAt(0).toUpperCase());
-  staffRole = computed(() => {
-    const role = this.user()?.role;
-    return role ? role.replace('_', ' ') : '';
-  });
+  staffRole       = computed(() => (this.user()?.role ?? '').replace('_', ' '));
 
-  // Property switcher (via ActivePropertyService)
   showPropertySwitcher = false;
-  allProperties = this.activeProperty.properties;
+  showMobilePropertySwitcher = false;
+  allProperties     = this.activeProperty.properties;
   currentPropertyId = this.activeProperty.propertyId;
 
   switchToProperty(property: any): void {
     this.showPropertySwitcher = false;
+    this.showMobilePropertySwitcher = false;
     this.activeProperty.switchTo(property.id);
     this.toast.success('Switching to ' + property.name + '...');
   }
@@ -271,51 +522,66 @@ export class HotelLayoutComponent implements OnInit {
     return ((u.first_name?.charAt(0) || '') + (u.last_name?.charAt(0) || '')).toUpperCase() || '?';
   });
 
-  // Lucide icon names (kebab-case)
+  openMoreSheet(): void {
+    if (this.bottomSheetGroup() !== null) {
+      this.closeBottomSheet();
+    } else {
+      this.bottomSheetGroup.set(0);
+    }
+  }
+
+  closeBottomSheet(): void {
+    this.bottomSheetGroup.set(null);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.mobileNavOpen.set(false);
+    this.closeBottomSheet();
+  }
+
   private allNavGroups: NavGroup[] = [
     {
       label: 'Daily Operation',
       items: [
-        { label: 'Dashboard', icon: 'layout-dashboard', route: '/dashboard' },
+        { label: 'Dashboard',         icon: 'layout-dashboard', route: '/dashboard' },
         { label: 'Bookings',          icon: 'clipboard-list',   route: '/bookings' },
-        { label: 'Live Room Monitor',  icon: 'activity',          route: '/bookings/checkout-tracker',
-          requiredRoles: ['property_admin','manager','front_desk'] },
-        { label: 'Guest Validation',    icon: 'user-check',        route: '/bookings/guest-validation',
-          requiredRoles: ['property_admin','manager','front_desk'] },
-        { label: 'Rooms',             icon: 'bed-double',        route: '/rooms' },
-        { label: 'Room Types',icon: 'tag',               route: '/room-types' },
-        { label: 'Guests',    icon: 'user-round',        route: '/guests' },
+        { label: 'Live Room Monitor', icon: 'activity',         route: '/bookings/checkout-tracker', requiredRoles: ['property_admin','manager','front_desk'] },
+        { label: 'Guest Validation',  icon: 'user-check',       route: '/bookings/guest-validation', requiredRoles: ['property_admin','manager','front_desk'] },
+        { label: 'Rooms',             icon: 'bed-double',       route: '/rooms' },
+        { label: 'Room Types',        icon: 'tag',              route: '/room-types' },
+        { label: 'Guests',            icon: 'user-round',       route: '/guests' },
       ],
     },
     {
       label: 'Reservations & Events',
       items: [
-        { label: 'Group Bookings',     icon: 'users',         route: '/group-bookings',   requiredRoles: ['property_admin','manager','front_desk','accountant'] },
+        { label: 'Group Bookings',     icon: 'users',         route: '/group-bookings',    requiredRoles: ['property_admin','manager','front_desk','accountant'] },
         { label: 'Corporate Profiles', icon: 'building-2',    route: '/corporate-profiles', requiredRoles: ['property_admin','manager','accountant'] },
-        { label: 'Events & Banquets',  icon: 'calendar-days', route: '/events',           requiredRoles: ['property_admin','manager','front_desk','accountant','concierge'] },
-        { label: 'OTA Channels',       icon: 'globe',         route: '/ota',              requiredRoles: ['property_admin','manager'] },
-        { label: 'Pricing Rules',      icon: 'trending-up',   route: '/pricing-rules', requiredModule: 'dynamic_pricing', requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Events & Banquets',  icon: 'calendar-days', route: '/events',            requiredRoles: ['property_admin','manager','front_desk','accountant','concierge'] },
+        { label: 'OTA Channels',       icon: 'globe',         route: '/ota',               requiredRoles: ['property_admin','manager'] },
+        { label: 'Pricing Rules',      icon: 'trending-up',   route: '/pricing-rules',     requiredModule: 'dynamic_pricing', requiredRoles: ['property_admin','manager','accountant'] },
       ],
     },
     {
       label: 'Guest Experience',
       items: [
-        { label: 'Service Requests',  icon: 'concierge-bell', route: '/service-requests',  requiredModule: 'service_requests' },
-        { label: 'Guest Services',    icon: 'users',          route: '/guest-services',    requiredModule: 'service_requests' },
-        { label: 'Chat',              icon: 'message-circle', route: '/chat',              requiredModule: 'guest_chat' },
-        { label: 'Loyalty',           icon: 'gift',           route: '/loyalty',           requiredModule: 'loyalty_program' },
-        { label: 'Guest Preferences', icon: 'heart',          route: '/guest-preferences' },
-        { label: 'Guest Cards',       icon: 'credit-card',    route: '/guest-cards',       requiredModule: 'guest_access_codes' },
-        { label: 'Card Scanner',      icon: 'scan-line',      route: '/guest-cards/scanner',    requiredModule: 'guest_access_codes' },
-        { label: 'Card Events',       icon: 'activity',       route: '/guest-cards/events',     requiredModule: 'guest_access_codes' },
-        { label: 'Scan Points',       icon: 'radio',          route: '/guest-cards/scan-points', requiredModule: 'guest_access_codes' },
-        { label: 'Room Controls',     icon: 'sliders-horizontal', route: '/room-controls', requiredModule: 'guest_access_codes' },
+        { label: 'Service Requests',  icon: 'concierge-bell',     route: '/service-requests',       requiredModule: 'service_requests' },
+        { label: 'Guest Services',    icon: 'users',              route: '/guest-services',          requiredModule: 'service_requests' },
+        { label: 'Chat',              icon: 'message-circle',     route: '/chat',                   requiredModule: 'guest_chat' },
+        { label: 'Loyalty',           icon: 'gift',               route: '/loyalty',                requiredModule: 'loyalty_program' },
+        { label: 'Guest Preferences', icon: 'heart',              route: '/guest-preferences' },
+        { label: 'Guest Cards',       icon: 'credit-card',        route: '/guest-cards',            requiredModule: 'guest_access_codes' },
+        { label: 'Card Scanner',      icon: 'scan-line',          route: '/guest-cards/scanner',    requiredModule: 'guest_access_codes' },
+        { label: 'Card Events',       icon: 'activity',           route: '/guest-cards/events',     requiredModule: 'guest_access_codes' },
+        { label: 'Scan Points',       icon: 'radio',              route: '/guest-cards/scan-points', requiredModule: 'guest_access_codes' },
+        { label: 'Room Controls',     icon: 'sliders-horizontal', route: '/room-controls',          requiredModule: 'guest_access_codes' },
       ],
     },
     {
       label: 'Housekeeping',
       items: [
-        { label: 'Housekeeping', icon: 'spray-can', route: '/housekeeping', requiredModule: 'housekeeping', requiredRoles: ['property_admin','manager','housekeeping'] },
+        { label: 'Housekeeping', icon: 'spray-can', route: '/housekeeping',             requiredModule: 'housekeeping', requiredRoles: ['property_admin','manager','housekeeping'] },
         { label: 'Consumables',  icon: 'box',        route: '/housekeeping/consumables', requiredModule: 'housekeeping', requiredRoles: ['property_admin','manager','housekeeping'] },
       ],
     },
@@ -332,26 +598,26 @@ export class HotelLayoutComponent implements OnInit {
     {
       label: 'Inventory & Food Cost',
       items: [
-        { label: 'Stock & Inventory',    icon: 'package',          route: '/inventory',           requiredModule: 'inventory_management' },
-        { label: 'Stock Movements',      icon: 'arrow-left-right', route: '/inventory/movements', requiredModule: 'inventory_management' },
-        { label: 'Goods Received (GRN)', icon: 'truck',            route: '/inventory/grn',       requiredModule: 'inventory_management' },
-        { label: 'Vendors',              icon: 'building-2',       route: '/procurement/vendors', requiredModule: 'inventory_management' },
-        { label: 'Purchase Requests',    icon: 'clipboard-list',   route: '/procurement/requests',requiredModule: 'inventory_management' },
-        { label: 'Purchase Orders',      icon: 'file-text',        route: '/procurement/orders',  requiredModule: 'inventory_management' },
-        { label: 'Recipe Builder',       icon: 'chef-hat',         route: '/pos/recipes',         requiredModule: 'bar_pos' },
+        { label: 'Stock & Inventory',    icon: 'package',          route: '/inventory',            requiredModule: 'inventory_management' },
+        { label: 'Stock Movements',      icon: 'arrow-left-right', route: '/inventory/movements',  requiredModule: 'inventory_management' },
+        { label: 'Goods Received (GRN)', icon: 'truck',            route: '/inventory/grn',        requiredModule: 'inventory_management' },
+        { label: 'Vendors',              icon: 'building-2',       route: '/procurement/vendors',  requiredModule: 'inventory_management' },
+        { label: 'Purchase Requests',    icon: 'clipboard-list',   route: '/procurement/requests', requiredModule: 'inventory_management' },
+        { label: 'Purchase Orders',      icon: 'file-text',        route: '/procurement/orders',   requiredModule: 'inventory_management' },
+        { label: 'Recipe Builder',       icon: 'chef-hat',         route: '/pos/recipes',          requiredModule: 'bar_pos' },
         { label: 'Food Cost',            icon: 'percent',          route: '/pos/food-cost',        requiredModule: 'bar_pos' },
-        { label: 'Inventory Reports',    icon: 'bar-chart-2',      route: '/inventory/reports',   requiredModule: 'inventory_management' },
+        { label: 'Inventory Reports',    icon: 'bar-chart-2',      route: '/inventory/reports',    requiredModule: 'inventory_management' },
       ],
     },
     {
       label: 'Finance & Reports',
       items: [
-        { label: 'Folios',      icon: 'folder-open',       route: '/folios',      requiredModule: 'folio_billing',       requiredRoles: ['property_admin','manager','front_desk','accountant'] },
-        { label: 'Invoices',    icon: 'file-text',         route: '/invoices',    requiredModule: 'invoice_generation',   requiredRoles: ['property_admin','manager','accountant'] },
-        { label: 'Expenses',    icon: 'receipt',           route: '/expenses',    requiredModule: 'folio_billing',       requiredRoles: ['property_admin','manager','accountant'] },
-        { label: 'Night Audit', icon: 'moon',              route: '/night-audit', requiredModule: 'folio_billing',       requiredRoles: ['property_admin','manager','accountant'] },
-        { label: 'Analytics',   icon: 'chart-bar',         route: '/analytics',   requiredModule: 'basic_analytics',     requiredRoles: ['property_admin','manager','accountant'] },
-        { label: 'Reports',     icon: 'file-chart-column', route: '/reports',     requiredModule: 'basic_analytics',     requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Folios',      icon: 'folder-open',       route: '/folios',      requiredModule: 'folio_billing',     requiredRoles: ['property_admin','manager','front_desk','accountant'] },
+        { label: 'Invoices',    icon: 'file-text',         route: '/invoices',    requiredModule: 'invoice_generation', requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Expenses',    icon: 'receipt',           route: '/expenses',    requiredModule: 'folio_billing',     requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Night Audit', icon: 'moon',              route: '/night-audit', requiredModule: 'folio_billing',     requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Analytics',   icon: 'chart-bar',         route: '/analytics',   requiredModule: 'basic_analytics',   requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Reports',     icon: 'file-chart-column', route: '/reports',     requiredModule: 'basic_analytics',   requiredRoles: ['property_admin','manager','accountant'] },
       ],
     },
     {
@@ -361,31 +627,32 @@ export class HotelLayoutComponent implements OnInit {
         { label: 'Incidents',      icon: 'triangle-alert',route: '/incidents',      requiredModule: 'security_incidents', requiredRoles: ['property_admin','manager','security'] },
         { label: 'Police Reports', icon: 'shield-alert',  route: '/police-reports',                                       requiredRoles: ['property_admin','manager','security'] },
         { label: 'Audit Log',      icon: 'history',       route: '/audit-log',      requiredModule: 'audit_logging',      requiredRoles: ['property_admin','manager'] },
+        { label: 'Compliance',     icon: 'shield-check',  route: '/compliance',                                           requiredRoles: ['property_admin'] },
       ],
     },
     {
       label: 'Human Resources',
       items: [
-        { label: 'People',     icon: 'users',          route: '/staff',               requiredRoles: ['property_admin','manager'] },
-        { label: 'Attendance', icon: 'clock',          route: '/attendance',          requiredModule: 'attendance_shifts',    requiredRoles: ['property_admin','manager'] },
-        { label: 'Leave',      icon: 'tree-palm',      route: '/leave',               requiredModule: 'leave_management',     requiredRoles: ['property_admin','manager'] },
-        { label: 'Payroll',    icon: 'hand-coins',     route: '/payroll',             requiredModule: 'payroll',              requiredRoles: ['property_admin','manager'] },
-        { label: 'Recruitment', icon: 'briefcase',      route: '/recruitment',         requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager'] },
-        { label: 'Training',    icon: 'book-open',      route: '/training',            requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager'] },
-        { label: 'Expense Claims', icon: 'receipt',     route: '/expense-claims',      requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager','accountant'] },
-        { label: 'Performance', icon: 'star',           route: '/performance-reviews', requiredModule: 'performance_reviews',  requiredRoles: ['property_admin','manager'] },
-        { label: 'Goals',          icon: 'target',         route: '/goals',               requiredModule: 'performance_reviews',  requiredRoles: ['property_admin','manager'] },
-        { label: 'Pay Components', icon: 'sliders-vertical',route: '/payroll-components',  requiredModule: 'payroll',              requiredRoles: ['property_admin','manager'] },
-        { label: 'Self-Service',   icon: 'user-round',     route: '/self-service',        requiredRoles: ['front_desk','manager','accountant','security','housekeeping','concierge','kitchen','bar','maintenance','restaurant'] },
-        { label: 'HR Analytics',   icon: 'chart-bar',      route: '/hr-analytics',        requiredModule: 'employee_management',  requiredRoles: ['property_admin','manager'] },
+        { label: 'People',          icon: 'users',            route: '/staff',               requiredRoles: ['property_admin','manager'] },
+        { label: 'Attendance',      icon: 'clock',            route: '/attendance',          requiredModule: 'attendance_shifts',   requiredRoles: ['property_admin','manager'] },
+        { label: 'Leave',           icon: 'tree-palm',        route: '/leave',               requiredModule: 'leave_management',    requiredRoles: ['property_admin','manager'] },
+        { label: 'Payroll',         icon: 'hand-coins',       route: '/payroll',             requiredModule: 'payroll',             requiredRoles: ['property_admin','manager'] },
+        { label: 'Recruitment',     icon: 'briefcase',        route: '/recruitment',         requiredModule: 'employee_management', requiredRoles: ['property_admin','manager'] },
+        { label: 'Training',        icon: 'book-open',        route: '/training',            requiredModule: 'employee_management', requiredRoles: ['property_admin','manager'] },
+        { label: 'Expense Claims',  icon: 'receipt',          route: '/expense-claims',      requiredModule: 'employee_management', requiredRoles: ['property_admin','manager','accountant'] },
+        { label: 'Performance',     icon: 'star',             route: '/performance-reviews', requiredModule: 'performance_reviews', requiredRoles: ['property_admin','manager'] },
+        { label: 'Goals',           icon: 'target',           route: '/goals',               requiredModule: 'performance_reviews', requiredRoles: ['property_admin','manager'] },
+        { label: 'Pay Components',  icon: 'sliders-vertical', route: '/payroll-components',  requiredModule: 'payroll',             requiredRoles: ['property_admin','manager'] },
+        { label: 'Self-Service',    icon: 'user-round',       route: '/self-service',        requiredRoles: ['front_desk','manager','accountant','security','housekeeping','concierge','kitchen','bar','maintenance','restaurant'] },
+        { label: 'HR Analytics',    icon: 'chart-bar',        route: '/hr-analytics',        requiredModule: 'employee_management', requiredRoles: ['property_admin','manager'] },
       ],
     },
     {
       label: 'Maintenance & Assets',
       items: [
-        { label: 'Assets',      icon: 'package',  route: '/assets',      requiredModule: 'asset_management', requiredRoles: ['property_admin','manager','maintenance'] },
-        { label: 'Maintenance', icon: 'wrench',   route: '/maintenance', requiredModule: 'asset_management', requiredRoles: ['property_admin','manager','maintenance'] },
-        { label: 'Engineers',   icon: 'hard-hat', route: '/engineers',   requiredModule: 'asset_management', requiredRoles: ['property_admin','manager','maintenance'] },
+        { label: 'Assets',      icon: 'package', route: '/assets',      requiredModule: 'asset_management', requiredRoles: ['property_admin','manager','maintenance'] },
+        { label: 'Maintenance', icon: 'wrench',  route: '/maintenance', requiredModule: 'asset_management', requiredRoles: ['property_admin','manager','maintenance'] },
+        { label: 'Engineers',   icon: 'hard-hat',route: '/engineers',   requiredModule: 'asset_management', requiredRoles: ['property_admin','manager','maintenance'] },
       ],
     },
     {
@@ -398,23 +665,22 @@ export class HotelLayoutComponent implements OnInit {
     {
       label: 'System',
       items: [
-        { label: 'Properties', icon: 'building',    route: '/properties', requiredModule: 'multi_property', requiredRoles: ['property_admin'] },
-        { label: 'Features',   icon: 'puzzle',      route: '/features',                                     requiredRoles: ['property_admin'] },
-        { label: 'Role Permissions', icon: 'shield-check',  route: '/settings/rbac',                                          requiredRoles: ['property_admin'] },
-        { label: 'Apps',       icon: 'zap',         route: '/apps',                                         requiredRoles: ['property_admin'] },
-        { label: 'Billing',    icon: 'credit-card', route: '/billing',                                      requiredRoles: ['property_admin'] },
+        { label: 'Properties',       icon: 'building',      route: '/properties',    requiredModule: 'multi_property', requiredRoles: ['property_admin'] },
+        { label: 'Features',         icon: 'puzzle',        route: '/features',                                        requiredRoles: ['property_admin'] },
+        { label: 'Role Permissions', icon: 'shield-check',  route: '/settings/rbac',                                   requiredRoles: ['property_admin'] },
+        { label: 'Apps',             icon: 'zap',           route: '/apps',                                            requiredRoles: ['property_admin'] },
+        { label: 'Billing',          icon: 'credit-card',   route: '/billing',                                         requiredRoles: ['property_admin'] },
       ],
     },
   ];
+
   visibleNavGroups = computed(() => {
     const role = this.tokenService.role();
     return this.allNavGroups.map(group => ({
       ...group,
       items: group.items.filter(item => {
-        // Feature module gate
         if (item.requiredModule && !this.featureService.isEnabled(item.requiredModule)) return false;
-        // Role gate — if no requiredRoles, item is visible to all authenticated users
-        if (item.requiredRoles && item.requiredRoles.length > 0) {
+        if (item.requiredRoles?.length) {
           if (!role || !item.requiredRoles.includes(role as any)) return false;
         }
         return true;
@@ -422,22 +688,18 @@ export class HotelLayoutComponent implements OnInit {
     })).filter(g => g.items.length > 0);
   });
 
-  isGroupCollapsed(index: number): boolean {
-    return this.collapsedGroups().has(index);
-  }
+  isGroupCollapsed(index: number): boolean { return this.collapsedGroups().has(index); }
 
   toggleGroup(index: number): void {
     const total = this.visibleNavGroups().length;
     this.collapsedGroups.update(set => {
       const next = new Set(set);
       if (!next.has(index)) {
-        // Section is currently OPEN — just collapse it
         next.add(index);
       } else {
-        // Section is currently COLLAPSED — open it, collapse all others
         for (let i = 0; i < total; i++) {
-          if (i === index) next.delete(i); // open clicked
-          else             next.add(i);    // collapse all others
+          if (i === index) next.delete(i);
+          else             next.add(i);
         }
       }
       return next;
@@ -447,19 +709,16 @@ export class HotelLayoutComponent implements OnInit {
   ngOnInit(): void {
     this.featureService.load();
     this.activeProperty.load();
-
     this.loadNotificationCount();
     this.loadChatUnread();
-    // Poll every 30 seconds for chat, 60 for notifications
     setInterval(() => this.loadNotificationCount(), 60_000);
     setInterval(() => this.loadChatUnread(), 30_000);
   }
 
-  private lastChatUnread = -1;   // -1 = not yet initialised; avoids false sound on first load
+  private lastChatUnread = -1;
   private audioCtx: AudioContext | null = null;
   private audioUnlocked = false;
 
-  /** Call once on first user gesture to unlock AudioContext (browser policy). */
   unlockAudio(): void {
     if (this.audioUnlocked) return;
     try {
@@ -474,13 +733,9 @@ export class HotelLayoutComponent implements OnInit {
     if (!pid) return;
     this.api.get('/chat/active', { property_id: pid }).subscribe({
       next: (r: any) => {
-        const chats: any[] = r?.data ?? [];
-        const total = chats.reduce((sum: number, ch: any) => sum + (ch.unread_count ?? 0), 0);
+        const total = (r?.data ?? []).reduce((s: number, ch: any) => s + (ch.unread_count ?? 0), 0);
         this.chatUnreadCount.set(total);
-        // Sound on new messages — skip very first poll (lastChatUnread === -1)
-        if (this.lastChatUnread >= 0 && total > this.lastChatUnread) {
-          this.playChatSound();
-        }
+        if (this.lastChatUnread >= 0 && total > this.lastChatUnread) this.playChatSound();
         this.lastChatUnread = total;
       },
       error: () => {},
@@ -489,25 +744,17 @@ export class HotelLayoutComponent implements OnInit {
 
   private playChatSound(): void {
     try {
-      if (!this.audioCtx) {
-        this.audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
+      if (!this.audioCtx) this.audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const ctx = this.audioCtx;
-      if (ctx.state === 'suspended') { ctx.resume(); }
-
-      // Two-tone ping: 880 Hz → 1100 Hz
-      const t = ctx.currentTime;
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(880,  t);
+      if (ctx.state === 'suspended') ctx.resume();
+      const t = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(880, t);
       osc.frequency.setValueAtTime(1100, t + 0.12);
       gain.gain.setValueAtTime(0.25, t);
       gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
-      osc.start(t);
-      osc.stop(t + 0.4);
-    } catch { /* audio blocked or unsupported */ }
+      osc.start(t); osc.stop(t + 0.4);
+    } catch {}
   }
 
   private loadNotificationCount(): void {
@@ -517,7 +764,5 @@ export class HotelLayoutComponent implements OnInit {
     });
   }
 
-  logout(): void {
-    this.auth.logout().subscribe(() => this.auth.navigateToLogin());
-  }
+  logout(): void { this.auth.logout().subscribe(() => this.auth.navigateToLogin()); }
 }
