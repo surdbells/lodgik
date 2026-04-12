@@ -200,6 +200,14 @@ final class GuestStayNotificationService
             . ($bookingRef ? "<tr><td style='padding:8px 0;color:#6b7280;font-size:13px;'>Booking Ref</td><td style='padding:8px 0;font-weight:600;'>{$bookingRef}</td></tr>" : "")
             : '';
 
+        // Pre-compute all conditional blocks — ternary expressions are not valid inside PHP heredocs
+        $bookingTableHtml  = $bookingSection
+            ? "<table style='width:100%;border-top:1px solid #f3f4f6;margin-bottom:24px;'><tbody>{$bookingSection}</tbody></table>"
+            : '';
+        $hotelAddressHtml  = $hotelAddress ? "<p style='color:#6b7280;font-size:14px;margin:0 0 4px;'>{$hotelAddress}</p>" : '';
+        $hotelPhoneHtml    = $hotelPhone   ? "<p style='color:#6b7280;font-size:14px;margin:0 0 4px;'>📞 {$hotelPhone}</p>" : '';
+        $hotelEmailHtml    = $hotelEmail   ? "<p style='color:#6b7280;font-size:14px;margin:0;'>✉️ {$hotelEmail}</p>" : '';
+
         return <<<HTML
 <!DOCTYPE html>
 <html>
@@ -220,15 +228,15 @@ final class GuestStayNotificationService
       <strong>{$guestName}</strong> is currently staying at <strong>{$hotelName}</strong>.
     </p>
 
-    {$bookingSection ? "<table style='width:100%;border-top:1px solid #f3f4f6;margin-bottom:24px;'><tbody>{$bookingSection}</tbody></table>" : ""}
+    {$bookingTableHtml}
 
     <!-- Hotel Details -->
     <div style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:24px;">
       <h3 style="color:#111827;font-size:14px;font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:0.5px;">📍 Hotel Location</h3>
       <p style="color:#374151;font-size:15px;font-weight:600;margin:0 0 4px;">{$hotelName}</p>
-      {$hotelAddress ? "<p style='color:#6b7280;font-size:14px;margin:0 0 4px;'>{$hotelAddress}</p>" : ''}
-      {$hotelPhone ? "<p style='color:#6b7280;font-size:14px;margin:0 0 4px;'>📞 {$hotelPhone}</p>" : ''}
-      {$hotelEmail ? "<p style='color:#6b7280;font-size:14px;margin:0;'>✉️ {$hotelEmail}</p>" : ''}
+      {$hotelAddressHtml}
+      {$hotelPhoneHtml}
+      {$hotelEmailHtml}
     </div>
 
     <!-- Maps CTA -->
