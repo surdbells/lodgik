@@ -36,7 +36,6 @@ final class PosService
         private readonly ?ChatService $chatService = null,
         private readonly ?RedisClient $redis = null,
     ) {}
-    ) {}
 
     // ─── Tables ─────────────────────────────────────────────────
 
